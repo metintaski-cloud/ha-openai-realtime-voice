@@ -53,6 +53,20 @@ REPLY_GAP_S = 1.0
 # After the model said goodbye, wait this long without audio before hanging up.
 GOODBYE_IDLE_S = 1.5
 GOODBYE_MAX_WAIT_S = 15.0
+# End the session when nobody spoke for this long (GPT Live is billed per minute).
+IDLE_TIMEOUT_S = 30.0
+MAX_SESSION_S = 600.0
+
+# GPT Live is full duplex and wants a continuous input stream. The Voice PE mutes its
+# mic while it plays audio, so the bridge fills such gaps with silence.
+SILENCE_FILL_AFTER_S = 0.12
+SILENCE_FILL_MAX_S = 0.5
+
+# GPT Live may stream quiet frames while it is not talking. The Voice PE treats any
+# received audio as "bot speaking" and mutes its mic, so quiet frames are dropped
+# unless they are a short pause inside real speech.
+OUTPUT_SILENCE_PEAK = 300
+OUTPUT_HANGOVER_S = 0.4
 
 DEFAULT_INSTRUCTIONS = (
     "Du bist eine warme, freundliche und natürlich klingende Sprachassistentin im Wohnzimmer. "
@@ -88,6 +102,20 @@ END_CONVERSATION_TOOL = {
         "additionalProperties": False,
     },
 }
+
+
+def pcm_level(pcm: bytes) -> tuple[int, int]:
+    """Return (rms, peak) of 16-bit little-endian mono PCM. Used for diagnostics."""
+    import array
+    if len(pcm) < 2:
+        return 0, 0
+    samples = array.array("h")
+    samples.frombytes(pcm[: len(pcm) // 2 * 2])
+    if sys.byteorder == "big":
+        samples.byteswap()
+    peak = max(abs(x) for x in samples)
+    rms = int((sum(x * x for x in samples) / len(samples)) ** 0.5)
+    return rms, peak
 
 
 class LiveVoiceBridge:
@@ -194,16 +222,35 @@ class LiveVoiceBridge:
         output_queue: asyncio.Queue,
         first_audio_from_client: list,
         end_reason: dict,
+        state: dict,
     ) -> None:
         """Forward ESP32 binary audio to GPT Live. Client only sends audio after ready."""
+        window_start = time.monotonic()
+        window_rms = 0
+        window_peak = 0
+        window_chunks = 0
         try:
             async for message in client_ws:
                 if isinstance(message, bytes):
+                    rms, peak = pcm_level(message)
+                    window_rms = max(window_rms, rms)
+                    window_peak = max(window_peak, peak)
+                    window_chunks += 1
+                    if time.monotonic() - window_start >= 2.0:
+                        logger.info(
+                            "Mic level (2 s): max rms=%d peak=%d chunks=%d silence_fill=%.1fs",
+                            window_rms, window_peak, window_chunks, state["silence_filled_s"],
+                        )
+                        state["silence_filled_s"] = 0.0
+                        window_start = time.monotonic()
+                        window_rms = window_peak = window_chunks = 0
                     if not first_audio_from_client[0]:
                         first_audio_from_client[0] = True
                         logger.info("First audio from client (%d bytes)", len(message))
                     if len(message) % 2 != 0:
                         message = message + b"\x00"
+                    now = time.monotonic()
+                    state["input_clock"] = max(state["input_clock"], now) + len(message) / BYTES_PER_SEC
                     b64 = base64.standard_b64encode(message).decode("ascii")
                     await live_ws.send(
                         json.dumps({"type": "session.input_audio.append", "audio": b64})
@@ -232,6 +279,33 @@ class LiveVoiceBridge:
         finally:
             if "reason" not in end_reason:
                 end_reason["reason"] = "client_disconnected"
+
+    async def _silence_pump(self, live_ws, state: dict) -> None:
+        """Keep the GPT Live input stream continuous. When the client sends no audio
+        (for example while the Voice PE mutes its mic during playback), send silence."""
+        try:
+            while True:
+                await asyncio.sleep(0.02)
+                now = time.monotonic()
+                gap = now - state["input_clock"]
+                if gap < SILENCE_FILL_AFTER_S:
+                    continue
+                fill_s = min(gap, SILENCE_FILL_MAX_S)
+                n_bytes = int(fill_s * BYTES_PER_SEC) // 2 * 2
+                if n_bytes <= 0:
+                    continue
+                state["input_clock"] += n_bytes / BYTES_PER_SEC
+                state["silence_filled_s"] += n_bytes / BYTES_PER_SEC
+                b64 = base64.standard_b64encode(b"\x00" * n_bytes).decode("ascii")
+                await live_ws.send(
+                    json.dumps({"type": "session.input_audio.append", "audio": b64})
+                )
+        except asyncio.CancelledError:
+            raise
+        except websockets.exceptions.ConnectionClosed:
+            return
+        except Exception as e:
+            logger.error("Error in silence pump: %s", e, exc_info=True)
 
     async def _send_phase(self, client_ws, phase: str) -> None:
         """Send phase message to client for LED/UX feedback."""
@@ -294,6 +368,9 @@ class LiveVoiceBridge:
         """Forward GPT Live events to ESP32; audio and phases go through one output queue."""
         delta_count = 0
         delta_bytes_total = 0
+        reply_peak = 0
+        dropped_silent = 0
+        last_loud = 0.0
         user_text: list[str] = []
         bot_text: list[str] = []
         try:
@@ -312,21 +389,37 @@ class LiveVoiceBridge:
                     delta_b64 = event.get("delta")
                     if delta_b64:
                         now = time.monotonic()
+                        audio_bytes = base64.standard_b64decode(delta_b64)
+                        _, out_peak = pcm_level(audio_bytes)
+                        if out_peak >= OUTPUT_SILENCE_PEAK:
+                            last_loud = now
+                        elif now - last_loud > OUTPUT_HANGOVER_S:
+                            # Quiet frame outside of speech: do not send, or the Voice PE
+                            # would mute its mic and never hear the user.
+                            dropped_silent += 1
+                            if dropped_silent % 100 == 1:
+                                logger.info(
+                                    "Dropping quiet output audio (peak=%d, dropped so far %d)",
+                                    out_peak, dropped_silent,
+                                )
+                            continue
                         if now - state["last_audio_time"] > REPLY_GAP_S:
-                            await output_queue.put(("phase", "replying"))
                             if delta_count:
                                 logger.info(
-                                    "Reply audio: %d deltas, %d bytes (%.1f s)",
+                                    "Reply audio: %d deltas, %d bytes (%.1f s), max peak %d",
                                     delta_count, delta_bytes_total,
-                                    delta_bytes_total / BYTES_PER_SEC,
+                                    delta_bytes_total / BYTES_PER_SEC, reply_peak,
                                 )
+                            await output_queue.put(("phase", "replying"))
                             delta_count = 0
                             delta_bytes_total = 0
+                            reply_peak = 0
                         state["last_audio_time"] = now
-                        audio_bytes = base64.standard_b64decode(delta_b64)
+                        state["last_activity"] = now
                         await output_queue.put(audio_bytes)
                         delta_count += 1
                         delta_bytes_total += len(audio_bytes)
+                        reply_peak = max(reply_peak, out_peak)
                         if self.recorder:
                             self.recorder.record_output_audio(audio_bytes)
 
@@ -341,6 +434,7 @@ class LiveVoiceBridge:
 
                 elif ev_type == "session.input_transcript.delta":
                     user_text.append(event.get("delta", ""))
+                    state["last_activity"] = time.monotonic()
                     logger.info("User said: %r", event.get("delta", ""))
                 elif ev_type == "session.output_transcript.delta":
                     bot_text.append(event.get("delta", ""))
@@ -376,13 +470,21 @@ class LiveVoiceBridge:
             logger.error("Error in live_to_client: %s", e, exc_info=True)
             end_reason["reason"] = "live_to_client_error"
         finally:
+            if delta_count:
+                logger.info(
+                    "Reply audio: %d deltas, %d bytes (%.1f s), max peak %d",
+                    delta_count, delta_bytes_total,
+                    delta_bytes_total / BYTES_PER_SEC, reply_peak,
+                )
+            if dropped_silent:
+                logger.info("Dropped %d quiet output deltas in total", dropped_silent)
             if user_text or bot_text:
                 logger.info("Transcript user: %s", "".join(user_text).strip())
                 logger.info("Transcript bot: %s", "".join(bot_text).strip())
             if "reason" not in end_reason:
                 end_reason["reason"] = "live_disconnected"
 
-    async def _goodbye_watcher(
+    async def _session_watcher(
         self,
         client_ws,
         live_ws,
@@ -390,35 +492,29 @@ class LiveVoiceBridge:
         end_reason: dict,
         state: dict,
     ) -> None:
-        """After end_conversation was called: let the farewell finish playing, then hang up."""
+        """Ends the session: after end_conversation (once the farewell was played), when
+        nobody spoke for IDLE_TIMEOUT_S, or after MAX_SESSION_S."""
         try:
-            while not state.get("closing"):
+            session_start = time.monotonic()
+            reason = ""
+            while not reason:
                 await asyncio.sleep(0.1)
-            loop = asyncio.get_event_loop()
-            started = loop.time()
-            heard_audio = False
-            baseline = state["last_audio_time"]
-            while True:
-                await asyncio.sleep(0.1)
-                if state["last_audio_time"] > baseline:
-                    heard_audio = True
-                idle = time.monotonic() - state["last_audio_time"]
-                waited = loop.time() - started
-                if waited > GOODBYE_MAX_WAIT_S:
-                    break
-                if heard_audio and idle > GOODBYE_IDLE_S and output_queue.empty():
-                    break
-                # No farewell audio at all: do not hang up instantly, give it a moment.
-                if not heard_audio and waited > 6.0:
-                    break
-            logger.info("End of conversation, notifying client")
-            end_reason["reason"] = "end_conversation"
+                now = time.monotonic()
+                if state.get("closing"):
+                    await self._wait_for_farewell(output_queue, state)
+                    reason = "end_conversation"
+                elif now - state["last_activity"] > IDLE_TIMEOUT_S:
+                    reason = "idle_timeout"
+                elif now - session_start > MAX_SESSION_S:
+                    reason = "max_duration"
+            logger.info("Ending session (%s), notifying client", reason)
+            end_reason["reason"] = reason
             try:
                 await client_ws.send(
                     json.dumps({
                         "type": "disconnect",
-                        "message": "User requested disconnect",
-                        "reason": "user_requested_stop",
+                        "message": "Session ended",
+                        "reason": "user_requested_stop" if reason == "end_conversation" else reason,
                     })
                 )
             except Exception:
@@ -429,6 +525,26 @@ class LiveVoiceBridge:
                 pass
         except asyncio.CancelledError:
             raise
+
+    async def _wait_for_farewell(self, output_queue: asyncio.Queue, state: dict) -> None:
+        """Wait until the goodbye audio has been played (or a time limit is reached)."""
+        loop = asyncio.get_event_loop()
+        started = loop.time()
+        heard_audio = False
+        baseline = state["last_audio_time"]
+        while True:
+            await asyncio.sleep(0.1)
+            if state["last_audio_time"] > baseline:
+                heard_audio = True
+            idle = time.monotonic() - state["last_audio_time"]
+            waited = loop.time() - started
+            if waited > GOODBYE_MAX_WAIT_S:
+                return
+            if heard_audio and idle > GOODBYE_IDLE_S and output_queue.empty():
+                return
+            # No farewell audio at all: do not hang up instantly, give it a moment.
+            if not heard_audio and waited > 6.0:
+                return
 
     async def _output_sender(
         self,
@@ -546,7 +662,14 @@ class LiveVoiceBridge:
         first_audio_from_client = [False]
         first_audio_to_client = [False]
         output_queue: asyncio.Queue = asyncio.Queue()
-        state: dict = {"closing": False, "fatal": False, "last_audio_time": 0.0}
+        state: dict = {
+            "closing": False,
+            "fatal": False,
+            "last_audio_time": 0.0,
+            "last_activity": time.monotonic(),
+            "input_clock": time.monotonic(),
+            "silence_filled_s": 0.0,
+        }
         live_ws = None
 
         try:
@@ -562,11 +685,14 @@ class LiveVoiceBridge:
             logger.info("Instructions: %s", instructions_preview)
             await client_ws.send(json.dumps({"type": "ready"}))
             logger.info("Sent ready signal to client")
+            state["input_clock"] = time.monotonic()
+            state["last_activity"] = time.monotonic()
 
             tasks = [
                 asyncio.create_task(
                     self._client_to_live(
-                        client_ws, live_ws, output_queue, first_audio_from_client, end_reason
+                        client_ws, live_ws, output_queue, first_audio_from_client, end_reason,
+                        state,
                     )
                 ),
                 asyncio.create_task(
@@ -578,11 +704,14 @@ class LiveVoiceBridge:
                     )
                 ),
                 asyncio.create_task(
-                    self._goodbye_watcher(client_ws, live_ws, output_queue, end_reason, state)
+                    self._session_watcher(client_ws, live_ws, output_queue, end_reason, state)
                 ),
             ]
+            pump = asyncio.create_task(self._silence_pump(live_ws, state))
             finished, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
 
+            pump.cancel()
+            await asyncio.gather(pump, return_exceptions=True)
             for task in pending:
                 task.cancel()
             if pending:
