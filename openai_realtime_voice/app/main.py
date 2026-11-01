@@ -31,6 +31,7 @@ import dotenv
 import websockets
 
 from app.audio_recorder import AudioRecorder
+from app import memory
 
 logging.basicConfig(
     level=logging.INFO,
@@ -163,6 +164,10 @@ class LiveVoiceBridge:
         self.backend_model = os.environ.get("BACKEND_MODEL", "gpt-5.6-luna")
         self.enable_web_search = os.environ.get("ENABLE_WEB_SEARCH", "true").lower() == "true"
         self.enable_recording = os.environ.get("ENABLE_RECORDING", "false").lower() == "true"
+        self.enable_memory = os.environ.get("ENABLE_MEMORY", "true").lower() == "true"
+        self.memory_model = os.environ.get("MEMORY_MODEL", "gpt-6-luna")
+        self.memory = memory.MemoryStore(os.environ.get("MEMORY_PATH", "/data/memory.json"))
+        self._memory_tasks: set = set()
         self.recorder: Optional[AudioRecorder] = None
         if self.enable_recording:
             self.recorder = AudioRecorder(output_dir="recordings")
@@ -182,7 +187,7 @@ class LiveVoiceBridge:
             "event_id": "event_start",
             "session": {
                 "model": self.live_model,
-                "instructions": self.instructions,
+                "instructions": self._instructions_with_memory(),
                 "audio": {
                     "format": {"type": "audio/pcm", "rate": SAMPLE_RATE},
                     "output": {"voice": self.voice},
@@ -199,6 +204,44 @@ class LiveVoiceBridge:
                 },
             },
         }
+
+    def _instructions_with_memory(self) -> str:
+        if not self.enable_memory:
+            return self.instructions
+        return self.instructions + self.memory.instructions_block()
+
+    def _add_dialog(self, state: dict, speaker: str, delta: str) -> None:
+        dialog = state.setdefault("dialog", [])
+        if dialog and dialog[-1][0] == speaker:
+            dialog[-1][1] += delta
+        else:
+            dialog.append([speaker, delta])
+
+    async def _update_memory(self, dialog: list, remember_requested: bool) -> None:
+        old = self.memory.load()
+        facts = await memory.summarize(
+            self.openai_api_key, [self.memory_model, self.backend_model], old, dialog,
+            url=os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL),
+        )
+        if facts is None:
+            logger.warning("Memory not updated")
+            return
+        if facts != old:
+            self.memory.save(facts)
+            logger.info("Memory updated: %d facts (before %d)%s", len(facts), len(old),
+                        " (user asked to remember)" if remember_requested else "")
+        else:
+            logger.info("Memory unchanged (%d facts)", len(facts))
+
+    def _schedule_memory_update(self, state: dict) -> None:
+        dialog = [d for d in state.get("dialog", []) if d[1].strip()]
+        if not self.enable_memory or not any(s == "user" for s, _ in dialog):
+            return
+        task = asyncio.create_task(
+            self._update_memory(dialog, bool(state.get("remember_requested")))
+        )
+        self._memory_tasks.add(task)
+        task.add_done_callback(self._memory_tasks.discard)
 
     async def _connect_live(self):
         """Open WebSocket to the GPT Live API."""
@@ -464,9 +507,13 @@ class LiveVoiceBridge:
                 elif ev_type == "session.input_transcript.delta":
                     delta = event.get("delta", "")
                     user_text.append(delta)
+                    self._add_dialog(state, "user", delta)
                     state["last_activity"] = time.monotonic()
                     recent = (state.get("recent_user_text", "") + delta)[-80:]
                     state["recent_user_text"] = recent
+                    if not state.get("remember_requested") and memory.wants_to_remember(recent):
+                        state["remember_requested"] = True
+                        logger.info("User asked to remember something")
                     if not state.get("closing") and contains_goodbye(recent):
                         logger.info("Goodbye heard from user: %r", recent.strip())
                         state["closing"] = True
@@ -474,6 +521,7 @@ class LiveVoiceBridge:
                 elif ev_type == "session.output_transcript.delta":
                     delta = event.get("delta", "")
                     bot_text.append(delta)
+                    self._add_dialog(state, "bot", delta)
                     recent = (state.get("recent_bot_text", "") + delta)[-80:]
                     state["recent_bot_text"] = recent
                     if not state.get("closing") and contains_goodbye(recent, from_user=False):
@@ -777,6 +825,10 @@ class LiveVoiceBridge:
                     pass
             if self.recorder:
                 self.recorder.stop_recording()
+            try:
+                self._schedule_memory_update(state)
+            except Exception as e:
+                logger.warning("Could not start memory update: %s", e)
             duration = time.monotonic() - start_time
             reason = end_reason.get("reason", "unknown")
             logger.info(
