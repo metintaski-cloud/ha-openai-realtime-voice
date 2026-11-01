@@ -73,16 +73,28 @@ OUTPUT_HANGOVER_S = 0.4
 # does not always delegate the end of a conversation to the backend tool.
 GOODBYE_PHRASES = (
     "tschüss", "tschüs", "tschuess", "auf wiedersehen", "gute nacht", "ciao",
+    "mach's gut", "machs gut",
     "hoşça kal", "hosca kal", "hoşçakal", "güle güle", "gule gule", "görüşürüz",
-    "gorusuruz", "iyi geceler", "allahaısmarladık", "allaha ısmarladık",
+    "gorusuruz", "görüşmek üzere", "iyi geceler", "allahaısmarladık",
+    "allaha ısmarladık", "kendine iyi bak",
     "goodbye", "bye bye",
 )
+# Only the user may end the session with these softer phrases.
+USER_ONLY_GOODBYE_PHRASES = ("bis bald", "bis dann", "das war's", "das wars")
 
 
-def contains_goodbye(text: str) -> bool:
+def _normalize(text: str) -> str:
+    import unicodedata
+    t = unicodedata.normalize("NFC", text).lower()
+    t = t.replace("\u2019", "'").replace("\u00b4", "'").replace("`", "'")
+    return " ".join(t.split())
+
+
+def contains_goodbye(text: str, from_user: bool = True) -> bool:
     """True if the text contains a farewell phrase."""
-    t = " ".join(text.lower().split())
-    return any(phrase in t for phrase in GOODBYE_PHRASES)
+    t = _normalize(text)
+    phrases = GOODBYE_PHRASES + (USER_ONLY_GOODBYE_PHRASES if from_user else ())
+    return any(_normalize(phrase) in t for phrase in phrases)
 
 
 DEFAULT_INSTRUCTIONS = (
@@ -460,7 +472,13 @@ class LiveVoiceBridge:
                         state["closing"] = True
                     logger.info("User said: %r", event.get("delta", ""))
                 elif ev_type == "session.output_transcript.delta":
-                    bot_text.append(event.get("delta", ""))
+                    delta = event.get("delta", "")
+                    bot_text.append(delta)
+                    recent = (state.get("recent_bot_text", "") + delta)[-80:]
+                    state["recent_bot_text"] = recent
+                    if not state.get("closing") and contains_goodbye(recent, from_user=False):
+                        logger.info("Goodbye said by assistant: %r", recent.strip())
+                        state["closing"] = True
                     logger.info("Bot said: %r", event.get("delta", ""))
 
                 elif ev_type == "session.usage.updated":
