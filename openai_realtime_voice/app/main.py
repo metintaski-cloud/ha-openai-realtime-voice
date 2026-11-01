@@ -332,6 +332,7 @@ class LiveVoiceBridge:
 
                 elif ev_type == "response.event":
                     inner = event.get("event") or {}
+                    logger.info("Backend event: %s", inner.get("type"))
                     await self._handle_backend_event(inner, live_ws, output_queue, state)
 
                 elif ev_type == "session.delegation.created":
@@ -340,8 +341,10 @@ class LiveVoiceBridge:
 
                 elif ev_type == "session.input_transcript.delta":
                     user_text.append(event.get("delta", ""))
+                    logger.info("User said: %r", event.get("delta", ""))
                 elif ev_type == "session.output_transcript.delta":
                     bot_text.append(event.get("delta", ""))
+                    logger.info("Bot said: %r", event.get("delta", ""))
 
                 elif ev_type == "session.usage.updated":
                     logger.debug("Usage: %s", event.get("usage"))
@@ -362,7 +365,7 @@ class LiveVoiceBridge:
                         await output_queue.put(("error", "insufficient_quota"))
                         state["fatal"] = True
                 else:
-                    logger.debug("Unhandled GPT Live event: %s", ev_type)
+                    logger.info("GPT Live event: %s", raw[:300])
         except websockets.exceptions.ConnectionClosed as e:
             end_reason["reason"] = "live_disconnected"
             end_reason["code"] = e.code
