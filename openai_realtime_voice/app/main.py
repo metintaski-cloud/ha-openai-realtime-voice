@@ -68,6 +68,23 @@ SILENCE_FILL_MAX_S = 0.5
 OUTPUT_SILENCE_PEAK = 300
 OUTPUT_HANGOVER_S = 0.4
 
+# Farewell phrases (German, Turkish, English). When the user says one of them, the
+# bridge ends the session after the assistant's goodbye was played. GPT Live itself
+# does not always delegate the end of a conversation to the backend tool.
+GOODBYE_PHRASES = (
+    "tschüss", "tschüs", "tschuess", "auf wiedersehen", "gute nacht", "ciao",
+    "hoşça kal", "hosca kal", "hoşçakal", "güle güle", "gule gule", "görüşürüz",
+    "gorusuruz", "iyi geceler", "allahaısmarladık", "allaha ısmarladık",
+    "goodbye", "bye bye",
+)
+
+
+def contains_goodbye(text: str) -> bool:
+    """True if the text contains a farewell phrase."""
+    t = " ".join(text.lower().split())
+    return any(phrase in t for phrase in GOODBYE_PHRASES)
+
+
 DEFAULT_INSTRUCTIONS = (
     "Du bist eine warme, freundliche und natürlich klingende Sprachassistentin im Wohnzimmer. "
     "Sprich immer in der Sprache, in der du angesprochen wirst, meistens Türkisch oder Deutsch. "
@@ -433,8 +450,14 @@ class LiveVoiceBridge:
                     await output_queue.put(("phase", "thinking"))
 
                 elif ev_type == "session.input_transcript.delta":
-                    user_text.append(event.get("delta", ""))
+                    delta = event.get("delta", "")
+                    user_text.append(delta)
                     state["last_activity"] = time.monotonic()
+                    recent = (state.get("recent_user_text", "") + delta)[-80:]
+                    state["recent_user_text"] = recent
+                    if not state.get("closing") and contains_goodbye(recent):
+                        logger.info("Goodbye heard from user: %r", recent.strip())
+                        state["closing"] = True
                     logger.info("User said: %r", event.get("delta", ""))
                 elif ev_type == "session.output_transcript.delta":
                     bot_text.append(event.get("delta", ""))
