@@ -38,6 +38,7 @@ In **Supervisor** → **OpenAI Realtime Voice** → **Configuration**:
 - `realtime_model`: OpenAI Realtime model (default `gpt-realtime`). Constructs the WebSocket URL as `wss://api.openai.com/v1/realtime?model={realtime_model}`.
 - `web_search_model`: Model for Responses API web search (default `gpt-4.1-mini`)
 - `vad_threshold`, `vad_prefix_padding_ms`, `vad_silence_duration_ms`: Voice activity detection
+- `light_entities`: Comma separated light entities the assistant may control, in order (first one is "Lampe 1"). Needs `homeassistant_api: true`.
 - `enable_recording`: Set to `true` to record input/output WAVs under `recordings/` (debug only)
 
 Then start the addon.

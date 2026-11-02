@@ -35,7 +35,7 @@ import websockets
 from app.audio_recorder import AudioRecorder
 from app import memory
 from app import context
-from app import costs
+from app import costs, lights
 
 logging.basicConfig(
     level=logging.INFO,
@@ -208,6 +208,7 @@ class LiveVoiceBridge:
         self.enable_context = os.environ.get("ENABLE_CONTEXT", "true").lower() == "true"
         self.memory_model = os.environ.get("MEMORY_MODEL", "gpt-6-luna")
         self.admin_key, self.monthly_budget = costs.config_from_env()
+        self.lights = lights.LightController(lights.entities_from_env())
         self.memory = memory.MemoryStore(os.environ.get("MEMORY_PATH", "/data/memory.json"))
         self._memory_tasks: set = set()
         self.recorder: Optional[AudioRecorder] = None
@@ -240,6 +241,10 @@ class LiveVoiceBridge:
         if self.admin_key:
             tools.append(costs.COSTS_TOOL)
             backend_instructions += costs.COSTS_BACKEND_HINT
+        if self.lights.available:
+            tools.append(lights.LIGHTS_TOOL)
+            backend_instructions += lights.LIGHTS_BACKEND_HINT.format(
+                count=len(self.lights.entities))
         session = {
             "type": "session.start",
             "event_id": "event_start",
@@ -497,6 +502,22 @@ class LiveVoiceBridge:
         except Exception as e:
             logger.warning("Could not return costs report: %s", e)
 
+    async def _run_lights_tool(self, live_ws, call_id: str, raw_args) -> None:
+        """Switch the living room lamps without blocking the audio loop."""
+        try:
+            args = json.loads(raw_args) if isinstance(raw_args, str) and raw_args else (raw_args or {})
+        except json.JSONDecodeError:
+            args = {}
+        try:
+            result = await asyncio.wait_for(self.lights.run(args), timeout=12.0)
+        except Exception as e:
+            logger.warning("Light control failed: %s", e)
+            result = {"error": "Die Lampen konnten gerade nicht gesteuert werden."}
+        try:
+            await self._send_function_output(live_ws, call_id, result)
+        except Exception as e:
+            logger.warning("Could not return light result: %s", e)
+
     async def _handle_backend_event(
         self,
         inner: dict,
@@ -521,6 +542,11 @@ class LiveVoiceBridge:
             elif name == costs.COSTS_TOOL["name"]:
                 await output_queue.put(("phase", "thinking"))
                 task = asyncio.create_task(self._run_costs_tool(live_ws, call_id))
+                self._memory_tasks.add(task)
+                task.add_done_callback(self._memory_tasks.discard)
+            elif name == lights.LIGHTS_TOOL["name"]:
+                task = asyncio.create_task(
+                    self._run_lights_tool(live_ws, call_id, item.get("arguments")))
                 self._memory_tasks.add(task)
                 task.add_done_callback(self._memory_tasks.discard)
             else:
