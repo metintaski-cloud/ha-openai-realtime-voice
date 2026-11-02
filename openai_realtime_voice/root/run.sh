@@ -5,6 +5,7 @@ OPENAI_API_KEY=$(bashio::config 'openai_api_key')
 WEBSOCKET_PORT=$(bashio::config 'websocket_port')
 INSTRUCTIONS=$(bashio::config 'instructions')
 VOICE=$(bashio::config 'voice')
+GREETING_WORDS=$(bashio::config 'greeting_words')
 LIVE_MODEL=$(bashio::config 'live_model')
 BACKEND_MODEL=$(bashio::config 'backend_model')
 ENABLE_WEB_SEARCH=$(bashio::config 'enable_web_search')
@@ -24,6 +25,7 @@ export OPENAI_API_KEY
 export WEBSOCKET_PORT
 export INSTRUCTIONS
 export VOICE
+export GREETING_WORDS
 export LIVE_MODEL
 export BACKEND_MODEL
 export ENABLE_WEB_SEARCH

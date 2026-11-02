@@ -24,7 +24,9 @@ import json
 import base64
 import logging
 import time
+import random
 import uuid
+from datetime import datetime
 from typing import Optional
 
 import dotenv
@@ -116,6 +118,39 @@ DEFAULT_BACKEND_INSTRUCTIONS = (
     "end_conversation function."
 )
 
+DEFAULT_GREETING_WORDS = "Hallo, Merhaba, Selamünaleyküm, Hey, Hallöchen"
+TURKISH_GREETINGS = ("merhaba", "selam", "günaydın", "iyi akşamlar", "iyi günler")
+GREETING_TEMPLATE = (
+    "Begrüße die Person jetzt sofort, ganz kurz und natürlich mit „{word}“ und frag danach "
+    "freundlich, wer da ist, damit du weißt, mit wem du sprichst. {language} "
+    "Dann hör zu und reagiere auf die Antwort."
+)
+
+
+def parse_greeting_words(raw: Optional[str]) -> list[str]:
+    """Comma separated greeting words from the add-on option ('' disables the greeting)."""
+    if raw is None or raw.strip().lower() == "null":
+        raw = DEFAULT_GREETING_WORDS
+    return [w.strip() for w in raw.split(",") if w.strip()]
+
+
+def greeting_instruction(word: str) -> str:
+    turkish = any(t in word.lower() for t in TURKISH_GREETINGS)
+    language = ("Stell die Frage auf Türkisch." if turkish
+                else "Stell die Frage auf Deutsch.")
+    return GREETING_TEMPLATE.format(word=word, language=language)
+
+
+def pick_greeting(words: list[str], hour: int) -> str:
+    """Pick a different greeting each time, with time of day greetings mixed in."""
+    pool = list(words)
+    if 5 <= hour < 11:
+        pool += ["Guten Morgen", "Günaydın"]
+    elif 18 <= hour < 23:
+        pool += ["Guten Abend", "İyi akşamlar"]
+    return random.choice(pool)
+
+
 END_CONVERSATION_TOOL = {
     "type": "function",
     "name": "end_conversation",
@@ -163,6 +198,8 @@ class LiveVoiceBridge:
             (os.environ.get("BACKEND_INSTRUCTIONS") or "").strip() or DEFAULT_BACKEND_INSTRUCTIONS
         )
         self.voice = os.environ.get("VOICE", "marin")
+        self.greeting_words = parse_greeting_words(os.environ.get("GREETING_WORDS"))
+        self.greeting = ""  # chosen fresh for every session
         self.live_model = os.environ.get("LIVE_MODEL", "gpt-live-1")
         self.backend_model = os.environ.get("BACKEND_MODEL", "gpt-5.6-luna")
         self.enable_web_search = os.environ.get("ENABLE_WEB_SEARCH", "true").lower() == "true"
@@ -182,6 +219,18 @@ class LiveVoiceBridge:
         if not self.openai_api_key:
             raise ValueError("OPENAI_API_KEY environment variable is required")
 
+    def _choose_greeting(self) -> str:
+        if not self.greeting_words:
+            return ""
+        try:
+            from zoneinfo import ZoneInfo
+            hour = datetime.now(ZoneInfo(os.environ.get("TZ") or "Europe/Berlin")).hour
+        except Exception:
+            hour = datetime.now().hour
+        word = pick_greeting(self.greeting_words, hour)
+        logger.info("Greeting word: %s", word)
+        return greeting_instruction(word)
+
     def _session_start(self, extra: str = "") -> dict:
         """Build the session.start payload for GPT Live."""
         tools: list[dict] = [END_CONVERSATION_TOOL]
@@ -191,7 +240,7 @@ class LiveVoiceBridge:
         if self.admin_key:
             tools.append(costs.COSTS_TOOL)
             backend_instructions += costs.COSTS_BACKEND_HINT
-        return {
+        session = {
             "type": "session.start",
             "event_id": "event_start",
             "session": {
@@ -213,6 +262,14 @@ class LiveVoiceBridge:
                 },
             },
         }
+        if self.greeting:
+            # Developer message so the greeting instruction is known from the start; the
+            # commentary.append after session.started makes GPT Live actually speak first.
+            session["session"]["input"] = [{
+                "role": "developer",
+                "content": [{"type": "input_text", "text": self.greeting}],
+            }]
+        return session
 
     def _instructions_with_memory(self) -> str:
         if not self.enable_memory:
@@ -268,6 +325,7 @@ class LiveVoiceBridge:
 
     async def _start_session(self, live_ws, timeout: float = 15.0) -> dict:
         """Send session.start and wait for session.started. Returns the started event."""
+        self.greeting = self._choose_greeting()
         extra = ""
         if self.enable_context:
             try:
@@ -294,6 +352,14 @@ class LiveVoiceBridge:
                     f"GPT Live error: {err.get('message', event) if isinstance(err, dict) else err}"
                 )
             if ev_type == "session.started":
+                if self.greeting:
+                    await live_ws.send(json.dumps({
+                        "type": "session.commentary.append",
+                        "event_id": f"greeting_{uuid.uuid4().hex[:8]}",
+                        "delegation_id": None,
+                        "content": self.greeting,
+                    }))
+                    logger.info("Greeting requested")
                 return event
 
     def _client_id_from_ws(self, ws) -> str:

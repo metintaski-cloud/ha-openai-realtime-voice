@@ -1,5 +1,5 @@
 name: GPT Live Voice
-version: "2.4.0"
+version: "2.5.0"
 slug: openai_realtime_voice
 description: WebSocket bridge from Voice PE to OpenAI GPT Live (natural voice conversation with web search)
 url: https://github.com/metintaski-cloud/ha-openai-realtime-voice
@@ -16,6 +16,7 @@ options:
   websocket_port: 8080
   instructions: "Du bist eine warme, freundliche und natürlich klingende Sprachassistentin im Wohnzimmer. Sprich immer in der Sprache, in der du angesprochen wirst, meistens Türkisch oder Deutsch. Sprich lebendig und menschlich, mit natürlicher Betonung, und antworte kurz. Wenn sich jemand verabschiedet oder das Gespräch beenden möchte, verabschiede dich kurz und beende das Gespräch."
   voice: "marin"
+  greeting_words: "Hallo, Merhaba, Selamünaleyküm, Hey, Hallöchen"
   live_model: "gpt-live-1"
   backend_model: "gpt-5.6-luna"
   enable_web_search: true
@@ -30,6 +31,7 @@ schema:
   websocket_port: int(1024,65535)
   instructions: str
   voice: str
+  greeting_words: str?
   live_model: str
   backend_model: str
   enable_web_search: bool
