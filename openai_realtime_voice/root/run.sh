@@ -10,6 +10,7 @@ BACKEND_MODEL=$(bashio::config 'backend_model')
 ENABLE_WEB_SEARCH=$(bashio::config 'enable_web_search')
 ENABLE_RECORDING=$(bashio::config 'enable_recording')
 ENABLE_MEMORY=$(bashio::config 'enable_memory')
+ENABLE_CONTEXT=$(bashio::config 'enable_context')
 MEMORY_MODEL=$(bashio::config 'memory_model')
 
 if [ -z "$OPENAI_API_KEY" ]; then
@@ -26,6 +27,7 @@ export BACKEND_MODEL
 export ENABLE_WEB_SEARCH
 export ENABLE_RECORDING
 export ENABLE_MEMORY
+export ENABLE_CONTEXT
 export MEMORY_MODEL
 
 export PYTHONUNBUFFERED=1

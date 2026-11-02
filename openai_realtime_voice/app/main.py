@@ -32,6 +32,7 @@ import websockets
 
 from app.audio_recorder import AudioRecorder
 from app import memory
+from app import context
 
 logging.basicConfig(
     level=logging.INFO,
@@ -165,6 +166,7 @@ class LiveVoiceBridge:
         self.enable_web_search = os.environ.get("ENABLE_WEB_SEARCH", "true").lower() == "true"
         self.enable_recording = os.environ.get("ENABLE_RECORDING", "false").lower() == "true"
         self.enable_memory = os.environ.get("ENABLE_MEMORY", "true").lower() == "true"
+        self.enable_context = os.environ.get("ENABLE_CONTEXT", "true").lower() == "true"
         self.memory_model = os.environ.get("MEMORY_MODEL", "gpt-6-luna")
         self.memory = memory.MemoryStore(os.environ.get("MEMORY_PATH", "/data/memory.json"))
         self._memory_tasks: set = set()
@@ -177,7 +179,7 @@ class LiveVoiceBridge:
         if not self.openai_api_key:
             raise ValueError("OPENAI_API_KEY environment variable is required")
 
-    def _session_start(self) -> dict:
+    def _session_start(self, extra: str = "") -> dict:
         """Build the session.start payload for GPT Live."""
         tools: list[dict] = [END_CONVERSATION_TOOL]
         if self.enable_web_search:
@@ -187,7 +189,7 @@ class LiveVoiceBridge:
             "event_id": "event_start",
             "session": {
                 "model": self.live_model,
-                "instructions": self._instructions_with_memory(),
+                "instructions": self._instructions_with_memory() + extra,
                 "audio": {
                     "format": {"type": "audio/pcm", "rate": SAMPLE_RATE},
                     "output": {"voice": self.voice},
@@ -259,7 +261,13 @@ class LiveVoiceBridge:
 
     async def _start_session(self, live_ws, timeout: float = 15.0) -> dict:
         """Send session.start and wait for session.started. Returns the started event."""
-        await live_ws.send(json.dumps(self._session_start()))
+        extra = ""
+        if self.enable_context:
+            try:
+                extra = await asyncio.wait_for(context.build_context(), timeout=4.0)
+            except Exception as e:
+                logger.info("Context not added: %s", e)
+        await live_ws.send(json.dumps(self._session_start(extra)))
         loop = asyncio.get_event_loop()
         deadline = loop.time() + timeout
         while True:

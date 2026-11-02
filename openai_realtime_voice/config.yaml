@@ -1,5 +1,5 @@
 name: GPT Live Voice
-version: "2.1.0"
+version: "2.2.0"
 slug: openai_realtime_voice
 description: WebSocket bridge from Voice PE to OpenAI GPT Live (natural voice conversation with web search)
 url: https://github.com/metintaski-cloud/ha-openai-realtime-voice
@@ -10,6 +10,7 @@ init: false
 startup: application
 boot: auto
 host_network: true
+homeassistant_api: true
 options:
   openai_api_key: ""
   websocket_port: 8080
@@ -19,6 +20,7 @@ options:
   backend_model: "gpt-5.6-luna"
   enable_web_search: true
   enable_memory: true
+  enable_context: true
   memory_model: "gpt-6-luna"
   enable_recording: false
 schema:
@@ -30,5 +32,6 @@ schema:
   backend_model: str
   enable_web_search: bool
   enable_memory: bool
+  enable_context: bool
   memory_model: str
   enable_recording: bool
