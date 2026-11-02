@@ -13,8 +13,7 @@ ENABLE_MEMORY=$(bashio::config 'enable_memory')
 ENABLE_CONTEXT=$(bashio::config 'enable_context')
 MEMORY_MODEL=$(bashio::config 'memory_model')
 OPENAI_ADMIN_KEY=$(bashio::config 'openai_admin_key')
-CREDIT_TOPUP_USD=$(bashio::config 'credit_topup_usd')
-CREDIT_TOPUP_DATE=$(bashio::config 'credit_topup_date')
+MONTHLY_BUDGET_USD=$(bashio::config 'monthly_budget_usd')
 
 if [ -z "$OPENAI_API_KEY" ]; then
     bashio::log.error "OPENAI_API_KEY is required but not set"
@@ -33,8 +32,7 @@ export ENABLE_MEMORY
 export ENABLE_CONTEXT
 export MEMORY_MODEL
 export OPENAI_ADMIN_KEY
-export CREDIT_TOPUP_USD
-export CREDIT_TOPUP_DATE
+export MONTHLY_BUDGET_USD
 
 export PYTHONUNBUFFERED=1
 exec python3 -m app.main

@@ -1,5 +1,5 @@
 name: GPT Live Voice
-version: "2.3.0"
+version: "2.3.1"
 slug: openai_realtime_voice
 description: WebSocket bridge from Voice PE to OpenAI GPT Live (natural voice conversation with web search)
 url: https://github.com/metintaski-cloud/ha-openai-realtime-voice
@@ -23,8 +23,7 @@ options:
   enable_context: true
   memory_model: "gpt-6-luna"
   openai_admin_key: ""
-  credit_topup_usd: 0
-  credit_topup_date: ""
+  monthly_budget_usd: 20
   enable_recording: false
 schema:
   openai_api_key: password
@@ -38,6 +37,5 @@ schema:
   enable_context: bool
   memory_model: str
   openai_admin_key: password?
-  credit_topup_usd: float?
-  credit_topup_date: str?
+  monthly_budget_usd: float?
   enable_recording: bool

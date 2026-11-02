@@ -169,7 +169,7 @@ class LiveVoiceBridge:
         self.enable_memory = os.environ.get("ENABLE_MEMORY", "true").lower() == "true"
         self.enable_context = os.environ.get("ENABLE_CONTEXT", "true").lower() == "true"
         self.memory_model = os.environ.get("MEMORY_MODEL", "gpt-6-luna")
-        self.admin_key, self.credit_topup_usd, self.credit_topup_date = costs.config_from_env()
+        self.admin_key, self.monthly_budget = costs.config_from_env()
         self.memory = memory.MemoryStore(os.environ.get("MEMORY_PATH", "/data/memory.json"))
         self._memory_tasks: set = set()
         self.recorder: Optional[AudioRecorder] = None
@@ -419,7 +419,7 @@ class LiveVoiceBridge:
         """Fetch the OpenAI spending report without blocking the audio loop."""
         try:
             report = await asyncio.wait_for(
-                costs.cost_report(self.admin_key, self.credit_topup_usd, self.credit_topup_date),
+                costs.cost_report(self.admin_key, self.monthly_budget),
                 timeout=15.0,
             )
         except Exception as e:

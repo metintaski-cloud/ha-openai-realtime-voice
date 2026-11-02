@@ -4,8 +4,8 @@ OpenAI spending report for the voice assistant.
 Uses the official Costs API (GET /v1/organization/costs). That endpoint needs an
 Admin key; a restricted Admin key with only read access to the Usage API is enough
 and cannot change anything in the account. OpenAI has no API for the prepaid credit
-balance, so the balance is estimated from a top-up amount and date the user enters
-in the add-on configuration (top-up minus everything spent since that day).
+balance, so instead the report compares this month's spending with a monthly budget
+(Metin's auto recharge limit, 20 US dollars by default, set in the add-on options).
 OpenAI reports costs with some delay, so today's number is approximate.
 """
 import logging
@@ -19,14 +19,13 @@ import httpx
 logger = logging.getLogger(__name__)
 
 COSTS_URL = "https://api.openai.com/v1/organization/costs"
-DAY = 86400
 
 COSTS_TOOL = {
     "type": "function",
     "name": "openai_kosten",
     "description": (
         "Returns the OpenAI API spending in US dollars: today, yesterday, the last 7 days, "
-        "this month and last month, plus the estimated remaining prepaid credit if known. "
+        "this month and last month, plus the monthly budget and how much of it is left. "
         "Call this whenever the user asks about OpenAI costs, usage, spending, bill, "
         "balance or credit (Guthaben, Kosten, Verbrauch, bakiye, harcama)."
     ),
@@ -34,23 +33,11 @@ COSTS_TOOL = {
 }
 
 COSTS_BACKEND_HINT = (
-    " If the user asks about OpenAI costs, usage, credit or balance, call openai_kosten and "
-    "answer briefly in the user's language. Amounts are US dollars; round to cents. "
-    "Mention that today's value can lag a few hours behind."
+    " If the user asks about OpenAI costs, usage, credit, budget or balance, call openai_kosten "
+    "and answer briefly in the user's language. Amounts are US dollars; round to cents. "
+    "For credit or balance questions say how much of the monthly budget is used and left "
+    "(the budget is the monthly auto recharge limit). Today's value can lag a few hours."
 )
-
-
-def _parse_date(text: str) -> Optional[date]:
-    text = (text or "").strip()
-    if not text:
-        return None
-    for fmt in ("%Y-%m-%d", "%d.%m.%Y", "%d.%m.%y"):
-        try:
-            return datetime.strptime(text, fmt).date()
-        except ValueError:
-            continue
-    logger.warning("Could not parse credit_topup_date %r (use 2026-11-02 or 02.11.2026)", text)
-    return None
 
 
 def _utc_ts(d: date) -> int:
@@ -75,8 +62,7 @@ def bucket_totals(pages: list[dict]) -> dict[date, float]:
     return totals
 
 
-def summarize(totals: dict[date, float], today: date, topup_usd: float = 0.0,
-              topup_date: Optional[date] = None) -> dict:
+def summarize(totals: dict[date, float], today: date, monthly_budget: float = 0.0) -> dict:
     def total(start: date, end: date) -> float:
         return sum(v for d, v in totals.items() if start <= d < end)
 
@@ -92,15 +78,13 @@ def summarize(totals: dict[date, float], today: date, topup_usd: float = 0.0,
         "last_month": round(total(last_month_start, month_start), 2),
         "note": "Costs are reported by OpenAI with a delay of a few hours.",
     }
-    if topup_usd and topup_usd > 0 and topup_date:
-        spent = total(topup_date, tomorrow)
-        result["credit_topup"] = round(topup_usd, 2)
-        result["credit_topup_date"] = topup_date.isoformat()
-        result["spent_since_topup"] = round(spent, 2)
-        result["estimated_remaining_credit"] = round(topup_usd - spent, 2)
-    else:
-        result["estimated_remaining_credit"] = None
-        result["credit_note"] = "No top-up amount configured, remaining credit unknown."
+    if monthly_budget and monthly_budget > 0:
+        used = result["this_month"]
+        result["monthly_budget"] = round(monthly_budget, 2)
+        result["budget_left_this_month"] = round(max(0.0, monthly_budget - used), 2)
+        result["budget_used_percent"] = round(100.0 * used / monthly_budget)
+        result["budget_note"] = ("Budget = monthly auto recharge limit; the current prepaid "
+                                 "balance is not available via API.")
     return result
 
 
@@ -122,22 +106,19 @@ async def fetch_pages(admin_key: str, start: date, url: str = COSTS_URL,
     return pages
 
 
-async def cost_report(admin_key: str, topup_usd: float = 0.0, topup_date_text: str = "",
+async def cost_report(admin_key: str, monthly_budget: float = 0.0,
                       url: Optional[str] = None, today: Optional[date] = None) -> dict:
     """Fetch costs and return a short summary dict for the voice assistant."""
     if not admin_key:
         return {"error": "No OpenAI admin key configured."}
     today = today or datetime.now(timezone.utc).date()
-    topup_date = _parse_date(topup_date_text)
     month_start = today.replace(day=1)
     start = (month_start - timedelta(days=1)).replace(day=1)
     start = min(start, today - timedelta(days=6))
-    if topup_date and topup_date < start:
-        start = topup_date
     t0 = time.monotonic()
     url = url or os.environ.get("OPENAI_COSTS_URL") or COSTS_URL
     pages = await fetch_pages(admin_key, start, url=url)
-    report = summarize(bucket_totals(pages), today, topup_usd, topup_date)
+    report = summarize(bucket_totals(pages), today, monthly_budget)
     logger.info("Costs report in %.1fs: %s", time.monotonic() - t0, report)
     return report
 
@@ -147,10 +128,10 @@ def _env(name: str) -> str:
     return "" if value.lower() == "null" else value
 
 
-def config_from_env() -> tuple[str, float, str]:
+def config_from_env() -> tuple[str, float]:
     key = _env("OPENAI_ADMIN_KEY")
     try:
-        topup = float(_env("CREDIT_TOPUP_USD").replace(",", ".") or 0)
+        budget = float(_env("MONTHLY_BUDGET_USD").replace(",", ".") or 0)
     except ValueError:
-        topup = 0.0
-    return key, topup, _env("CREDIT_TOPUP_DATE")
+        budget = 0.0
+    return key, budget
