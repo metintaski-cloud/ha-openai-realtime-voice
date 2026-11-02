@@ -441,7 +441,7 @@ void VoiceAssistantWebSocket::on_microphone_data_(const std::vector<uint8_t> &da
   if (!esp_websocket_client_is_connected(this->websocket_client_)) {
     return;
   }
-  if (this->is_bot_speaking()) {
+  if (!this->full_duplex_ && this->is_bot_speaking()) {
     this->was_bot_speaking_ = true;
     return;
   }
@@ -620,9 +620,13 @@ void VoiceAssistantWebSocket::handle_websocket_event_(esp_websocket_event_id_t e
           }
         } else if (message.find("\"type\":\"interrupt\"") != std::string::npos ||
                    message.find("\"type\": \"interrupt\"") != std::string::npos) {
+          // Server detected that the user started talking (barge-in): stop playback
+          // and drop audio chunks that are still in flight for a short moment.
+          ESP_LOGI(TAG, "Interrupt from server, stopping playback");
           if (this->speaker_ != nullptr) {
             this->speaker_->stop();
           }
+          this->interrupt_time_ = millis();
         } else if (message.find("\"type\":\"disconnect\"") != std::string::npos ||
                    message.find("\"type\": \"disconnect\"") != std::string::npos) {
           ESP_LOGI(TAG, "Disconnect message received from server");

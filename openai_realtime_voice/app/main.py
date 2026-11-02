@@ -70,6 +70,7 @@ SILENCE_FILL_MAX_S = 0.5
 # unless they are a short pause inside real speech.
 OUTPUT_SILENCE_PEAK = 300
 OUTPUT_HANGOVER_S = 0.4
+BARGE_IN_GAP_S = 0.3  # no new reply audio for this long while the user talks = barge-in
 
 # Farewell phrases (German, Turkish, English). When the user says one of them, the
 # bridge ends the session after the assistant's goodbye was played. GPT Live itself
@@ -540,6 +541,14 @@ class LiveVoiceBridge:
 
                 elif ev_type == "session.input_transcript.delta":
                     delta = event.get("delta", "")
+                    if (delta.strip() and not output_queue.empty()
+                            and time.monotonic() - state["last_audio_time"] > BARGE_IN_GAP_S):
+                        # The user talks while queued reply audio is still waiting and GPT
+                        # Live stopped sending more: it yielded the turn (barge-in). Drop the
+                        # rest and tell the Voice PE to stop playing right away.
+                        self._clear_output_queue(output_queue)
+                        await output_queue.put(("interrupt", None))
+                        logger.info("Barge-in: user talks over the reply, playback stopped")
                     user_text.append(delta)
                     self._add_dialog(state, "user", delta)
                     state["last_activity"] = time.monotonic()
@@ -705,6 +714,16 @@ class LiveVoiceBridge:
                         await client_ws.send(bytes(buffer))
                         buffer.clear()
                     await self._send_phase(client_ws, chunk[1])
+                    continue
+
+                if isinstance(chunk, tuple) and chunk[0] == "interrupt":
+                    buffer.clear()
+                    bytes_sent = 0
+                    start_time = None
+                    try:
+                        await client_ws.send(json.dumps({"type": "interrupt"}))
+                    except Exception as e:
+                        logger.warning("Failed to send interrupt: %s", e)
                     continue
 
                 if isinstance(chunk, tuple) and chunk[0] == "error":

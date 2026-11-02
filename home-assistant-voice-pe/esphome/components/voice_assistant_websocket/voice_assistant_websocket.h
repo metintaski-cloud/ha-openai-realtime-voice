@@ -34,6 +34,9 @@ class VoiceAssistantWebSocket : public Component {
   void set_microphone(microphone::Microphone *mic) { this->microphone_ = mic; }
   void set_speaker(speaker::Speaker *spkr) { this->speaker_ = spkr; }
   void set_auto_stop_timeout(uint32_t ms) { this->auto_stop_inactivity_ms_ = ms; }
+  // Full duplex: keep sending the microphone while the bot speaks, so the user can
+  // talk over the assistant (barge-in). Relies on the XMOS echo cancellation.
+  void set_full_duplex(bool full_duplex) { this->full_duplex_ = full_duplex; }
 
   void start();
   void stop(const char *reason = "action");
@@ -149,6 +152,7 @@ class VoiceAssistantWebSocket : public Component {
   bool first_audio_sent_{false};
   bool first_audio_received_{false};
   bool was_bot_speaking_{false};
+  bool full_duplex_{false};
   bool was_bot_speaking_for_phase_{false};
   bool first_data_after_connect_{false};
   uint32_t connection_count_{0};
