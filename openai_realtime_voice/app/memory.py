@@ -19,7 +19,7 @@ import httpx
 logger = logging.getLogger(__name__)
 
 RESPONSES_URL = "https://api.openai.com/v1/responses"
-MAX_FACTS = 60
+MAX_FACTS = 150
 MAX_FACT_CHARS = 200
 
 REMEMBER_PHRASES = (
