@@ -33,6 +33,7 @@ import websockets
 from app.audio_recorder import AudioRecorder
 from app import memory
 from app import context
+from app import costs
 
 logging.basicConfig(
     level=logging.INFO,
@@ -168,6 +169,7 @@ class LiveVoiceBridge:
         self.enable_memory = os.environ.get("ENABLE_MEMORY", "true").lower() == "true"
         self.enable_context = os.environ.get("ENABLE_CONTEXT", "true").lower() == "true"
         self.memory_model = os.environ.get("MEMORY_MODEL", "gpt-6-luna")
+        self.admin_key, self.credit_topup_usd, self.credit_topup_date = costs.config_from_env()
         self.memory = memory.MemoryStore(os.environ.get("MEMORY_PATH", "/data/memory.json"))
         self._memory_tasks: set = set()
         self.recorder: Optional[AudioRecorder] = None
@@ -184,6 +186,10 @@ class LiveVoiceBridge:
         tools: list[dict] = [END_CONVERSATION_TOOL]
         if self.enable_web_search:
             tools.append({"type": "web_search"})
+        backend_instructions = self.backend_instructions
+        if self.admin_key:
+            tools.append(costs.COSTS_TOOL)
+            backend_instructions += costs.COSTS_BACKEND_HINT
         return {
             "type": "session.start",
             "event_id": "event_start",
@@ -198,7 +204,7 @@ class LiveVoiceBridge:
                     "type": "responses",
                     "responses": {
                         "model": self.backend_model,
-                        "instructions": self.backend_instructions,
+                        "instructions": backend_instructions,
                         "tools": tools,
                         "tool_choice": "auto",
                         "parallel_tool_calls": False,
@@ -409,6 +415,21 @@ class LiveVoiceBridge:
         )
         await live_ws.send(json.dumps({"type": "response.create"}))
 
+    async def _run_costs_tool(self, live_ws, call_id: str) -> None:
+        """Fetch the OpenAI spending report without blocking the audio loop."""
+        try:
+            report = await asyncio.wait_for(
+                costs.cost_report(self.admin_key, self.credit_topup_usd, self.credit_topup_date),
+                timeout=15.0,
+            )
+        except Exception as e:
+            logger.warning("Costs report failed: %s", e)
+            report = {"error": "Could not read OpenAI costs right now."}
+        try:
+            await self._send_function_output(live_ws, call_id, report)
+        except Exception as e:
+            logger.warning("Could not return costs report: %s", e)
+
     async def _handle_backend_event(
         self,
         inner: dict,
@@ -430,6 +451,11 @@ class LiveVoiceBridge:
             if name == "end_conversation":
                 state["closing"] = True
                 await self._send_function_output(live_ws, call_id, {"status": "ok"})
+            elif name == costs.COSTS_TOOL["name"]:
+                await output_queue.put(("phase", "thinking"))
+                task = asyncio.create_task(self._run_costs_tool(live_ws, call_id))
+                self._memory_tasks.add(task)
+                task.add_done_callback(self._memory_tasks.discard)
             else:
                 await self._send_function_output(
                     live_ws, call_id, {"error": f"Unknown function: {name}"}
