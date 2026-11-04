@@ -119,3 +119,20 @@ def test_add_facts(tmp_path):
     store.save(["A"])
     assert store.add("B; A; null") == ["B"]
     assert store.load() == ["A", "B"]
+
+
+def test_wants_to_forget():
+    assert memory.wants_to_forget("Vergiss bitte das mit dem Licht")
+    assert memory.wants_to_forget("bunu unut")
+    assert not memory.wants_to_forget("Mach das Licht an")
+
+
+def test_no_memory_update_without_request(monkeypatch):
+    os.environ["OPENAI_API_KEY"] = os.environ.get("OPENAI_API_KEY", "test")
+    from app.main import LiveVoiceBridge
+    bridge = LiveVoiceBridge()
+    bridge.enable_memory = True
+    called = []
+    monkeypatch.setattr(asyncio, "create_task", lambda c: called.append(c) or c.close())
+    bridge._schedule_memory_update({"dialog": [["user", "Mach das Licht an"]]})
+    assert called == []

@@ -310,6 +310,10 @@ class LiveVoiceBridge:
         dialog = [d for d in state.get("dialog", []) if d[1].strip()]
         if not self.enable_memory or not any(s == "user" for s, _ in dialog):
             return
+        if not (state.get("remember_requested") or state.get("forget_requested")):
+            # Leyla only remembers or forgets when someone asks her to.
+            logger.info("Memory unchanged: nobody asked to remember or forget")
+            return
         task = asyncio.create_task(
             self._update_memory(dialog, bool(state.get("remember_requested")))
         )
@@ -651,6 +655,9 @@ class LiveVoiceBridge:
                     if not state.get("remember_requested") and memory.wants_to_remember(recent):
                         state["remember_requested"] = True
                         logger.info("User asked to remember something")
+                    if not state.get("forget_requested") and memory.wants_to_forget(recent):
+                        state["forget_requested"] = True
+                        logger.info("User asked to forget something")
                     if not state.get("closing") and contains_goodbye(recent):
                         logger.info("Goodbye heard from user: %r", recent.strip())
                         state["closing"] = True

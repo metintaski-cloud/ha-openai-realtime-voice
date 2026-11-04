@@ -27,6 +27,10 @@ REMEMBER_PHRASES = (
     "aklında tut", "aklinda tut", "unutma", "remember",
 )
 
+FORGET_PHRASES = (
+    "vergiss", "vergessen", "lösch", "losch", "unut", "sil ", "forget",
+)
+
 SUMMARY_PROMPT = """Du pflegst das Langzeitgedächtnis einer Sprachassistentin in einem Wohnzimmer.
 Im Haushalt sprechen vor allem Metin und seine Mutter, beide auf Deutsch oder Türkisch.
 Die Assistentin antwortet immer in der Sprache, in der die Person gerade spricht.
@@ -40,8 +44,8 @@ Neues Gespräch (Nutzer = wer gesprochen hat, Assistentin = die Sprachassistenti
 Aufgabe: Gib die aktualisierte Faktenliste zurück.
 Regeln:
 - Behalte alle bisherigen Fakten, außer sie sind durch das Gespräch überholt oder der Nutzer wollte sie vergessen.
-- Füge nur dauerhaft nützliche Dinge hinzu: Namen, wer zum Haushalt gehört, Vorlieben, Gewohnheiten,
-  wichtige Termine, und alles, worum der Nutzer ausdrücklich gebeten hat ("merk dir", "aklında tut").
+- Füge nur das hinzu, worum der Nutzer in diesem Gespräch ausdrücklich gebeten hat, es sich zu merken
+  ("merk dir", "aklında tut", "unutma"). Merke dir nichts von dir aus, auch nicht Vorlieben oder Stimmungen.
 - Wenn erkennbar ist, wer etwas gesagt hat (zum Beispiel an der Sprache oder am Namen), schreibe es dazu.
 - Keine Passwörter, PINs, Konto oder Kartennummern.
 - Kurze deutsche Sätze, höchstens {max_facts} Fakten.
@@ -52,6 +56,11 @@ Antworte nur mit JSON in der Form {{"facts": ["...", "..."]}} und sonst nichts."
 def wants_to_remember(text: str) -> bool:
     t = " ".join(text.lower().split())
     return any(p in t for p in REMEMBER_PHRASES)
+
+
+def wants_to_forget(text: str) -> bool:
+    t = " ".join(text.lower().split()) + " "
+    return any(p in t for p in FORGET_PHRASES)
 
 
 def _clean_facts(facts) -> list[str]:
