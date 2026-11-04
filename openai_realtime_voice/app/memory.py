@@ -104,6 +104,19 @@ class MemoryStore:
                       ensure_ascii=False, indent=2)
         os.replace(tmp, self.path)
 
+    def forget(self, raw_patterns: str) -> list[str]:
+        """Remove every fact that contains one of the ;-separated text pieces."""
+        patterns = [p.strip().lower() for p in (raw_patterns or "").split(";")
+                    if p.strip() and p.strip().lower() != "null"]
+        if not patterns:
+            return []
+        facts = self.load()
+        keep = [f for f in facts if not any(p in f.lower() for p in patterns)]
+        removed = [f for f in facts if f not in keep]
+        if removed:
+            self.save(keep)
+        return removed
+
     def instructions_block(self) -> str:
         facts = self.load()
         if not facts:

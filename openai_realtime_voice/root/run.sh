@@ -16,6 +16,7 @@ MEMORY_MODEL=$(bashio::config 'memory_model')
 OPENAI_ADMIN_KEY=$(bashio::config 'openai_admin_key')
 MONTHLY_BUDGET_USD=$(bashio::config 'monthly_budget_usd')
 LIGHT_ENTITIES=$(bashio::config 'light_entities')
+FORGET_FACTS=$(bashio::config 'forget_facts')
 
 if [ -z "$OPENAI_API_KEY" ]; then
     bashio::log.error "OPENAI_API_KEY is required but not set"
@@ -37,6 +38,7 @@ export MEMORY_MODEL
 export OPENAI_ADMIN_KEY
 export MONTHLY_BUDGET_USD
 export LIGHT_ENTITIES
+export FORGET_FACTS
 
 export PYTHONUNBUFFERED=1
 exec python3 -m app.main

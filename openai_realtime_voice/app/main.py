@@ -983,8 +983,20 @@ class LiveVoiceBridge:
                 client_id, duration, reason,
             )
 
+    def _memory_maintenance(self) -> None:
+        """Apply the forget_facts option and list the stored facts in the log."""
+        if not self.enable_memory:
+            return
+        for fact in self.memory.forget(os.environ.get("FORGET_FACTS", "")):
+            logger.info("Memory: forgot fact: %s", fact)
+        facts = self.memory.load()
+        logger.info("Memory: %d facts stored", len(facts))
+        for i, fact in enumerate(facts, 1):
+            logger.info("Memory fact %d: %s", i, fact)
+
     async def run(self) -> None:
         """Start WebSocket server and run forever."""
+        self._memory_maintenance()
         logger.info(
             "Starting WebSocket server on ws://%s:%s/ (live model %s, backend %s)",
             self.websocket_host, self.websocket_port, self.live_model, self.backend_model,
