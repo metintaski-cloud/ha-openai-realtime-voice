@@ -28,7 +28,8 @@ REMEMBER_PHRASES = (
 )
 
 SUMMARY_PROMPT = """Du pflegst das Langzeitgedächtnis einer Sprachassistentin in einem Wohnzimmer.
-Im Haushalt sprechen vor allem Metin (meist Deutsch) und seine Mutter (meist Türkisch).
+Im Haushalt sprechen vor allem Metin und seine Mutter, beide auf Deutsch oder Türkisch.
+Die Assistentin antwortet immer in der Sprache, in der die Person gerade spricht.
 
 Bisher gespeicherte Fakten (JSON Liste):
 {facts}
