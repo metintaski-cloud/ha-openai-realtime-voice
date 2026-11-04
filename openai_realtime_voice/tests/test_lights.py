@@ -151,6 +151,7 @@ async def test_bridge_answers_light_tool_call():
         responses = fake.start_msg["session"]["delegation"]["responses"]
         assert any(t.get("name") == "licht_steuern" for t in responses["tools"])
         assert "Lampe 1 to Lampe 4" in responses["instructions"]
+        assert "Stehlampen" in fake.start_msg["session"]["instructions"]
         assert _HA.calls and _HA.calls[0][2] == {"brightness_pct": 60, "color_temp_kelvin": 6500,
                                                  "entity_id": ["light.l1", "light.l2"]}
         assert LightLive.outputs and LightLive.outputs[0]["call_id"] == "c7"

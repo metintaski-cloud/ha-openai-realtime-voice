@@ -238,11 +238,13 @@ class LiveVoiceBridge:
         if self.enable_web_search:
             tools.append({"type": "web_search"})
         backend_instructions = self.backend_instructions
+        live_extra = ""
         if self.admin_key:
             tools.append(costs.COSTS_TOOL)
             backend_instructions += costs.COSTS_BACKEND_HINT
         if self.lights.available:
             tools.append(lights.LIGHTS_TOOL)
+            live_extra += lights.LIGHTS_LIVE_HINT
             backend_instructions += lights.LIGHTS_BACKEND_HINT.format(
                 count=len(self.lights.entities))
         session = {
@@ -250,7 +252,7 @@ class LiveVoiceBridge:
             "event_id": "event_start",
             "session": {
                 "model": self.live_model,
-                "instructions": self._instructions_with_memory() + extra,
+                "instructions": self._instructions_with_memory() + live_extra + extra,
                 "audio": {
                     "format": {"type": "audio/pcm", "rate": SAMPLE_RATE},
                     "output": {"voice": self.voice},

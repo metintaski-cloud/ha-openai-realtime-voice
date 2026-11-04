@@ -81,9 +81,21 @@ LIGHTS_BACKEND_HINT = (
     "neutral or kalt white, or to a color (rot, orange, gelb, gruen, tuerkis, blau, lila, pink). "
     "If the user does not say which lamp, use all lamps. 'Heller' or 'dunkler' means about 25 "
     "percent more or less than now; read the status first if you need the current value. "
-    "Confirm very briefly what you did. If the user asks what is possible or seems unsure, "
+    "Always call licht_steuern for every light request, also when the same request was made "
+    "before; never answer from memory. Report only what the returned lamp states say: a lamp "
+    "counts as on only if its state is on. If a lamp is listed as unavailable, say it is not "
+    "reachable (maybe unplugged). Confirm very briefly what you did. If the user asks what is possible or seems unsure, "
     "explain these options simply and suggest something fitting, for example warm white at 40 "
     "percent for a cozy evening or kalt white at 100 percent for reading or cleaning."
+)
+
+
+LIGHTS_LIVE_HINT = (
+    "\n\nLicht: Du kannst die Stehlampen im Wohnzimmer schalten, aber nur über deinen "
+    "Hintergrund (Delegation). Gib jede Lichtbitte sofort dorthin weiter. Sag niemals, dass "
+    "eine Lampe an, aus oder geändert ist, bevor das Ergebnis zurück ist, und erfinde keine "
+    "Signale oder Zwischenschritte. Melde danach genau das, was das Ergebnis sagt, auch wenn "
+    "eine Lampe nicht erreichbar ist."
 )
 
 
