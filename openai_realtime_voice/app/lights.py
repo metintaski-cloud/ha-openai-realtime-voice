@@ -140,6 +140,27 @@ def select_entities(entities: list[str], lamps) -> tuple[list[str], list[int]]:
     return chosen, unknown
 
 
+RETRY_WAITS_S = (0.8, 1.5, 2.5)
+
+
+def matches(state: dict, service: str, data: dict) -> bool:
+    """True when a lamp state already shows the result of the command."""
+    if state.get("state") == "unavailable":
+        return True  # nothing to retry, reported to the user instead
+    if service == "turn_off":
+        return state.get("state") == "off"
+    if state.get("state") != "on":
+        return False
+    attrs = state.get("attributes") or {}
+    if "brightness_pct" in data and attrs.get("brightness") is not None:
+        if abs(round(int(attrs["brightness"]) * 100 / 255) - data["brightness_pct"]) > 3:
+            return False
+    if "color_temp_kelvin" in data and attrs.get("color_temp_kelvin"):
+        if abs(int(attrs["color_temp_kelvin"]) - data["color_temp_kelvin"]) > 150:
+            return False
+    return True
+
+
 def describe_state(number: int, state: dict) -> dict:
     attrs = state.get("attributes") or {}
     info: dict = {"lamp": number, "state": state.get("state", "unknown")}
@@ -179,27 +200,64 @@ class LightController:
                 out.append(resp.json())
         return out
 
+    async def _call(self, client: httpx.AsyncClient, service: str, data: dict,
+                    ids: list[str]) -> None:
+        body = dict(data, entity_id=ids)
+        try:
+            resp = await client.post(f"{self.api_url}/services/light/{service}",
+                                     json=body, headers=self._headers())
+        except httpx.TimeoutException:
+            # Matter lamps on WLAN sometimes need a moment to reconnect; the state
+            # check below decides whether to send the command again.
+            logger.info("Lights %s %s: Home Assistant answered slowly", service, ids)
+            return
+        if resp.status_code >= 300:
+            raise RuntimeError(f"HA HTTP {resp.status_code}: {resp.text[:200]}")
+
     async def run(self, args: dict) -> dict:
         ids, unknown = select_entities(self.entities, args.get("lamps"))
         if not ids:
             return {"error": f"Es gibt nur Lampe 1 bis {len(self.entities)}.",
                     "unknown_lamps": unknown}
         numbers = [self.entities.index(e) + 1 for e in ids]
+        retried: list[int] = []
         async with httpx.AsyncClient(timeout=8.0) as client:
             if args.get("action") != "status":
                 service, data = build_service_data(args)
-                body = dict(data, entity_id=ids)
-                resp = await client.post(f"{self.api_url}/services/light/{service}",
-                                         json=body, headers=self._headers())
-                if resp.status_code >= 300:
-                    raise RuntimeError(f"HA HTTP {resp.status_code}: {resp.text[:200]}")
+                if service == "toggle":
+                    # Turn toggle into an explicit on or off per lamp, so it can be checked.
+                    before = await self._states(client, ids)
+                    plan = [(e, "turn_off" if b.get("state") == "on" else "turn_on")
+                            for e, b in zip(ids, before)]
+                else:
+                    plan = [(e, service) for e in ids]
+                for svc in ("turn_on", "turn_off"):
+                    group = [e for e, s in plan if s == svc]
+                    if group:
+                        await self._call(client, svc, data if svc == service else {}, group)
                 logger.info("Lights %s %s %s", service, numbers, data)
-                await asyncio.sleep(0.6)  # give the lamps a moment to report back
+                for wait in RETRY_WAITS_S:
+                    await asyncio.sleep(wait)
+                    states = await self._states(client, ids)
+                    missed = [(e, s) for (e, s), st in zip(plan, states)
+                              if not matches(st, s, data if s == service else {})]
+                    if not missed:
+                        break
+                    for svc in ("turn_on", "turn_off"):
+                        group = [e for e, s in missed if s == svc]
+                        if group:
+                            logger.info("Lights %s not done yet for %s, sending again",
+                                        svc, group)
+                            retried += [self.entities.index(e) + 1 for e in group]
+                            await self._call(client, svc,
+                                             data if svc == service else {}, group)
             states = await self._states(client, ids)
         result = {"lamps": [describe_state(n, s) for n, s in zip(numbers, states)]}
         if unknown:
             result["unknown_lamps"] = unknown
             result["note"] = f"Es gibt nur Lampe 1 bis {len(self.entities)}."
+        if retried:
+            result["retried"] = sorted(set(retried))
         unavailable = [d["lamp"] for d in result["lamps"] if d["state"] == "unavailable"]
         if unavailable:
             result["unavailable"] = unavailable

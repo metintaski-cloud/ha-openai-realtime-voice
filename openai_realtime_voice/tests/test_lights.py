@@ -16,6 +16,7 @@ ENTS = ["light.l1", "light.l2", "light.l3", "light.l4"]
 class _HA(BaseHTTPRequestHandler):
     calls: list = []
     states: dict = {}
+    drop: int = 0
 
     def _send(self, code, obj):
         body = json.dumps(obj).encode()
@@ -30,6 +31,10 @@ class _HA(BaseHTTPRequestHandler):
         body = json.loads(self.rfile.read(length) or b"{}")
         service = self.path.rsplit("/", 1)[-1]
         _HA.calls.append((self.headers.get("Authorization"), service, body))
+        if _HA.drop > 0:
+            _HA.drop -= 1
+            self._send(200, [])
+            return
         for eid in body.get("entity_id", []):
             st = _HA.states.setdefault(eid, {"entity_id": eid, "state": "off", "attributes": {}})
             if service == "turn_off":
@@ -169,3 +174,24 @@ async def test_no_token_no_light_tool():
     await _run(fake, scenario)
     tools = fake.start_msg["session"]["delegation"]["responses"]["tools"]
     assert not any(t.get("name") == "licht_steuern" for t in tools)
+
+
+async def test_retries_when_first_command_is_lost():
+    _HA.calls.clear()
+    _HA.states.clear()
+    _HA.states["light.l2"] = {"entity_id": "light.l2", "state": "off", "attributes": {}}
+    _HA.drop = 1  # the lamp ignores the first command, like a sleepy WLAN lamp
+    server = _server(19998)
+    try:
+        ctl = lights.LightController(ENTS, api_url="http://127.0.0.1:19998/api", token="tok")
+        r = await ctl.run({"lamps": [2], "action": "on", "brightness_percent": 30,
+                           "white": None, "color": None})
+        assert [c[1] for c in _HA.calls] == ["turn_on", "turn_on"]
+        assert r["retried"] == [2]
+        assert r["lamps"][0]["state"] == "on" and r["lamps"][0]["brightness_percent"] == 30
+        r = await ctl.run({"lamps": [2], "action": "toggle"})
+        assert _HA.calls[-1][1] == "turn_off" and r["lamps"][0]["state"] == "off"
+        assert "retried" not in r
+    finally:
+        _HA.drop = 0
+        server.shutdown()

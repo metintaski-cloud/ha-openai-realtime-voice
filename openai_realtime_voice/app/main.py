@@ -509,7 +509,7 @@ class LiveVoiceBridge:
         except json.JSONDecodeError:
             args = {}
         try:
-            result = await asyncio.wait_for(self.lights.run(args), timeout=12.0)
+            result = await asyncio.wait_for(self.lights.run(args), timeout=25.0)
         except Exception as e:
             logger.warning("Light control failed: %s", e)
             result = {"error": "Die Lampen konnten gerade nicht gesteuert werden."}
