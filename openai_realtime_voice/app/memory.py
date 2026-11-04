@@ -117,6 +117,16 @@ class MemoryStore:
             self.save(keep)
         return removed
 
+    def add(self, raw_facts: str) -> list[str]:
+        """Add the ;-separated facts that are not stored yet."""
+        new = [f.strip() for f in (raw_facts or "").split(";")
+               if f.strip() and f.strip().lower() != "null"]
+        facts = self.load()
+        added = [f for f in new if f not in facts]
+        if added:
+            self.save(facts + added)
+        return added
+
     def instructions_block(self) -> str:
         facts = self.load()
         if not facts:

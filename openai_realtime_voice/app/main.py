@@ -989,6 +989,8 @@ class LiveVoiceBridge:
             return
         for fact in self.memory.forget(os.environ.get("FORGET_FACTS", "")):
             logger.info("Memory: forgot fact: %s", fact)
+        for fact in self.memory.add(os.environ.get("ADD_FACTS", "")):
+            logger.info("Memory: added fact: %s", fact)
         facts = self.memory.load()
         logger.info("Memory: %d facts stored", len(facts))
         for i, fact in enumerate(facts, 1):

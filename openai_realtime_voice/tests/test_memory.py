@@ -112,3 +112,10 @@ def test_forget_removes_matching_facts(tmp_path):
     assert removed == ["Lichtbefehle immer zweimal senden"]
     assert store.load() == ["Metin mag warmes Licht", "Mama heißt Gülfikar"]
     assert store.forget("") == [] and store.forget("null") == []
+
+
+def test_add_facts(tmp_path):
+    store = memory.MemoryStore(str(tmp_path / "m.json"))
+    store.save(["A"])
+    assert store.add("B; A; null") == ["B"]
+    assert store.load() == ["A", "B"]
