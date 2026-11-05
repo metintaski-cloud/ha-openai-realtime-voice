@@ -18,6 +18,8 @@ MONTHLY_BUDGET_USD=$(bashio::config 'monthly_budget_usd')
 LIGHT_ENTITIES=$(bashio::config 'light_entities')
 FORGET_FACTS=$(bashio::config 'forget_facts')
 ADD_FACTS=$(bashio::config 'add_facts')
+RF_HOST=$(bashio::config 'rf_host')
+RF_FREQUENCY=$(bashio::config 'rf_frequency')
 
 if [ -z "$OPENAI_API_KEY" ]; then
     bashio::log.error "OPENAI_API_KEY is required but not set"
@@ -41,6 +43,8 @@ export MONTHLY_BUDGET_USD
 export LIGHT_ENTITIES
 export FORGET_FACTS
 export ADD_FACTS
+export RF_HOST
+export RF_FREQUENCY
 
 export PYTHONUNBUFFERED=1
 exec python3 -m app.main

@@ -35,7 +35,7 @@ import websockets
 from app.audio_recorder import AudioRecorder
 from app import memory
 from app import context
-from app import costs, lights
+from app import costs, lights, rf
 
 logging.basicConfig(
     level=logging.INFO,
@@ -209,6 +209,7 @@ class LiveVoiceBridge:
         self.memory_model = os.environ.get("MEMORY_MODEL", "gpt-6-luna")
         self.admin_key, self.monthly_budget = costs.config_from_env()
         self.lights = lights.LightController(lights.entities_from_env())
+        self.rf = rf.remote_from_env()
         self.memory = memory.MemoryStore(os.environ.get("MEMORY_PATH", "/data/memory.json"))
         self._memory_tasks: set = set()
         self.recorder: Optional[AudioRecorder] = None
@@ -1006,6 +1007,11 @@ class LiveVoiceBridge:
     async def run(self) -> None:
         """Start WebSocket server and run forever."""
         self._memory_maintenance()
+        if self.rf.available:
+            try:
+                await rf.start_http(self.rf, port=int(os.environ.get("RF_HTTP_PORT", "8081")))
+            except Exception as e:
+                logger.warning("RF remote HTTP could not start: %s", e)
         logger.info(
             "Starting WebSocket server on ws://%s:%s/ (live model %s, backend %s)",
             self.websocket_host, self.websocket_port, self.live_model, self.backend_model,
