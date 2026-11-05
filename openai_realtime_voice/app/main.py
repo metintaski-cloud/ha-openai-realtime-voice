@@ -35,7 +35,7 @@ import websockets
 from app.audio_recorder import AudioRecorder
 from app import memory
 from app import context
-from app import costs, lights, rf
+from app import costs, fan, lights, rf
 
 logging.basicConfig(
     level=logging.INFO,
@@ -210,6 +210,7 @@ class LiveVoiceBridge:
         self.admin_key, self.monthly_budget = costs.config_from_env()
         self.lights = lights.LightController(lights.entities_from_env())
         self.rf = rf.remote_from_env()
+        self.fan = fan.FanController(self.rf)
         self.memory = memory.MemoryStore(os.environ.get("MEMORY_PATH", "/data/memory.json"))
         self._memory_tasks: set = set()
         self.recorder: Optional[AudioRecorder] = None
@@ -248,6 +249,10 @@ class LiveVoiceBridge:
             live_extra += lights.LIGHTS_LIVE_HINT
             backend_instructions += lights.LIGHTS_BACKEND_HINT.format(
                 count=len(self.lights.entities))
+        if self.fan.available:
+            tools.append(fan.FAN_TOOL)
+            live_extra += fan.FAN_LIVE_HINT
+            backend_instructions += fan.FAN_BACKEND_HINT
         session = {
             "type": "session.start",
             "event_id": "event_start",
@@ -525,6 +530,22 @@ class LiveVoiceBridge:
         except Exception as e:
             logger.warning("Could not return light result: %s", e)
 
+    async def _run_fan_tool(self, live_ws, call_id: str, raw_args) -> None:
+        """Press a fan remote button without blocking the audio loop."""
+        try:
+            args = json.loads(raw_args) if isinstance(raw_args, str) and raw_args else (raw_args or {})
+        except json.JSONDecodeError:
+            args = {}
+        try:
+            result = await asyncio.wait_for(self.fan.run(args), timeout=15.0)
+        except Exception as e:
+            logger.warning("Fan control failed: %s", e)
+            result = {"error": "Der Ventilator konnte gerade nicht gesteuert werden."}
+        try:
+            await self._send_function_output(live_ws, call_id, result)
+        except Exception as e:
+            logger.warning("Could not return fan result: %s", e)
+
     async def _handle_backend_event(
         self,
         inner: dict,
@@ -554,6 +575,11 @@ class LiveVoiceBridge:
             elif name == lights.LIGHTS_TOOL["name"]:
                 task = asyncio.create_task(
                     self._run_lights_tool(live_ws, call_id, item.get("arguments")))
+                self._memory_tasks.add(task)
+                task.add_done_callback(self._memory_tasks.discard)
+            elif name == fan.FAN_TOOL["name"]:
+                task = asyncio.create_task(
+                    self._run_fan_tool(live_ws, call_id, item.get("arguments")))
                 self._memory_tasks.add(task)
                 task.add_done_callback(self._memory_tasks.discard)
             else:

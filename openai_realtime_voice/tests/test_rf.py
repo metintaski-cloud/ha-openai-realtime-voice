@@ -71,3 +71,26 @@ async def test_http_endpoints(tmp_path, monkeypatch):
         assert status == 200 and dev.sent
     finally:
         server.close()
+
+
+async def test_rotation_never_repeats_capture(tmp_path, monkeypatch):
+    dev = FakeDevice("1.2.3.4")
+    remote = rf.RfRemote("1.2.3.4", 433.87, str(tmp_path / "c.json"), device_factory=lambda h: dev)
+    for i in (1, 2, 3):
+        remote.save_code(f"licht_{i}", bytes([i]))
+    remote.save_code("stufe1_1", b"\x09")
+    sent = [(await remote.send_rotating("licht"))["sent"] for _ in range(4)]
+    assert sent == ["licht_2", "licht_3", "licht_1", "licht_2"]
+    assert dev.sent == [b"\x02", b"\x03", b"\x01", b"\x02"]
+    # a manual send through the HTTP test endpoint is remembered as well
+    await remote.send("licht_3")
+    assert remote.next_capture("licht") == "licht_1"
+    # survives a restart
+    again = rf.RfRemote("1.2.3.4", 433.87, str(tmp_path / "c.json"), device_factory=lambda h: dev)
+    assert again.next_capture("licht") == "licht_1"
+    assert again.next_capture("stufe1") == "stufe1_1"
+    try:
+        again.next_capture("power")
+        assert False
+    except KeyError:
+        pass

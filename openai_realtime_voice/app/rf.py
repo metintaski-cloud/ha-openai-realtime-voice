@@ -38,6 +38,8 @@ class RfRemote:
         self._device_factory = device_factory
         self._lock = asyncio.Lock()
         self.learning: Optional[str] = None
+        base, _ = os.path.splitext(path)
+        self.state_path = base + "_state.json"
 
     @property
     def available(self) -> bool:
@@ -62,6 +64,59 @@ class RfRemote:
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump({"frequency": self.frequency, "codes": codes}, f, indent=2)
         os.replace(tmp, self.path)
+
+    def _load_state(self) -> dict:
+        try:
+            with open(self.state_path, encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+
+    def _record_sent(self, name: str) -> None:
+        """Remember which capture of a button was sent last (name like licht_2)."""
+        key, _, idx = name.rpartition("_")
+        if not key or not idx.isdigit():
+            return
+        state = self._load_state()
+        state.setdefault("last_index", {})[key] = int(idx)
+        state["last_sent"] = name
+        try:
+            os.makedirs(os.path.dirname(self.state_path) or ".", exist_ok=True)
+            tmp = self.state_path + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(state, f, indent=2)
+            os.replace(tmp, self.state_path)
+        except Exception as e:
+            logger.warning("Could not save RF state: %s", e)
+
+    def captures(self, key: str) -> list[int]:
+        """Indexes of the learned captures of a button, e.g. [1, 2, 3] for licht_1..3."""
+        out = []
+        for name in self.load():
+            k, _, idx = name.rpartition("_")
+            if k == key and idx.isdigit():
+                out.append(int(idx))
+        return sorted(out)
+
+    def next_capture(self, key: str) -> str:
+        """The capture to send next: never the same one as last time for this button."""
+        idxs = self.captures(key)
+        if not idxs:
+            if key in self.load():
+                return key
+            raise KeyError(f"Taste '{key}' ist nicht angelernt")
+        last = self._load_state().get("last_index", {}).get(key)
+        if last is None:
+            # Nothing recorded yet; start with the second capture, because the first one
+            # was used for testing right after learning.
+            nxt = idxs[1] if len(idxs) > 1 else idxs[0]
+        else:
+            later = [i for i in idxs if i > last]
+            nxt = later[0] if later else idxs[0]
+        return f"{key}_{nxt}"
+
+    async def send_rotating(self, key: str) -> dict:
+        return await self.send(self.next_capture(key))
 
     # device ------------------------------------------------------------------
     def _connect(self):
@@ -129,6 +184,7 @@ class RfRemote:
                     await asyncio.to_thread(self._send_blocking, packet)
                 if i + 1 < repeats:
                     await asyncio.sleep(0.15)
+        self._record_sent(name)
         logger.info("RF code '%s' sent", name)
         return {"sent": name}
 
