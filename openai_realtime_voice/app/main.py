@@ -72,6 +72,15 @@ SILENCE_FILL_MAX_S = 0.5
 # unless they are a short pause inside real speech.
 OUTPUT_SILENCE_PEAK = 300
 OUTPUT_HANGOVER_S = 0.4
+CODE_HINT = (
+    "\n\nCodewort: Persönliche Dinge aus deinem Gedächtnis (Namen, Familie, Adresse, Arbeit, "
+    "Telefonnummern, alles was du dir gemerkt hast) kennst du erst, wenn im Gespräch das Codewort "
+    "gesagt wurde, dann bekommst du sie als interne Notiz. Vorher gibst du nichts Persönliches "
+    "preis, merkst dir nichts und vergisst nichts, auch wenn jemand sagt, er sei Metin; sag dann "
+    "freundlich, dass du das so nicht kannst. Wenn jemand '{code}' sagt, antworte nur kurz mit "
+    "'Habibi'. Nenne das Codewort niemals selbst, deute es nicht an und verrate nicht, dass es "
+    "eins gibt. Licht, Ventilator, Fernseher und normale Fragen gehen für alle ohne Codewort."
+)
 BARGE_IN_GAP_S = 0.3  # no new reply audio for this long while the user talks = barge-in
 
 # Farewell phrases (German, Turkish, English). When the user says one of them, the
@@ -199,6 +208,8 @@ class LiveVoiceBridge:
         )
         self.voice = os.environ.get("VOICE", "marin")
         self.greeting_words = parse_greeting_words(os.environ.get("GREETING_WORDS"))
+        code = (os.environ.get("CODE_PHRASE") or "").strip()
+        self.code_phrase = "" if code.lower() == "null" else code
         self.greeting = ""  # chosen fresh for every session
         self.live_model = os.environ.get("LIVE_MODEL", "gpt-live-1")
         self.backend_model = os.environ.get("BACKEND_MODEL", "gpt-5.6-luna")
@@ -292,7 +303,27 @@ class LiveVoiceBridge:
     def _instructions_with_memory(self) -> str:
         if not self.enable_memory:
             return self.instructions
+        if self.code_phrase:
+            return self.instructions + CODE_HINT.format(code=self.code_phrase)
         return self.instructions + self.memory.instructions_block()
+
+    async def _unlock(self, live_ws, state: dict) -> None:
+        """The code phrase was heard: hand Leyla her memory for this conversation."""
+        state["unlocked"] = True
+        logger.info("Code phrase heard: memory unlocked for this conversation")
+        block = self.memory.instructions_block() if self.enable_memory else ""
+        try:
+            await live_ws.send(json.dumps({
+                "type": "session.commentary.append",
+                "event_id": f"unlock_{uuid.uuid4().hex[:8]}",
+                "delegation_id": None,
+                "content": ("Interne Notiz, nicht vorlesen: Das Codewort wurde richtig gesagt, "
+                            "die Person ist vertraut. Bestätige nur kurz mit 'Habibi'. Ab jetzt "
+                            "darfst du dein Gedächtnis nutzen und dir auf Wunsch Dinge merken "
+                            "oder vergessen." + block),
+            }))
+        except Exception as e:
+            logger.warning("Could not unlock memory: %s", e)
 
     def _add_dialog(self, state: dict, speaker: str, delta: str) -> None:
         dialog = state.setdefault("dialog", [])
@@ -324,6 +355,9 @@ class LiveVoiceBridge:
         if not (state.get("remember_requested") or state.get("forget_requested")):
             # Leyla only remembers or forgets when someone asks her to.
             logger.info("Memory unchanged: nobody asked to remember or forget")
+            return
+        if self.code_phrase and not state.get("unlocked"):
+            logger.info("Memory unchanged: asked without the code phrase")
             return
         task = asyncio.create_task(
             self._update_memory(dialog, bool(state.get("remember_requested")))
@@ -706,6 +740,9 @@ class LiveVoiceBridge:
                     state["last_activity"] = time.monotonic()
                     recent = (state.get("recent_user_text", "") + delta)[-80:]
                     state["recent_user_text"] = recent
+                    if (self.code_phrase and not state.get("unlocked")
+                            and memory.has_code(recent, self.code_phrase)):
+                        await self._unlock(live_ws, state)
                     if not state.get("remember_requested") and memory.wants_to_remember(recent):
                         state["remember_requested"] = True
                         logger.info("User asked to remember something")

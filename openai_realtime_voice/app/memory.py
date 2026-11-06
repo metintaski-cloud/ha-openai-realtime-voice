@@ -148,6 +148,32 @@ class MemoryStore:
         )
 
 
+NAME_WORDS = {"leyla", "leila", "leyle", "hallo", "hey"}
+
+
+def _words(text: str) -> list[str]:
+    import re
+    import unicodedata
+    text = unicodedata.normalize("NFKD", text or "").encode("ascii", "ignore").decode().lower()
+    return re.findall(r"[a-z0-9]+", text)
+
+
+def code_words(phrase: str) -> list[str]:
+    """The words of the code phrase that must be heard; the assistant's name is optional."""
+    words = _words(phrase)
+    rest = [w for w in words if w not in NAME_WORDS]
+    return rest or words
+
+
+def has_code(text: str, phrase: str) -> bool:
+    need = code_words(phrase)
+    if not need:
+        return False
+    heard = _words(text)
+    joined = " ".join(heard)
+    return " ".join(need) in joined
+
+
 def format_dialog(dialog: list[list[str]]) -> str:
     names = {"user": "Nutzer", "bot": "Assistentin"}
     return "\n".join(f"{names.get(s, s)}: {t.strip()}" for s, t in dialog if t.strip())

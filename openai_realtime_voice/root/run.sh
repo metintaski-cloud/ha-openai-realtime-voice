@@ -22,6 +22,7 @@ RF_HOST=$(bashio::config 'rf_host')
 RF_FREQUENCY=$(bashio::config 'rf_frequency')
 TV_CHANNELS=$(bashio::config 'tv_channels')
 TV_REMOTE=$(bashio::config 'tv_remote')
+CODE_PHRASE=$(bashio::config 'code_phrase')
 
 if [ -z "$OPENAI_API_KEY" ]; then
     bashio::log.error "OPENAI_API_KEY is required but not set"
@@ -49,6 +50,7 @@ export RF_HOST
 export RF_FREQUENCY
 export TV_CHANNELS
 export TV_REMOTE
+export CODE_PHRASE
 
 export PYTHONUNBUFFERED=1
 exec python3 -m app.main

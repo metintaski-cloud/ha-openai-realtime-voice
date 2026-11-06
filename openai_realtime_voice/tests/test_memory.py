@@ -136,3 +136,11 @@ def test_no_memory_update_without_request(monkeypatch):
     monkeypatch.setattr(asyncio, "create_task", lambda c: called.append(c) or c.close())
     bridge._schedule_memory_update({"dialog": [["user", "Mach das Licht an"]]})
     assert called == []
+
+
+def test_code_phrase_detection():
+    from app import memory as m
+    assert m.code_words("Leyla habibi") == ["habibi"]
+    assert m.has_code("Leila, habibi, was weißt du?", "Leyla habibi")
+    assert m.has_code("ok Habibi", "Leyla habibi")
+    assert not m.has_code("Leyla, ich bin Metin", "Leyla habibi")
