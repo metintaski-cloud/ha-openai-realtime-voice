@@ -213,6 +213,7 @@ class LiveVoiceBridge:
         self.greeting_words = parse_greeting_words(os.environ.get("GREETING_WORDS"))
         code = (os.environ.get("CODE_PHRASE") or "").strip()
         self.code_phrase = "" if code.lower() == "null" else code
+        logger.info("Code phrase: %s", "active" if self.code_phrase else "off")
         self.greeting = ""  # chosen fresh for every session
         self.live_model = os.environ.get("LIVE_MODEL", "gpt-live-1")
         self.backend_model = os.environ.get("BACKEND_MODEL", "gpt-5.6-luna")

@@ -24,11 +24,14 @@ MAX_FACT_CHARS = 200
 
 REMEMBER_PHRASES = (
     "merk dir", "merke dir", "merk' dir", "merkst du dir", "vergiss nicht",
-    "aklında tut", "aklinda tut", "unutma", "remember",
+    "aklında tut", "aklinda tut", "unutma", "remember", "speicher", "notier",
+    "kaydet", "kayded", "kayıt et", "kayit et", "hatırla", "hatirla", "not al", "not et",
+    "sakla", "ezberle",
 )
 
 FORGET_PHRASES = (
-    "vergiss", "vergessen", "lösch", "losch", "unut", "sil ", "forget",
+    "vergiss", "vergessen", "lösch", "losch", "unut", "sil ", "silebilir", "silin",
+    "forget",
 )
 
 SUMMARY_PROMPT = """Du pflegst das Langzeitgedächtnis einer Sprachassistentin in einem Wohnzimmer.
