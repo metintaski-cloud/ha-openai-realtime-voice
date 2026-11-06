@@ -94,3 +94,12 @@ async def test_rotation_never_repeats_capture(tmp_path, monkeypatch):
         assert False
     except KeyError:
         pass
+
+
+async def test_learn_ir(tmp_path, monkeypatch):
+    monkeypatch.setattr(rf.time, "sleep", lambda s: None)
+    dev = FakeDevice("1.2.3.4")
+    dev.enter_learning = lambda: dev.calls.append("ir")
+    remote = rf.RfRemote("1.2.3.4", 433.87, str(tmp_path / "c.json"), device_factory=lambda h: dev)
+    r = await remote.learn("receiver_1", timeout=5, ir=True)
+    assert r["learned"] == "receiver_1" and "ir" in dev.calls and ("find", 433.87) not in dev.calls

@@ -10,6 +10,7 @@ the captured packet, replay it later.
 A tiny HTTP endpoint on the add-on (port 8081 by default) is used to learn and test
 codes from a browser:
   GET /rf/learn?name=licht   listen up to 60 s, press the button once meanwhile
+  GET /rf/learn?name=tv_1&ir=1   the same for an infrared remote
   GET /rf/send?name=licht    send a learned code
   GET /rf/list               list learned codes
 """
@@ -152,15 +153,30 @@ class RfRemote:
             pass
         raise TimeoutError("Kein Funksignal empfangen")
 
+    def _learn_ir_blocking(self, timeout: float) -> bytes:
+        dev = self._connect()
+        dev.enter_learning()
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            time.sleep(1.0)
+            try:
+                data = dev.check_data()
+            except Exception:
+                continue
+            if data:
+                return bytes(data)
+        raise TimeoutError("Kein Infrarotsignal empfangen")
+
     def _send_blocking(self, packet: bytes) -> None:
         dev = self._connect()
         dev.send_data(packet)
 
-    async def learn(self, name: str, timeout: float = LEARN_TIMEOUT_S) -> dict:
+    async def learn(self, name: str, timeout: float = LEARN_TIMEOUT_S, ir: bool = False) -> dict:
         async with self._lock:
             self.learning = name
             try:
-                packet = await asyncio.to_thread(self._learn_blocking, timeout)
+                packet = await asyncio.to_thread(
+                    self._learn_ir_blocking if ir else self._learn_blocking, timeout)
             except Exception:
                 self._device = None
                 raise
@@ -218,7 +234,7 @@ async def _handle_http(remote: RfRemote, reader: asyncio.StreamReader,
             body = {"frequency": remote.frequency, "codes": sorted(remote.load()),
                     "learning": remote.learning}
         elif url.path == "/rf/learn" and name:
-            body = await remote.learn(name)
+            body = await remote.learn(name, ir=q.get("ir") in ("1", "true", "yes"))
         elif url.path == "/rf/send" and name:
             body = await remote.send(name, int(q.get("repeats", "1") or 1))
         else:
