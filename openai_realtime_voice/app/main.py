@@ -35,7 +35,7 @@ import websockets
 from app.audio_recorder import AudioRecorder
 from app import memory
 from app import context
-from app import costs, fan, lights, rf, tv
+from app import costs, fan, lights, messages, rf, tv
 
 logging.basicConfig(
     level=logging.INFO,
@@ -230,6 +230,7 @@ class LiveVoiceBridge:
         self.rf = rf.remote_from_env()
         self.fan = fan.FanController(self.rf)
         self.tv = tv.from_env(self.rf)
+        self.messages = messages.from_env(self._speak_once)
         self.memory = memory.MemoryStore(os.environ.get("MEMORY_PATH", "/data/memory.json"))
         self._memory_tasks: set = set()
         self.recorder: Optional[AudioRecorder] = None
@@ -276,6 +277,10 @@ class LiveVoiceBridge:
             tools.append(tv.build_tool(self.tv.channels))
             live_extra += tv.TV_LIVE_HINT.format(names=self.tv.names)
             backend_instructions += tv.TV_BACKEND_HINT.format(names=self.tv.names)
+        if self.messages.available:
+            tools.append(messages.TO_METIN_TOOL)
+            backend_instructions += messages.TO_METIN_BACKEND_HINT
+            live_extra += self.messages.live_hint()
         session = {
             "type": "session.start",
             "event_id": "event_start",
@@ -390,6 +395,74 @@ class LiveVoiceBridge:
         )
         logger.info("Connected to OpenAI GPT Live API")
         return ws
+
+    async def _speak_once(self, prompt: str, max_s: float = 40.0) -> bytes:
+        """Let GPT Live speak one announcement without a listener; return 24 kHz PCM."""
+        ws = await self._connect_live()
+        pcm = bytearray()
+        try:
+            await ws.send(json.dumps({
+                "type": "session.start",
+                "event_id": "event_announce",
+                "session": {
+                    "model": self.live_model,
+                    "instructions": ("Du bist Leyla, eine warme, liebe Sprachassistentin. Du "
+                                     "machst nur eine kurze Ansage, so wie verlangt, und "
+                                     "redest danach nicht weiter."),
+                    "audio": {"format": {"type": "audio/pcm", "rate": SAMPLE_RATE},
+                              "output": {"voice": self.voice}},
+                    "delegation": {"type": "responses", "responses": {
+                        "model": self.backend_model, "instructions": "Do nothing.",
+                        "tools": [END_CONVERSATION_TOOL], "tool_choice": "auto",
+                        "parallel_tool_calls": False}},
+                },
+            }))
+            loop = asyncio.get_event_loop()
+            end = loop.time() + max_s
+            started = False
+            last_audio = None
+            while loop.time() < end:
+                wait = 2.5 if last_audio else end - loop.time()
+                try:
+                    raw = await asyncio.wait_for(ws.recv(), timeout=max(0.1, wait))
+                except asyncio.TimeoutError:
+                    if last_audio:
+                        break
+                    continue
+                if not isinstance(raw, str):
+                    continue
+                ev = json.loads(raw)
+                t = ev.get("type")
+                if t == "session.started" and not started:
+                    started = True
+                    await ws.send(json.dumps({
+                        "type": "session.commentary.append",
+                        "event_id": f"announce_{uuid.uuid4().hex[:8]}",
+                        "delegation_id": None, "content": prompt}))
+                elif t == "session.output_audio.delta" and ev.get("delta"):
+                    pcm += base64.standard_b64decode(ev["delta"])
+                    last_audio = loop.time()
+                elif t == "error":
+                    raise RuntimeError(f"GPT Live: {ev.get('error')}")
+            try:
+                await ws.send(json.dumps({"type": "session.close"}))
+            except Exception:
+                pass
+        finally:
+            await ws.close()
+        logger.info("Announcement audio: %.1f s", len(pcm) / (SAMPLE_RATE * 2))
+        return bytes(pcm)
+
+    async def _run_message_tool(self, live_ws, call_id: str, raw_args) -> None:
+        try:
+            args = json.loads(raw_args) if isinstance(raw_args, str) and raw_args else (raw_args or {})
+        except json.JSONDecodeError:
+            args = {}
+        result = await self.messages.to_metin(args)
+        try:
+            await self._send_function_output(live_ws, call_id, result)
+        except Exception as e:
+            logger.warning("Could not return message result: %s", e)
 
     async def _start_session(self, live_ws, timeout: float = 15.0) -> dict:
         """Send session.start and wait for session.started. Returns the started event."""
@@ -645,6 +718,11 @@ class LiveVoiceBridge:
                     self._run_lights_tool(live_ws, call_id, item.get("arguments")))
                 self._memory_tasks.add(task)
                 task.add_done_callback(self._memory_tasks.discard)
+            elif name == messages.TO_METIN_TOOL["name"]:
+                task = asyncio.create_task(
+                    self._run_message_tool(live_ws, call_id, item.get("arguments")))
+                self._memory_tasks.add(task)
+                task.add_done_callback(self._memory_tasks.discard)
             elif name == "fernseher_steuern":
                 task = asyncio.create_task(
                     self._run_tv_tool(live_ws, call_id, item.get("arguments")))
@@ -752,6 +830,9 @@ class LiveVoiceBridge:
                     state["last_activity"] = time.monotonic()
                     recent = (state.get("recent_user_text", "") + delta)[-80:]
                     state["recent_user_text"] = recent
+                    if self.messages.available and messages.is_ack(recent) \
+                            and self.messages.pending():
+                        await self.messages.acknowledge(recent)
                     if (self.code_phrase and not state.get("unlocked")
                             and memory.has_code(recent, self.code_phrase)):
                         await self._unlock(live_ws, state)
@@ -1109,6 +1190,11 @@ class LiveVoiceBridge:
     async def run(self) -> None:
         """Start WebSocket server and run forever."""
         self._memory_maintenance()
+        if self.messages.available:
+            try:
+                self._message_tasks = await self.messages.start()
+            except Exception as e:
+                logger.warning("Messages could not start: %s", e)
         if self.rf.available:
             try:
                 await rf.start_http(self.rf, port=int(os.environ.get("RF_HTTP_PORT", "8081")))
