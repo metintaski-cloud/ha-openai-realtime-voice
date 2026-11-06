@@ -33,7 +33,8 @@ logger = logging.getLogger(__name__)
 
 REPEAT_EVERY_S = 600
 GIVE_UP_AFTER_S = 3600
-ACK_WORDS = ("tamam", "anladım", "anladim", "duydum", "verstanden", "gehört", "gehoert")
+ACK_WORDS = ("tamam", "tamamdır", "tamamdir", "anladım", "anladim", "duydum", "olur", "oldu",
+             "peki", "verstanden", "gehört", "gehoert")
 INPUT_HELPER = "input_text.leyla_nachricht"
 
 TO_METIN_TOOL = {
@@ -80,8 +81,14 @@ def pcm_to_wav(pcm: bytes, rate: int = 24000) -> bytes:
 
 
 def is_ack(text: str) -> bool:
-    t = " ".join((text or "").lower().split())
-    return any(w in t for w in ACK_WORDS)
+    import re
+    words = re.findall(r"\w+", (text or "").lower())
+    for i, w in enumerate(words):
+        if w in ACK_WORDS:
+            if w == "oldu" and i and words[i - 1] in ("ne", "nasıl", "nasil", "kim"):
+                continue  # "ne oldu?" is a question, not a confirmation
+            return True
+    return False
 
 
 class MessageCenter:
