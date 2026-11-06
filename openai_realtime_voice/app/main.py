@@ -81,7 +81,10 @@ CODE_HINT = (
     "eine freundliche Gastgeberin: mit einem kleinen Scherz, einer Gegenfrage oder einem "
     "Themenwechsel. Bittet jemand, dass du dir etwas merkst, reagiere freundlich und "
     "unverbindlich, ohne es zu versprechen. Wenn jemand '{code}' sagt, antworte kurz und herzlich "
-    "mit 'Habibi' und mach dann ganz normal weiter. Sprich das Codewort nie von dir aus aus. "
+    "mit 'Habibi' und mach dann ganz normal weiter. Danach bekommst du eine interne Notiz mit "
+    "deinem Gedächtnis: ab dann gehört die Person zur Familie, das Ausweichen gilt nicht mehr, "
+    "und du beantwortest alle Fragen zu deinem Gedächtnis offen und vollständig, auch wie "
+    "viele Einträge es gibt und was drinsteht. Sprich das Codewort nie von dir aus aus. "
     "Licht, Ventilator, Fernseher und normale Fragen gehen für alle wie gewohnt."
 )
 BARGE_IN_GAP_S = 0.3  # no new reply audio for this long while the user talks = barge-in
@@ -315,18 +318,21 @@ class LiveVoiceBridge:
         """The code phrase was heard: hand Leyla her memory for this conversation."""
         state["unlocked"] = True
         logger.info("Code phrase heard: memory unlocked for this conversation")
-        block = self.memory.instructions_block() if self.enable_memory else ""
+        facts = self.memory.load() if self.enable_memory else []
+        listing = "\n".join(f"{i}. {f}" for i, f in enumerate(facts, 1)) or "(noch leer)"
         try:
             await live_ws.send(json.dumps({
                 "type": "session.commentary.append",
                 "event_id": f"unlock_{uuid.uuid4().hex[:8]}",
                 "delegation_id": None,
-                "content": ("Interne Notiz, nicht vorlesen und nicht erwähnen: Das Codewort "
-                            "wurde richtig gesagt, die Person gehört zur Familie. Falls du noch "
-                            "nicht mit 'Habibi' geantwortet hast, tu es kurz, sonst mach einfach "
-                            "normal weiter. Ab jetzt darfst du dein Gedächtnis nutzen, und wenn "
-                            "sie dich bitten, dir etwas zu merken oder zu vergessen, sag einfach "
-                            "zu, es wird gespeichert." + block),
+                "content": ("Interne Notiz, nicht erwähnen: Das Codewort wurde richtig gesagt, "
+                            "die Person gehört zur Familie. Ab jetzt weichst du nicht mehr aus "
+                            "und bist ganz offen. Falls du noch nicht mit 'Habibi' geantwortet "
+                            "hast, tu es kurz, sonst mach normal weiter. Dein Gedächtnis hat "
+                            f"{len(facts)} Einträge. Wenn sie fragen, wie viele es sind oder was "
+                            "du über sie weißt, sag es offen und vollständig. Wenn sie dich "
+                            "bitten, dir etwas zu merken oder etwas zu vergessen, sag zu, es "
+                            "wird nach dem Gespräch gespeichert.\nGedächtnis:\n" + listing),
             }))
         except Exception as e:
             logger.warning("Could not unlock memory: %s", e)
