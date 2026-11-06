@@ -1,5 +1,5 @@
 name: GPT Live Voice
-version: "2.8.1"
+version: "2.9.0"
 slug: openai_realtime_voice
 description: WebSocket bridge from Voice PE to OpenAI GPT Live (natural voice conversation with web search)
 url: https://github.com/metintaski-cloud/ha-openai-realtime-voice
@@ -28,6 +28,8 @@ options:
   light_entities: "light.wohnzimmer_lamba_1, light.wohnzimmer_lamba_2, light.wohnzimmer_lamba_3, light.wohnzimmer_lamba_4"
   rf_host: "192.168.2.77"
   rf_frequency: 433.87
+  tv_channels: "atv Avrupa=1; A Haber=2; Euro D=6"
+  tv_remote: "remote.android_tv"
   enable_recording: false
 schema:
   openai_api_key: password
@@ -47,5 +49,7 @@ schema:
   add_facts: str?
   rf_host: str?
   rf_frequency: float?
+  tv_channels: str?
+  tv_remote: str?
   light_entities: str?
   enable_recording: bool

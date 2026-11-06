@@ -35,7 +35,7 @@ import websockets
 from app.audio_recorder import AudioRecorder
 from app import memory
 from app import context
-from app import costs, fan, lights, rf
+from app import costs, fan, lights, rf, tv
 
 logging.basicConfig(
     level=logging.INFO,
@@ -211,6 +211,7 @@ class LiveVoiceBridge:
         self.lights = lights.LightController(lights.entities_from_env())
         self.rf = rf.remote_from_env()
         self.fan = fan.FanController(self.rf)
+        self.tv = tv.from_env(self.rf)
         self.memory = memory.MemoryStore(os.environ.get("MEMORY_PATH", "/data/memory.json"))
         self._memory_tasks: set = set()
         self.recorder: Optional[AudioRecorder] = None
@@ -253,6 +254,10 @@ class LiveVoiceBridge:
             tools.append(fan.FAN_TOOL)
             live_extra += fan.FAN_LIVE_HINT
             backend_instructions += fan.FAN_BACKEND_HINT
+        if self.tv.available:
+            tools.append(tv.build_tool(self.tv.channels))
+            live_extra += tv.TV_LIVE_HINT.format(names=self.tv.names)
+            backend_instructions += tv.TV_BACKEND_HINT.format(names=self.tv.names)
         session = {
             "type": "session.start",
             "event_id": "event_start",
@@ -546,6 +551,23 @@ class LiveVoiceBridge:
         except Exception as e:
             logger.warning("Could not return fan result: %s", e)
 
+    async def _run_tv_tool(self, live_ws, call_id: str, raw_args) -> None:
+        """Control the TV without blocking the audio loop."""
+        try:
+            args = json.loads(raw_args) if isinstance(raw_args, str) and raw_args else (raw_args or {})
+        except json.JSONDecodeError:
+            args = {}
+        try:
+            result = await asyncio.wait_for(self.tv.run(args), timeout=20.0)
+        except Exception as e:
+            logger.warning("TV control failed: %s", e)
+            result = {"error": "Der Fernseher konnte gerade nicht gesteuert werden."}
+        logger.info("TV %s -> %s", args, result)
+        try:
+            await self._send_function_output(live_ws, call_id, result)
+        except Exception as e:
+            logger.warning("Could not return TV result: %s", e)
+
     async def _handle_backend_event(
         self,
         inner: dict,
@@ -575,6 +597,11 @@ class LiveVoiceBridge:
             elif name == lights.LIGHTS_TOOL["name"]:
                 task = asyncio.create_task(
                     self._run_lights_tool(live_ws, call_id, item.get("arguments")))
+                self._memory_tasks.add(task)
+                task.add_done_callback(self._memory_tasks.discard)
+            elif name == "fernseher_steuern":
+                task = asyncio.create_task(
+                    self._run_tv_tool(live_ws, call_id, item.get("arguments")))
                 self._memory_tasks.add(task)
                 task.add_done_callback(self._memory_tasks.discard)
             elif name == fan.FAN_TOOL["name"]:
