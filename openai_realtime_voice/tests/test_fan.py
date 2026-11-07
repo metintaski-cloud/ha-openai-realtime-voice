@@ -219,3 +219,76 @@ async def test_energy_costs(tmp_path, monkeypatch):
         f.write(str(time.time() - 3 * 86400))
     r = await ctl.run({"action": "stromkosten"})
     assert r["gesamt_kwh"] == 0.9 and r["schaetzung_monat_euro"] == 3.6  # 0.3 kWh a day
+
+
+class _Fan:
+    """Fake fan with light 17 W; the fan ignores some radio captures."""
+
+    def __init__(self, light=True, speed=1, ignore=()):
+        self.light, self.speed, self.ignore, self.sent = light, speed, set(ignore), []
+
+    @property
+    def watts(self):
+        return (17.0 if self.light else 0.0) + fan.FAN_W[self.speed]
+
+
+def _fan_ctl(monkeypatch, f, light_known=True):
+    import asyncio as _a
+    _orig = _a.sleep
+    monkeypatch.setattr(fan.asyncio, "sleep", lambda s: _orig(0))
+    ctl = fan.FanController(None, power_sensor="s", token="t")
+    n = {"i": 0}
+
+    async def power():
+        return f.watts
+
+    class R:
+        available = True
+
+        async def send_rotating(self, name):
+            n["i"] += 1
+            cap = f"{name}_{(n['i'] - 1) % 3 + 1}"
+            f.sent.append(cap)
+            if cap in f.ignore:
+                return {"sent": cap}
+            if name == "stop":
+                f.speed = 0
+            elif name.startswith("stufe"):
+                f.speed = int(name[5:])
+            elif name == "licht":
+                f.light = not f.light
+            return {"sent": cap}
+
+    ctl.remote, ctl.power = R(), power
+    if light_known:
+        ctl.light_on, ctl.light_w = f.light, 17.0
+    return ctl
+
+
+async def test_stop_is_sent_again_when_ignored(monkeypatch):
+    f = _Fan(ignore={"stop_1"})        # like stop_3 on 7 Nov
+    ctl = _fan_ctl(monkeypatch, f)
+    r = await ctl.run({"action": "aus", "speed": None, "hours": None})
+    assert f.speed == 0 and f.sent == ["stop_1", "stop_2"]
+    assert r["checked"] == "Vom Strommesser bestätigt."
+
+
+async def test_stop_reports_failure_honestly(monkeypatch):
+    f = _Fan(ignore={"stop_1", "stop_2", "stop_3"})
+    ctl = _fan_ctl(monkeypatch, f)
+    r = await ctl.run({"action": "aus", "speed": None, "hours": None})
+    assert f.speed == 1 and "nicht geklappt" in r["note"]
+
+
+async def test_stop_with_fan_already_off(monkeypatch):
+    f = _Fan(speed=0)
+    ctl = _fan_ctl(monkeypatch, f)
+    r = await ctl.run({"action": "aus", "speed": None, "hours": None})
+    assert f.sent == ["stop_1"] and "checked" in r
+
+
+async def test_speed_is_sent_again_when_ignored(monkeypatch):
+    f = _Fan(speed=0, ignore={"stufe3_1"})
+    ctl = _fan_ctl(monkeypatch, f)
+    r = await ctl.run({"action": "stufe", "speed": 3, "hours": None})
+    assert f.speed == 3 and f.sent == ["stufe3_1", "stufe3_2"] and "checked" in r

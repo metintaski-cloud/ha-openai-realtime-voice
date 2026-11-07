@@ -511,6 +511,9 @@ class FanController:
         button, error = button_for(args)
         if error:
             return {"error": error}
+        checked = action in ("aus", "stufe") and bool(self.token)
+        before = await self.power() if checked else None
+        expected = self.describe(before) if before is not None else {}
         try:
             result = await self.remote.send_rotating(button)
         except KeyError as e:
@@ -520,6 +523,25 @@ class FanController:
             return {"error": "Der Ventilator Sender ist gerade nicht erreichbar."}
         logger.info("Fan: %s sent (%s)", button, result.get("sent"))
         out = {"pressed": args.get("action"), "button": button}
+        if before is not None:
+            # Not every radio frame reaches the fan (7 Nov: stop_3 was ignored), so check
+            # the power and press again with the next capture if nothing happened.
+            ok = await self._worked(action, args, before, expected)
+            tries = 1
+            while ok is False and tries < 3:
+                logger.info("Fan: %s (%s) had no effect, sending again", button,
+                            result.get("sent"))
+                result = await self.remote.send_rotating(button)
+                ok = await self._worked(action, args, before, expected)
+                tries += 1
+            if ok is False and action == "aus" and expected.get("licht") == "unklar":
+                # Stop changed nothing twice: the fan was not turning, it is the light
+                self.light_on, self.speed, ok = True, 0, True
+            if ok is False:
+                out["note"] = ("Taste mehrmals gesendet, aber der Strommesser zeigt keine "
+                               "Änderung. Sag ehrlich, dass es nicht geklappt hat.")
+                return out
+            out["checked"] = "Vom Strommesser bestätigt."
         if args.get("action") == "stufe":
             out["speed"] = int(args["speed"])
         if args.get("action") == "timer":
@@ -530,5 +552,29 @@ class FanController:
             self.speed = 0
         elif action in ("an", "naturwind"):
             self.speed = None
-        out["note"] = "Taste gesendet."
+        out.setdefault("note", "Taste gesendet.")
         return out
+
+    async def _worked(self, action: str, args: dict, before: float,
+                      expected: dict) -> Optional[bool]:
+        """Did the fan react to stop or a speed button? None when it cannot be told."""
+        if action == "aus":
+            if before < OFF_W or expected.get("ventilator") == "aus":
+                return True  # nothing was turning
+            await asyncio.sleep(2.0)
+            after = await self.power()
+            if after is None:
+                return None
+            if after < OFF_W:
+                return True
+            if self.light_on:
+                return after <= (self.light_w or LIGHT_W) + 2.5
+            return before - after >= 2.0
+        speed = int(args.get("speed") or 0)
+        if expected.get("ventilator", "").endswith(f"Stufe {speed}"):
+            return True  # already at that speed
+        await asyncio.sleep(3.0)
+        after = await self.power()
+        if after is None:
+            return None
+        return abs(after - before) >= 1.0
