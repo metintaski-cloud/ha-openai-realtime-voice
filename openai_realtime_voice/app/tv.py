@@ -266,9 +266,12 @@ class TvController:
                 await self._tv_key("VOLUME_UP" if action == "lauter" else "VOLUME_DOWN", steps)
                 return {"done": f"{steps} Stufen {action}"}
             if action == "lautstaerke":
-                if args.get("volume_percent") is None:
+                target = args.get("volume_percent")
+                if target is None:
+                    target = args.get("steps")  # the model sometimes puts the number there
+                if target is None:
                     return {"error": "Welche Lautstärke? 0 bis 100."}
-                return await self._set_volume(args["volume_percent"])
+                return await self._set_volume(target)
             if action == "status":
                 state = await self._state()
                 volume, muted = await self._volume()
