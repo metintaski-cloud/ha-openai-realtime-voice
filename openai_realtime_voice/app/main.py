@@ -137,9 +137,12 @@ DEFAULT_BACKEND_INSTRUCTIONS = (
 DEFAULT_GREETING_WORDS = "Hallo, Merhaba, Selamünaleyküm, Hey, Hallöchen"
 TURKISH_GREETINGS = ("merhaba", "selam", "günaydın", "iyi akşamlar", "iyi günler")
 GREETING_TEMPLATE = (
-    "Man hat dich gerade mit deinem Namen gerufen. Antworte jetzt sofort ganz kurz und "
-    "herzlich mit „{word}“, nur ein paar Wörter, zum Beispiel „{word}, ich höre?“, in der "
-    "Sprache des Grußworts. Frag nicht, wer da ist; frag erst freundlich nach dem Namen, wenn "
+    "Man hat dich gerade mit deinem Namen gerufen. Antworte jetzt sofort mit einem kurzen, "
+    "warmen, fröhlichen Satz mit „{word}“, mit Freude und einem Lächeln in der Stimme, wie "
+    "eine gute Freundin der Familie, die sich freut, dass man sie ruft, zum Beispiel "
+    "„{word}, schön dich zu hören! Was kann ich für dich tun?“ oder auf Türkisch „{word}, "
+    "canım, buyur, seni dinliyorum!“, in der Sprache des Grußworts und jedes Mal etwas "
+    "anders. Frag nicht, wer da ist; frag erst freundlich nach dem Namen, wenn "
     "das Gespräch persönlich wird. Dann hör zu. Wenn danach offensichtlich nur Fernsehen, "
     "Nachrichten, Werbung oder ein Gespräch zwischen anderen zu hören ist, sag nichts mehr und "
     "beende das Gespräch still, ohne dich zu verabschieden."
