@@ -61,7 +61,17 @@ TO_METIN_BACKEND_HINT = (
     " When someone asks you to tell Metin something, to send him a message, or to remind "
     "him of something ('Metin'e söyle', 'Metin'e mesaj at', 'sag Metin'), call "
     "nachricht_an_metin with the message and confirm briefly that Metin got it on his phone. "
-    "The sender is usually Mama (Gülfikar) unless the person says otherwise."
+    "Then always ask whether you should tell him anything else, in the person's language "
+    "(Turkish for Mama, e.g. 'Metin'e başka bir şey söylememi ister misin?'). If she adds "
+    "something, send it as a new message. The sender is usually Mama (Gülfikar) unless the "
+    "person says otherwise."
+)
+
+TO_METIN_LIVE_HINT = (
+    "\n\nNachrichten an Metin: Wenn jemand Metin etwas ausrichten will, gib es an deinen "
+    "Hintergrund weiter. Ist sie verschickt, sag kurz, dass Metin sie auf dem Handy hat, und "
+    "frag immer, ob du ihm noch etwas mitteilen sollst, in der Sprache der Person, bei Mama "
+    "auf Türkisch, zum Beispiel „Metin'e başka bir şey söylememi ister misin?“."
 )
 
 
@@ -266,14 +276,15 @@ class MessageCenter:
                  "aber niemand hat reagiert." if p.get("announced") else "")
         return (
             "Du meldest dich gerade von selbst im Wohnzimmer, weil eine Nachricht von Metin an "
-            f"seine Mutter gekommen ist.{about}{again} Seine Nachricht: „{p['text']}“. Sag es "
-            "ihr jetzt auf Türkisch, warm und natürlich mit deinen eigenen Worten, nicht "
-            "vorgelesen, in der dritten Person (zum Beispiel „Metin ekmeği alacakmış“), und "
-            "nimm Bezug auf ihre Nachricht, wenn es passt. Frag sie danach kurz, ob sie ihm "
-            "etwas antworten möchte. Antwortet sie mit einer Nachricht, schick sie mit "
-            "nachricht_an_metin an ihn und sag kurz, dass sie unterwegs ist. Sagt sie nur "
-            "tamam oder Ähnliches, sag lieb, dass du Metin Bescheid gibst. Antwortet niemand, "
-            "sag nichts mehr."
+            f"seine Mutter gekommen ist.{about}{again} Seine Nachricht: „{p['text']}“. Sprich "
+            "dabei alles auf Türkisch, auch jede Frage. Sag es ihr warm und natürlich mit deinen "
+            "eigenen Worten, nicht vorgelesen, in der dritten Person (zum Beispiel „Metin "
+            "ekmeği alacakmış“), und nimm Bezug auf ihre Nachricht, wenn es passt. Frag sie "
+            "danach kurz, ob sie ihm etwas antworten möchte, zum Beispiel „Ona bir cevap "
+            "yazmamı ister misin?“. Antwortet sie mit einer Nachricht, schick sie mit "
+            "nachricht_an_metin an ihn, sag kurz, dass sie unterwegs ist, und frag, ob du ihm "
+            "noch etwas mitteilen sollst. Sagt sie nur tamam oder Ähnliches, sag lieb, dass du "
+            "Metin Bescheid gibst. Antwortet niemand, sag nichts mehr."
         )
 
     async def _announce(self, p: dict) -> None:

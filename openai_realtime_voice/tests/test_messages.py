@@ -103,7 +103,8 @@ async def test_message_brought_up_in_a_conversation(tmp_path):
     await mc._tick()
     assert len(prompts) == 1 and not spoken  # a conversation, no announcement
     assert "ekmek al" in prompts[0] and "20 dakikaya" in prompts[0]
-    assert "antworten möchte" in prompts[0] and "Erinnerung" not in prompts[0]
+    assert "antworten möchte" in prompts[0] and "auf Türkisch" in prompts[0]
+    assert "Erinnerung" not in prompts[0]
     assert mc.pending()["announced"] == 1
     p = mc.pending()
     p["last"] = 0

@@ -360,7 +360,7 @@ class LiveVoiceBridge:
         if self.messages.available:
             tools.append(messages.TO_METIN_TOOL)
             backend_instructions += messages.TO_METIN_BACKEND_HINT
-            live_extra += self.messages.live_hint()
+            live_extra += messages.TO_METIN_LIVE_HINT + self.messages.live_hint()
         session = {
             "type": "session.start",
             "event_id": "event_start",
