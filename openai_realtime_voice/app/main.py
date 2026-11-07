@@ -60,7 +60,7 @@ GOODBYE_IDLE_S = 1.5
 GOODBYE_MAX_WAIT_S = 15.0
 # End the session when nobody spoke for this long (GPT Live is billed per minute).
 IDLE_TIMEOUT_S = 30.0
-NO_SPEECH_TIMEOUT_S = 8.0  # false wake: nobody speaks, end silently
+NO_SPEECH_TIMEOUT_S = 15.0  # false wake: nobody speaks, end silently
 MAX_SESSION_S = 600.0
 
 # GPT Live is full duplex and wants a continuous input stream. The Voice PE mutes its
