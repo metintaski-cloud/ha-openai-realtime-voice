@@ -175,3 +175,10 @@ def test_language_hint_in_session():
     instructions = bridge._session_start()["session"]["instructions"]
     assert "bir saniye" in instructions
     assert "Leyla" in m.greeting_instruction("Hallo")
+
+
+def test_few_terms_of_endearment():
+    bridge = _bridge()
+    instructions = bridge._session_start()["session"]["instructions"]
+    assert "Kosewörter" in instructions and "höchstens einmal" in instructions
+    assert "canım" not in m.greeting_instruction("Merhaba")

@@ -198,8 +198,8 @@ class MessageCenter:
             return
         prompt = ("Mach jetzt eine kurze Ansage im Wohnzimmer, in der Sprache des Textes. Sag sie "
                   "nicht vorgelesen, sondern lebendig, herzlich und fröhlich mit deinen eigenen "
-                  "Worten, wie eine liebe Freundin der Familie, gern mit einem kleinen netten Satz "
-                  "dazu. Alle Informationen wie Uhrzeit und was du tust müssen drin bleiben. "
+                  "Worten, wie eine liebe Bekannte der Familie, gern mit einem kleinen netten Satz "
+                  "dazu, aber ohne Kosewörter wie „canım“. Alle Informationen wie Uhrzeit und was du tust müssen drin bleiben. "
                   "Danach sagst du nichts mehr. Inhalt: \"" + text + "\"")
         await self._play(await self.speak(prompt))
         logger.info("Announced: %r", text)
@@ -234,8 +234,8 @@ class MessageCenter:
 
     async def _announce(self, p: dict) -> None:
         prompt = (
-            "Sag jetzt eine kurze Ansage auf Türkisch, lebendig, herzlich und liebevoll wie eine "
-            "gute Freundin der Familie, nicht vorgelesen, und danach nichts mehr. "
+            "Sag jetzt eine kurze Ansage auf Türkisch, lebendig und herzlich wie eine "
+            "gute Bekannte der Familie, ohne Kosewörter wie „canım“, nicht vorgelesen, und danach nichts mehr. "
             "Inhalt: Es gibt eine Nachricht von Metin. Übersetze seine Nachricht ins Türkische "
             f"und sag sie: \"{p['text']}\". Sag am Ende: Wenn du es gehört hast, sag "
             "'Hallo Leyla, tamam'."
