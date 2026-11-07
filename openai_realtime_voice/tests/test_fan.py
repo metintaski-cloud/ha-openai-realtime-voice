@@ -175,3 +175,17 @@ def test_fan_stop_versus_light_off():
         ctl.on_power(w, base + t)
     ctl.on_power(14.8, base + 71)   # quick drop of 18 W: what is left looks like the fan
     assert ctl.describe(14.8) == {"watt": 14.8, "licht": "aus", "ventilator": "an, ungefähr Stufe 4"}
+
+
+def test_state_survives_restart(tmp_path):
+    import time
+    path = str(tmp_path / "fan_state.json")
+    base = time.monotonic() - 1000
+    a = fan.FanController(None, power_sensor="s", token="", state_path=path)
+    for t, w in [(0, 0.0), (5, 9.0), (6, 18.2)]:
+        a.on_power(w, base + t)
+    assert a.describe(18.2)["licht"] == "an"
+    b = fan.FanController(None, power_sensor="s", token="", state_path=path)
+    assert b.describe(18.0) == {"watt": 18.0, "licht": "an", "ventilator": "aus"}
+    c = fan.FanController(None, power_sensor="s", token="", state_path=path)
+    assert c.describe(14.8)["licht"] == "unklar"  # power changed meanwhile: not trusted

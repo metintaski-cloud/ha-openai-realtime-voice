@@ -20,6 +20,7 @@ The light button is a toggle, so "licht_an" and "licht_aus" press it, check how 
 power changed and press again if the light went the wrong way.
 """
 import asyncio
+import json
 import logging
 import os
 import time
@@ -157,7 +158,8 @@ def button_for(args: dict) -> tuple[Optional[str], Optional[str]]:
 
 class FanController:
     def __init__(self, remote, power_sensor: Optional[str] = None,
-                 api_url: Optional[str] = None, token: Optional[str] = None) -> None:
+                 api_url: Optional[str] = None, token: Optional[str] = None,
+                 state_path: Optional[str] = None) -> None:
         self.remote = remote
         if power_sensor is None:
             power_sensor = (os.environ.get("FAN_POWER_SENSOR") or "").strip()
@@ -172,6 +174,39 @@ class FanController:
         self._recent: deque = deque()         # (time, watts) of the last few seconds
         self._last_w: Optional[float] = None
         self._pending: Optional[tuple[float, float, float]] = None  # rise: time, level, low
+        # Remembered across restarts, used only while the power still fits
+        self.state_path = state_path
+        self._saved: Optional[tuple] = None
+        self._restored: Optional[dict] = None
+        if state_path:
+            try:
+                with open(state_path) as f:
+                    self._restored = json.load(f)
+            except (OSError, ValueError):
+                pass
+
+    def _save(self) -> None:
+        if not self.state_path or self._last_w is None:
+            return
+        snap = (self.light_on, self.speed, self.light_w)
+        if self._saved and snap == self._saved[0] and abs(self._last_w - self._saved[1]) < 1.0:
+            return  # nothing new (the power drifts slowly as the light warms up)
+        self._saved = (snap, self._last_w)
+        try:
+            with open(self.state_path, "w") as f:
+                json.dump({"light_on": self.light_on, "speed": self.speed,
+                           "light_w": self.light_w, "watts": self._last_w}, f)
+        except OSError as e:
+            logger.warning("Could not save the fan state: %s", e)
+
+    def _restore(self, watts: float) -> None:
+        """After a restart: take the saved state if the power is still the same."""
+        saved, self._restored = self._restored, None
+        if saved and abs(float(saved.get("watts") or -99) - watts) < 2.5:
+            self.light_on = saved.get("light_on")
+            self.speed = saved.get("speed")
+            self.light_w = saved.get("light_w")
+            logger.info("Fan state restored: light %s, speed %s", self.light_on, self.speed)
 
     async def power(self) -> Optional[float]:
         """Watts from the power meter, None when there is none."""
@@ -191,6 +226,8 @@ class FanController:
     def on_power(self, watts: float, now: Optional[float] = None) -> None:
         """Every new reading of the power meter (Home Assistant state_changed)."""
         now = time.monotonic() if now is None else now
+        if self._restored is not None:
+            self._restore(watts)
         prev = self._last_w
         self._last_w = watts
         if self._pending and now - self._pending[0] < SPIKE_S \
@@ -202,6 +239,7 @@ class FanController:
             self.light_on, self.speed = False, 0
             self._recent.clear()
             self._recent.append((now, watts))
+            self._save()
             return
         while self._recent and now - self._recent[0][0] > JUMP_WINDOW_S:
             self._recent.popleft()
@@ -219,6 +257,7 @@ class FanController:
                 self._dropped(high, watts)
                 self._recent.clear()
         self._recent.append((now, watts))
+        self._save()
 
     def _settle(self, now: float) -> None:
         if not self._pending or now - self._pending[0] < SPIKE_S:
@@ -261,6 +300,10 @@ class FanController:
     def describe(self, watts: float) -> dict:
         """What is on, from the watts and what the controller has followed."""
         out: dict = {"watt": round(watts, 1)}
+        if self._restored is not None:
+            self._restore(watts)
+        if self._last_w is None:
+            self._last_w = watts
         self._settle(time.monotonic())
         if watts < OFF_W:
             self.light_on, self.speed = False, 0
@@ -294,6 +337,7 @@ class FanController:
         speed = nearest_speed(fan_w)
         out["licht"] = "an" if light else "aus"
         out["ventilator"] = "aus" if speed == 0 else f"an, ungefähr Stufe {speed}"
+        self._save()
         return out
 
     async def _press_light(self) -> Optional[float]:
@@ -315,6 +359,7 @@ class FanController:
                 self.speed = 0
         self._recent.clear()
         self._last_w = after
+        self._save()
         return delta
 
     async def set_light(self, on: bool) -> dict:

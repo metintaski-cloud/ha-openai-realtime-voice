@@ -292,7 +292,9 @@ class LiveVoiceBridge:
         self.admin_key, self.monthly_budget = costs.config_from_env()
         self.lights = lights.LightController(lights.entities_from_env())
         self.rf = rf.remote_from_env()
-        self.fan = fan.FanController(self.rf)
+        self.fan = fan.FanController(self.rf, state_path=os.path.join(
+            os.path.dirname(os.environ.get("MEMORY_PATH", "/data/memory.json")) or "/data",
+            "fan_state.json") if os.path.isdir("/data") else None)
         self.tv = tv.from_env(self.rf)
         self.messages = messages.from_env(self._speak_once)
         self.messages.on_command = self._automation_command
