@@ -112,7 +112,7 @@ FAN_BACKEND_HINT = (
     " You can control the living room ceiling fan with ventilator_steuern (German: Ventilator, "
     "Turkish: vantilatör). It works like pressing a button on its remote. A power meter tells "
     "whether the light is on and whether the fan turns: use status when asked, and report "
-    "exactly what the result says; if it says unklar, name the possibilities it lists. Speeds are "
+    "exactly what the result says; never guess. Speeds are "
     "1 (slow) to 6 (fast); 'schneller' or 'langsamer' means one step up or down from the speed "
     "the user last asked for in this conversation, otherwise ask. For the fan light use licht_an "
     "or licht_aus; if the result says it was already on or off, say so kindly. Words like 'Deckenlicht', 'Ventilatorlicht' or 'Licht am Ventilator' mean the "
@@ -340,6 +340,44 @@ class FanController:
         self._save()
         return out
 
+    async def _probe(self, watts: float) -> Optional[dict]:
+        """The watts fit the light and the fan alike. Press stop: if the power stays, the
+        fan was not turning and nobody notices; if it drops, the fan was turning and gets
+        its speed back right away."""
+        try:
+            await self.remote.send_rotating("stop")
+            await asyncio.sleep(1.5)
+            await self.remote.send_rotating("stop")  # in case one frame got lost
+            await asyncio.sleep(2.0)
+        except Exception as e:
+            logger.warning("Fan probe failed: %s", e)
+            return None
+        after = await self.power()
+        if after is None:
+            return None
+        fan_w = max(watts - after, 0.0)
+        speed = nearest_speed(fan_w) if fan_w > 2.5 else 0
+        self.light_on = after >= OFF_W
+        if self.light_on:
+            self.light_w = min(max(after, LIGHT_MIN_W), LIGHT_MAX_W)
+        self.speed = 0
+        self._recent.clear()
+        self._last_w = after
+        logger.info("Fan probe: %.1f W -> %.1f W, light %s, fan was at speed %d",
+                    watts, after, self.light_on, speed)
+        if speed:
+            try:
+                await self.remote.send_rotating(f"stufe{speed}")
+                self.speed = speed
+            except Exception as e:
+                logger.warning("Could not restart the fan: %s", e)
+        self._save()
+        result = {"watt": round(watts, 1), "licht": "an" if self.light_on else "aus",
+                  "ventilator": "aus" if not speed else f"an, ungefähr Stufe {speed}"}
+        if speed:
+            result["note"] = "Zum Prüfen kurz angehalten und gleich wieder gestartet."
+        return result
+
     async def _press_light(self) -> Optional[float]:
         """Press the light button; return the power change it caused, None without meter."""
         before = await self.power()
@@ -398,7 +436,10 @@ class FanController:
                 watts = await self.power()
                 if watts is None:
                     return {"error": "Der Ventilator hat keinen Strommesser."}
-                return self.describe(watts)
+                result = self.describe(watts)
+                if result.get("licht") == "unklar":
+                    result = await self._probe(watts) or result
+                return result
         except KeyError as e:
             return {"error": str(e).strip("'\"")}
         except Exception as e:

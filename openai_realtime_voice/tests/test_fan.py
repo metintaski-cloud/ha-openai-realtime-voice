@@ -87,7 +87,7 @@ async def test_light_on_from_off(tmp_path, monkeypatch):
 async def test_light_on_corrects_wrong_toggle(tmp_path, monkeypatch):
     m = _Meter(light=True, fan=True)  # 28.7 W: light 18 + fan 3, or fan 6 alone
     ctl = _metered(tmp_path, monkeypatch, m)
-    assert (await ctl.run({"action": "status"}))["licht"] == "unklar"
+    assert ctl.describe(m.watts)["licht"] == "unklar"
     r = await ctl.run({"action": "licht_an"})
     assert m.light and "jetzt stimmt es" in r["note"]
 
@@ -189,3 +189,58 @@ def test_state_survives_restart(tmp_path):
     assert b.describe(18.0) == {"watt": 18.0, "licht": "an", "ventilator": "aus"}
     c = fan.FanController(None, power_sensor="s", token="", state_path=path)
     assert c.describe(14.8)["licht"] == "unklar"  # power changed meanwhile: not trusted
+
+
+class _Fan4OrLight:
+    """15 W: either the light alone or the fan alone at speed 4."""
+
+    def __init__(self, light):
+        self.light, self.speed = light, 0 if light else 4
+        self.pressed = []
+
+    @property
+    def watts(self):
+        return (15.0 if self.light else 0.0) + fan.FAN_W[self.speed]
+
+
+def _probe_ctl(tmp_path, monkeypatch, m):
+    import asyncio as _a
+    _orig = _a.sleep
+    monkeypatch.setattr(fan.asyncio, "sleep", lambda s: _orig(0))
+    ctl = fan.FanController(None, power_sensor="sensor.x", token="t")
+
+    async def power():
+        return m.watts
+
+    class R:
+        available = True
+
+        async def send_rotating(self, name):
+            m.pressed.append(name)
+            if name == "stop":
+                m.speed = 0
+            elif name.startswith("stufe"):
+                m.speed = int(name[5:])
+            return {"sent": name}
+
+    ctl.remote = R()
+    ctl.power = power
+    return ctl
+
+
+async def test_probe_finds_the_light(tmp_path, monkeypatch):
+    m = _Fan4OrLight(light=True)
+    ctl = _probe_ctl(tmp_path, monkeypatch, m)
+    r = await ctl.run({"action": "status"})
+    assert r == {"watt": 15.0, "licht": "an", "ventilator": "aus"}
+    assert m.pressed == ["stop", "stop"] and m.light
+
+
+async def test_probe_finds_the_fan_and_restarts_it(tmp_path, monkeypatch):
+    m = _Fan4OrLight(light=False)
+    ctl = _probe_ctl(tmp_path, monkeypatch, m)
+    r = await ctl.run({"action": "status"})
+    assert r["licht"] == "aus" and r["ventilator"] == "an, ungefähr Stufe 4"
+    assert m.pressed == ["stop", "stop", "stufe4"] and m.speed == 4
+    r = await ctl.run({"action": "status"})  # known now, no more pressing
+    assert r["licht"] == "aus" and len(m.pressed) == 3
