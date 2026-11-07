@@ -103,3 +103,8 @@ Update when:
 - The Docker build or dependencies change
 - When shipping a fix or feature: update version in `config.yaml` (semver-like; see Version above).
 - **Session learnings:** If you discover something during a session that cost time or caused confusion (e.g. environment quirks, tool invocation details, non-obvious gotchas), add it here before finishing. Future sessions start fresh and won't have that context unless it's written down.
+
+## Session learnings (GPT Live)
+
+- GPT Live streams reply audio at about real time. `_output_sender` holds each reply until 200 ms are buffered and then stays 200 ms ahead of playback; without that reserve the first words stuttered. The Voice PE queues only 10 chunks of 20 ms while its speaker starts, so keep the lead at 200 ms or the ESP drops audio.
+- GPT Live has no turn detection setting. With the TV on or people talking, it may never see the end of a turn and stays silent. When the transcript addresses Leyla by name (`addressed_by_name`) and she has not reacted within 5 s, the bridge sends a commentary nudge.
