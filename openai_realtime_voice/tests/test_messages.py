@@ -62,3 +62,15 @@ async def test_flow(tmp_path):
         assert mc.pending() is None and "nicht" in _HA.calls[-1][2]["message"]
     finally:
         server.shutdown()
+
+
+async def test_say(tmp_path):
+    _HA.calls.clear()
+    server = _server(19993)
+    spoken = []
+    mc = _center(tmp_path, 19993, spoken)
+    try:
+        await mc.say("Saat 16:41, lambaları açıyorum.")
+        assert "16:41" in spoken[0] and _HA.calls[-1][1] == "play_media"
+    finally:
+        server.shutdown()

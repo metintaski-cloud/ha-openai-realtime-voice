@@ -189,16 +189,17 @@ class MessageCenter:
             logger.warning("Could not tell Metin about the confirmation: %s", e)
         return True
 
-    async def _announce(self, p: dict) -> None:
-        prompt = (
-            "Sag jetzt genau eine kurze, liebe Ansage auf Türkisch und danach nichts mehr. "
-            "Inhalt: Es gibt eine Nachricht von Metin. Übersetze seine Nachricht ins Türkische "
-            f"und sag sie: \"{p['text']}\". Sag am Ende: Wenn du es gehört hast, sag "
-            "'Hallo Leyla, tamam'."
-        )
-        if p.get("announced"):
-            prompt = ("Das ist eine Erinnerung. " + prompt)
-        pcm = await self.speak(prompt)
+    async def say(self, text: str) -> None:
+        """One announcement from an automation (HA event leyla_announce), no repeats."""
+        text = (text or "").strip()
+        if not text:
+            return
+        prompt = ("Sag jetzt genau diese kurze Ansage, natürlich und lieb, in der Sprache, in "
+                  f"der sie geschrieben ist, und danach nichts mehr: \"{text}\"")
+        await self._play(await self.speak(prompt))
+        logger.info("Announced: %r", text)
+
+    async def _play(self, pcm: bytes) -> None:
         if not pcm:
             raise RuntimeError("no audio")
         key = uuid.uuid4().hex[:10]
@@ -208,6 +209,17 @@ class MessageCenter:
             "entity_id": self.media_player, "media_content_id": url,
             "media_content_type": "music", "announce": True,
         })
+
+    async def _announce(self, p: dict) -> None:
+        prompt = (
+            "Sag jetzt genau eine kurze, liebe Ansage auf Türkisch und danach nichts mehr. "
+            "Inhalt: Es gibt eine Nachricht von Metin. Übersetze seine Nachricht ins Türkische "
+            f"und sag sie: \"{p['text']}\". Sag am Ende: Wenn du es gehört hast, sag "
+            "'Hallo Leyla, tamam'."
+        )
+        if p.get("announced"):
+            prompt = ("Das ist eine Erinnerung. " + prompt)
+        await self._play(await self.speak(prompt))
         logger.info("Announced message from Metin (%d. time)", p.get("announced", 0) + 1)
 
     async def _tick(self) -> None:
@@ -263,6 +275,8 @@ class MessageCenter:
                                               "event_type": "mobile_app_notification_action"}))
                     await ws.send(json.dumps({"id": 2, "type": "subscribe_events",
                                               "event_type": "state_changed"}))
+                    await ws.send(json.dumps({"id": 3, "type": "subscribe_events",
+                                              "event_type": "leyla_announce"}))
                     logger.info("Listening for messages from Metin")
                     async for raw in ws:
                         msg = json.loads(raw)
@@ -270,7 +284,12 @@ class MessageCenter:
                             continue
                         ev = msg.get("event", {})
                         data = ev.get("data", {})
-                        if ev.get("event_type") == "mobile_app_notification_action":
+                        if ev.get("event_type") == "leyla_announce":
+                            task = asyncio.create_task(self.say(data.get("text", "")))
+                            task.add_done_callback(
+                                lambda t: t.exception() and logger.warning(
+                                    "Announcement failed: %s", t.exception()))
+                        elif ev.get("event_type") == "mobile_app_notification_action":
                             if data.get("action") == "REPLY" and data.get("reply_text"):
                                 await self.from_metin(data["reply_text"])
                         elif data.get("entity_id") == INPUT_HELPER:
