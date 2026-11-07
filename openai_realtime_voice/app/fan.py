@@ -6,14 +6,24 @@ every button was learned three times (name_1 .. name_3). Each send uses the next
 capture of that button, so the same capture is never sent twice in a row.
 
 The fan itself does not report anything back. A Shelly PM Mini Gen3 in the canopy
-measures its power (FAN_POWER_SENSOR). Measured on 7 Nov 2026: everything off 0 W,
-light about 14 W, fan alone about 5 W (speed 1), 10 W (speed 3), 20 W (speed 6).
+measures the power of light and motor together (FAN_POWER_SENSOR). Measured on
+7 Nov 2026 (watts, steady):
+
+    everything off 0, light 13.5 to 18.5 (it varies), fan alone by speed
+    1: 5.2  2: 6.6  3: 10.7  4: 14.8  5: 19.1  6: 28.5, light plus fan adds up.
+
+The total alone is ambiguous (light 14 W = fan speed 4), so the controller also
+follows what happened: its own button presses, and the shape of every power change.
+The light jumps within a second (on: +13 to +19 W), while the fan ramps by a few
+watts per second when it changes speed; 0 W means everything is off.
 The light button is a toggle, so "licht_an" and "licht_aus" press it, check how the
 power changed and press again if the light went the wrong way.
 """
 import asyncio
 import logging
 import os
+import time
+from collections import deque
 from typing import Optional
 
 import httpx
@@ -32,10 +42,35 @@ BUTTONS = {
 TIMERS = {1: "timer1", 2: "timer2", 4: "timer4"}
 
 DEFAULT_POWER_SENSOR = "sensor.ventilator_leistung"
-LIGHT_W = 14.0      # the fan light
+LIGHT_W = 16.0                    # typical fan light
+LIGHT_MIN_W, LIGHT_MAX_W = 13.0, 19.5
+FAN_W = {0: 0.0, 1: 5.2, 2: 6.6, 3: 10.7, 4: 14.8, 5: 19.1, 6: 28.5}
 OFF_W = 2.0         # below this everything is off
 STEP_W = 6.0        # a change this big after pressing licht is the light
+JUMP_W = 12.5       # a change this big within JUMP_WINDOW_S is the light switching
+SPIKE_S = 1.5        # the fan kicks up to 12 W for a second when it starts
+JUMP_WINDOW_S = 3.5  # the light needs 2 to 3 s; the fan ramps 1 to 2 W per second
 SETTLE_S = 3.0      # the light needs about 2 s to reach its power
+
+
+def candidates(watts: float, light_w: Optional[float] = None) -> list[tuple[bool, int]]:
+    """All (light on, speed) states whose power fits the measured watts."""
+    lo_l, hi_l = (light_w - 1.5, light_w + 1.5) if light_w else (LIGHT_MIN_W, LIGHT_MAX_W)
+    out = []
+    for light in (False, True):
+        for speed, fan_w in FAN_W.items():
+            lo = fan_w + (lo_l if light else 0.0)
+            hi = fan_w + (hi_l if light else 0.0)
+            tol = 1.0 + 0.06 * hi
+            if lo - tol <= watts <= hi + tol:
+                out.append((light, speed))
+    return out
+
+
+def nearest_speed(fan_w: float) -> int:
+    if fan_w < 2.5:
+        return 0
+    return min((s for s in FAN_W if s), key=lambda s: abs(FAN_W[s] - fan_w))
 
 FAN_TOOL = {
     "type": "function",
@@ -45,8 +80,8 @@ FAN_TOOL = {
         "aus: fan off. stufe: set speed 1 to 6 directly (also switches the fan on). "
         "an: power button, fan on at its last speed. licht_an or licht_aus: switch the fan light "
         "on or off; the power meter checks the result and corrects it. licht: only toggle the "
-        "light without checking. status: measured power, whether the light is on and whether "
-        "the fan turns. naturwind: natural wind mode. "
+        "light without checking. status: what is on (light, fan and about which speed), from "
+        "the power meter. naturwind: natural wind mode. "
         "links or rechts: turning direction. timer: switch off after 1, 2 or 4 hours."
     ),
     "parameters": {
@@ -75,8 +110,8 @@ FAN_TOOL = {
 FAN_BACKEND_HINT = (
     " You can control the living room ceiling fan with ventilator_steuern (German: Ventilator, "
     "Turkish: vantilatör). It works like pressing a button on its remote. A power meter tells "
-    "whether the light is on and whether the fan turns: use status when asked, and only "
-    "report what the result says. Speeds are "
+    "whether the light is on and whether the fan turns: use status when asked, and report "
+    "exactly what the result says; if it says unklar, name the possibilities it lists. Speeds are "
     "1 (slow) to 6 (fast); 'schneller' or 'langsamer' means one step up or down from the speed "
     "the user last asked for in this conversation, otherwise ask. For the fan light use licht_an "
     "or licht_aus; if the result says it was already on or off, say so kindly. Words like 'Deckenlicht', 'Ventilatorlicht' or 'Licht am Ventilator' mean the "
@@ -131,8 +166,12 @@ class FanController:
         self.power_sensor = power_sensor
         self.api_url = api_url or os.environ.get("HA_API_URL") or "http://supervisor/core/api"
         self.token = token if token is not None else os.environ.get("SUPERVISOR_TOKEN", "")
-        self.light_on: Optional[bool] = None  # last state the meter confirmed
-        self._confirmed_w: Optional[float] = None  # power at that moment
+        self.light_on: Optional[bool] = None  # what we know about the light
+        self.speed: Optional[int] = None      # what we know about the fan, 0 = stopped
+        self.light_w: Optional[float] = None  # measured power of the light
+        self._recent: deque = deque()         # (time, watts) of the last few seconds
+        self._last_w: Optional[float] = None
+        self._pending: Optional[tuple[float, float, float]] = None  # rise: time, level, low
 
     async def power(self) -> Optional[float]:
         """Watts from the power meter, None when there is none."""
@@ -148,59 +187,151 @@ class FanController:
         except Exception:
             return None
 
-    def _describe(self, watts: float) -> dict:
-        out: dict = {"watt": round(watts, 1)}
+    # Following the power ---------------------------------------------------------
+    def on_power(self, watts: float, now: Optional[float] = None) -> None:
+        """Every new reading of the power meter (Home Assistant state_changed)."""
+        now = time.monotonic() if now is None else now
+        prev = self._last_w
+        self._last_w = watts
+        if self._pending and now - self._pending[0] < SPIKE_S \
+                and watts < self._pending[1] - 5.0:
+            self._pending = None  # only the start kick of the fan
+        self._settle(now)
         if watts < OFF_W:
-            self._confirm(False, watts)
-            out.update(light="aus", fan="steht")
-        elif self.light_on is None:
-            out.update(light="unbekannt", fan="unbekannt",
-                       note="Licht oder Ventilator ist an; welches, weiß ich erst nach dem "
-                            "nächsten Schalten des Lichts.")
+            self._pending = None
+            self.light_on, self.speed = False, 0
+            self._recent.clear()
+            self._recent.append((now, watts))
+            return
+        while self._recent and now - self._recent[0][0] > JUMP_WINDOW_S:
+            self._recent.popleft()
+        if prev is not None and not self._recent:
+            self._recent.append((now - 0.1, prev))
+        if self._recent:
+            low = min(w for _, w in self._recent)
+            high = max(w for _, w in self._recent)
+            if watts - low >= JUMP_W:
+                # Jumped up within a second or two: the light went on (the fan ramps).
+                # Confirmed once it stays up (see _settle).
+                self._pending = (now, watts, low)
+                self._recent.clear()
+            elif high - watts >= JUMP_W:
+                self._dropped(high, watts)
+                self._recent.clear()
+        self._recent.append((now, watts))
+
+    def _settle(self, now: float) -> None:
+        if not self._pending or now - self._pending[0] < SPIKE_S:
+            return
+        _, level, low = self._pending
+        self._pending = None
+        self.light_on = True
+        self.light_w = min(max(level - low, LIGHT_MIN_W), LIGHT_MAX_W)
+        if self.speed is None and low < OFF_W:
+            self.speed = 0
+        logger.info("Fan light switched on (%.1f W -> %.1f W)", low, level)
+
+    def on_power_state(self, state: str) -> None:
+        """Callback for Home Assistant state_changed of the power sensor."""
+        try:
+            self.on_power(float(state))
+        except (TypeError, ValueError):
+            pass  # unavailable or unknown
+
+    def _dropped(self, before: float, after: float) -> None:
+        """A quick drop: the light went off, or the fan stopped from speed 4 or more."""
+        light_w = self.light_w or LIGHT_W
+        fan_before = before - light_w if self.light_on else None
+        if self.light_on is False:
+            self.speed = 0
+        elif self.light_on is None and self.speed is not None and FAN_W[self.speed] < 12.0:
+            self.light_on = False  # the fan was too slow to drop that much
+        elif fan_before is not None and fan_before < 12.0:
+            self.light_on = False  # the fan alone could not drop that much
+        elif self.light_on and abs(after - light_w) + 3.0 < abs(after - (before - light_w)):
+            self.speed = 0         # what is left looks like the light alone
+        elif self.light_on and fan_before is not None:
+            self.light_on = False
+            self.speed = nearest_speed(after)
         else:
-            if self.light_on and watts < LIGHT_W - 4.0:
-                self.light_on = False  # switched off with the remote meanwhile
-            fan_w = watts - (LIGHT_W if self.light_on else 0.0)
-            out.update(light="an" if self.light_on else "aus",
-                       fan="dreht sich" if fan_w > 3.0 else "steht")
+            self.light_on = self.speed = None
+        logger.info("Fan power dropped %.1f W -> %.1f W: light %s, speed %s",
+                    before, after, self.light_on, self.speed)
+
+    def describe(self, watts: float) -> dict:
+        """What is on, from the watts and what the controller has followed."""
+        out: dict = {"watt": round(watts, 1)}
+        self._settle(time.monotonic())
+        if watts < OFF_W:
+            self.light_on, self.speed = False, 0
+            out.update(licht="aus", ventilator="aus")
+            return out
+        light = self.light_on
+        if light and watts < LIGHT_MIN_W - 2.0:
+            light = self.light_on = False  # too little power for the light
+        if light is None:
+            cands = candidates(watts, self.light_w)
+            if self.speed is not None:
+                cands = [c for c in cands if c[1] == self.speed] or cands
+            lights = {c[0] for c in cands}
+            if len(lights) == 1:
+                light = self.light_on = lights.pop()
+            else:
+                options = []
+                for on, speed in sorted(set(cands), key=lambda c: (c[1], c[0])):
+                    if on and speed == 0:
+                        options.append("nur das Licht")
+                    elif on:
+                        options.append(f"Licht und Ventilator auf Stufe {speed}")
+                    elif speed:
+                        options.append(f"nur der Ventilator auf Stufe {speed}")
+                out.update(licht="unklar", ventilator="unklar",
+                           moeglich=options[:3] or ["Licht oder Ventilator"],
+                           note="Das kann ich an den Watt allein nicht unterscheiden, bis "
+                                "einmal geschaltet wurde.")
+                return out
+        fan_w = watts - ((self.light_w or LIGHT_W) if light else 0.0)
+        speed = nearest_speed(fan_w)
+        out["licht"] = "an" if light else "aus"
+        out["ventilator"] = "aus" if speed == 0 else f"an, ungefähr Stufe {speed}"
         return out
 
-    def _confirm(self, light_on: Optional[bool], watts: Optional[float]) -> None:
-        self.light_on = light_on
-        self._confirmed_w = watts
-
-    async def _press_light(self) -> tuple[Optional[float], Optional[float]]:
-        """Press the light button; return (power change, power after), None without meter."""
+    async def _press_light(self) -> Optional[float]:
+        """Press the light button; return the power change it caused, None without meter."""
         before = await self.power()
         await self.remote.send_rotating("licht")
         if before is None:
-            return None, None
+            return None
         await asyncio.sleep(SETTLE_S)
         after = await self.power()
-        return (None, None) if after is None else (after - before, after)
+        if after is None:
+            return None
+        delta = after - before
+        if abs(delta) >= STEP_W:
+            self.light_on = delta > 0
+            if delta > 0:
+                self.light_w = min(max(delta, LIGHT_MIN_W), LIGHT_MAX_W)
+            if after < OFF_W:
+                self.speed = 0
+        self._recent.clear()
+        self._last_w = after
+        return delta
 
     async def set_light(self, on: bool) -> dict:
         watts = await self.power()
         if watts is None:
             await self.remote.send_rotating("licht")
             return {"pressed": "licht", "note": "Lichttaste gedrückt, kein Strommesser."}
-        if watts < OFF_W:
-            self._confirm(False, watts)
-            if not on:
-                return {"done": "Das Licht ist schon aus.", "watt": round(watts, 1)}
-        elif self.light_on == on and (
-                (on and watts >= LIGHT_W - 4.0) or
-                (self._confirmed_w is not None and abs(watts - self._confirmed_w) < 3.0)):
-            # Confirmed earlier and the power still fits (the fan only adds power)
+        state = self.describe(watts).get("licht")
+        if state == ("an" if on else "aus"):
             return {"done": f"Das Licht ist schon {'an' if on else 'aus'}.",
                     "watt": round(watts, 1)}
         for attempt in range(2):
-            delta, after = await self._press_light()
+            delta = await self._press_light()
             if delta is None or abs(delta) < STEP_W:
-                self._confirm(None, None)
+                self.light_on = None
                 return {"pressed": "licht", "note": "Lichttaste gedrückt, der Strommesser hat "
                         "keine klare Änderung gesehen."}
-            self._confirm(delta > 0, after)
             if self.light_on == on:
                 return {"done": f"Licht {'an' if on else 'aus'}",
                         "note": "Vom Strommesser bestätigt." if attempt == 0 else
@@ -222,7 +353,7 @@ class FanController:
                 watts = await self.power()
                 if watts is None:
                     return {"error": "Der Ventilator hat keinen Strommesser."}
-                return self._describe(watts)
+                return self.describe(watts)
         except KeyError as e:
             return {"error": str(e).strip("'\"")}
         except Exception as e:
@@ -244,8 +375,11 @@ class FanController:
             out["speed"] = int(args["speed"])
         if args.get("action") == "timer":
             out["hours"] = int(args["hours"])
-        if action == "licht" and self.light_on is not None:
-            self.light_on = not self.light_on
-            self._confirmed_w = None
+        if action == "stufe":
+            self.speed = int(args["speed"])
+        elif action == "aus":
+            self.speed = 0
+        elif action in ("an", "naturwind"):
+            self.speed = None
         out["note"] = "Taste gesendet."
         return out

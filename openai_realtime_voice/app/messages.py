@@ -108,6 +108,8 @@ class MessageCenter:
         self.audio: dict[str, bytes] = {}
         self._wake = asyncio.Event()
         self.on_command: Optional[Callable[[dict], Awaitable[dict]]] = None
+        # entity_id -> callback(new state string), for state_changed events
+        self.state_listeners: dict[str, Callable[[str], None]] = {}
         self.mute_switch = ""
 
     @property
@@ -322,6 +324,12 @@ class MessageCenter:
                         elif ev.get("event_type") == "mobile_app_notification_action":
                             if data.get("action") == "REPLY" and data.get("reply_text"):
                                 await self.from_metin(data["reply_text"])
+                        elif data.get("entity_id") in self.state_listeners:
+                            new = (data.get("new_state") or {}).get("state", "")
+                            try:
+                                self.state_listeners[data["entity_id"]](new)
+                            except Exception as e:
+                                logger.warning("State listener %s: %s", data["entity_id"], e)
                         elif data.get("entity_id") == INPUT_HELPER:
                             new = (data.get("new_state") or {}).get("state", "")
                             if new and new not in ("unknown", "unavailable", ""):

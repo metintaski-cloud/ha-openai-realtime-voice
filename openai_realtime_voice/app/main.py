@@ -296,6 +296,8 @@ class LiveVoiceBridge:
         self.tv = tv.from_env(self.rf)
         self.messages = messages.from_env(self._speak_once)
         self.messages.on_command = self._automation_command
+        if self.fan.power_sensor:
+            self.messages.state_listeners[self.fan.power_sensor] = self.fan.on_power_state
         self.memory = memory.MemoryStore(os.environ.get("MEMORY_PATH", "/data/memory.json"))
         self._memory_tasks: set = set()
         self.recorder: Optional[AudioRecorder] = None
