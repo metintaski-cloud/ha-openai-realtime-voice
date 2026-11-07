@@ -422,6 +422,17 @@ class LiveVoiceBridge:
             end = loop.time() + max_s
             started = False
             last_audio = None
+
+            async def feed_silence():
+                # GPT Live runs on the input audio clock: without input it never
+                # finishes injecting the commentary, so feed real-time silence.
+                chunk = base64.standard_b64encode(b"\x00" * (BYTES_PER_SEC // 10)).decode("ascii")
+                while True:
+                    await ws.send(json.dumps({"type": "session.input_audio.append",
+                                              "audio": chunk}))
+                    await asyncio.sleep(0.1)
+
+            feeder = None
             while loop.time() < end:
                 wait = 2.5 if last_audio else end - loop.time()
                 try:
@@ -436,6 +447,7 @@ class LiveVoiceBridge:
                 t = ev.get("type")
                 if t == "session.started" and not started:
                     started = True
+                    feeder = asyncio.create_task(feed_silence())
                     await ws.send(json.dumps({
                         "type": "session.commentary.append",
                         "event_id": f"announce_{uuid.uuid4().hex[:8]}",
@@ -445,11 +457,15 @@ class LiveVoiceBridge:
                     last_audio = loop.time()
                 elif t == "error":
                     raise RuntimeError(f"GPT Live: {ev.get('error')}")
+            if feeder:
+                feeder.cancel()
             try:
                 await ws.send(json.dumps({"type": "session.close"}))
             except Exception:
                 pass
         finally:
+            if feeder and not feeder.done():
+                feeder.cancel()
             await ws.close()
         logger.info("Announcement audio: %.1f s", len(pcm) / (SAMPLE_RATE * 2))
         return bytes(pcm)
