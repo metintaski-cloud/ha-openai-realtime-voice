@@ -75,3 +75,75 @@ async def test_volume(tmp_path, monkeypatch):
         _HA.states.pop("media_player.android_tv_2", None)
         _HA.states.pop("remote.android_tv", None)
         server.shutdown()
+
+
+async def test_duck_while_leyla_listens(tmp_path, monkeypatch):
+    import asyncio as _a
+    _orig = _a.sleep
+    monkeypatch.setattr(tv.asyncio, "sleep", lambda s: _orig(0))
+    monkeypatch.delenv("TV_DUCK", raising=False)
+    _HA.calls.clear()
+    player = {"entity_id": "media_player.android_tv_2", "state": "on",
+              "attributes": {"volume_level": 0.5, "is_volume_muted": False}}
+    _HA.states["media_player.android_tv_2"] = player
+    _HA.states["remote.android_tv"] = {"entity_id": "remote.android_tv", "state": "on",
+                                       "attributes": {}}
+    server = _server(19993)
+    remote = rf.RfRemote("", 433.87, str(tmp_path / "c.json"))
+    ctl = tv.TvController(remote, tv.parse_channels(None), api_url="http://127.0.0.1:19993/api",
+                          token="tok")
+    try:
+        await ctl.duck()
+        assert _HA.calls[-1][2] == {"entity_id": "remote.android_tv", "command": "VOLUME_DOWN",
+                                    "num_repeats": 35, "delay_secs": 0.1}
+        # Asked for the volume, Leyla tells the normal one
+        r = await ctl.run({"action": "status"})
+        assert r["volume_percent"] == 50
+        # Ducking twice does nothing
+        n = len(_HA.calls)
+        await ctl.duck()
+        assert len(_HA.calls) == n
+        # After the conversation it goes back up
+        player["attributes"]["volume_level"] = 0.15
+        await ctl.unduck()
+        assert _HA.calls[-1][2]["command"] == "VOLUME_UP"
+        assert _HA.calls[-1][2]["num_repeats"] == 35
+        # A volume request during the conversation starts from the normal volume
+        player["attributes"]["volume_level"] = 0.5
+        await ctl.duck()
+        player["attributes"]["volume_level"] = 0.15
+        await ctl.run({"action": "lauter", "steps": 3})
+        cmds = [c[2]["command"] for c in _HA.calls[-2:]]
+        assert cmds == ["VOLUME_UP", "VOLUME_UP"] and _HA.calls[-1][2]["num_repeats"] == 3
+        n = len(_HA.calls)
+        await ctl.unduck()  # nothing left to restore
+        assert len(_HA.calls) == n
+        # Quiet or muted TV: left alone
+        player["attributes"]["volume_level"] = 0.06
+        await ctl.duck()
+        player["attributes"].update(volume_level=0.5, is_volume_muted=True)
+        await ctl.duck()
+        assert len(_HA.calls) == n
+        # Switched off with TV_DUCK=false
+        player["attributes"]["is_volume_muted"] = False
+        monkeypatch.setenv("TV_DUCK", "false")
+        off = tv.TvController(remote, {}, api_url="http://127.0.0.1:19993/api", token="tok")
+        await off.duck()
+        assert len(_HA.calls) == n
+    finally:
+        _HA.states.pop("media_player.android_tv_2", None)
+        _HA.states.pop("remote.android_tv", None)
+        server.shutdown()
+
+
+async def test_no_duck_when_tv_is_off(tmp_path, monkeypatch):
+    _HA.calls.clear()
+    server = _server(19994)
+    remote = rf.RfRemote("", 433.87, str(tmp_path / "c.json"))
+    ctl = tv.TvController(remote, {}, api_url="http://127.0.0.1:19994/api", token="tok")
+    try:
+        await ctl.duck()  # remote.android_tv unknown -> not on
+        await ctl.unduck()
+        assert _HA.calls == []
+    finally:
+        server.shutdown()

@@ -23,6 +23,11 @@ logger = logging.getLogger(__name__)
 DEFAULT_CHANNELS = "atv Avrupa=1; A Haber=2; Euro D=6"
 DEFAULT_TV_REMOTE = "remote.android_tv"
 DEFAULT_TV_PLAYER = "media_player.android_tv_2"
+# While Leyla listens, the TV is turned down to DUCK_FACTOR of its volume, so that she
+# hears the family instead of the TV. Only when it is louder than DUCK_MIN_PERCENT.
+DUCK_FACTOR = 0.3
+DUCK_MIN_PERCENT = 8
+DUCK_STEP_DELAY_S = 0.1
 DIGITS = ["null", "eins", "zwei", "drei", "vier", "fuenf", "sechs", "sieben", "acht", "neun"]
 
 
@@ -113,7 +118,9 @@ TV_BACKEND_HINT = (
     "unknown channel name say which channels you know. 'Lauter' or 'leiser' without a number "
     "means 3 steps; 'viel lauter' about 6. When the user names a number ('Lautstärke 20', "
     "'sesi 30 yap'), use lautstaerke with volume_percent; 0 means mute. To tell the current "
-    "volume, use status. 'Stumm' or 'Ton aus' mutes, 'Ton wieder an' presses "
+    "volume, use status. While a conversation runs, the TV is turned down automatically and "
+    "goes back to its volume afterwards; volume requests work from the normal volume. "
+    "'Stumm' or 'Ton aus' mutes, 'Ton wieder an' presses "
     "stumm again. The receiver power button is a toggle; press it only when the user asks for "
     "the receiver. Always call the tool and confirm very briefly what was done; if it returns an "
     "error, say so honestly."
@@ -122,7 +129,9 @@ TV_BACKEND_HINT = (
 TV_LIVE_HINT = (
     "\n\nFernseher: Du kannst den Fernseher im Wohnzimmer über deinen Hintergrund (Delegation) "
     "bedienen: an, aus, Sender wechseln ({names}), lauter, leiser und stumm. Gib jede "
-    "Fernsehbitte sofort dorthin weiter und bestätige erst, wenn das Ergebnis zurück ist."
+    "Fernsehbitte sofort dorthin weiter und bestätige erst, wenn das Ergebnis zurück ist. "
+    "Solange ihr redet, ist der Fernseher automatisch leiser, damit du alle gut verstehst; "
+    "danach geht er von selbst wieder auf die alte Lautstärke."
 )
 
 
@@ -136,6 +145,9 @@ class TvController:
         self.tv_remote = tv_remote
         self.api_url = api_url or os.environ.get("HA_API_URL") or "http://supervisor/core/api"
         self.token = token if token is not None else os.environ.get("SUPERVISOR_TOKEN", "")
+        self.duck_enabled = (os.environ.get("TV_DUCK") or "true").strip().lower() != "false"
+        self._ducked_from: Optional[int] = None
+        self._lock = asyncio.Lock()
 
     @property
     def available(self) -> bool:
@@ -207,7 +219,43 @@ class TvController:
         return (None if level is None else round(float(level) * 100),
                 bool(attrs.get("is_volume_muted")))
 
-    async def _set_volume(self, target: int) -> dict:
+    async def duck(self) -> None:
+        """Turn the TV down while Leyla listens and remember the volume (see DUCK_FACTOR)."""
+        if not (self.available and self.duck_enabled):
+            return
+        async with self._lock:
+            if self._ducked_from is not None or await self._state() != "on":
+                return
+            current, muted = await self._volume()
+            if current is None or muted or current <= DUCK_MIN_PERCENT:
+                return
+            target = max(3, round(current * DUCK_FACTOR))
+            self._ducked_from = current
+            try:
+                await self._set_volume(target, DUCK_STEP_DELAY_S)
+                logger.info("TV turned down from %d to %d while Leyla listens", current, target)
+            except Exception as e:
+                logger.warning("Could not turn the TV down: %s", e)
+
+    async def unduck(self) -> None:
+        """Bring the TV back to the volume it had before the conversation."""
+        async with self._lock:
+            await self._unduck_locked()
+
+    async def _unduck_locked(self) -> None:
+        original, self._ducked_from = self._ducked_from, None
+        if original is None or await self._state() != "on":
+            return
+        current, muted = await self._volume()
+        if current is None or muted:
+            return
+        try:
+            await self._set_volume(original, DUCK_STEP_DELAY_S)
+            logger.info("TV volume back to %d", original)
+        except Exception as e:
+            logger.warning("Could not restore the TV volume: %s", e)
+
+    async def _set_volume(self, target: int, step_delay: float = 0.25) -> dict:
         target = max(0, min(100, int(target)))
         current, muted = await self._volume()
         if target == 0:
@@ -223,7 +271,8 @@ class TvController:
             diff = target - current
             if diff == 0:
                 break
-            await self._tv_key("VOLUME_UP" if diff > 0 else "VOLUME_DOWN", min(abs(diff), 60))
+            await self._tv_key("VOLUME_UP" if diff > 0 else "VOLUME_DOWN", min(abs(diff), 60),
+                               step_delay)
             await asyncio.sleep(1.5)
             new, _ = await self._volume()
             if new is None or new == current:
@@ -231,10 +280,10 @@ class TvController:
             current = new
         return {"done": f"Lautstärke {current}", "volume_percent": current}
 
-    async def _tv_key(self, command: str, repeats: int = 1) -> None:
+    async def _tv_key(self, command: str, repeats: int = 1, step_delay: float = 0.25) -> None:
         data = {"entity_id": self.tv_remote, "command": command}
         if repeats > 1:
-            data.update(num_repeats=repeats, delay_secs=0.25)
+            data.update(num_repeats=repeats, delay_secs=step_delay)
         await self._service("remote", "send_command", data)
 
     async def _channel(self, number: int) -> None:
@@ -252,6 +301,19 @@ class TvController:
 
     async def run(self, args: dict) -> dict:
         action = (args.get("action") or "").strip().lower()
+        if action not in ("status", "lauter", "leiser", "lautstaerke", "stumm", "aus"):
+            return await self._run(action, args)
+        async with self._lock:  # wait until turning down or back up is finished
+            if action == "status" and self._ducked_from is not None:
+                return {"tv": "an", "volume_percent": self._ducked_from, "muted": False,
+                        "note": "Während des Gesprächs ist der Fernseher automatisch leiser."}
+            if action == "aus":
+                self._ducked_from = None
+            elif action != "status":
+                await self._unduck_locked()  # volume requests start from the normal volume
+            return await self._run(action, args)
+
+    async def _run(self, action: str, args: dict) -> dict:
         try:
             if action == "an":
                 return await self._power(True)

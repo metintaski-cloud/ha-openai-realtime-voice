@@ -1,5 +1,5 @@
 name: GPT Live Voice
-version: "2.16.0"
+version: "2.17.0"
 slug: openai_realtime_voice
 description: WebSocket bridge from Voice PE to OpenAI GPT Live (natural voice conversation with web search)
 url: https://github.com/metintaski-cloud/ha-openai-realtime-voice
@@ -51,6 +51,7 @@ schema:
   rf_frequency: float?
   tv_channels: str?
   tv_remote: str?
+  tv_duck: bool?
   code_phrase: str?
   notify_service: str?
   announce_player: str?

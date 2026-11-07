@@ -292,6 +292,7 @@ class LiveVoiceBridge:
             self.recorder = AudioRecorder(output_dir="recordings")
 
         self._active_sessions: dict[str, websockets.WebSocketServerProtocol] = {}
+        self._background: set = set()
 
         if not self.openai_api_key:
             raise ValueError("OPENAI_API_KEY environment variable is required")
@@ -1231,6 +1232,8 @@ class LiveVoiceBridge:
         client_id = self._client_id_from_ws(client_ws)
         logger.info("Client connected: %s", client_id)
         start_time = time.monotonic()
+        if self.tv.available:
+            self._in_background(self.tv.duck())  # so Leyla hears the family, not the TV
 
         old_ws = self._active_sessions.get(client_id)
         if old_ws is not None:
@@ -1322,6 +1325,8 @@ class LiveVoiceBridge:
                     pass
             if self.recorder:
                 self.recorder.stop_recording()
+            if self.tv.available:
+                self._in_background(self.tv.unduck())
             try:
                 self._schedule_memory_update(state)
             except Exception as e:
@@ -1332,6 +1337,11 @@ class LiveVoiceBridge:
                 "Session ended: %s (duration: %.1fs, reason: %s)",
                 client_id, duration, reason,
             )
+
+    def _in_background(self, coro) -> None:
+        task = asyncio.create_task(coro)
+        self._background.add(task)
+        task.add_done_callback(self._background.discard)
 
     def _memory_maintenance(self) -> None:
         """Apply the forget_facts option and list the stored facts in the log."""
