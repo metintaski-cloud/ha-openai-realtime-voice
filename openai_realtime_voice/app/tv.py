@@ -23,11 +23,21 @@ logger = logging.getLogger(__name__)
 DEFAULT_CHANNELS = "atv Avrupa=1; A Haber=2; Euro D=6"
 DEFAULT_TV_REMOTE = "remote.android_tv"
 DEFAULT_TV_PLAYER = "media_player.android_tv_2"
-# While Leyla listens, the TV is turned down to DUCK_FACTOR of its volume, so that she
-# hears the family instead of the TV. Only when it is louder than DUCK_MIN_PERCENT.
+# While Leyla listens, the TV is turned down to DUCK_FACTOR of its volume, at most
+# DUCK_MAX_PERCENT, so that she hears the family instead of the TV. A TV that keeps
+# talking makes GPT Live wait for the end of a turn that never comes.
 DUCK_FACTOR = 0.3
+DUCK_MAX_PERCENT = 8
 DUCK_MIN_PERCENT = 8
-DUCK_STEP_DELAY_S = 0.1
+# After a volume request during a conversation, let the family hear the new volume
+# for a moment before turning the TV down again.
+REDUCK_AFTER_S = 4.0
+# Delay between volume key presses. 0.25 s made "Lautstärke 50" take 8 s, and while a
+# tool runs Leyla does not take the next request.
+STEP_DELAY_S = 0.1
+DUCK_STEP_DELAY_S = STEP_DELAY_S
+# How long to wait for the TV to report on or off before answering.
+POWER_WAIT_S = 4.5
 DIGITS = ["null", "eins", "zwei", "drei", "vier", "fuenf", "sechs", "sieben", "acht", "neun"]
 
 
@@ -148,6 +158,8 @@ class TvController:
         self.duck_enabled = (os.environ.get("TV_DUCK") or "true").strip().lower() != "false"
         self._ducked_from: Optional[int] = None
         self._lock = asyncio.Lock()
+        self.listening = False  # a conversation is running
+        self._tasks: set = set()
 
     @property
     def available(self) -> bool:
@@ -193,16 +205,41 @@ class TvController:
         else:
             await self._service("remote", "turn_on" if on else "turn_off",
                                 {"entity_id": self.tv_remote})
-        for _ in range(10):
+        if on:
+            self._later(self._duck_when_on())
+        for _ in range(int(POWER_WAIT_S / 1.5)):
             await asyncio.sleep(1.5)
             state = await self._state()
             if (state == "on") == on:
                 return {"done": "Fernseher eingeschaltet" if on else "Fernseher ausgeschaltet"}
-        if used_ir and on:
-            # The TV does not always report back quickly after waking up.
-            return {"done": "Ein/Aus Taste per Infrarot gedrückt",
-                    "note": "Der Fernseher hat sich noch nicht zurückgemeldet."}
-        return {"error": "Der Fernseher hat nicht reagiert."}
+        # Do not keep Leyla waiting: while a tool runs she takes no new request.
+        if on:
+            return {"done": "Einschalten gesendet",
+                    "note": "Der Fernseher startet noch, das dauert ein paar Sekunden."}
+        if used_ir:
+            return {"done": "Ein/Aus Taste per Infrarot gedrückt"}
+        return {"done": "Ausschalten gesendet",
+                "note": "Der Fernseher hat sich noch nicht als aus gemeldet."}
+
+    def _later(self, coro) -> None:
+        task = asyncio.create_task(coro)
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)
+
+    async def _duck_when_on(self) -> None:
+        """The TV was switched on during a conversation: turn it down once it is up."""
+        for _ in range(20):
+            await asyncio.sleep(1.5)
+            if not self.listening:
+                return
+            if await self._state() == "on" and (await self._volume())[0] is not None:
+                await self.duck()
+                return
+
+    async def _reduck_later(self) -> None:
+        await asyncio.sleep(REDUCK_AFTER_S)
+        if self.listening:
+            await self.duck()
 
     async def _player(self) -> dict:
         try:
@@ -223,13 +260,16 @@ class TvController:
         """Turn the TV down while Leyla listens and remember the volume (see DUCK_FACTOR)."""
         if not (self.available and self.duck_enabled):
             return
+        self.listening = True
         async with self._lock:
+            if not self.listening:
+                return  # the conversation ended meanwhile
             if self._ducked_from is not None or await self._state() != "on":
                 return
             current, muted = await self._volume()
             if current is None or muted or current <= DUCK_MIN_PERCENT:
                 return
-            target = max(3, round(current * DUCK_FACTOR))
+            target = max(2, min(round(current * DUCK_FACTOR), DUCK_MAX_PERCENT))
             self._ducked_from = current
             try:
                 await self._set_volume(target, DUCK_STEP_DELAY_S)
@@ -239,6 +279,7 @@ class TvController:
 
     async def unduck(self) -> None:
         """Bring the TV back to the volume it had before the conversation."""
+        self.listening = False
         async with self._lock:
             await self._unduck_locked()
 
@@ -255,7 +296,7 @@ class TvController:
         except Exception as e:
             logger.warning("Could not restore the TV volume: %s", e)
 
-    async def _set_volume(self, target: int, step_delay: float = 0.25) -> dict:
+    async def _set_volume(self, target: int, step_delay: float = STEP_DELAY_S) -> dict:
         target = max(0, min(100, int(target)))
         current, muted = await self._volume()
         if target == 0:
@@ -273,14 +314,15 @@ class TvController:
                 break
             await self._tv_key("VOLUME_UP" if diff > 0 else "VOLUME_DOWN", min(abs(diff), 60),
                                step_delay)
-            await asyncio.sleep(1.5)
+            await asyncio.sleep(1.0)
             new, _ = await self._volume()
             if new is None or new == current:
                 break
             current = new
         return {"done": f"Lautstärke {current}", "volume_percent": current}
 
-    async def _tv_key(self, command: str, repeats: int = 1, step_delay: float = 0.25) -> None:
+    async def _tv_key(self, command: str, repeats: int = 1,
+                      step_delay: float = STEP_DELAY_S) -> None:
         data = {"entity_id": self.tv_remote, "command": command}
         if repeats > 1:
             data.update(num_repeats=repeats, delay_secs=step_delay)
@@ -309,9 +351,15 @@ class TvController:
                         "note": "Während des Gesprächs ist der Fernseher automatisch leiser."}
             if action == "aus":
                 self._ducked_from = None
-            elif action != "status":
-                await self._unduck_locked()  # volume requests start from the normal volume
-            return await self._run(action, args)
+                return await self._run(action, args)
+            if action == "status":
+                return await self._run(action, args)
+            await self._unduck_locked()  # volume requests start from the normal volume
+            result = await self._run(action, args)
+        if self.listening and "error" not in result:
+            # The new volume is the one to come back to after the conversation.
+            self._later(self._reduck_later())
+        return result
 
     async def _run(self, action: str, args: dict) -> dict:
         try:

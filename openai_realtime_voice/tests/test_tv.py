@@ -43,7 +43,7 @@ async def test_controller(tmp_path, monkeypatch):
         assert dev.sent[-1] == b"rx_power" or dev.sent[-1] == b"tv_power"
         await ctl.run({"action": "lauter", "channel": None, "steps": None})
         assert _HA.calls[-1][2] == {"entity_id": "remote.android_tv", "command": "VOLUME_UP",
-                                    "num_repeats": 3, "delay_secs": 0.25}
+                                    "num_repeats": 3, "delay_secs": 0.1}
         await ctl.run({"action": "stumm", "channel": None, "steps": None})
         assert _HA.calls[-1][2]["command"] == "VOLUME_MUTE"
     finally:
@@ -95,7 +95,7 @@ async def test_duck_while_leyla_listens(tmp_path, monkeypatch):
     try:
         await ctl.duck()
         assert _HA.calls[-1][2] == {"entity_id": "remote.android_tv", "command": "VOLUME_DOWN",
-                                    "num_repeats": 35, "delay_secs": 0.1}
+                                    "num_repeats": 42, "delay_secs": 0.1}  # 50 -> 8
         # Asked for the volume, Leyla tells the normal one
         r = await ctl.run({"action": "status"})
         assert r["volume_percent"] == 50
@@ -115,9 +115,15 @@ async def test_duck_while_leyla_listens(tmp_path, monkeypatch):
         await ctl.run({"action": "lauter", "steps": 3})
         cmds = [c[2]["command"] for c in _HA.calls[-2:]]
         assert cmds == ["VOLUME_UP", "VOLUME_UP"] and _HA.calls[-1][2]["num_repeats"] == 3
+        # A moment later the TV goes down again, and the new volume is the one to restore
+        for _ in range(30):
+            await _orig(0.05)
+            if ctl._ducked_from is not None and not ctl._lock.locked():
+                break
+        assert _HA.calls[-1][2]["command"] == "VOLUME_DOWN" and ctl._ducked_from == 15
         n = len(_HA.calls)
-        await ctl.unduck()  # nothing left to restore
-        assert len(_HA.calls) == n
+        await ctl.unduck()  # fake TV still reports 15: nothing to press
+        assert len(_HA.calls) == n and not ctl.listening
         # Quiet or muted TV: left alone
         player["attributes"]["volume_level"] = 0.06
         await ctl.duck()

@@ -182,3 +182,8 @@ def test_few_terms_of_endearment():
     instructions = bridge._session_start()["session"]["instructions"]
     assert "Kosewörter" in instructions and "höchstens einmal" in instructions
     assert "canım" not in m.greeting_instruction("Merhaba")
+
+
+def test_never_only_announce():
+    instructions = _bridge()._session_start()["session"]["instructions"]
+    assert "Kündige nie etwas nur an" in instructions

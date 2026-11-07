@@ -108,3 +108,5 @@ Update when:
 
 - GPT Live streams reply audio at about real time. `_output_sender` holds each reply until 200 ms are buffered and then stays 200 ms ahead of playback; without that reserve the first words stuttered. The Voice PE queues only 10 chunks of 20 ms while its speaker starts, so keep the lead at 200 ms or the ESP drops audio.
 - GPT Live has no turn detection setting. With the TV on or people talking, it may never see the end of a turn and stays silent. When the transcript addresses Leyla by name (`addressed_by_name`) and she has not reacted within 5 s, the bridge sends a commentary nudge.
+- While a delegation runs, GPT Live does not start the next one: a request said meanwhile is acknowledged ("I'll look at the lamps") but never done, and the user has to repeat it. Keep tool calls short: the TV power call waits at most 4.5 s, volume keys use 0.1 s steps.
+- The TV is turned down while Leyla listens (`tv.duck`), also when it is switched on during the conversation, and again 4 s after a volume request; the requested volume is restored afterwards.
