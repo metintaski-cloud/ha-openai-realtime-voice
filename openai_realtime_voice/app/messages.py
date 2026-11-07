@@ -108,6 +108,7 @@ class MessageCenter:
         self.audio: dict[str, bytes] = {}
         self._wake = asyncio.Event()
         self.on_command: Optional[Callable[[dict], Awaitable[dict]]] = None
+        self.mute_switch = ""
 
     @property
     def available(self) -> bool:
@@ -206,10 +207,27 @@ class MessageCenter:
         key = uuid.uuid4().hex[:10]
         self.audio = {key: pcm_to_wav(pcm)}
         url = f"{self.base_url}/announce/{key}.wav"
+        # Mute the Voice PE microphone while it speaks, so the announcement cannot
+        # wake Leyla herself.
+        if self.mute_switch:
+            try:
+                await self._service("switch", "turn_on", {"entity_id": self.mute_switch})
+            except Exception as e:
+                logger.info("Could not mute during announcement: %s", e)
         await self._service("media_player", "play_media", {
             "entity_id": self.media_player, "media_content_id": url,
             "media_content_type": "music", "announce": True,
         })
+        if self.mute_switch:
+            seconds = len(pcm) / 48000 + 2.5
+            asyncio.get_event_loop().call_later(
+                seconds, lambda: asyncio.ensure_future(self._unmute()))
+
+    async def _unmute(self) -> None:
+        try:
+            await self._service("switch", "turn_off", {"entity_id": self.mute_switch})
+        except Exception as e:
+            logger.warning("Could not unmute after announcement: %s", e)
 
     async def _announce(self, p: dict) -> None:
         prompt = (
@@ -349,7 +367,7 @@ class MessageCenter:
 
 
 def from_env(speak) -> MessageCenter:
-    return MessageCenter(
+    mc = MessageCenter(
         speak,
         notify_service=_env("NOTIFY_SERVICE"),
         media_player=_env("ANNOUNCE_PLAYER", "media_player.home_assistant_voice_0ae305_media_player"),
@@ -357,3 +375,5 @@ def from_env(speak) -> MessageCenter:
         port=int(_env("ANNOUNCE_PORT", "8082")),
         path=_env("MESSAGES_PATH", "/data/messages.json"),
     )
+    mc.mute_switch = _env("ANNOUNCE_MUTE_SWITCH", "switch.home_assistant_voice_0ae305_mute")
+    return mc

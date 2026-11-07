@@ -433,8 +433,9 @@ class LiveVoiceBridge:
                     await asyncio.sleep(0.1)
 
             feeder = None
+            loud_end = 0
             while loop.time() < end:
-                wait = 2.5 if last_audio else end - loop.time()
+                wait = 2.0 if last_audio else end - loop.time()
                 try:
                     raw = await asyncio.wait_for(ws.recv(), timeout=max(0.1, wait))
                 except asyncio.TimeoutError:
@@ -453,8 +454,16 @@ class LiveVoiceBridge:
                         "event_id": f"announce_{uuid.uuid4().hex[:8]}",
                         "delegation_id": None, "content": prompt}))
                 elif t == "session.output_audio.delta" and ev.get("delta"):
-                    pcm += base64.standard_b64decode(ev["delta"])
-                    last_audio = loop.time()
+                    chunk_pcm = base64.standard_b64decode(ev["delta"])
+                    _, peak = pcm_level(chunk_pcm)
+                    if peak >= OUTPUT_SILENCE_PEAK:
+                        last_audio = loop.time()
+                        pcm += chunk_pcm
+                        loud_end = len(pcm)
+                    elif last_audio:
+                        pcm += chunk_pcm  # pauses inside the speech
+                    if last_audio and loop.time() - last_audio > 2.0:
+                        break  # GPT Live keeps sending silence after the speech
                 elif t == "error":
                     raise RuntimeError(f"GPT Live: {ev.get('error')}")
             if feeder:
@@ -467,6 +476,7 @@ class LiveVoiceBridge:
             if feeder and not feeder.done():
                 feeder.cancel()
             await ws.close()
+        pcm = pcm[:loud_end + BYTES_PER_SEC // 4]  # drop trailing silence
         logger.info("Announcement audio: %.1f s", len(pcm) / (SAMPLE_RATE * 2))
         return bytes(pcm)
 
