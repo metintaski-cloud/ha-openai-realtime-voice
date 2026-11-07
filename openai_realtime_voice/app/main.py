@@ -407,9 +407,11 @@ class LiveVoiceBridge:
                 "event_id": "event_announce",
                 "session": {
                     "model": self.live_model,
-                    "instructions": ("Du bist Leyla, eine warme, liebe Sprachassistentin. Du "
-                                     "machst nur eine kurze Ansage, so wie verlangt, und "
-                                     "redest danach nicht weiter."),
+                    "instructions": ("Du bist Leyla, eine warme, fröhliche und lebendige "
+                                     "Sprachassistentin der Familie. Du sprichst mit viel "
+                                     "Gefühl, natürlicher Betonung und einem Lächeln in der "
+                                     "Stimme, nie monoton. Du machst nur die verlangte kurze "
+                                     "Ansage und redest danach nicht weiter."),
                     "audio": {"format": {"type": "audio/pcm", "rate": SAMPLE_RATE},
                               "output": {"voice": self.voice}},
                     "delegation": {"type": "responses", "responses": {
