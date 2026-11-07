@@ -231,6 +231,7 @@ class LiveVoiceBridge:
         self.fan = fan.FanController(self.rf)
         self.tv = tv.from_env(self.rf)
         self.messages = messages.from_env(self._speak_once)
+        self.messages.on_command = self._automation_command
         self.memory = memory.MemoryStore(os.environ.get("MEMORY_PATH", "/data/memory.json"))
         self._memory_tasks: set = set()
         self.recorder: Optional[AudioRecorder] = None
@@ -452,6 +453,24 @@ class LiveVoiceBridge:
             await ws.close()
         logger.info("Announcement audio: %.1f s", len(pcm) / (SAMPLE_RATE * 2))
         return bytes(pcm)
+
+    async def _automation_command(self, data: dict) -> dict:
+        """Event leyla_command from a Home Assistant automation, e.g.
+        {"device": "ventilator", "action": "licht"} or {"device": "fernseher", "action": "aus"}."""
+        device = (data.get("device") or "").lower()
+        args = {k: v for k, v in data.items() if k != "device"}
+        args.setdefault("speed", None)
+        args.setdefault("hours", None)
+        if device in ("ventilator", "fan"):
+            result = await self.fan.run(args)
+        elif device in ("fernseher", "tv"):
+            args.setdefault("channel", None)
+            args.setdefault("steps", None)
+            result = await self.tv.run(args)
+        else:
+            result = {"error": f"unknown device {device}"}
+        logger.info("Automation command %s -> %s", data, result)
+        return result
 
     async def _run_message_tool(self, live_ws, call_id: str, raw_args) -> None:
         try:

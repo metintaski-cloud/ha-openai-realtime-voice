@@ -107,6 +107,7 @@ class MessageCenter:
         self.token = token if token is not None else os.environ.get("SUPERVISOR_TOKEN", "")
         self.audio: dict[str, bytes] = {}
         self._wake = asyncio.Event()
+        self.on_command: Optional[Callable[[dict], Awaitable[dict]]] = None
 
     @property
     def available(self) -> bool:
@@ -277,6 +278,8 @@ class MessageCenter:
                                               "event_type": "state_changed"}))
                     await ws.send(json.dumps({"id": 3, "type": "subscribe_events",
                                               "event_type": "leyla_announce"}))
+                    await ws.send(json.dumps({"id": 4, "type": "subscribe_events",
+                                              "event_type": "leyla_command"}))
                     logger.info("Listening for messages from Metin")
                     async for raw in ws:
                         msg = json.loads(raw)
@@ -284,7 +287,12 @@ class MessageCenter:
                             continue
                         ev = msg.get("event", {})
                         data = ev.get("data", {})
-                        if ev.get("event_type") == "leyla_announce":
+                        if ev.get("event_type") == "leyla_command" and self.on_command:
+                            task = asyncio.create_task(self.on_command(dict(data)))
+                            task.add_done_callback(
+                                lambda t: t.exception() and logger.warning(
+                                    "Command failed: %s", t.exception()))
+                        elif ev.get("event_type") == "leyla_announce":
                             task = asyncio.create_task(self.say(data.get("text", "")))
                             task.add_done_callback(
                                 lambda t: t.exception() and logger.warning(
