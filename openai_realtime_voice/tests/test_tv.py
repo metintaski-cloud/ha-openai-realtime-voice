@@ -48,3 +48,30 @@ async def test_controller(tmp_path, monkeypatch):
         assert _HA.calls[-1][2]["command"] == "VOLUME_MUTE"
     finally:
         server.shutdown()
+
+
+async def test_volume(tmp_path, monkeypatch):
+    import asyncio as _a
+    _orig = _a.sleep
+    monkeypatch.setattr(tv.asyncio, "sleep", lambda s: _orig(0))
+    _HA.calls.clear()
+    _HA.states["media_player.android_tv_2"] = {
+        "entity_id": "media_player.android_tv_2", "state": "on",
+        "attributes": {"volume_level": 0.2, "is_volume_muted": False}}
+    server = _server(19992)
+    remote = rf.RfRemote("", 433.87, str(tmp_path / "c.json"))
+    ctl = tv.TvController(remote, tv.parse_channels(None), api_url="http://127.0.0.1:19992/api",
+                          token="tok")
+    try:
+        await ctl.run({"action": "lautstaerke", "volume_percent": 30})
+        assert _HA.calls[-1][2]["command"] == "VOLUME_UP" and _HA.calls[-1][2]["num_repeats"] == 10
+        r = await ctl.run({"action": "lautstaerke", "volume_percent": 0})
+        assert _HA.calls[-1][2]["command"] == "VOLUME_MUTE" and r["volume_percent"] == 0
+        _HA.states["remote.android_tv"] = {"entity_id": "remote.android_tv", "state": "on",
+                                           "attributes": {}}
+        r = await ctl.run({"action": "status"})
+        assert r["tv"] == "an" and r["volume_percent"] == 20
+    finally:
+        _HA.states.pop("media_player.android_tv_2", None)
+        _HA.states.pop("remote.android_tv", None)
+        server.shutdown()

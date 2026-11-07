@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_CHANNELS = "atv Avrupa=1; A Haber=2; Euro D=6"
 DEFAULT_TV_REMOTE = "remote.android_tv"
+DEFAULT_TV_PLAYER = "media_player.android_tv_2"
 DIGITS = ["null", "eins", "zwei", "drei", "vier", "fuenf", "sechs", "sieben", "acht", "neun"]
 
 
@@ -72,14 +73,17 @@ def build_tool(channels: dict[str, int]) -> dict:
             "Control the living room TV (Turkish: televizyon) and its satellite receiver. "
             "an or aus: TV power. kanal: switch the receiver to a channel by name or number; "
             f"known channels: {names}. lauter, leiser: TV volume by some steps. stumm: mute or "
-            "unmute the TV sound. receiver: press the power button of the receiver."
+            "unmute the TV sound. lautstaerke: set the volume to an exact value 0 to 100. "
+            "status: read whether the TV is on and the current volume. receiver: press the "
+            "power button of the receiver."
         ),
         "parameters": {
             "type": "object",
             "properties": {
                 "action": {
                     "type": "string",
-                    "enum": ["an", "aus", "kanal", "lauter", "leiser", "stumm", "receiver"],
+                    "enum": ["an", "aus", "kanal", "lauter", "leiser", "lautstaerke", "stumm",
+                             "status", "receiver"],
                 },
                 "channel": {
                     "type": ["string", "null"],
@@ -91,7 +95,12 @@ def build_tool(channels: dict[str, int]) -> dict:
                                    "otherwise null.",
                 },
             },
-            "required": ["action", "channel", "steps"],
+                "volume_percent": {
+                    "type": ["integer", "null"],
+                    "description": "For action lautstaerke: exact TV volume 0 to 100 "
+                                   "(0 means mute), otherwise null.",
+                },
+            "required": ["action", "channel", "steps", "volume_percent"],
             "additionalProperties": False,
         },
     }
@@ -102,7 +111,9 @@ TV_BACKEND_HINT = (
     "televizyon). Channels known by name: {names}. When the user names one of them, also with "
     "a different spelling or in Turkish ('A Haber'yi aç', 'atv koy'), use that channel. For an "
     "unknown channel name say which channels you know. 'Lauter' or 'leiser' without a number "
-    "means 3 steps; 'viel lauter' about 6. 'Stumm' or 'Ton aus' mutes, 'Ton wieder an' presses "
+    "means 3 steps; 'viel lauter' about 6. When the user names a number ('Lautstärke 20', "
+    "'sesi 30 yap'), use lautstaerke with volume_percent; 0 means mute. To tell the current "
+    "volume, use status. 'Stumm' or 'Ton aus' mutes, 'Ton wieder an' presses "
     "stumm again. The receiver power button is a toggle; press it only when the user asks for "
     "the receiver. Always call the tool and confirm very briefly what was done; if it returns an "
     "error, say so honestly."
@@ -117,8 +128,10 @@ TV_LIVE_HINT = (
 
 class TvController:
     def __init__(self, remote, channels: dict[str, int], tv_remote: str = DEFAULT_TV_REMOTE,
-                 api_url: Optional[str] = None, token: Optional[str] = None) -> None:
+                 api_url: Optional[str] = None, token: Optional[str] = None,
+                 tv_player: str = DEFAULT_TV_PLAYER) -> None:
         self.rf = remote
+        self.tv_player = tv_player
         self.channels = channels
         self.tv_remote = tv_remote
         self.api_url = api_url or os.environ.get("HA_API_URL") or "http://supervisor/core/api"
@@ -179,6 +192,45 @@ class TvController:
                     "note": "Der Fernseher hat sich noch nicht zurückgemeldet."}
         return {"error": "Der Fernseher hat nicht reagiert."}
 
+    async def _player(self) -> dict:
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                resp = await client.get(f"{self.api_url}/states/{self.tv_player}",
+                                        headers={"Authorization": f"Bearer {self.token}"})
+            return resp.json() if resp.status_code == 200 else {}
+        except Exception:
+            return {}
+
+    async def _volume(self) -> tuple[Optional[int], bool]:
+        attrs = (await self._player()).get("attributes") or {}
+        level = attrs.get("volume_level")
+        return (None if level is None else round(float(level) * 100),
+                bool(attrs.get("is_volume_muted")))
+
+    async def _set_volume(self, target: int) -> dict:
+        target = max(0, min(100, int(target)))
+        current, muted = await self._volume()
+        if target == 0:
+            if not muted:
+                await self._tv_key("VOLUME_MUTE")
+            return {"done": "Ton stumm", "volume_percent": 0}
+        if current is None:
+            return {"error": "Ich kann die aktuelle Lautstärke gerade nicht lesen."}
+        if muted:
+            await self._tv_key("VOLUME_MUTE")
+            await asyncio.sleep(0.8)
+        for _ in range(3):
+            diff = target - current
+            if diff == 0:
+                break
+            await self._tv_key("VOLUME_UP" if diff > 0 else "VOLUME_DOWN", min(abs(diff), 60))
+            await asyncio.sleep(1.5)
+            new, _ = await self._volume()
+            if new is None or new == current:
+                break
+            current = new
+        return {"done": f"Lautstärke {current}", "volume_percent": current}
+
     async def _tv_key(self, command: str, repeats: int = 1) -> None:
         data = {"entity_id": self.tv_remote, "command": command}
         if repeats > 1:
@@ -213,6 +265,18 @@ class TvController:
                 steps = max(1, min(15, steps))
                 await self._tv_key("VOLUME_UP" if action == "lauter" else "VOLUME_DOWN", steps)
                 return {"done": f"{steps} Stufen {action}"}
+            if action == "lautstaerke":
+                if args.get("volume_percent") is None:
+                    return {"error": "Welche Lautstärke? 0 bis 100."}
+                return await self._set_volume(args["volume_percent"])
+            if action == "status":
+                state = await self._state()
+                volume, muted = await self._volume()
+                out = {"tv": "an" if state == "on" else "aus"}
+                if state == "on" and volume is not None:
+                    out["volume_percent"] = 0 if muted else volume
+                    out["muted"] = muted
+                return out
             if action == "stumm":
                 await self._tv_key("VOLUME_MUTE")
                 return {"done": "Stummtaste gedrückt"}
