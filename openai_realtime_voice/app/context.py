@@ -78,6 +78,34 @@ async def _ha_config(client: httpx.AsyncClient) -> Optional[dict]:
     return resp.json()
 
 
+INDOOR_TEMP = "sensor.wohnzimmer_wohnzimmer_fernbedienung_temperatur"
+INDOOR_HUMIDITY = "sensor.wohnzimmer_wohnzimmer_fernbedienung_luftfeuchtigkeit"
+
+
+async def _indoor(client: httpx.AsyncClient) -> str:
+    """Living room temperature and humidity from the RM4 Pro sensor cable (HTS2)."""
+    token = os.environ.get("SUPERVISOR_TOKEN")
+    if not token:
+        return ""
+    base = os.environ.get("HA_API_URL", "http://supervisor/core/api")
+    vals = {}
+    for key, ent in (("t", os.environ.get("INDOOR_TEMP_SENSOR") or INDOOR_TEMP),
+                     ("h", os.environ.get("INDOOR_HUMIDITY_SENSOR") or INDOOR_HUMIDITY)):
+        try:
+            resp = await client.get(f"{base}/states/{ent}",
+                                    headers={"Authorization": f"Bearer {token}"})
+            if resp.status_code == 200:
+                vals[key] = float(resp.json().get("state"))
+        except Exception:
+            pass
+    if "t" not in vals:
+        return ""
+    text = f"Im Wohnzimmer sind es gerade {vals['t']:.1f} °C".replace(".", ",")
+    if "h" in vals:
+        text += f" bei {round(vals['h'])} % Luftfeuchtigkeit"
+    return text + "."
+
+
 async def build_context() -> str:
     """Return a short German text block with date, time and weather (or '')."""
     cached = _cache.get("ctx")
@@ -129,4 +157,8 @@ async def build_context() -> str:
                     logger.info("Weather not available: %s", e)
             if weather:
                 lines.append(weather)
+
+        indoor = await _indoor(client)
+        if indoor:
+            lines.append(indoor)
     return "\n\nAktuelle Lage (nutze es nur, wenn es passt):\n" + "\n".join(lines)
