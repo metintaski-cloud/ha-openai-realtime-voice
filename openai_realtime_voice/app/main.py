@@ -31,6 +31,7 @@ from datetime import datetime
 from typing import Optional
 
 import dotenv
+import httpx
 import websockets
 
 from app.audio_recorder import AudioRecorder
@@ -64,6 +65,21 @@ IDLE_TIMEOUT_S = 30.0
 NO_SPEECH_TIMEOUT_S = 15.0  # false wake: nobody speaks, end silently
 FOLLOWUP_MAX_WAIT_S = 15.0  # Leyla starts a conversation: the Voice PE connects within this
 FOLLOWUP_NO_SPEECH_S = 35.0  # she speaks first, then the family needs time to answer
+
+# 23:00 every day (Home Assistant automation, event leyla_command device "nacht"): Leyla
+# asks whether to switch lamps and fan off; without an answer she switches them off.
+NIGHT_WAIT_S = 70.0
+NIGHT_KEEP_RE = re.compile(
+    r"\b(hay[ıi]r|kals[ıi]n|kapatma|istemiyorum|bekle|nein|nicht|lass|bleib)\b", re.IGNORECASE)
+NIGHT_PROMPT = (
+    "Du meldest dich gerade von selbst, weil es 23 Uhr ist. Frag auf Türkisch kurz und lieb, "
+    "ob du die Lampen und den Ventilator ausschalten sollst, und sag dazu, dass du es in einer "
+    "Minute machst, wenn niemand antwortet, zum Beispiel „Saat on bir oldu. Lambaları ve "
+    "vantilatörü kapatayım mı? Cevap gelmezse bir dakika sonra kapatacağım.“ Sagt jemand ja, "
+    "schalte über deinen Hintergrund alle Stehlampen aus, dazu Ventilator und Ventilatorlicht "
+    "(licht_aus), und wünsch kurz eine gute Nacht. Sagt jemand nein oder will etwas anlassen, "
+    "lass es so und sag kurz tamam. Antwortet niemand, sag nichts mehr."
+)
 MAX_SESSION_S = 600.0
 
 # GPT Live is full duplex and wants a continuous input stream. The Voice PE mutes its
@@ -308,6 +324,7 @@ class LiveVoiceBridge:
         self._followup: Optional[dict] = None
         self._started_as_followup = False
         self._live_sessions: dict = {}
+        self._night: Optional[dict] = None  # the 23:00 question is open, collects answers
         if self.fan.power_sensor:
             self.messages.state_listeners[self.fan.power_sensor] = self.fan.on_power_state
         self.memory = memory.MemoryStore(os.environ.get("MEMORY_PATH", "/data/memory.json"))
@@ -611,6 +628,9 @@ class LiveVoiceBridge:
         """Event leyla_command from a Home Assistant automation, e.g.
         {"device": "ventilator", "action": "licht"} or {"device": "fernseher", "action": "aus"}."""
         device = (data.get("device") or "").lower()
+        if device == "nacht":
+            self._in_background(self._night_check())
+            return {"started": "night check"}
         args = {k: v for k, v in data.items() if k != "device"}
         args.setdefault("speed", None)
         args.setdefault("hours", None)
@@ -682,6 +702,57 @@ class LiveVoiceBridge:
                     }))
                     logger.info("Greeting requested")
                 return event
+
+    async def _anything_on(self) -> bool:
+        if self.lights.available:
+            try:
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    states = await self.lights._states(client, self.lights.entities)
+                if any(st.get("state") == "on" for st in states):
+                    return True
+            except Exception as e:
+                logger.info("Lamp status for the night check: %s", e)
+        watts = await self.fan.power()
+        return bool(watts and watts >= fan.OFF_W)
+
+    async def _all_off(self) -> None:
+        if self.lights.available:
+            await self.lights.run({"lamps": [], "action": "off", "brightness_percent": None,
+                                   "white": None, "color": None})
+        watts = await self.fan.power()
+        if watts is not None and watts >= fan.OFF_W:
+            state = self.fan.describe(watts)
+            if state.get("ventilator") != "aus":
+                await self.fan.run({"action": "aus", "speed": None, "hours": None})
+                await asyncio.sleep(2.5)
+            if state.get("licht") != "aus":
+                await self.fan.run({"action": "licht_aus", "speed": None, "hours": None})
+
+    async def _night_check(self) -> None:
+        """23:00: ask whether to switch everything off; without an answer, switch off."""
+        if self._night is not None:
+            return
+        try:
+            if not await self._anything_on():
+                logger.info("Night check: everything is already off")
+                return
+            self._night = {"text": ""}
+            asked = await self._converse(NIGHT_PROMPT)
+            logger.info("Night check: asked %s", "in a conversation" if asked else "not possible")
+            await asyncio.sleep(NIGHT_WAIT_S if asked else 0)
+            answer = self._night["text"]
+            if NIGHT_KEEP_RE.search(answer):
+                logger.info("Night check: keep on (%r)", answer[-120:])
+                return
+            if not await self._anything_on():
+                logger.info("Night check: switched off in the conversation")
+                return
+            await self._all_off()
+            logger.info("Night check: no answer, lamps and fan switched off")
+        except Exception as e:
+            logger.warning("Night check failed: %s", e)
+        finally:
+            self._night = None
 
     async def _converse(self, prompt: str) -> bool:
         """Bring something up in a conversation: in the running one, or Leyla starts a
@@ -1040,6 +1111,8 @@ class LiveVoiceBridge:
                     state["last_activity"] = time.monotonic()
                     recent = (state.get("recent_user_text", "") + delta)[-80:]
                     state["recent_user_text"] = recent
+                    if self._night is not None:
+                        self._night["text"] += delta
                     self._note_name_mention(live_ws, state, delta)
                     if self.messages.available and messages.is_ack(recent) \
                             and self.messages.pending():

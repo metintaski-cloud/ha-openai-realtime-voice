@@ -241,3 +241,70 @@ async def test_no_conversation_when_device_does_not_answer(monkeypatch):
     monkeypatch.setattr(bridge.messages, "token", "t")
     assert not await bridge._converse("x")
     assert bridge._followup is None
+
+
+async def _night(monkeypatch, answer, lamps_on=True, can_ask=True):
+    monkeypatch.setattr(m, "NIGHT_WAIT_S", 0.05)
+    bridge = _bridge()
+    actions = []
+    lamps = {"on": lamps_on}
+
+    async def anything_on():
+        return lamps["on"]
+
+    async def all_off():
+        actions.append("off")
+        lamps["on"] = False
+
+    async def converse(prompt):
+        actions.append("asked")
+        if answer:
+            bridge._night["text"] += answer
+        return can_ask
+
+    bridge._anything_on, bridge._all_off, bridge._converse = anything_on, all_off, converse
+    await bridge._night_check()
+    return actions, bridge
+
+
+async def test_night_check_switches_off_without_answer(monkeypatch):
+    actions, bridge = await _night(monkeypatch, "")
+    assert actions == ["asked", "off"] and bridge._night is None
+
+
+async def test_night_check_keeps_on_when_told(monkeypatch):
+    actions, _ = await _night(monkeypatch, "Hayır, açık kalsın")
+    assert actions == ["asked"]
+
+
+async def test_night_check_nothing_on(monkeypatch):
+    actions, _ = await _night(monkeypatch, "", lamps_on=False)
+    assert actions == []
+
+
+async def test_night_check_via_automation_event(monkeypatch):
+    bridge = _bridge()
+    started = []
+
+    async def night():
+        started.append(True)
+
+    bridge._night_check = night
+    r = await bridge._automation_command({"device": "nacht"})
+    await asyncio.sleep(0)
+    assert r == {"started": "night check"} and started
+
+
+async def test_anything_on_reads_lamps(monkeypatch):
+    bridge = _bridge()
+
+    async def states(client, ids):
+        return [{"entity_id": i, "state": "off"} for i in ids[:-1]] + [{"state": "on"}]
+
+    async def power():
+        return 0.0
+
+    monkeypatch.setattr(bridge.lights, "token", "t")
+    monkeypatch.setattr(bridge.lights, "_states", states)
+    monkeypatch.setattr(bridge.fan, "power", power)
+    assert await bridge._anything_on()
