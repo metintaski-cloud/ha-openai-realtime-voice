@@ -28,6 +28,8 @@ from collections import deque
 from typing import Optional
 
 import httpx
+import websockets
+from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +45,10 @@ BUTTONS = {
 TIMERS = {1: "timer1", 2: "timer2", 4: "timer4"}
 
 DEFAULT_POWER_SENSOR = "sensor.ventilator_leistung"
+DEFAULT_ENERGY_SENSOR = "sensor.ventilator_energie"
+# Average German household price (Destatis, first half of 2026: 37.97 ct/kWh); the
+# add-on option strompreis_ct sets the family's own tariff.
+DEFAULT_PRICE_CT = 38.0
 LIGHT_W = 16.0                    # typical fan light
 LIGHT_MIN_W, LIGHT_MAX_W = 13.0, 19.5
 FAN_W = {0: 0.0, 1: 5.2, 2: 6.6, 3: 10.7, 4: 14.8, 5: 19.1, 6: 28.5}
@@ -82,7 +88,8 @@ FAN_TOOL = {
         "an: power button, fan on at its last speed. licht_an or licht_aus: switch the fan light "
         "on or off; the power meter checks the result and corrects it. licht: only toggle the "
         "light without checking. status: what is on (light, fan and about which speed), from "
-        "the power meter. naturwind: natural wind mode. "
+        "the power meter. stromkosten: what fan and light cost in electricity (now per hour, "
+        "today, since measuring started, estimate per month). naturwind: natural wind mode. "
         "links or rechts: turning direction. timer: switch off after 1, 2 or 4 hours."
     ),
     "parameters": {
@@ -91,7 +98,7 @@ FAN_TOOL = {
             "action": {
                 "type": "string",
                 "enum": ["aus", "an", "stufe", "licht_an", "licht_aus", "licht", "status",
-                         "naturwind", "links", "rechts", "timer"],
+                         "stromkosten", "naturwind", "links", "rechts", "timer"],
             },
             "speed": {
                 "type": ["integer", "null"],
@@ -121,7 +128,8 @@ FAN_BACKEND_HINT = (
     "Direction: links means turning left (counterclockwise), rechts means turning right "
     "(clockwise). Timers switch the fan off after 1, 2 or 4 hours. Always call the tool, also "
     "when the same request was made before, and confirm very briefly what was sent. If the tool "
-    "returns an error, say so honestly."
+    "returns an error, say so honestly. For electricity costs of fan and light use "
+    "stromkosten and say the amounts in euros and cents, rounded, in one or two sentences."
 )
 
 FAN_LIVE_HINT = (
@@ -169,6 +177,14 @@ class FanController:
         self.power_sensor = power_sensor
         self.api_url = api_url or os.environ.get("HA_API_URL") or "http://supervisor/core/api"
         self.token = token if token is not None else os.environ.get("SUPERVISOR_TOKEN", "")
+        self.energy_sensor = (os.environ.get("FAN_ENERGY_SENSOR") or "").strip() or \
+            DEFAULT_ENERGY_SENSOR
+        try:
+            self.price_ct = float(os.environ.get("STROMPREIS_CT") or DEFAULT_PRICE_CT)
+        except ValueError:
+            self.price_ct = DEFAULT_PRICE_CT
+        if self.price_ct <= 0:
+            self.price_ct = DEFAULT_PRICE_CT
         self.light_on: Optional[bool] = None  # what we know about the light
         self.speed: Optional[int] = None      # what we know about the fan, 0 = stopped
         self.light_w: Optional[float] = None  # measured power of the light
@@ -208,6 +224,89 @@ class FanController:
             self.speed = saved.get("speed")
             self.light_w = saved.get("light_w")
             logger.info("Fan state restored: light %s, speed %s", self.light_on, self.speed)
+
+    async def _api(self, method: str, path: str, **kw):
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.request(method, f"{self.api_url}/{path}",
+                                        headers={"Authorization": f"Bearer {self.token}"}, **kw)
+        resp.raise_for_status()
+        return resp
+
+    async def _stat_change(self, start_iso: str, period: str) -> Optional[float]:
+        """Energy used since start_iso, from Home Assistant's statistics. They also count
+        right when the Shelly restarts and its own counter begins at 0 again."""
+        u = urlparse(self.api_url)
+        ws_url = f"{'wss' if u.scheme == 'https' else 'ws'}://{u.netloc}" + \
+            u.path.rsplit("/api", 1)[0] + "/websocket"
+        async with websockets.connect(ws_url, max_size=None, open_timeout=5) as ws:
+            await ws.recv()
+            await ws.send(json.dumps({"type": "auth", "access_token": self.token}))
+            if json.loads(await ws.recv()).get("type") != "auth_ok":
+                return None
+            await ws.send(json.dumps({
+                "id": 1, "type": "recorder/statistics_during_period",
+                "start_time": start_iso, "statistic_ids": [self.energy_sensor],
+                "period": period, "types": ["change"]}))
+            msg = json.loads(await asyncio.wait_for(ws.recv(), 10))
+        rows = (msg.get("result") or {}).get(self.energy_sensor) or []
+        return sum(float(r.get("change") or 0.0) for r in rows)
+
+    async def energy_report(self) -> dict:
+        """Electricity cost of fan and light: now, today, since measuring started."""
+        price = self.price_ct
+        out: dict = {"strompreis_ct_pro_kwh": price}
+        watts = await self.power()
+        if watts is not None:
+            out["jetzt_watt"] = round(watts, 1)
+            out["jetzt_cent_pro_stunde"] = round(watts / 1000 * price, 2)
+        midnight = (await self._api("POST", "template", json={
+            "template": "{{ today_at().isoformat() }}"})).text.strip()
+        since = await self._measuring_since()
+        try:
+            today = await self._stat_change(midnight, "5minute")
+            total = None
+            if since is not None:
+                since_iso = (await self._api("POST", "template", json={
+                    "template": "{{ as_datetime(%d).isoformat() }}" % int(since)})).text.strip()
+                total = await self._stat_change(since_iso, "hour")
+                total = max(total or 0.0, today or 0.0)
+        except Exception as e:
+            logger.warning("Energy statistics failed: %s", e)
+            today = total = None
+        if today is None:  # fall back to the meter's own counter
+            state = (await self._api("GET", f"states/{self.energy_sensor}")).json()
+            today = total = float(state["state"])
+        out["heute_kwh"] = round(today, 3)
+        out["heute_cent"] = round(today * price, 1)
+        if total is not None and since is not None:
+            days = (time.time() - since) / 86400
+            out["gesamt_kwh"] = round(total, 3)
+            out["gesamt_cent"] = round(total * price, 1)
+            out["gemessen_seit_tagen"] = round(days, 1)
+            if days >= 2:
+                out["schaetzung_monat_euro"] = round(total / days * 30 * price / 100, 2)
+            else:
+                out["note"] = ("Erst seit Kurzem gemessen; eine Monatsschätzung gibt es nach ein "
+                               "paar Tagen. Grob: eine Stunde Licht kostet etwa 0,6 Cent, eine "
+                               "Stunde Ventilator auf Stufe 6 etwa 1,1 Cent.")
+        return out
+
+    async def _measuring_since(self) -> Optional[float]:
+        """When the energy meter started, from the saved state file or now."""
+        if not self.state_path:
+            return None
+        path = self.state_path + ".since"
+        try:
+            with open(path) as f:
+                return float(f.read().strip())
+        except (OSError, ValueError):
+            now = time.time()
+            try:
+                with open(path, "w") as f:
+                    f.write(str(now))
+            except OSError:
+                return None
+            return now
 
     async def power(self) -> Optional[float]:
         """Watts from the power meter, None when there is none."""
@@ -395,6 +494,10 @@ class FanController:
         try:
             if action in ("licht_an", "licht_aus"):
                 return await self.set_light(action == "licht_an")
+            if action == "stromkosten":
+                if not self.token:
+                    return {"error": "Der Ventilator hat keinen Strommesser."}
+                return await self.energy_report()
             if action == "status":
                 watts = await self.power()
                 if watts is None:

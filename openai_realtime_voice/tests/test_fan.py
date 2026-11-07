@@ -189,3 +189,33 @@ def test_state_survives_restart(tmp_path):
     assert b.describe(18.0) == {"watt": 18.0, "licht": "an", "ventilator": "aus"}
     c = fan.FanController(None, power_sensor="s", token="", state_path=path)
     assert c.describe(14.8)["licht"] == "unklar"  # power changed meanwhile: not trusted
+
+
+async def test_energy_costs(tmp_path, monkeypatch):
+    import time
+    monkeypatch.setenv("STROMPREIS_CT", "40")
+    ctl = fan.FanController(None, power_sensor="s", token="t",
+                            state_path=str(tmp_path / "fan_state.json"))
+
+    async def power():
+        return 15.0
+
+    class Resp:
+        def __init__(self, text):
+            self.text = text
+
+    async def api(method, path, **kw):
+        return Resp("2026-11-07T00:00:00+01:00")
+
+    async def stat_change(start, period):
+        return 0.05 if period == "5minute" else 0.9
+
+    ctl.power, ctl._api, ctl._stat_change = power, api, stat_change
+    r = await ctl.run({"action": "stromkosten"})
+    assert r["jetzt_cent_pro_stunde"] == 0.6
+    assert r["heute_kwh"] == 0.05 and r["heute_cent"] == 2.0
+    assert "note" in r  # measured only since now
+    with open(str(tmp_path / "fan_state.json") + ".since", "w") as f:
+        f.write(str(time.time() - 3 * 86400))
+    r = await ctl.run({"action": "stromkosten"})
+    assert r["gesamt_kwh"] == 0.9 and r["schaetzung_monat_euro"] == 3.6  # 0.3 kWh a day
