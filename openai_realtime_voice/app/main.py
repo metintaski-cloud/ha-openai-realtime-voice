@@ -137,12 +137,12 @@ DEFAULT_BACKEND_INSTRUCTIONS = (
 DEFAULT_GREETING_WORDS = "Hallo, Merhaba, Selamünaleyküm, Hey, Hallöchen"
 TURKISH_GREETINGS = ("merhaba", "selam", "günaydın", "iyi akşamlar", "iyi günler")
 GREETING_TEMPLATE = (
-    "Sag am Anfang nichts und warte, bis jemand zuerst spricht. Erst dann begrüße die Person "
-    "kurz und natürlich, zum Beispiel mit „{word}“ oder in ihrer Sprache, und geh direkt auf "
-    "das ein, was sie gesagt hat. Frag nicht gleich, wer da ist; frag erst freundlich nach dem "
-    "Namen, wenn das Gespräch persönlich wird. Wenn das Gehörte offensichtlich nicht an dich "
-    "gerichtet ist, zum Beispiel Fernsehen, Nachrichten, Werbung oder ein Gespräch zwischen "
-    "anderen, sag gar nichts und beende das Gespräch still, ohne dich zu verabschieden."
+    "Man hat dich gerade mit deinem Namen gerufen. Antworte jetzt sofort ganz kurz und "
+    "herzlich mit „{word}“, nur ein paar Wörter, zum Beispiel „{word}, ich höre?“, in der "
+    "Sprache des Grußworts. Frag nicht, wer da ist; frag erst freundlich nach dem Namen, wenn "
+    "das Gespräch persönlich wird. Dann hör zu. Wenn danach offensichtlich nur Fernsehen, "
+    "Nachrichten, Werbung oder ein Gespräch zwischen anderen zu hören ist, sag nichts mehr und "
+    "beende das Gespräch still, ohne dich zu verabschieden."
 )
 
 
@@ -541,8 +541,14 @@ class LiveVoiceBridge:
                     f"GPT Live error: {err.get('message', event) if isinstance(err, dict) else err}"
                 )
             if ev_type == "session.started":
-                # Leyla no longer speaks first: she waits for someone to talk (fewer
-                # awkward greetings after a false wake word).
+                if self.greeting:
+                    await live_ws.send(json.dumps({
+                        "type": "session.commentary.append",
+                        "event_id": f"greeting_{uuid.uuid4().hex[:8]}",
+                        "delegation_id": None,
+                        "content": self.greeting,
+                    }))
+                    logger.info("Greeting requested")
                 return event
 
     def _client_id_from_ws(self, ws) -> str:
