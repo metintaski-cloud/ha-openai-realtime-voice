@@ -139,6 +139,46 @@ class TvController:
         if resp.status_code >= 300:
             raise RuntimeError(f"HA HTTP {resp.status_code}: {resp.text[:200]}")
 
+    async def _state(self) -> str:
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                resp = await client.get(f"{self.api_url}/states/{self.tv_remote}",
+                                        headers={"Authorization": f"Bearer {self.token}"})
+            return resp.json().get("state", "unknown") if resp.status_code == 200 else "unknown"
+        except Exception:
+            return "unknown"
+
+    def _has_ir_power(self) -> bool:
+        return bool(self.rf.available and "tv_power" in self.rf.load())
+
+    async def _power(self, on: bool) -> dict:
+        """Switch the TV on or off. In deep standby the TV turns its WLAN off, then only
+        the infrared power button (tv_power, a toggle) can wake it."""
+        state = await self._state()
+        if on and state == "on":
+            return {"done": "Fernseher ist schon an"}
+        if not on and state in ("off", "unavailable", "standby"):
+            return {"done": "Fernseher ist schon aus"}
+        used_ir = False
+        if state == "unavailable" or (on and state != "on" and self._has_ir_power()):
+            if not self._has_ir_power():
+                return {"error": "Der Fernseher ist über WLAN nicht erreichbar."}
+            await self.rf.send("tv_power")
+            used_ir = True
+        else:
+            await self._service("remote", "turn_on" if on else "turn_off",
+                                {"entity_id": self.tv_remote})
+        for _ in range(10):
+            await asyncio.sleep(1.5)
+            state = await self._state()
+            if (state == "on") == on:
+                return {"done": "Fernseher eingeschaltet" if on else "Fernseher ausgeschaltet"}
+        if used_ir and on:
+            # The TV does not always report back quickly after waking up.
+            return {"done": "Ein/Aus Taste per Infrarot gedrückt",
+                    "note": "Der Fernseher hat sich noch nicht zurückgemeldet."}
+        return {"error": "Der Fernseher hat nicht reagiert."}
+
     async def _tv_key(self, command: str, repeats: int = 1) -> None:
         data = {"entity_id": self.tv_remote, "command": command}
         if repeats > 1:
@@ -162,11 +202,9 @@ class TvController:
         action = (args.get("action") or "").strip().lower()
         try:
             if action == "an":
-                await self._service("remote", "turn_on", {"entity_id": self.tv_remote})
-                return {"done": "Fernseher eingeschaltet"}
+                return await self._power(True)
             if action == "aus":
-                await self._service("remote", "turn_off", {"entity_id": self.tv_remote})
-                return {"done": "Fernseher ausgeschaltet"}
+                return await self._power(False)
             if action in ("lauter", "leiser"):
                 try:
                     steps = int(args.get("steps") or 3)
