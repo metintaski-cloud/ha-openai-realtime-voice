@@ -74,3 +74,39 @@ async def test_say(tmp_path):
         assert "16:41" in spoken[0] and _HA.calls[-1][1] == "play_media"
     finally:
         server.shutdown()
+
+
+async def test_message_brought_up_in_a_conversation(tmp_path):
+    spoken = []
+
+    async def speak(prompt):
+        spoken.append(prompt)
+        return b"\x00\x00" * 100
+
+    mc = messages.MessageCenter(speak, notify_service="notify.x", media_player="media_player.x",
+                                base_url="http://h:8082", path=str(tmp_path / "m.json"),
+                                api_url="http://127.0.0.1:1/api", token="t")
+
+    async def push(*a, **k):
+        return None
+
+    mc.push = push
+    await mc.to_metin({"text": "Eve gelirken ekmek al", "sender": "Mama"})
+    await mc.from_metin("Tamam, ekmek alıyorum, 20 dakikaya evdeyim")
+    prompts = []
+
+    async def converse(prompt):
+        prompts.append(prompt)
+        return True
+
+    mc.converse = converse
+    await mc._tick()
+    assert len(prompts) == 1 and not spoken  # a conversation, no announcement
+    assert "ekmek al" in prompts[0] and "20 dakikaya" in prompts[0]
+    assert "antworten möchte" in prompts[0] and "Erinnerung" not in prompts[0]
+    assert mc.pending()["announced"] == 1
+    p = mc.pending()
+    p["last"] = 0
+    mc._save(p)
+    await mc._tick()
+    assert "Erinnerung" in prompts[1]

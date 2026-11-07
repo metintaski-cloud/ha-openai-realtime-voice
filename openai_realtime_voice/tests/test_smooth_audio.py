@@ -187,3 +187,57 @@ def test_few_terms_of_endearment():
 def test_never_only_announce():
     instructions = _bridge()._session_start()["session"]["instructions"]
     assert "Kündige nie etwas nur an" in instructions
+
+
+async def test_converse_in_running_session():
+    bridge = _bridge()
+    ws = FakeLiveWs()
+    bridge._live_sessions["dev"] = (ws, {"closing": False})
+    assert await bridge._converse("Metin schreibt: bin gleich da")
+    assert ws.sent[0]["type"] == "session.commentary.append"
+    assert "bin gleich da" in ws.sent[0]["content"]
+
+
+class _StartWs:
+    def __init__(self):
+        self.sent = []
+
+    async def send(self, raw):
+        self.sent.append(json.loads(raw))
+
+    async def recv(self):
+        return json.dumps({"type": "session.started", "session": {}})
+
+
+async def test_leyla_starts_a_conversation(monkeypatch):
+    bridge = _bridge()
+    bridge.enable_context = False
+    calls = []
+    live = _StartWs()
+
+    async def service(domain, name, data):
+        calls.append(f"{domain}.{name}")
+        # the Voice PE connects and the session starts
+        asyncio.get_event_loop().call_soon(
+            lambda: asyncio.ensure_future(bridge._start_session(live)))
+
+    monkeypatch.setattr(bridge.messages, "_service", service)
+    monkeypatch.setattr(bridge.messages, "token", "t")
+    assert await bridge._converse("Metin hat geantwortet: bin gleich da")
+    assert calls == ["esphome.ha_voice_openai_0ae305_start_conversation"]
+    assert bridge._started_as_followup
+    greeting = [m for m in live.sent if m["type"] == "session.commentary.append"]
+    assert "bin gleich da" in greeting[0]["content"]
+
+
+async def test_no_conversation_when_device_does_not_answer(monkeypatch):
+    monkeypatch.setattr(m, "FOLLOWUP_MAX_WAIT_S", 0.1)
+    bridge = _bridge()
+
+    async def service(domain, service, data):
+        return None
+
+    monkeypatch.setattr(bridge.messages, "_service", service)
+    monkeypatch.setattr(bridge.messages, "token", "t")
+    assert not await bridge._converse("x")
+    assert bridge._followup is None

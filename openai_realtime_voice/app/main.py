@@ -62,6 +62,8 @@ GOODBYE_MAX_WAIT_S = 15.0
 # End the session when nobody spoke for this long (GPT Live is billed per minute).
 IDLE_TIMEOUT_S = 30.0
 NO_SPEECH_TIMEOUT_S = 15.0  # false wake: nobody speaks, end silently
+FOLLOWUP_MAX_WAIT_S = 15.0  # Leyla starts a conversation: the Voice PE connects within this
+FOLLOWUP_NO_SPEECH_S = 35.0  # she speaks first, then the family needs time to answer
 MAX_SESSION_S = 600.0
 
 # GPT Live is full duplex and wants a continuous input stream. The Voice PE mutes its
@@ -298,6 +300,14 @@ class LiveVoiceBridge:
         self.tv = tv.from_env(self.rf)
         self.messages = messages.from_env(self._speak_once)
         self.messages.on_command = self._automation_command
+        self.messages.converse = self._converse
+        # Home Assistant action of the Voice PE that starts a conversation (see the
+        # api actions in voice_pe_config.yaml)
+        self.conversation_service = (os.environ.get("CONVERSATION_SERVICE") or
+                                     "esphome.ha_voice_openai_0ae305_start_conversation")
+        self._followup: Optional[dict] = None
+        self._started_as_followup = False
+        self._live_sessions: dict = {}
         if self.fan.power_sensor:
             self.messages.state_listeners[self.fan.power_sensor] = self.fan.on_power_state
         self.memory = memory.MemoryStore(os.environ.get("MEMORY_PATH", "/data/memory.json"))
@@ -628,7 +638,15 @@ class LiveVoiceBridge:
 
     async def _start_session(self, live_ws, timeout: float = 15.0) -> dict:
         """Send session.start and wait for session.started. Returns the started event."""
-        self.greeting = self._choose_greeting()
+        followup, self._followup = self._followup, None
+        if followup and time.monotonic() - followup["at"] < FOLLOWUP_MAX_WAIT_S:
+            # Leyla started this conversation herself (a message from Metin)
+            self.greeting = followup["prompt"]
+            self._started_as_followup = True
+            followup["taken"].set()
+        else:
+            self.greeting = self._choose_greeting()
+            self._started_as_followup = False
         extra = ""
         if self.enable_context:
             try:
@@ -664,6 +682,33 @@ class LiveVoiceBridge:
                     }))
                     logger.info("Greeting requested")
                 return event
+
+    async def _converse(self, prompt: str) -> bool:
+        """Bring something up in a conversation: in the running one, or Leyla starts a
+        new one on the Voice PE. False when neither is possible."""
+        for live_ws, state in list(self._live_sessions.values()):
+            if not state.get("closing"):
+                await live_ws.send(json.dumps({
+                    "type": "session.commentary.append",
+                    "event_id": f"message_{uuid.uuid4().hex[:8]}",
+                    "delegation_id": None,
+                    "content": "Unterbrich kurz freundlich. " + prompt,
+                }))
+                return True
+        if not self.conversation_service or not self.messages.token:
+            return False
+        taken = asyncio.Event()
+        self._followup = {"prompt": prompt, "at": time.monotonic(), "taken": taken}
+        domain, _, service = self.conversation_service.partition(".")
+        try:
+            await self.messages._service(domain, service, {})
+            await asyncio.wait_for(taken.wait(), FOLLOWUP_MAX_WAIT_S)
+            return True
+        except Exception as e:
+            logger.info("Could not start a conversation on the Voice PE: %s", e)
+            if self._followup and self._followup.get("taken") is taken:
+                self._followup = None
+            return False
 
     def _client_id_from_ws(self, ws) -> str:
         """Derive a client id (e.g. for recording)."""
@@ -1086,7 +1131,8 @@ class LiveVoiceBridge:
                 if state.get("closing"):
                     await self._wait_for_farewell(output_queue, state)
                     reason = "end_conversation"
-                elif not state.get("user_spoke") and now - session_start > NO_SPEECH_TIMEOUT_S:
+                elif not state.get("user_spoke") and \
+                        now - session_start > state.get("no_speech_s", NO_SPEECH_TIMEOUT_S):
                     reason = "no_speech"
                 elif now - state["last_activity"] > IDLE_TIMEOUT_S:
                     reason = "idle_timeout"
@@ -1280,6 +1326,9 @@ class LiveVoiceBridge:
         try:
             live_ws = await self._connect_live()
             started = await self._start_session(live_ws)
+            if self._started_as_followup:
+                state["no_speech_s"] = FOLLOWUP_NO_SPEECH_S  # time to listen and answer
+            self._live_sessions[client_id] = (live_ws, state)
             session = started.get("session") or {}
             logger.info(
                 "Session started: id=%s model=%s", session.get("id"), session.get("model")
@@ -1334,6 +1383,8 @@ class LiveVoiceBridge:
         finally:
             if self._active_sessions.get(client_id) is client_ws:
                 del self._active_sessions[client_id]
+            if client_id in self._live_sessions and self._live_sessions[client_id][1] is state:
+                del self._live_sessions[client_id]
             if live_ws:
                 try:
                     await live_ws.close()

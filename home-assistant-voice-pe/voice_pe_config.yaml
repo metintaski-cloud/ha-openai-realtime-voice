@@ -115,6 +115,19 @@ api:
   reboot_timeout: 0s
   # Required for homeassistant.event (wake word attribution events)
   homeassistant_services: true
+  # Leyla starts a conversation herself, e.g. to bring a message from Metin and hear the answer
+  actions:
+    - action: start_conversation
+      then:
+        - if:
+            condition:
+              and:
+                - switch.is_off: master_mute_switch
+                - not:
+                    voice_assistant_websocket.is_running:
+                      id: voice_assistant_ws
+            then:
+              - script.execute: start_openai_pipeline
   on_client_connected:
     - script.execute: control_leds
   on_client_disconnected:

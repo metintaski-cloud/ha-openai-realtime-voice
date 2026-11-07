@@ -111,25 +111,36 @@ class MessageCenter:
         # entity_id -> callback(new state string), for state_changed events
         self.state_listeners: dict[str, Callable[[str], None]] = {}
         self.mute_switch = ""
+        # Brings a message up in a real conversation (set by the bridge); returns False
+        # when that is not possible, then the message is only announced.
+        self.converse: Optional[Callable[[str], Awaitable[bool]]] = None
 
     @property
     def available(self) -> bool:
         return bool(self.token and self.notify_service)
 
     # storage ---------------------------------------------------------------
-    def pending(self) -> Optional[dict]:
+    def _load(self) -> dict:
         try:
             with open(self.path, encoding="utf-8") as f:
-                return json.load(f).get("pending")
+                return json.load(f) or {}
         except Exception:
-            return None
+            return {}
 
-    def _save(self, pending: Optional[dict]) -> None:
+    def _write(self, data: dict) -> None:
         os.makedirs(os.path.dirname(self.path) or ".", exist_ok=True)
         tmp = self.path + ".tmp"
         with open(tmp, "w", encoding="utf-8") as f:
-            json.dump({"pending": pending}, f, ensure_ascii=False, indent=2)
+            json.dump(data, f, ensure_ascii=False, indent=2)
         os.replace(tmp, self.path)
+
+    def pending(self) -> Optional[dict]:
+        return self._load().get("pending")
+
+    def _save(self, pending: Optional[dict]) -> None:
+        data = self._load()
+        data["pending"] = pending
+        self._write(data)
 
     # Home Assistant ----------------------------------------------------------
     async def _service(self, domain: str, service: str, data: dict) -> None:
@@ -160,7 +171,19 @@ class MessageCenter:
             logger.warning("Push to Metin failed: %s", e)
             return {"error": "Die Nachricht konnte gerade nicht gesendet werden."}
         logger.info("Message to Metin sent: %r", text)
+        self._remember_sent(text)
         return {"sent": True, "to": "Metin"}
+
+    def _remember_sent(self, text: str) -> None:
+        data = self._load()
+        data["last_to_metin"] = {"text": text, "at": time.time()}
+        self._write(data)
+
+    def last_to_metin(self, max_age_s: float = 12 * 3600) -> Optional[str]:
+        last = self._load().get("last_to_metin") or {}
+        if last.get("text") and time.time() - float(last.get("at") or 0) < max_age_s:
+            return last["text"]
+        return None
 
     # Metin -> Mama ---------------------------------------------------------------
     async def from_metin(self, text: str) -> None:
@@ -234,7 +257,34 @@ class MessageCenter:
         except Exception as e:
             logger.warning("Could not unmute after announcement: %s", e)
 
+    def conversation_prompt(self, p: dict) -> str:
+        """How Leyla brings Metin's message up herself and talks about it."""
+        context = self.last_to_metin()
+        about = (f" Sie hatte ihm vorher geschrieben: „{context}“, seine Nachricht ist die "
+                 "Antwort darauf." if context else "")
+        again = (" Das ist eine Erinnerung, du hast es vor ein paar Minuten schon gesagt, "
+                 "aber niemand hat reagiert." if p.get("announced") else "")
+        return (
+            "Du meldest dich gerade von selbst im Wohnzimmer, weil eine Nachricht von Metin an "
+            f"seine Mutter gekommen ist.{about}{again} Seine Nachricht: „{p['text']}“. Sag es "
+            "ihr jetzt auf Türkisch, warm und natürlich mit deinen eigenen Worten, nicht "
+            "vorgelesen, in der dritten Person (zum Beispiel „Metin ekmeği alacakmış“), und "
+            "nimm Bezug auf ihre Nachricht, wenn es passt. Frag sie danach kurz, ob sie ihm "
+            "etwas antworten möchte. Antwortet sie mit einer Nachricht, schick sie mit "
+            "nachricht_an_metin an ihn und sag kurz, dass sie unterwegs ist. Sagt sie nur "
+            "tamam oder Ähnliches, sag lieb, dass du Metin Bescheid gibst. Antwortet niemand, "
+            "sag nichts mehr."
+        )
+
     async def _announce(self, p: dict) -> None:
+        if self.converse:
+            try:
+                if await self.converse(self.conversation_prompt(p)):
+                    logger.info("Message from Metin brought up in a conversation (%d. time)",
+                                p.get("announced", 0) + 1)
+                    return
+            except Exception as e:
+                logger.warning("Could not start a conversation for the message: %s", e)
         prompt = (
             "Sag jetzt eine kurze Ansage auf Türkisch, lebendig und herzlich wie eine "
             "gute Bekannte der Familie, ohne Kosewörter wie „canım“, nicht vorgelesen, und danach nichts mehr. "
