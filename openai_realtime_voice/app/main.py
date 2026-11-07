@@ -66,16 +66,17 @@ NO_SPEECH_TIMEOUT_S = 15.0  # false wake: nobody speaks, end silently
 FOLLOWUP_MAX_WAIT_S = 15.0  # Leyla starts a conversation: the Voice PE connects within this
 FOLLOWUP_NO_SPEECH_S = 35.0  # she speaks first, then the family needs time to answer
 
-# 23:00 every day (Home Assistant automation, event leyla_command device "nacht"): Leyla
+# 23:30 every day (Home Assistant automation, event leyla_command device "nacht"): Leyla
 # asks whether to switch lamps and fan off; without an answer she switches them off.
 NIGHT_WAIT_S = 70.0
 NIGHT_KEEP_RE = re.compile(
     r"\b(hay[ıi]r|kals[ıi]n|kapatma|istemiyorum|bekle|nein|nicht|lass|bleib)\b", re.IGNORECASE)
 NIGHT_PROMPT = (
-    "Du meldest dich gerade von selbst, weil es 23 Uhr ist. Frag auf Türkisch kurz und lieb, "
-    "ob du die Lampen und den Ventilator ausschalten sollst, und sag dazu, dass du es in einer "
-    "Minute machst, wenn niemand antwortet, zum Beispiel „Saat on bir oldu. Lambaları ve "
-    "vantilatörü kapatayım mı? Cevap gelmezse bir dakika sonra kapatacağım.“ Sagt jemand ja, "
+    "Du meldest dich gerade von selbst, weil es spät ist (es ist {time} Uhr). Frag auf Türkisch "
+    "kurz und lieb, ob du die Lampen und den Ventilator ausschalten sollst, und sag dazu, dass "
+    "du es in einer Minute machst, wenn niemand antwortet, zum Beispiel „Saat on bir buçuk "
+    "oldu. Lambaları ve vantilatörü kapatayım mı? Cevap gelmezse bir dakika sonra "
+    "kapatacağım.“ Nenn dabei die richtige Uhrzeit. Sagt jemand ja, "
     "schalte über deinen Hintergrund alle Stehlampen aus, dazu Ventilator und Ventilatorlicht "
     "(licht_aus), und wünsch kurz eine gute Nacht. Sagt jemand nein oder will etwas anlassen, "
     "lass es so und sag kurz tamam. Antwortet niemand, sag nichts mehr."
@@ -737,7 +738,12 @@ class LiveVoiceBridge:
                 logger.info("Night check: everything is already off")
                 return
             self._night = {"text": ""}
-            asked = await self._converse(NIGHT_PROMPT)
+            try:
+                from zoneinfo import ZoneInfo
+                now = datetime.now(ZoneInfo(os.environ.get("TZ") or "Europe/Berlin"))
+            except Exception:
+                now = datetime.now()
+            asked = await self._converse(NIGHT_PROMPT.format(time=now.strftime("%H:%M")))
             logger.info("Night check: asked %s", "in a conversation" if asked else "not possible")
             await asyncio.sleep(NIGHT_WAIT_S if asked else 0)
             answer = self._night["text"]
