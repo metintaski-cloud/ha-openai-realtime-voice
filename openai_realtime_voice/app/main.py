@@ -60,6 +60,7 @@ GOODBYE_IDLE_S = 1.5
 GOODBYE_MAX_WAIT_S = 15.0
 # End the session when nobody spoke for this long (GPT Live is billed per minute).
 IDLE_TIMEOUT_S = 30.0
+NO_SPEECH_TIMEOUT_S = 8.0  # false wake: nobody speaks, end silently
 MAX_SESSION_S = 600.0
 
 # GPT Live is full duplex and wants a continuous input stream. The Voice PE mutes its
@@ -136,9 +137,12 @@ DEFAULT_BACKEND_INSTRUCTIONS = (
 DEFAULT_GREETING_WORDS = "Hallo, Merhaba, Selamünaleyküm, Hey, Hallöchen"
 TURKISH_GREETINGS = ("merhaba", "selam", "günaydın", "iyi akşamlar", "iyi günler")
 GREETING_TEMPLATE = (
-    "Begrüße die Person jetzt sofort, ganz kurz und natürlich mit „{word}“ und frag danach "
-    "freundlich, wer da ist, damit du weißt, mit wem du sprichst. {language} "
-    "Dann hör zu und reagiere auf die Antwort."
+    "Sag am Anfang nichts und warte, bis jemand zuerst spricht. Erst dann begrüße die Person "
+    "kurz und natürlich, zum Beispiel mit „{word}“ oder in ihrer Sprache, und geh direkt auf "
+    "das ein, was sie gesagt hat. Frag nicht gleich, wer da ist; frag erst freundlich nach dem "
+    "Namen, wenn das Gespräch persönlich wird. Wenn das Gehörte offensichtlich nicht an dich "
+    "gerichtet ist, zum Beispiel Fernsehen, Nachrichten, Werbung oder ein Gespräch zwischen "
+    "anderen, sag gar nichts und beende das Gespräch still, ohne dich zu verabschieden."
 )
 
 
@@ -150,10 +154,7 @@ def parse_greeting_words(raw: Optional[str]) -> list[str]:
 
 
 def greeting_instruction(word: str) -> str:
-    turkish = any(t in word.lower() for t in TURKISH_GREETINGS)
-    language = ("Stell die Frage auf Türkisch." if turkish
-                else "Stell die Frage auf Deutsch.")
-    return GREETING_TEMPLATE.format(word=word, language=language)
+    return GREETING_TEMPLATE.format(word=word)
 
 
 def pick_greeting(words: list[str], hour: int) -> str:
@@ -540,14 +541,8 @@ class LiveVoiceBridge:
                     f"GPT Live error: {err.get('message', event) if isinstance(err, dict) else err}"
                 )
             if ev_type == "session.started":
-                if self.greeting:
-                    await live_ws.send(json.dumps({
-                        "type": "session.commentary.append",
-                        "event_id": f"greeting_{uuid.uuid4().hex[:8]}",
-                        "delegation_id": None,
-                        "content": self.greeting,
-                    }))
-                    logger.info("Greeting requested")
+                # Leyla no longer speaks first: she waits for someone to talk (fewer
+                # awkward greetings after a false wake word).
                 return event
 
     def _client_id_from_ws(self, ws) -> str:
@@ -873,6 +868,8 @@ class LiveVoiceBridge:
                         await output_queue.put(("interrupt", None))
                         logger.info("Barge-in: user talks over the reply, playback stopped")
                     user_text.append(delta)
+                    if delta.strip():
+                        state["user_spoke"] = True
                     self._add_dialog(state, "user", delta)
                     state["last_activity"] = time.monotonic()
                     recent = (state.get("recent_user_text", "") + delta)[-80:]
@@ -967,6 +964,8 @@ class LiveVoiceBridge:
                 if state.get("closing"):
                     await self._wait_for_farewell(output_queue, state)
                     reason = "end_conversation"
+                elif not state.get("user_spoke") and now - session_start > NO_SPEECH_TIMEOUT_S:
+                    reason = "no_speech"
                 elif now - state["last_activity"] > IDLE_TIMEOUT_S:
                     reason = "idle_timeout"
                 elif now - session_start > MAX_SESSION_S:

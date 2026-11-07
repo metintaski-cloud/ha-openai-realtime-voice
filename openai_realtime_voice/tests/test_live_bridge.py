@@ -280,7 +280,7 @@ async def test_barge_in_stops_queued_reply():
     assert audio < total * 0.6
 
 
-async def test_greeting_is_requested_after_start():
+async def test_waits_for_speech_before_greeting():
     os.environ.pop("GREETING_WORDS", None)
     fake = FakeLive(respond_after=10**6)
 
@@ -291,8 +291,8 @@ async def test_greeting_is_requested_after_start():
 
     await _run(fake, scenario)
     assert fake.start_msg["session"]["input"][0]["role"] == "developer"
-    assert "session.commentary.append" in fake.received
-    assert fake.received.index("session.commentary.append") > fake.received.index("session.start")
+    assert "warte" in fake.start_msg["session"]["input"][0]["content"][0]["text"]
+    assert "session.commentary.append" not in fake.received
 
 
 async def test_greeting_can_be_disabled():
@@ -316,7 +316,7 @@ def test_greeting_words_and_language():
     import app.main as m
     assert m.parse_greeting_words(None)[2] == "Selamünaleyküm"
     assert m.parse_greeting_words("") == []
-    assert "Türkisch" in m.greeting_instruction("Selamünaleyküm")
-    assert "Deutsch" in m.greeting_instruction("Hallo")
+    assert "Selamünaleyküm" in m.greeting_instruction("Selamünaleyküm")
+    assert "nicht gleich, wer da ist" in m.greeting_instruction("Hallo")
     seen = {m.pick_greeting(["Hallo", "Merhaba"], 20) for _ in range(200)}
     assert {"Hallo", "Merhaba", "Guten Abend", "İyi akşamlar"} <= seen
