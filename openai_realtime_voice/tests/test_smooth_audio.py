@@ -319,3 +319,4 @@ def test_leyla_birthday_joke():
     assert m.leyla_age(date(2027, 11, 2)) == "heute, du wirst 1"
     instructions = _bridge()._session_start()["session"]["instructions"]
     assert "Bevor du jemanden nach seinem Geburtstag fragst" in instructions
+    assert "neugierig statt ausfragend" in instructions
