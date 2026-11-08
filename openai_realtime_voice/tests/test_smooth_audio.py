@@ -321,4 +321,10 @@ def test_leyla_birthday_joke():
     assert "Bevor du jemanden nach seinem Geburtstag fragst" in instructions
     assert "neugierig statt ausfragend" in instructions
     assert "Du gehörst selbst zur Familie" in instructions and "112" in instructions
-    assert "Dein kleines Geheimnis" in instructions and "Kim bilir?" in instructions
+    assert "Dein kleines Geheimnis" in instructions and "sag sie nie wörtlich" in instructions
+
+
+def test_secret_examples_vary():
+    picks = {m.secret_hint() for _ in range(20)}
+    assert len(picks) > 5
+    assert all(sum(h in p for h in m.SECRET_HINTS) == 3 for p in picks)
