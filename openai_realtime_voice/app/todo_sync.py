@@ -6,8 +6,10 @@ and edit them in the Home Assistant app (no code phrase needed there):
   todo.leyla_privat    Metin's private list
 
 Both directions every SYNC_INTERVAL_S (and right after Leyla saved something):
-an entry deleted or ticked off in the app is forgotten, an entry added in the app is
-remembered, and what Leyla learned shows up in the app. The last list both sides agreed
+an entry deleted in the app is forgotten, an entry added or renamed in the app is
+remembered, and what Leyla learned shows up in the app. Ticking an entry off does not
+forget it (a tap in the app or the widget ticks it off by accident); it is unticked
+again on the next sync. The last list both sides agreed
 on decides who changed what, so edits on both sides are merged.
 """
 import asyncio
@@ -89,10 +91,11 @@ class TodoSync:
                 items = await self.items(client, entity)
                 if items is None:
                     continue
-                done = [i for i in items if i.get("status") == "completed"]
-                ha = [" ".join((i.get("summary") or "").split()) for i in items
-                      if i.get("status") != "completed"]
-                ha = [x for x in ha if x]
+                ha = []
+                for i in items:
+                    x = " ".join((i.get("summary") or "").split())
+                    if x and x not in ha:
+                        ha.append(x)
                 mine = lists[kind]
                 merged = merge(mine, ha, self._last[kind])
                 if merged != mine:
@@ -100,13 +103,15 @@ class TodoSync:
                     changed = True
                     logger.info("Memory %s: %d entries changed in the Home Assistant app",
                                 kind, abs(len(merged) - len(mine)) or 1)
-                # Bring the app list in line: drop ticked off and removed, add new ones
-                stale = [i["uid"] for i in done if i.get("uid")]
-                stale += [i["uid"] for i in items if i.get("status") != "completed"
-                          and " ".join((i.get("summary") or "").split()) not in merged
-                          and i.get("uid")]
+                # Bring the app list in line: untick, drop removed ones, add new ones
+                stale = [i["uid"] for i in items if i.get("uid")
+                         and " ".join((i.get("summary") or "").split()) not in merged]
                 if stale:
                     await self._call(client, "remove_item", {"entity_id": entity, "item": stale})
+                for i in items:
+                    if i.get("status") == "completed" and i.get("uid") not in stale:
+                        await self._call(client, "update_item", {
+                            "entity_id": entity, "item": i["uid"], "status": "needs_action"})
                 for x in merged:
                     if x not in ha:
                         await self._call(client, "add_item", {"entity_id": entity, "item": x})

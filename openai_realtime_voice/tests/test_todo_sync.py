@@ -44,6 +44,10 @@ def _sync(tmp_path, ha):
             ha.add(e, data["item"])
         if service == "remove_item":
             ha.remove(e, data["item"])
+        if service == "update_item":
+            for i in ha.lists[e]:
+                if i["uid"] == data["item"]:
+                    i["status"] = data["status"]
         return {}
 
     sync._call = call
@@ -58,8 +62,14 @@ async def test_sync_both_ways(tmp_path):
     assert [i["summary"] for i in ha.items("todo.leyla_privat")] == ["Geheim 1"]
     assert [i["summary"] for i in ha.items("todo.leyla_familie")] == ["Person: Umut (Metins Bruder)."]
 
-    # Metin ticks off the private entry and adds a family entry in the app
+    # A tap ticks the private entry off by accident: it stays and is unticked again
     ha.lists["todo.leyla_privat"][0]["status"] = "completed"
+    await sync.sync_once()
+    assert store.load(memory.PRIVATE) == ["Geheim 1"]
+    assert ha.items("todo.leyla_privat")[0]["status"] == "needs_action"
+
+    # Metin deletes the private entry and adds a family entry in the app
+    ha.remove("todo.leyla_privat", [ha.items("todo.leyla_privat")[0]["uid"]])
     ha.add("todo.leyla_familie", "Person: Ayşe (Metins Schwester).")
     await sync.sync_once()
     assert store.load(memory.PRIVATE) == []
@@ -77,3 +87,15 @@ async def test_sync_both_ways(tmp_path):
     store2, sync2 = _sync(tmp_path, ha)
     await sync2.sync_once()
     assert "Person: Umut (Metins Bruder)." not in store2.load()
+
+
+async def test_renamed_in_app(tmp_path):
+    ha = FakeHA()
+    store, sync = _sync(tmp_path, ha)
+    store.save_all({"family": ["Person: Ayse (Metins Schwester)."], "private": []})
+    await sync.sync_once()
+    ha.lists["todo.leyla_familie"][0]["summary"] = "Person: Ayşe (Metins Schwester)."
+    await sync.sync_once()
+    assert store.load() == ["Person: Ayşe (Metins Schwester)."]
+    assert [i["summary"] for i in ha.items("todo.leyla_familie")] == [
+        "Person: Ayşe (Metins Schwester)."]
