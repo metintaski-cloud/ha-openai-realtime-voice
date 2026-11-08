@@ -86,6 +86,8 @@ Regeln:
   gesprochen oder über Leyla oder Technik geredet wird. Wer zu Besuch kommt ("ich besuche meine
   Mutter"), wohnt nicht hier. Ist nicht klar, wer gesprochen hat, trägst du über diese Person
   nichts ein.
+- Reden mehrere Personen, trägst du nur ein, was eindeutig einer Person zuzuordnen ist (sie hat
+  sich selbst genannt, wurde mit Namen angesprochen, oder Leyla hat es bestätigt).
 - Schreib Namen immer so, wie sie schon in der Liste stehen (zum Beispiel Gülfikar, nicht
   Gül Fikar), auch wenn die Spracherkennung sie anders schreibt.
 - Ignoriere Fernsehen, Radio, Werbung und Gespräche, die nicht mit Leyla geführt werden.
