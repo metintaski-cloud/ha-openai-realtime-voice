@@ -117,9 +117,8 @@ TRUST_RUDE = (
     "nie selbst beleidigend.{report}"
 )
 TRUST_REPORT = (
-    " Dann schick Metin über deinen Hintergrund wirklich eine kurze Nachricht mit Absender Leyla: "
-    "wer es war, wenn du es weißt, und was gesagt wurde. Höchstens einmal im Gespräch, und frag "
-    "danach nicht, ob du ihm noch etwas ausrichten sollst."
+    " Nach dem Gespräch erzählst du Metin von selbst alles, was frech war; schick ihm dafür "
+    "während des Gesprächs keine Nachricht."
 )
 
 NO_CODE = "\n\nMETINS PRIVATE LISTE\n{listing}"

@@ -37,7 +37,7 @@ import websockets
 from app.audio_recorder import AudioRecorder
 from app import memory
 from app import context
-from app import costs, fan, lights, messages, persona, rf, todo_sync, tv
+from app import costs, fan, lights, messages, persona, report, rf, todo_sync, tv
 
 logging.basicConfig(
     level=logging.INFO,
@@ -512,6 +512,25 @@ class LiveVoiceBridge:
         task = asyncio.create_task(self._update_memory(dialog, unlocked))
         self._memory_tasks.add(task)
         task.add_done_callback(self._memory_tasks.discard)
+
+    def _schedule_rude_report(self, state: dict) -> None:
+        """Leyla said she would tell Metin: after the talk she does, in her own words."""
+        dialog = [d for d in state.get("dialog", []) if d[1].strip()]
+        if self.messages.available and report.needs_report(dialog):
+            self._in_background(self._send_rude_report(dialog))
+
+    async def _send_rude_report(self, dialog: list) -> None:
+        text = await report.write_report(
+            self.openai_api_key, [self.backend_model, self.memory_model], dialog,
+            url=os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL))
+        if not text:
+            logger.info("Rudeness report: nothing to tell Metin")
+            return
+        try:
+            await self.messages.push(report.TITLE, text)
+            logger.info("Rudeness report sent to Metin")
+        except Exception as e:
+            logger.warning("Could not send the rudeness report: %s", e)
 
     async def _connect_live(self):
         """Open WebSocket to the GPT Live API."""
@@ -1466,6 +1485,10 @@ class LiveVoiceBridge:
                 self._schedule_memory_update(state, reason)
             except Exception as e:
                 logger.warning("Could not start memory update: %s", e)
+            try:
+                self._schedule_rude_report(state)
+            except Exception as e:
+                logger.warning("Could not start the rudeness report: %s", e)
             logger.info(
                 "Session ended: %s (duration: %.1fs, reason: %s)",
                 client_id, duration, reason,

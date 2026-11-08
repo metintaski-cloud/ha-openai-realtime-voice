@@ -64,8 +64,7 @@ TO_METIN_BACKEND_HINT = (
     "Then always ask whether you should tell him anything else, in the person's language "
     "(Turkish for Mama, e.g. 'Metin'e başka bir şey söylememi ister misin?'). If she adds "
     "something, send it as a new message. The sender is usually Mama (Gülfikar) unless the "
-    "person says otherwise. When Leyla herself reports that someone was rude to her, send it "
-    "with sender Leyla, in German, and do not ask whether to add anything."
+    "person says otherwise."
 )
 
 def _env(name: str, default: str = "") -> str:

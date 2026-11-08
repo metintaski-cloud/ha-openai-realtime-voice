@@ -348,5 +348,61 @@ def test_rude_people_are_reported_to_metin():
     from app import persona
     text = persona.build([], messages=True, code_phrase="Leyla habibi")
     assert "Metin ist deine Vertrauensperson" in text and "das erzähl ich Metin" in text
-    assert "Absender Leyla" in text and "Habibi" in text
-    assert "Absender Leyla" not in persona.build([], messages=False)
+    assert "Nach dem Gespräch erzählst du Metin" in text and "Habibi" in text
+    assert "Nach dem Gespräch erzählst du Metin" not in persona.build([], messages=False)
+
+
+def test_rude_report_trigger():
+    from app import report
+    assert report.needs_report([["user", "Du bist doof"], ["bot", "Pass bloß auf, das erzähl ich Metin!"]])
+    assert report.needs_report([["bot", "Bunu Metin'e söyleyeceğim, haberin olsun!"]])
+    assert report.needs_report([["bot", "Das sag ich Metin."]])
+    assert not report.needs_report([["user", "das erzähl ich Metin"], ["bot", "Tamam!"]])
+    assert not report.needs_report([["bot", "Metin kommt gleich nach Hause."]])
+
+
+async def test_rude_report_after_the_talk(monkeypatch):
+    from app import report
+    bridge = _bridge()
+    pushed = []
+
+    async def write(api_key, models, dialog, url):
+        return "Ayşe war vorhin ganz schön frech zu mir, haha."
+
+    async def push(title, text, reply=False):
+        pushed.append((title, text))
+
+    monkeypatch.setattr(report, "write_report", write)
+    monkeypatch.setattr(bridge.messages, "push", push)
+    monkeypatch.setattr(bridge.messages, "token", "t")
+    monkeypatch.setattr(bridge.messages, "notify_service", "notify.handy")
+    bridge._schedule_rude_report({"dialog": [["user", "Sen aptalsın"],
+                                             ["bot", "Bunu Metin'e söyleyeceğim!"]]})
+    await asyncio.sleep(0.05)
+    assert pushed == [("Leyla erzählt", "Ayşe war vorhin ganz schön frech zu mir, haha.")]
+
+
+async def test_no_report_when_nobody_was_rude(monkeypatch):
+    from app import report
+
+    class Resp:
+        status_code = 200
+
+        def json(self):
+            return {"output_text": "NICHTS"}
+
+    class Client:
+        def __init__(self, *a, **k):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        async def post(self, *a, **k):
+            return Resp()
+
+    monkeypatch.setattr(report.httpx, "AsyncClient", Client)
+    assert await report.write_report("k", ["m"], [["bot", "Tamam, Metin'e söylerim."]]) is None
