@@ -82,7 +82,12 @@ Regeln:
   braucht es kein "merk dir". Ganze Gespräche, Kleinkram und Befehle (Licht, Fernseher)
   speicherst du nicht.
 - Ordne nur zu, wenn klar ist, wer spricht (die Person hat ihren Namen gesagt, Leyla hat
-  nachgefragt, oder es ergibt sich eindeutig). Im Zweifel speicherst du nichts.
+  nachgefragt, oder es ergibt sich eindeutig). Nimm nie an, dass es Metin ist, nur weil Deutsch
+  gesprochen oder über Leyla oder Technik geredet wird. Wer zu Besuch kommt ("ich besuche meine
+  Mutter"), wohnt nicht hier. Ist nicht klar, wer gesprochen hat, trägst du über diese Person
+  nichts ein.
+- Schreib Namen immer so, wie sie schon in der Liste stehen (zum Beispiel Gülfikar, nicht
+  Gül Fikar), auch wenn die Spracherkennung sie anders schreibt.
 - Ignoriere Fernsehen, Radio, Werbung und Gespräche, die nicht mit Leyla geführt werden.
 - "private" änderst du nur, wenn das Codewort gesagt wurde: Dann kommen Dinge hierher, die Metin
   sich ausdrücklich privat merken lassen will. Sagt er "für alle" oder ist es Familienwissen,
