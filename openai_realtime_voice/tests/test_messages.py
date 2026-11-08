@@ -33,6 +33,9 @@ async def test_flow(tmp_path):
         svc, body = _HA.calls[-1][1], _HA.calls[-1][2]
         assert svc == "mobile_app_handy" and "kauf Brot" in body["message"]
         assert body["data"]["actions"][0]["action"] == "REPLY"
+        assert body["title"] == "Leyla: Nachricht von Mama"
+        await mc.to_metin({"text": "Ayşe war frech: du bist doof", "sender": "Leyla"})
+        assert _HA.calls[-1][2]["title"] == "Leyla meldet"
 
         await mc.from_metin("Ich komme um 8")
         await mc._tick()

@@ -342,3 +342,11 @@ def test_extra_rules_come_last(monkeypatch):
     monkeypatch.setenv("INSTRUCTIONS", "Sag öfter Maşallah.")
     instructions = _bridge()._session_start()["session"]["instructions"]
     assert instructions.rstrip().endswith("Sag öfter Maşallah.")
+
+
+def test_rude_people_are_reported_to_metin():
+    from app import persona
+    text = persona.build([], messages=True, code_phrase="Leyla habibi")
+    assert "Metin ist deine Vertrauensperson" in text and "das erzähl ich Metin" in text
+    assert "Absender Leyla" in text and "Habibi" in text
+    assert "Absender Leyla" not in persona.build([], messages=False)

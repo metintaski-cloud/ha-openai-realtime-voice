@@ -64,7 +64,8 @@ TO_METIN_BACKEND_HINT = (
     "Then always ask whether you should tell him anything else, in the person's language "
     "(Turkish for Mama, e.g. 'Metin'e başka bir şey söylememi ister misin?'). If she adds "
     "something, send it as a new message. The sender is usually Mama (Gülfikar) unless the "
-    "person says otherwise."
+    "person says otherwise. When Leyla herself reports that someone was rude to her, send it "
+    "with sender Leyla, in German, and do not ask whether to add anything."
 )
 
 def _env(name: str, default: str = "") -> str:
@@ -167,8 +168,10 @@ class MessageCenter:
         de = (args.get("text_de") or "").strip()
         sender = (args.get("sender") or "Mama").strip()
         body = text if not de or de == text else f"{text}\n({de})"
+        # Leyla reports on her own, e.g. when someone was rude to her
+        title = "Leyla meldet" if sender.lower() == "leyla" else f"Leyla: Nachricht von {sender}"
         try:
-            await self.push(f"Leyla: Nachricht von {sender}", body, reply=True)
+            await self.push(title, body, reply=True)
         except Exception as e:
             logger.warning("Push to Metin failed: %s", e)
             return {"error": "Die Nachricht konnte gerade nicht gesendet werden."}
