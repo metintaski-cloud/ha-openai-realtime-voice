@@ -308,3 +308,14 @@ async def test_anything_on_reads_lamps(monkeypatch):
     monkeypatch.setattr(bridge.lights, "_states", states)
     monkeypatch.setattr(bridge.fan, "power", power)
     assert await bridge._anything_on()
+
+
+def test_leyla_birthday_joke():
+    from datetime import date
+    assert m.leyla_age(date(2026, 11, 8)) == "erst vor einer Woche"
+    assert m.leyla_age(date(2026, 11, 3)) == "gestern"
+    assert m.leyla_age(date(2026, 11, 20)) == "vor 3 Wochen"
+    assert m.leyla_age(date(2027, 3, 2)) == "vor 4 Monaten"
+    assert m.leyla_age(date(2027, 11, 2)) == "heute, du wirst 1"
+    instructions = _bridge()._session_start()["session"]["instructions"]
+    assert "Bevor du jemanden nach seinem Geburtstag fragst" in instructions

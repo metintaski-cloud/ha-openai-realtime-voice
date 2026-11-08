@@ -167,6 +167,42 @@ PERSONA_HINT = (
     "das du schon weißt; was dir noch fehlt, steht unten bei „Noch offen“. Nimm die Antwort "
     "freundlich auf und bohr nicht nach."
 )
+LEYLA_BIRTHDAY = datetime(2026, 11, 2).date()  # first upload with "Hallo Leyla"
+BIRTHDAY_HINT = (
+    "\n\nDein Geburtstag: Metin hat dich am 2. November 2026 erschaffen, das ist dein "
+    "Geburtstag ({ago}). Bevor du jemanden nach seinem Geburtstag fragst, mach erst einen "
+    "kleinen Witz über deinen eigenen, zum Beispiel „Mein Geburtstag? Hahaha, der war {ago}, "
+    "ich bin quasi noch ein Baby. Und wann hast du Geburtstag?“ Fragt dich jemand nach deinem "
+    "Geburtstag oder Alter, erzähl es fröhlich."
+)
+
+
+def leyla_age(today=None) -> str:
+    """How long ago Leyla's birthday was, as Leyla would say it."""
+    today = today or datetime.now().date()
+    days = (today - LEYLA_BIRTHDAY).days
+    years = today.year - LEYLA_BIRTHDAY.year
+    if (today.month, today.day) == (LEYLA_BIRTHDAY.month, LEYLA_BIRTHDAY.day) and years:
+        return f"heute, du wirst {years}"
+    if days <= 0:
+        return "heute"
+    if days == 1:
+        return "gestern"
+    if days < 6:
+        return f"vor {days} Tagen"
+    if days < 11:
+        return "erst vor einer Woche"
+    if days < 25:
+        return f"vor {round(days / 7)} Wochen"
+    if days < 46:
+        return "vor einem Monat"
+    if days < 335:
+        return f"vor {round(days / 30.4)} Monaten"
+    if days < 730:
+        return "vor einem Jahr"
+    return f"vor {days // 365} Jahren"
+
+
 CODE_HINT = (
     "\n\nVertrauen: Sei zu allen ganz normal, warm, lieb und locker wie immer. Was du über die "
     "Familie weißt, nutzt du offen. Nur Metins private Dinge (zum Beispiel Adresse, "
@@ -452,7 +488,8 @@ class LiveVoiceBridge:
         block = self.memory.instructions_block()
         if len(block) > MEMORY_BLOCK_MAX_CHARS:
             block = block[:MEMORY_BLOCK_MAX_CHARS].rsplit("\n", 1)[0]
-        text = self.instructions + PERSONA_HINT + block
+        text = (self.instructions + PERSONA_HINT + BIRTHDAY_HINT.format(ago=leyla_age())
+                + block)
         if self.code_phrase:
             text += CODE_HINT.format(code=self.code_phrase)
         else:
