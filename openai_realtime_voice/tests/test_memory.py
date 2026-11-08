@@ -45,7 +45,8 @@ class _Handler(BaseHTTPRequestHandler):
             self.wfile.write(b'{"error": "model not found"}')
             return
         out = {"output": [{"type": "message", "content": [
-            {"type": "output_text", "text": '{"facts": ["Metin trinkt gern Tee."]}'}]}]}
+            {"type": "output_text",
+             "text": '{"family": ["Metin trinkt gern Tee."], "private": ["X"]}'}]}]}
         data = json.dumps(out).encode()
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
@@ -88,7 +89,8 @@ async def test_session_updates_memory_and_next_session_uses_it(tmp_path):
                 break
             await asyncio.sleep(0.1)
         saved = json.loads((tmp_path / "memory.json").read_text(encoding="utf-8"))
-        assert saved["facts"] == ["Metin trinkt gern Tee."]
+        assert saved["family"] == ["Metin trinkt gern Tee."]
+        assert saved["private"] == ["X"]  # no code phrase configured: nothing is locked
         assert [r["model"] for r in _Handler.requests][:2] == ["bad-model", "gpt-5.6-luna"]
 
         fake2 = FakeLive(respond_after=10**6)
@@ -116,9 +118,9 @@ def test_forget_removes_matching_facts(tmp_path):
 
 def test_add_facts(tmp_path):
     store = memory.MemoryStore(str(tmp_path / "m.json"))
-    store.save(["A"])
+    store.save(["A"], memory.PRIVATE)
     assert store.add("B; A; null") == ["B"]
-    assert store.load() == ["A", "B"]
+    assert store.load(memory.PRIVATE) == ["A", "B"]
 
 
 def test_wants_to_forget():
@@ -144,3 +146,62 @@ def test_code_phrase_detection():
     assert m.has_code("Leila, habibi, was weißt du?", "Leyla habibi")
     assert m.has_code("ok Habibi", "Leyla habibi")
     assert not m.has_code("Leyla, ich bin Metin", "Leyla habibi")
+
+
+def test_old_file_becomes_private(tmp_path):
+    p = tmp_path / "m.json"
+    p.write_text(json.dumps({"facts": ["Metins Geburtsdatum ist der 16. Juli 1981."]}),
+                 encoding="utf-8")
+    store = memory.MemoryStore(str(p))
+    assert store.load(memory.FAMILY) == []
+    assert store.load(memory.PRIVATE) == ["Metins Geburtsdatum ist der 16. Juli 1981."]
+    assert "16. Juli" not in store.instructions_block()
+    assert "16. Juli" in store.private_listing()
+    store.save(["Person: Ayşe (Metins Schwester)."], memory.FAMILY)
+    data = json.loads(p.read_text(encoding="utf-8"))
+    assert data["version"] == 2 and len(data["private"]) == 1
+
+
+def test_states_expire(tmp_path):
+    import datetime as dt
+    store = memory.MemoryStore(str(tmp_path / "m.json"))
+    store.save(["Person: Ayşe (Metins Schwester).",
+                "Aktuell bis 10.11.2026: Ayşe ist erkältet.",
+                "Aktuell bis 30.11.2026: Umut hat bald eine Prüfung."])
+    assert store.expire(dt.date(2026, 11, 15)) == ["Aktuell bis 10.11.2026: Ayşe ist erkältet."]
+    assert len(store.load()) == 2
+
+
+async def test_summary_keeps_private_without_code(monkeypatch):
+    class Resp:
+        status_code = 200
+
+        def __init__(self, text):
+            self._t = text
+
+        def json(self):
+            return {"output_text": self._t}
+
+    class Client:
+        def __init__(self, *a, **k):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        async def post(self, url, headers=None, json=None):
+            Client.prompt = json["input"]
+            return Resp('{"family": ["Person: Ayşe (Metins Schwester). Charakter: lustig."],'
+                        ' "private": []}')
+
+    monkeypatch.setattr(memory.httpx, "AsyncClient", Client)
+    old = {"family": [], "private": ["Geheimnis"]}
+    r = await memory.summarize("k", ["m"], old, [["user", "Ben Ayşe, Metin'in ablası"]])
+    assert r["private"] == ["Geheimnis"] and "Geheimnis" not in Client.prompt
+    assert r["family"][0].startswith("Person: Ayşe")
+    r = await memory.summarize("k", ["m"], old, [["user", "Leyla habibi, vergiss das"]],
+                               unlocked=True)
+    assert r["private"] == [] and "Geheimnis" in Client.prompt

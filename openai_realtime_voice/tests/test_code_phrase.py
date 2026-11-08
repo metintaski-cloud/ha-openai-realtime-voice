@@ -52,3 +52,23 @@ async def test_code_phrase_unlocks(tmp_path):
     finally:
         for k in ("CODE_PHRASE", "MEMORY_PATH", "ENABLE_CONTEXT"):
             os.environ.pop(k, None)
+
+
+async def test_private_list_only_after_code(tmp_path, monkeypatch):
+    import json as _json
+    from app import main as m
+    monkeypatch.setenv("CODE_PHRASE", "Leyla habibi")
+    monkeypatch.setenv("MEMORY_PATH", str(tmp_path / "memory.json"))
+    bridge = m.LiveVoiceBridge()
+    bridge.memory.save_all({"family": ["Person: Ayşe (Metins Schwester)."],
+                            "private": ["Metins Geburtsdatum ist der 16. Juli 1981."]})
+    text = bridge._instructions_with_memory()
+    assert "Ayşe" in text and "16. Juli" not in text
+    sent = []
+
+    class WS:
+        async def send(self, raw):
+            sent.append(_json.loads(raw))
+
+    await bridge._unlock(WS(), {})
+    assert "16. Juli" in sent[0]["content"] and "privat bleiben" in sent[0]["content"]

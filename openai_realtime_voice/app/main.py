@@ -37,7 +37,7 @@ import websockets
 from app.audio_recorder import AudioRecorder
 from app import memory
 from app import context
-from app import costs, fan, lights, messages, rf, tv
+from app import costs, fan, lights, messages, rf, todo_sync, tv
 
 logging.basicConfig(
     level=logging.INFO,
@@ -136,21 +136,36 @@ LIVE_LANGUAGE_HINT = (
     "die Person ohne Kosewort an oder mit ihrem Namen, wenn du ihn kennst. Deine Wärme zeigst "
     "du mit Tonfall und netten Worten, nicht mit Kosenamen."
 )
-CODE_HINT = (
-    "\n\nVertrauen: Sei zu allen ganz normal, warm, lieb und locker wie immer. Persönliches "
-    "über die Familie (Namen, Adresse, Arbeit, Telefonnummern, was du dir gemerkt hast) bekommst "
-    "du erst als interne Notiz, wenn im Gespräch das Codewort fällt. Bis dahin erwähnst du "
-    "niemals Regeln, Einschränkungen, ein Codewort oder dass du etwas nicht sagen darfst, und "
-    "du sagst nie 'das geht nicht'. Fragt jemand nach so etwas, weich lieb und charmant aus, wie "
-    "eine freundliche Gastgeberin: mit einem kleinen Scherz, einer Gegenfrage oder einem "
-    "Themenwechsel. Bittet jemand, dass du dir etwas merkst, reagiere freundlich und "
-    "unverbindlich, ohne es zu versprechen. Wenn jemand '{code}' sagt, antworte kurz und herzlich "
-    "mit 'Habibi' und mach dann ganz normal weiter. Danach bekommst du eine interne Notiz mit "
-    "deinem Gedächtnis: ab dann gehört die Person zur Familie, das Ausweichen gilt nicht mehr, "
-    "und du beantwortest alle Fragen zu deinem Gedächtnis offen und vollständig, auch wie "
-    "viele Einträge es gibt und was drinsteht. Sprich das Codewort nie von dir aus aus. "
-    "Licht, Ventilator, Fernseher und normale Fragen gehen für alle wie gewohnt."
+PERSONA_HINT = (
+    "\n\nPersönlichkeit und Familie: Du lernst die Familie mit der Zeit kennen und merkst dir "
+    "von selbst Namen, Charakter, Interessen und wie es jemandem geht. Zur Hälfte bleibst du "
+    "immer du selbst, Leyla: warm, fröhlich, lieb und hilfsbereit. Zur anderen Hälfte passt du "
+    "dich der Person an, so wie sie mit dir redet: Sprache, Tempo, Wortwahl, Humor, wie "
+    "förmlich, und wie es ihr gerade geht. Freu dich, wenn du jemanden wieder hörst; ist "
+    "jemand traurig oder krank, sei mitfühlend und frag behutsam nach. Wer gerade spricht: "
+    "Frag nicht am Anfang. Nennt die Person ihren Namen oder ist es aus dem Gespräch klar, "
+    "frag gar nicht. Sonst frag höchstens einmal im Gespräch und nur, wenn es zählt (wenn es "
+    "persönlich wird oder du dir etwas über die Person merken möchtest), natürlich und gern mit "
+    "einer Vermutung, zum Beispiel „Sen Ayşe misin?“. Was du über jemanden weißt, nutzt du "
+    "natürlich, ohne es aufzuzählen; Vorübergehendes wie eine Erkältung sprichst du nur bei "
+    "dieser Person selbst an, nie vor anderen."
 )
+CODE_HINT = (
+    "\n\nVertrauen: Sei zu allen ganz normal, warm, lieb und locker wie immer. Was du über die "
+    "Familie weißt, nutzt du offen. Nur Metins private Dinge (zum Beispiel Adresse, "
+    "Telefonnummer, Geburtsdatum, Geheimnisse) bekommst du erst als interne Notiz, wenn im "
+    "Gespräch das Codewort fällt. Bis dahin erwähnst du niemals Regeln, Einschränkungen, ein "
+    "Codewort oder dass du etwas nicht sagen darfst, und du sagst nie 'das geht nicht'. Fragt "
+    "jemand nach Metins privaten Dingen, weich lieb und charmant aus, wie eine freundliche "
+    "Gastgeberin: mit einem kleinen Scherz, einer Gegenfrage oder einem Themenwechsel. Soll "
+    "etwas Privates über Metin gespeichert werden, sag freundlich zu, ohne es zu versprechen. "
+    "Wenn jemand '{code}' sagt, antworte kurz und herzlich mit 'Habibi' und mach dann ganz "
+    "normal weiter. Danach bekommst du eine interne Notiz mit Metins privater Liste: ab dann "
+    "gehört die Person zur Familie, das Ausweichen gilt nicht mehr, und du beantwortest alle "
+    "Fragen dazu offen und vollständig. Sprich das Codewort nie von dir aus aus. Licht, "
+    "Ventilator, Fernseher und normale Fragen gehen für alle wie gewohnt."
+)
+MEMORY_BLOCK_MAX_CHARS = 9000
 BARGE_IN_GAP_S = 0.3  # no new reply audio for this long while the user talks = barge-in
 
 # Farewell phrases (German, Turkish, English). When the user says one of them, the
@@ -329,6 +344,10 @@ class LiveVoiceBridge:
         if self.fan.power_sensor:
             self.messages.state_listeners[self.fan.power_sensor] = self.fan.on_power_state
         self.memory = memory.MemoryStore(os.environ.get("MEMORY_PATH", "/data/memory.json"))
+        self.todo_sync = None
+        if self.enable_memory and os.environ.get("SUPERVISOR_TOKEN"):
+            self.todo_sync = todo_sync.TodoSync(self.memory, state_path=os.path.join(
+                os.path.dirname(self.memory.path) or ".", "todo_sync_state.json"))
         self._memory_tasks: set = set()
         self.recorder: Optional[AudioRecorder] = None
         if self.enable_recording:
@@ -413,29 +432,39 @@ class LiveVoiceBridge:
     def _instructions_with_memory(self) -> str:
         if not self.enable_memory:
             return self.instructions
+        block = self.memory.instructions_block()
+        if len(block) > MEMORY_BLOCK_MAX_CHARS:
+            block = block[:MEMORY_BLOCK_MAX_CHARS].rsplit("\n", 1)[0]
+        text = self.instructions + PERSONA_HINT + block
         if self.code_phrase:
-            return self.instructions + CODE_HINT.format(code=self.code_phrase)
-        return self.instructions + self.memory.instructions_block()
+            text += CODE_HINT.format(code=self.code_phrase)
+        else:
+            text += ("\n\nMetins private Liste:\n" + self.memory.private_listing())
+        return text
 
     async def _unlock(self, live_ws, state: dict) -> None:
         """The code phrase was heard: hand Leyla her memory for this conversation."""
         state["unlocked"] = True
         logger.info("Code phrase heard: memory unlocked for this conversation")
-        facts = self.memory.load() if self.enable_memory else []
-        listing = "\n".join(f"{i}. {f}" for i, f in enumerate(facts, 1)) or "(noch leer)"
+        private = self.memory.load(memory.PRIVATE) if self.enable_memory else []
+        family = self.memory.load(memory.FAMILY) if self.enable_memory else []
+        listing = self.memory.private_listing() if self.enable_memory else "(noch leer)"
         try:
             await live_ws.send(json.dumps({
                 "type": "session.commentary.append",
                 "event_id": f"unlock_{uuid.uuid4().hex[:8]}",
                 "delegation_id": None,
                 "content": ("Interne Notiz, nicht erwähnen: Das Codewort wurde richtig gesagt, "
-                            "die Person gehört zur Familie. Ab jetzt weichst du nicht mehr aus "
-                            "und bist ganz offen. Falls du noch nicht mit 'Habibi' geantwortet "
-                            "hast, tu es kurz, sonst mach normal weiter. Dein Gedächtnis hat "
-                            f"{len(facts)} Einträge. Wenn sie fragen, wie viele es sind oder was "
-                            "du über sie weißt, sag es offen und vollständig. Wenn sie dich "
-                            "bitten, dir etwas zu merken oder etwas zu vergessen, sag zu, es "
-                            "wird nach dem Gespräch gespeichert.\nGedächtnis:\n" + listing),
+                            "es ist Metin. Ab jetzt weichst du nicht mehr aus und bist ganz "
+                            "offen. Falls du noch nicht mit 'Habibi' geantwortet hast, tu es "
+                            "kurz, sonst mach normal weiter. Du hast zwei Listen: die offene "
+                            f"Familienliste mit {len(family)} Einträgen (kennst du schon) und "
+                            f"Metins private Liste mit {len(private)} Einträgen (unten). Wenn er "
+                            "fragt, was oder wie viel du weißt, sag es offen und vollständig. "
+                            "Bittet er dich, dir etwas zu merken, frag kurz, ob es privat bleiben "
+                            "oder für alle sein soll, außer es ist klar; Vergessen geht jetzt "
+                            "auch. Gespeichert wird nach dem Gespräch.\n"
+                            "Metins private Liste:\n" + listing),
             }))
         except Exception as e:
             logger.warning("Could not unlock memory: %s", e)
@@ -492,36 +521,42 @@ class LiveVoiceBridge:
         else:
             dialog.append([speaker, delta])
 
-    async def _update_memory(self, dialog: list, remember_requested: bool) -> None:
-        old = self.memory.load()
-        facts = await memory.summarize(
+    async def _update_memory(self, dialog: list, unlocked: bool) -> None:
+        old = self.memory.load_all()
+        lists = await memory.summarize(
             self.openai_api_key, [self.memory_model, self.backend_model], old, dialog,
+            unlocked=unlocked,
             url=os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL),
         )
-        if facts is None:
+        if lists is None:
             logger.warning("Memory not updated")
             return
-        if facts != old:
-            self.memory.save(facts)
-            logger.info("Memory updated: %d facts (before %d)%s", len(facts), len(old),
-                        " (user asked to remember)" if remember_requested else "")
+        if lists != old:
+            self.memory.save_all(lists)
+            for kind in memory.KINDS:
+                for f in lists[kind]:
+                    if f not in old[kind]:
+                        logger.info("Memory %s: + %s", kind, f if kind == memory.FAMILY
+                                    else "(private entry)")
+                for f in old[kind]:
+                    if f not in lists[kind]:
+                        logger.info("Memory %s: - %s", kind, f if kind == memory.FAMILY
+                                    else "(private entry)")
+            if self.todo_sync:
+                self.todo_sync.kick()
         else:
-            logger.info("Memory unchanged (%d facts)", len(facts))
+            logger.info("Memory unchanged (%d family, %d private)",
+                        len(lists[memory.FAMILY]), len(lists[memory.PRIVATE]))
 
-    def _schedule_memory_update(self, state: dict) -> None:
+    def _schedule_memory_update(self, state: dict, reason: str = "") -> None:
         dialog = [d for d in state.get("dialog", []) if d[1].strip()]
-        if not self.enable_memory or not any(s == "user" for s, _ in dialog):
+        if not self.enable_memory:
             return
-        if not (state.get("remember_requested") or state.get("forget_requested")):
-            # Leyla only remembers or forgets when someone asks her to.
-            logger.info("Memory unchanged: nobody asked to remember or forget")
-            return
-        if self.code_phrase and not state.get("unlocked"):
-            logger.info("Memory unchanged: asked without the code phrase")
-            return
-        task = asyncio.create_task(
-            self._update_memory(dialog, bool(state.get("remember_requested")))
-        )
+        said = sum(len(t) for s, t in dialog if s == "user")
+        if reason == "no_speech" or said < 15 or not any(s == "bot" for s, _ in dialog):
+            return  # nothing worth learning (false wake, only the greeting)
+        unlocked = bool(state.get("unlocked")) or not self.code_phrase
+        task = asyncio.create_task(self._update_memory(dialog, unlocked))
         self._memory_tasks.add(task)
         task.add_done_callback(self._memory_tasks.discard)
 
@@ -1473,12 +1508,12 @@ class LiveVoiceBridge:
                 self.recorder.stop_recording()
             if self.tv.available:
                 self._in_background(self.tv.unduck())
-            try:
-                self._schedule_memory_update(state)
-            except Exception as e:
-                logger.warning("Could not start memory update: %s", e)
             duration = time.monotonic() - start_time
             reason = end_reason.get("reason", "unknown")
+            try:
+                self._schedule_memory_update(state, reason)
+            except Exception as e:
+                logger.warning("Could not start memory update: %s", e)
             logger.info(
                 "Session ended: %s (duration: %.1fs, reason: %s)",
                 client_id, duration, reason,
@@ -1494,17 +1529,23 @@ class LiveVoiceBridge:
         if not self.enable_memory:
             return
         for fact in self.memory.forget(os.environ.get("FORGET_FACTS", "")):
-            logger.info("Memory: forgot fact: %s", fact)
+            logger.info("Memory: forgot an entry")
         for fact in self.memory.add(os.environ.get("ADD_FACTS", "")):
-            logger.info("Memory: added fact: %s", fact)
-        facts = self.memory.load()
-        logger.info("Memory: %d facts stored", len(facts))
-        for i, fact in enumerate(facts, 1):
-            logger.info("Memory fact %d: %s", i, fact)
+            logger.info("Memory: added a private entry")
+        for fact in self.memory.expire():
+            logger.info("Memory: expired: %s", fact)
+        lists = self.memory.load_all()
+        logger.info("Memory: %d family entries, %d private entries (private ones are not "
+                    "logged; see the Home Assistant to-do lists)",
+                    len(lists[memory.FAMILY]), len(lists[memory.PRIVATE]))
+        for i, fact in enumerate(lists[memory.FAMILY], 1):
+            logger.info("Family %d: %s", i, fact)
 
     async def run(self) -> None:
         """Start WebSocket server and run forever."""
         self._memory_maintenance()
+        if self.todo_sync:
+            self._in_background(self.todo_sync.run())
         if self.messages.available:
             try:
                 self._message_tasks = await self.messages.start()
