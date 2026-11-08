@@ -320,3 +320,4 @@ def test_leyla_birthday_joke():
     instructions = _bridge()._session_start()["session"]["instructions"]
     assert "Bevor du jemanden nach seinem Geburtstag fragst" in instructions
     assert "neugierig statt ausfragend" in instructions
+    assert "Du gehörst selbst zur Familie" in instructions and "112" in instructions
