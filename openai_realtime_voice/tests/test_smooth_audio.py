@@ -321,3 +321,4 @@ def test_leyla_birthday_joke():
     assert "Bevor du jemanden nach seinem Geburtstag fragst" in instructions
     assert "neugierig statt ausfragend" in instructions
     assert "Du gehörst selbst zur Familie" in instructions and "112" in instructions
+    assert "Dein kleines Geheimnis" in instructions and "Kim bilir?" in instructions
