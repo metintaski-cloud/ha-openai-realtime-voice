@@ -174,7 +174,7 @@ def test_language_hint_in_session():
     bridge = _bridge()
     instructions = bridge._session_start()["session"]["instructions"]
     assert "bir saniye" in instructions
-    assert "Leyla" in m.greeting_instruction("Hallo")
+    assert "buyur" in m.greeting_instruction("Hallo")
 
 
 def test_few_terms_of_endearment():
@@ -312,19 +312,33 @@ async def test_anything_on_reads_lamps(monkeypatch):
 
 def test_leyla_birthday_joke():
     from datetime import date
-    assert m.leyla_age(date(2026, 11, 8)) == "erst vor einer Woche"
-    assert m.leyla_age(date(2026, 11, 3)) == "gestern"
-    assert m.leyla_age(date(2026, 11, 20)) == "vor 3 Wochen"
-    assert m.leyla_age(date(2027, 3, 2)) == "vor 4 Monaten"
-    assert m.leyla_age(date(2027, 11, 2)) == "heute, du wirst 1"
+    from app import persona
+    assert persona.leyla_age(date(2026, 11, 8)) == "erst vor einer Woche"
+    assert persona.leyla_age(date(2026, 11, 3)) == "gestern"
+    assert persona.leyla_age(date(2026, 11, 20)) == "vor 3 Wochen"
+    assert persona.leyla_age(date(2027, 3, 2)) == "vor 4 Monaten"
+    assert persona.leyla_age(date(2027, 11, 2)) == "heute, du wirst 1"
+
+
+def test_one_clear_package():
     instructions = _bridge()._session_start()["session"]["instructions"]
-    assert "Bevor du jemanden nach seinem Geburtstag fragst" in instructions
-    assert "neugierig statt ausfragend" in instructions
-    assert "Du gehörst selbst zur Familie" in instructions and "112" in instructions
-    assert "Dein kleines Geheimnis" in instructions and "sag sie nie wörtlich" in instructions
+    for section in ("WER DU BIST", "WIE DU SPRICHST", "WER MIT DIR SPRICHT", "KENNENLERNEN",
+                    "DEIN KLEINES GEHEIMNIS", "SICHERHEIT", "ERLEDIGEN"):
+        assert instructions.count(section) == 1, section
+    assert "Du gehörst zur Familie" in instructions and "112" in instructions
+    assert "Hahaha, der war" in instructions and "Kimler var burada?" in instructions
+    assert "Bekannte" not in instructions  # she is part of the family
+    assert instructions.count("Kosewörter") <= 2
 
 
 def test_secret_examples_vary():
-    picks = {m.secret_hint() for _ in range(20)}
+    from app import persona
+    picks = {persona.build([]) for _ in range(20)}
     assert len(picks) > 5
-    assert all(sum(h in p for h in m.SECRET_HINTS) == 3 for p in picks)
+    assert all(sum(h in p for h in persona.SECRET_HINTS) == 3 for p in picks)
+
+
+def test_extra_rules_come_last(monkeypatch):
+    monkeypatch.setenv("INSTRUCTIONS", "Sag öfter Maşallah.")
+    instructions = _bridge()._session_start()["session"]["instructions"]
+    assert instructions.rstrip().endswith("Sag öfter Maşallah.")

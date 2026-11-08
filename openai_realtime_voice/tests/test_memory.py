@@ -217,5 +217,5 @@ def test_profiles_and_open_questions(tmp_path):
         "Ayşe", {"Zugehörigkeit": "Metins Schwester", "Interessen": "Kochen"})
     assert memory.missing_fields(store.load()[0]) == ["Geburtstag", "Kinder", "Arbeit"]
     block = store.instructions_block()
-    assert "Noch offen" in block and "- Ayşe: Geburtstag, Kinder, Arbeit" in block
-    assert "- Metin:" not in block.split("Noch offen")[1]
+    assert "NOCH OFFEN" in block and "• Ayşe: Geburtstag, Kinder, Arbeit" in block
+    assert "• Metin:" not in block.split("NOCH OFFEN")[1]

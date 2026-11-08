@@ -136,15 +136,6 @@ TV_BACKEND_HINT = (
     "error, say so honestly."
 )
 
-TV_LIVE_HINT = (
-    "\n\nFernseher: Du kannst den Fernseher im Wohnzimmer über deinen Hintergrund (Delegation) "
-    "bedienen: an, aus, Sender wechseln ({names}), lauter, leiser und stumm. Gib jede "
-    "Fernsehbitte sofort dorthin weiter und bestätige erst, wenn das Ergebnis zurück ist. "
-    "Solange ihr redet, ist der Fernseher automatisch leiser, damit du alle gut verstehst; "
-    "danach geht er von selbst wieder auf die alte Lautstärke."
-)
-
-
 class TvController:
     def __init__(self, remote, channels: dict[str, int], tv_remote: str = DEFAULT_TV_REMOTE,
                  api_url: Optional[str] = None, token: Optional[str] = None,

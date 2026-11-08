@@ -161,4 +161,4 @@ async def build_context() -> str:
         indoor = await _indoor(client)
         if indoor:
             lines.append(indoor)
-    return "\n\nAktuelle Lage (nutze es nur, wenn es passt):\n" + "\n".join(lines)
+    return "\n\nAKTUELLE LAGE (nutze es nur, wenn es passt)\n" + "\n".join(lines)

@@ -90,15 +90,6 @@ LIGHTS_BACKEND_HINT = (
 )
 
 
-LIGHTS_LIVE_HINT = (
-    "\n\nLicht: Du kannst die Stehlampen im Wohnzimmer schalten, aber nur über deinen "
-    "Hintergrund (Delegation). Gib jede Lichtbitte sofort dorthin weiter. Sag niemals, dass "
-    "eine Lampe an, aus oder geändert ist, bevor das Ergebnis zurück ist, und erfinde keine "
-    "Signale oder Zwischenschritte. Melde danach genau das, was das Ergebnis sagt, auch wenn "
-    "eine Lampe nicht erreichbar ist."
-)
-
-
 def _env(name: str) -> str:
     value = (os.environ.get(name) or "").strip()
     return "" if value.lower() == "null" else value

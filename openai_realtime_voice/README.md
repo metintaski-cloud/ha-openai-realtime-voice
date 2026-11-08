@@ -32,7 +32,7 @@ In **Supervisor** → **OpenAI Realtime Voice** → **Configuration**:
 **Optional**
 
 - `websocket_port`: WebSocket port (default `8080`)
-- `instructions`: System prompt for the model (e.g. language, tone, length of answers)
+- `instructions`: Optional extra rules for Leyla, added after her built in instructions (app/persona.py)
 - `web_search_api_key`: API key for Responses API web search; must have **Responses (Write)** permission. If empty, `openai_api_key` is used.
 - `voice`: OpenAI Realtime voice (default `marin`)
 - `realtime_model`: OpenAI Realtime model (default `gpt-realtime`). Constructs the WebSocket URL as `wss://api.openai.com/v1/realtime?model={realtime_model}`.

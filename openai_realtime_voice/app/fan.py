@@ -132,15 +132,6 @@ FAN_BACKEND_HINT = (
     "stromkosten and say the amounts in euros and cents, rounded, in one or two sentences."
 )
 
-FAN_LIVE_HINT = (
-    "\n\nVentilator: Du kannst den Deckenventilator im Wohnzimmer über deinen Hintergrund "
-    "(Delegation) bedienen: aus, Stufe 1 bis 6, Licht am Ventilator an oder aus, Naturwind, "
-    "Drehrichtung links oder rechts und Timer 1, 2 oder 4 Stunden. Ein Strommesser sagt dir, "
-    "ob das Licht an ist und ob er sich dreht. Gib jede Ventilatorbitte sofort dorthin weiter "
-    "und bestätige erst, wenn das Ergebnis zurück ist."
-)
-
-
 def button_for(args: dict) -> tuple[Optional[str], Optional[str]]:
     """Return (button name, error) for the tool arguments."""
     action = (args.get("action") or "").strip().lower()

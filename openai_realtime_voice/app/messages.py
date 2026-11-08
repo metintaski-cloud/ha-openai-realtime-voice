@@ -67,14 +67,6 @@ TO_METIN_BACKEND_HINT = (
     "person says otherwise."
 )
 
-TO_METIN_LIVE_HINT = (
-    "\n\nNachrichten an Metin: Wenn jemand Metin etwas ausrichten will, gib es an deinen "
-    "Hintergrund weiter. Ist sie verschickt, sag kurz, dass Metin sie auf dem Handy hat, und "
-    "frag immer, ob du ihm noch etwas mitteilen sollst, in der Sprache der Person, bei Mama "
-    "auf Türkisch, zum Beispiel „Metin'e başka bir şey söylememi ister misin?“."
-)
-
-
 def _env(name: str, default: str = "") -> str:
     v = (os.environ.get(name) or "").strip()
     return default if not v or v.lower() == "null" else v
@@ -233,7 +225,7 @@ class MessageCenter:
             return
         prompt = ("Mach jetzt eine kurze Ansage im Wohnzimmer, in der Sprache des Textes. Sag sie "
                   "nicht vorgelesen, sondern lebendig, herzlich und fröhlich mit deinen eigenen "
-                  "Worten, wie eine liebe Bekannte der Familie, gern mit einem kleinen netten Satz "
+                  "Worten, als Teil der Familie, gern mit einem kleinen netten Satz "
                   "dazu, aber ohne Kosewörter wie „canım“. Alle Informationen wie Uhrzeit und was du tust müssen drin bleiben. "
                   "Danach sagst du nichts mehr. Inhalt: \"" + text + "\"")
         await self._play(await self.speak(prompt))
@@ -297,8 +289,8 @@ class MessageCenter:
             except Exception as e:
                 logger.warning("Could not start a conversation for the message: %s", e)
         prompt = (
-            "Sag jetzt eine kurze Ansage auf Türkisch, lebendig und herzlich wie eine "
-            "gute Bekannte der Familie, ohne Kosewörter wie „canım“, nicht vorgelesen, und danach nichts mehr. "
+            "Sag jetzt eine kurze Ansage auf Türkisch, lebendig und herzlich als "
+            "Teil der Familie, ohne Kosewörter wie „canım“, nicht vorgelesen, und danach nichts mehr. "
             "Inhalt: Es gibt eine Nachricht von Metin. Übersetze seine Nachricht ins Türkische "
             f"und sag sie: \"{p['text']}\". Sag am Ende: Wenn du es gehört hast, sag "
             "'Hallo Leyla, tamam'."

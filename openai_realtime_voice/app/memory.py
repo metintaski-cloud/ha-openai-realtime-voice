@@ -268,21 +268,16 @@ class MemoryStore:
         family = [f for f in self.load(FAMILY) if not expired(f)]
         if not family:
             return ""
-        lines = "\n".join(f"- {f}" for f in family)
+        lines = "\n".join(f"• {f}" for f in family)
         open_ = []
         for f in family:
             parsed = parse_profile(f)
             missing = missing_fields(f)
             if parsed and missing:
-                open_.append(f"- {parsed[0]}: {', '.join(missing)}")
-        text = (
-            "\n\nWas du über die Familie und den Haushalt weißt (offen, nutze es natürlich, "
-            "zähl es nicht auf; Einträge mit „Aktuell“ sprichst du nur bei der betroffenen "
-            "Person selbst an):\n" + lines
-        )
+                open_.append(f"• {parsed[0]}: {', '.join(missing)}")
+        text = "\n\nFAMILIE UND HAUSHALT\n" + lines
         if open_:
-            text += ("\nNoch offen (nur für beiläufige Fragen an die Person selbst):\n"
-                     + "\n".join(open_))
+            text += "\n\nNOCH OFFEN\n" + "\n".join(open_)
         return text
 
     def private_listing(self) -> str:
