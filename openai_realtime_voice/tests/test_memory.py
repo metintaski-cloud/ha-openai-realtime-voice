@@ -159,7 +159,7 @@ def test_old_file_becomes_private(tmp_path):
     assert "16. Juli" in store.private_listing()
     store.save(["Person: Ayşe (Metins Schwester)."], memory.FAMILY)
     data = json.loads(p.read_text(encoding="utf-8"))
-    assert data["version"] == 2 and len(data["private"]) == 1
+    assert data["version"] == 3 and len(data["private"]) == 1
 
 
 def test_states_expire(tmp_path):
@@ -219,3 +219,45 @@ def test_profiles_and_open_questions(tmp_path):
     block = store.instructions_block()
     assert "NOCH OFFEN" in block and "• Ayşe: Geburtstag, Kinder, Arbeit" in block
     assert "• Metin:" not in block.split("NOCH OFFEN")[1]
+
+
+def test_friends_and_relatives_list(tmp_path):
+    store = memory.MemoryStore(str(tmp_path / "m.json"))
+    store.save_all({"family": ["Person: Ayşe | Zugehörigkeit: Metins Schwester"],
+                    "friends": ["Person: Ali | Zugehörigkeit: Freund von Umut"]})
+    assert store.load(memory.FRIENDS) == ["Person: Ali | Zugehörigkeit: Freund von Umut"]
+    block = store.instructions_block()
+    assert "FAMILIE UND HAUSHALT\n• Person: Ayşe" in block
+    assert "FREUNDE UND VERWANDTE\n• Person: Ali" in block
+    assert "• Ali: Geburtstag" in block.split("NOCH OFFEN")[1]
+    # an old file without the friends list still loads
+    (tmp_path / "old.json").write_text('{"version": 2, "family": ["x"], "private": []}')
+    assert memory.MemoryStore(str(tmp_path / "old.json")).load(memory.FRIENDS) == []
+
+
+async def test_summary_keeps_friends_the_model_left_out(monkeypatch):
+    class Resp:
+        status_code = 200
+
+        def json(self):
+            return {"output_text": '{"family": ["Person: Metin"], "private": []}'}
+
+    class Client:
+        def __init__(self, *a, **k):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        async def post(self, *a, **k):
+            return Resp()
+
+    monkeypatch.setattr(memory.httpx, "AsyncClient", Client)
+    old = {"family": ["Person: Metin"], "friends": ["Person: Ali | Zugehörigkeit: Nachbar"],
+           "private": ["geheim"]}
+    lists = await memory.summarize("k", ["m"], old, [["user", "hallo"]])
+    assert lists["friends"] == ["Person: Ali | Zugehörigkeit: Nachbar"]
+    assert lists["private"] == ["geheim"]

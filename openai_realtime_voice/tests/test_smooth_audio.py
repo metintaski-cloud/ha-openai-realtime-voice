@@ -406,3 +406,10 @@ async def test_no_report_when_nobody_was_rude(monkeypatch):
 
     monkeypatch.setattr(report.httpx, "AsyncClient", Client)
     assert await report.write_report("k", ["m"], [["bot", "Tamam, Metin'e söylerim."]]) is None
+
+
+def test_unknown_names_are_asked_about():
+    from app import persona
+    text = persona.build([])
+    assert "Fällt im Gespräch ein Name, den du nicht kennst" in text
+    assert "alle anderen sind Freunde und Verwandte" in text

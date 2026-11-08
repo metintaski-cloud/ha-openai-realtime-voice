@@ -400,7 +400,8 @@ class LiveVoiceBridge:
         state["unlocked"] = True
         logger.info("Code phrase heard: memory unlocked for this conversation")
         private = self.memory.load(memory.PRIVATE) if self.enable_memory else []
-        family = self.memory.load(memory.FAMILY) if self.enable_memory else []
+        family = (self.memory.load(memory.FAMILY) + self.memory.load(memory.FRIENDS)
+                  if self.enable_memory else [])
         listing = self.memory.private_listing() if self.enable_memory else "(noch leer)"
         try:
             await live_ws.send(json.dumps({
@@ -410,8 +411,8 @@ class LiveVoiceBridge:
                 "content": ("Interne Notiz, nicht erwähnen: Das Codewort wurde richtig gesagt, "
                             "es ist Metin. Ab jetzt weichst du nicht mehr aus und bist ganz "
                             "offen. Falls du noch nicht mit 'Habibi' geantwortet hast, tu es "
-                            "kurz, sonst mach normal weiter. Du hast zwei Listen: die offene "
-                            f"Familienliste mit {len(family)} Einträgen (kennst du schon) und "
+                            "kurz, sonst mach normal weiter. Du hast die offenen Listen "
+                            f"Familie und Freunde mit {len(family)} Einträgen (kennst du schon) und "
                             f"Metins private Liste mit {len(private)} Einträgen (unten). Wenn er "
                             "fragt, was oder wie viel du weißt, sag es offen und vollständig. "
                             "Bittet er dich, dir etwas zu merken, frag kurz, ob es privat bleiben "
@@ -489,17 +490,18 @@ class LiveVoiceBridge:
             for kind in memory.KINDS:
                 for f in lists[kind]:
                     if f not in old[kind]:
-                        logger.info("Memory %s: + %s", kind, f if kind == memory.FAMILY
+                        logger.info("Memory %s: + %s", kind, f if kind in memory.OPEN_KINDS
                                     else "(private entry)")
                 for f in old[kind]:
                     if f not in lists[kind]:
-                        logger.info("Memory %s: - %s", kind, f if kind == memory.FAMILY
+                        logger.info("Memory %s: - %s", kind, f if kind in memory.OPEN_KINDS
                                     else "(private entry)")
             if self.todo_sync:
                 self.todo_sync.kick()
         else:
-            logger.info("Memory unchanged (%d family, %d private)",
-                        len(lists[memory.FAMILY]), len(lists[memory.PRIVATE]))
+            logger.info("Memory unchanged (%d family, %d friends, %d private)",
+                        len(lists[memory.FAMILY]), len(lists[memory.FRIENDS]),
+                        len(lists[memory.PRIVATE]))
 
     def _schedule_memory_update(self, state: dict, reason: str = "") -> None:
         dialog = [d for d in state.get("dialog", []) if d[1].strip()]
@@ -1510,11 +1512,14 @@ class LiveVoiceBridge:
         for fact in self.memory.expire():
             logger.info("Memory: expired: %s", fact)
         lists = self.memory.load_all()
-        logger.info("Memory: %d family entries, %d private entries (private ones are not "
-                    "logged; see the Home Assistant to-do lists)",
-                    len(lists[memory.FAMILY]), len(lists[memory.PRIVATE]))
+        logger.info("Memory: %d family, %d friends, %d private entries (private ones are "
+                    "not logged; see the Home Assistant to-do lists)",
+                    len(lists[memory.FAMILY]), len(lists[memory.FRIENDS]),
+                    len(lists[memory.PRIVATE]))
         for i, fact in enumerate(lists[memory.FAMILY], 1):
             logger.info("Family %d: %s", i, fact)
+        for i, fact in enumerate(lists[memory.FRIENDS], 1):
+            logger.info("Friends %d: %s", i, fact)
 
     async def run(self) -> None:
         """Start WebSocket server and run forever."""

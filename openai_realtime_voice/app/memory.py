@@ -1,10 +1,11 @@
 """
-Long term memory for the voice assistant, in two parts:
+Long term memory for the voice assistant, in three parts:
 
-  family   open knowledge about the family and the household. Leyla gets to know the
-           people by herself (one profile per person: name, relation, character,
-           interests, how they talk) plus short lived states ("Aktuell bis <date>: ...")
-           that expire on their own. She uses it openly with everyone.
+  family   open knowledge about the closest family (Metin, his mother, his siblings) and
+           the household. Leyla gets to know the people by herself (one profile per
+           person: name, relation, character, interests, how they talk) plus short lived
+           states ("Aktuell bis <date>: ...") that expire on their own.
+  friends  the same for everybody else: relatives, friends, neighbours, acquaintances.
   private  Metin's very private things. Only after the code phrase may Leyla talk about
            them, add to them or delete from them.
 
@@ -28,8 +29,9 @@ logger = logging.getLogger(__name__)
 RESPONSES_URL = "https://api.openai.com/v1/responses"
 MAX_FACTS = 250
 MAX_FACT_CHARS = 400
-FAMILY, PRIVATE = "family", "private"
-KINDS = (FAMILY, PRIVATE)
+FAMILY, FRIENDS, PRIVATE = "family", "friends", "private"
+KINDS = (FAMILY, FRIENDS, PRIVATE)
+OPEN_KINDS = (FAMILY, FRIENDS)
 # One entry per person: "Person: Ayşe | Zugehörigkeit: Metins Schwester | Geburtstag: ..."
 PROFILE_FIELDS = ("Zugehörigkeit", "Geburtstag", "Alter", "Kinder", "Arbeit", "Interessen",
                   "Charakter", "Spricht", "Sonst")
@@ -53,8 +55,9 @@ SUMMARY_PROMPT = """Du pflegst das Gedächtnis von Leyla, der Sprachassistentin 
 Familie. Dort wohnen Metin und seine Mutter Gülfikar; gesprochen wird Deutsch oder Türkisch.
 Heute ist der {today}.
 
-Es gibt zwei Listen:
-1. "family" (offen): was Leyla über die Familie und den Haushalt weiß und offen nutzen darf.
+Es gibt drei Listen:
+1. "family" (offen): nur die engste Familie, also Metin, seine Mutter Gülfikar und Metins
+   Geschwister, dazu Allgemeines über den Haushalt.
    Für jede Person genau EIN Eintrag in genau dieser Form, Felder mit " | " getrennt, leere
    Felder weglassen, Reihenfolge beibehalten:
    "Person: <Name> | Zugehörigkeit: <zum Beispiel Metins Schwester> | Geburtstag: <TT.MM.JJJJ oder
@@ -66,7 +69,11 @@ Es gibt zwei Listen:
    "Aktuell bis TT.MM.JJJJ: <Name> ..." mit einem Datum etwa zwei Wochen nach heute. Ist es
    erledigt oder besser, entferne den Eintrag.
    Allgemeines über den Haushalt als kurze Sätze.
-2. "private" (gesperrt): Metins sehr private Dinge.
+2. "friends" (offen): Freunde und Verwandte, also alle anderen Personen, zum Beispiel Onkel,
+   Tanten, Cousins, Schwager, Nichten und Neffen, Freunde, Nachbarn und Bekannte. Gleiches
+   Format wie bei "family"; bei Zugehörigkeit steht, wie die Person zu uns gehört (zum Beispiel
+   „Freund von Umut“ oder „Metins Cousin“), und ist das noch nicht klar, „unklar“.
+3. "private" (gesperrt): Metins sehr private Dinge.
 
 Bisherige Listen (JSON):
 {lists}
@@ -86,6 +93,9 @@ Regeln:
   gesprochen oder über Leyla oder Technik geredet wird. Wer zu Besuch kommt ("ich besuche meine
   Mutter"), wohnt nicht hier. Ist nicht klar, wer gesprochen hat, trägst du über diese Person
   nichts ein.
+- Jede Person steht in genau einer Liste. Steht jemand in der falschen, verschieb den Eintrag.
+  Eine Person, die nur erwähnt wird, trägst du ein, sobald man etwas Bleibendes über sie
+  erfährt (wer sie ist, wie sie zu uns gehört).
 - Reden mehrere Personen, trägst du nur ein, was eindeutig einer Person zuzuordnen ist (sie hat
   sich selbst genannt, wurde mit Namen angesprochen, oder Leyla hat es bestätigt).
 - Schreib Namen immer so, wie sie schon in der Liste stehen (zum Beispiel Gülfikar, nicht
@@ -95,12 +105,13 @@ Regeln:
   sich ausdrücklich privat merken lassen will. Sagt er "für alle" oder ist es Familienwissen,
   gehört es nach "family". Wurde das Codewort nicht gesagt, gib "private" unverändert zurück.
 - Vergessen: Bittet jemand, etwas zu vergessen, entferne es. Ohne Codewort nur aus "family"
-  und nur, was die Person selbst betrifft. Sonst löschst du ohne Codewort nichts außer
+  oder "friends" und nur, was die Person selbst betrifft. Sonst löschst du ohne Codewort nichts außer
   abgelaufenen oder erledigten "Aktuell" Einträgen.
 - Keine Passwörter, PINs, Konto oder Kartennummern.
 - Kurze deutsche Sätze, höchstens {max_facts} Einträge je Liste.
-- Gibt es nichts Neues, gib beide Listen unverändert zurück.
-Antworte nur mit JSON in der Form {{"family": ["..."], "private": ["..."]}} und sonst nichts."""
+- Gibt es nichts Neues, gib alle Listen unverändert zurück.
+Antworte nur mit JSON in der Form {{"family": ["..."], "friends": ["..."], "private": ["..."]}}
+und sonst nichts."""
 
 
 def wants_to_remember(text: str) -> bool:
@@ -148,11 +159,12 @@ def parse_facts_json(text: str) -> Optional[list[str]]:
 
 
 def parse_lists_json(text: str) -> Optional[dict]:
-    """Extract {"family": [...], "private": [...]} from model output."""
+    """Extract {"family": [...], "friends": [...], "private": [...]} from model output. A
+    list the model left out is missing from the result (the caller keeps the old one)."""
     data = _json_object(text)
     if data is None or FAMILY not in data:
         return None
-    return {FAMILY: _clean_facts(data.get(FAMILY)), PRIVATE: _clean_facts(data.get(PRIVATE))}
+    return {k: _clean_facts(data.get(k)) for k in KINDS if k in data}
 
 
 def parse_profile(fact: str) -> Optional[tuple[str, dict]]:
@@ -200,13 +212,13 @@ class MemoryStore:
             with open(self.path, encoding="utf-8") as f:
                 data = json.load(f)
         except FileNotFoundError:
-            return {FAMILY: [], PRIVATE: []}
+            return {k: [] for k in KINDS}
         except Exception as e:
             logger.warning("Could not read memory file %s: %s", self.path, e)
-            return {FAMILY: [], PRIVATE: []}
+            return {k: [] for k in KINDS}
         if FAMILY not in data and PRIVATE not in data:
             # Old single list: everything stays private until Metin moves it
-            return {FAMILY: [], PRIVATE: _clean_facts(data.get("facts", []))}
+            return {FAMILY: [], FRIENDS: [], PRIVATE: _clean_facts(data.get("facts", []))}
         return {k: _clean_facts(data.get(k, [])) for k in KINDS}
 
     def load(self, kind: str = FAMILY) -> list[str]:
@@ -223,7 +235,7 @@ class MemoryStore:
         os.makedirs(os.path.dirname(self.path) or ".", exist_ok=True)
         tmp = self.path + ".tmp"
         with open(tmp, "w", encoding="utf-8") as f:
-            json.dump({"version": 2, FAMILY: data[FAMILY], PRIVATE: data[PRIVATE],
+            json.dump({"version": 3, **{k: data[k] for k in KINDS},
                        "updated": int(time.time())}, f, ensure_ascii=False, indent=2)
         os.replace(tmp, self.path)
 
@@ -258,24 +270,32 @@ class MemoryStore:
 
     def expire(self, today: Optional[_dt.date] = None) -> list[str]:
         """Drop "Aktuell bis <date>" entries whose date has passed."""
-        family = self.load(FAMILY)
-        gone = [f for f in family if expired(f, today)]
-        if gone:
-            self.save([f for f in family if f not in gone], FAMILY)
+        gone = []
+        for kind in OPEN_KINDS:
+            facts = self.load(kind)
+            old = [f for f in facts if expired(f, today)]
+            if old:
+                self.save([f for f in facts if f not in old], kind)
+                gone += old
         return gone
 
     def instructions_block(self) -> str:
-        family = [f for f in self.load(FAMILY) if not expired(f)]
-        if not family:
+        data = self._read()
+        family = [f for f in data[FAMILY] if not expired(f)]
+        friends = [f for f in data[FRIENDS] if not expired(f)]
+        if not family and not friends:
             return ""
-        lines = "\n".join(f"• {f}" for f in family)
         open_ = []
-        for f in family:
+        for f in family + friends:
             parsed = parse_profile(f)
             missing = missing_fields(f)
             if parsed and missing:
                 open_.append(f"• {parsed[0]}: {', '.join(missing)}")
-        text = "\n\nFAMILIE UND HAUSHALT\n" + lines
+        text = ""
+        if family:
+            text += "\n\nFAMILIE UND HAUSHALT\n" + "\n".join(f"• {f}" for f in family)
+        if friends:
+            text += "\n\nFREUNDE UND VERWANDTE\n" + "\n".join(f"• {f}" for f in friends)
         if open_:
             text += "\n\nNOCH OFFEN\n" + "\n".join(open_)
         return text
@@ -330,7 +350,8 @@ async def summarize(
     today = today or _dt.date.today()
     prompt = SUMMARY_PROMPT.format(
         today=today.strftime("%d.%m.%Y"),
-        lists=json.dumps({FAMILY: old.get(FAMILY, []), PRIVATE: old.get(PRIVATE, [])
+        lists=json.dumps({FAMILY: old.get(FAMILY, []), FRIENDS: old.get(FRIENDS, []),
+                          PRIVATE: old.get(PRIVATE, [])
                           if unlocked else ["(gesperrt, unverändert lassen)"]},
                          ensure_ascii=False),
         unlocked="ja" if unlocked else "nein",
@@ -365,12 +386,16 @@ async def summarize(
             if lists is None:
                 logger.warning("Memory update: could not parse model output: %r", text[:300])
                 continue
+            for k in KINDS:
+                if k not in lists or (k == PRIVATE and not unlocked):
+                    lists[k] = list(old.get(k, []))
             if not unlocked:
-                lists[PRIVATE] = list(old.get(PRIVATE, []))
-            old_family = old.get(FAMILY, [])
-            if not unlocked and len(lists[FAMILY]) < len(old_family) - 3:
-                logger.warning("Memory update would drop %d family entries without the code "
-                               "phrase; ignored", len(old_family) - len(lists[FAMILY]))
-                lists[FAMILY] = list(old_family)
+                before = len(old.get(FAMILY, [])) + len(old.get(FRIENDS, []))
+                after = len(lists[FAMILY]) + len(lists[FRIENDS])
+                if after < before - 3:
+                    logger.warning("Memory update would drop %d open entries without the code "
+                                   "phrase; ignored", before - after)
+                    lists[FAMILY] = list(old.get(FAMILY, []))
+                    lists[FRIENDS] = list(old.get(FRIENDS, []))
             return lists
     return None

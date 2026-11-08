@@ -1,9 +1,10 @@
 """
-Mirror Leyla's two memory lists to two to-do lists in Home Assistant, so Metin can read
-and edit them in the Home Assistant app (no code phrase needed there):
+Mirror Leyla's memory lists to to-do lists in Home Assistant, so Metin can read and edit
+them in the Home Assistant app (no code phrase needed there):
 
-  todo.leyla_familie   the open family list
-  todo.leyla_privat    Metin's private list
+  todo.leyla_familie                 the closest family and the household
+  todo.leyla_freunde_und_verwandte   friends and relatives
+  todo.leyla_privat                  Metin's private list
 
 Both directions every SYNC_INTERVAL_S (and right after Leyla saved something):
 an entry deleted in the app is forgotten, an entry added or renamed in the app is
@@ -25,7 +26,9 @@ from app import memory
 logger = logging.getLogger(__name__)
 
 SYNC_INTERVAL_S = 30.0
-DEFAULT_LISTS = {memory.FAMILY: "todo.leyla_familie", memory.PRIVATE: "todo.leyla_privat"}
+DEFAULT_LISTS = {memory.FAMILY: "todo.leyla_familie",
+                 memory.FRIENDS: "todo.leyla_freunde_und_verwandte",
+                 memory.PRIVATE: "todo.leyla_privat"}
 
 
 def merge(store: list[str], ha: list[str], last: Optional[list[str]]) -> list[str]:

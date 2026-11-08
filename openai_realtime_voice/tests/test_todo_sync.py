@@ -17,7 +17,8 @@ def test_merge():
 
 class FakeHA:
     def __init__(self):
-        self.lists = {"todo.leyla_familie": [], "todo.leyla_privat": []}
+        self.lists = {"todo.leyla_familie": [], "todo.leyla_freunde_und_verwandte": [],
+                      "todo.leyla_privat": []}
         self.n = 0
 
     def items(self, entity):
