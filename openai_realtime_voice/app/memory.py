@@ -30,6 +30,11 @@ MAX_FACTS = 250
 MAX_FACT_CHARS = 400
 FAMILY, PRIVATE = "family", "private"
 KINDS = (FAMILY, PRIVATE)
+# One entry per person: "Person: Ayşe | Zugehörigkeit: Metins Schwester | Geburtstag: ..."
+PROFILE_FIELDS = ("Zugehörigkeit", "Geburtstag", "Alter", "Kinder", "Arbeit", "Interessen",
+                  "Charakter", "Spricht", "Sonst")
+# What Leyla tries to find out by herself, now and then, with a casual question
+ASK_FIELDS = ("Geburtstag", "Kinder", "Arbeit", "Interessen")
 STATE_RE = re.compile(r"^\s*Aktuell bis (\d{1,2})\.(\d{1,2})\.(\d{4})", re.IGNORECASE)
 
 REMEMBER_PHRASES = (
@@ -50,11 +55,13 @@ Heute ist der {today}.
 
 Es gibt zwei Listen:
 1. "family" (offen): was Leyla über die Familie und den Haushalt weiß und offen nutzen darf.
-   Für jede Person genau EIN Eintrag in dieser Form:
-   "Person: <Name> (<Zugehörigkeit, zum Beispiel Metins Schwester>). Charakter: ... Interessen: ...
-   Spricht: <Sprache, Art zu reden, wie sie angesprochen werden möchte>. Sonst: ..."
-   Lass leere Teile weg. Ergänze und verbessere den Eintrag mit jedem Gespräch, statt neue
-   Einträge für dieselbe Person anzulegen.
+   Für jede Person genau EIN Eintrag in genau dieser Form, Felder mit " | " getrennt, leere
+   Felder weglassen, Reihenfolge beibehalten:
+   "Person: <Name> | Zugehörigkeit: <zum Beispiel Metins Schwester> | Geburtstag: <TT.MM.JJJJ oder
+   TT.MM.> | Alter: ... | Kinder: ... | Arbeit: ... | Interessen: ... | Charakter: ... |
+   Spricht: <Sprache, Art zu reden, wie sie angesprochen werden möchte> | Sonst: ..."
+   Ergänze und verbessere den Eintrag mit jedem Gespräch, statt neue Einträge für dieselbe
+   Person anzulegen. Einträge in einem älteren Format bringst du in diese Form.
    Vorübergehendes (Krankheit, Prüfung, Reise, Sorge, Freude mit Anlass) als eigener Eintrag:
    "Aktuell bis TT.MM.JJJJ: <Name> ..." mit einem Datum etwa zwei Wochen nach heute. Ist es
    erledigt oder besser, entferne den Eintrag.
@@ -139,6 +146,31 @@ def parse_lists_json(text: str) -> Optional[dict]:
     if data is None or FAMILY not in data:
         return None
     return {FAMILY: _clean_facts(data.get(FAMILY)), PRIVATE: _clean_facts(data.get(PRIVATE))}
+
+
+def parse_profile(fact: str) -> Optional[tuple[str, dict]]:
+    """("Ayşe", {"Zugehörigkeit": "Metins Schwester", ...}) for a person entry, else None."""
+    if not fact.startswith("Person:"):
+        return None
+    parts = [p.strip() for p in fact[len("Person:"):].split("|")]
+    name = parts[0].strip(" .")
+    fields = {}
+    for part in parts[1:]:
+        key, sep, value = part.partition(":")
+        if sep and value.strip():
+            fields[key.strip()] = value.strip()
+    return (name, fields) if name else None
+
+
+def missing_fields(fact: str) -> list[str]:
+    parsed = parse_profile(fact)
+    if not parsed:
+        return []
+    fields = parsed[1]
+    out = [f for f in ASK_FIELDS if f not in fields]
+    if "Geburtstag" in out and "Alter" in fields:
+        out.remove("Geburtstag")
+    return out
 
 
 def expired(fact: str, today: Optional[_dt.date] = None) -> bool:
@@ -230,11 +262,21 @@ class MemoryStore:
         if not family:
             return ""
         lines = "\n".join(f"- {f}" for f in family)
-        return (
+        open_ = []
+        for f in family:
+            parsed = parse_profile(f)
+            missing = missing_fields(f)
+            if parsed and missing:
+                open_.append(f"- {parsed[0]}: {', '.join(missing)}")
+        text = (
             "\n\nWas du über die Familie und den Haushalt weißt (offen, nutze es natürlich, "
             "zähl es nicht auf; Einträge mit „Aktuell“ sprichst du nur bei der betroffenen "
             "Person selbst an):\n" + lines
         )
+        if open_:
+            text += ("\nNoch offen (nur für beiläufige Fragen an die Person selbst):\n"
+                     + "\n".join(open_))
+        return text
 
     def private_listing(self) -> str:
         facts = self.load(PRIVATE)
