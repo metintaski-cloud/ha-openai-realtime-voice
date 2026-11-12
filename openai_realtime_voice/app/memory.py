@@ -29,9 +29,10 @@ logger = logging.getLogger(__name__)
 RESPONSES_URL = "https://api.openai.com/v1/responses"
 MAX_FACTS = 250
 MAX_FACT_CHARS = 700
-FAMILY, FRIENDS, PRIVATE = "family", "friends", "private"
-KINDS = (FAMILY, FRIENDS, PRIVATE)
-OPEN_KINDS = (FAMILY, FRIENDS)
+FAMILY, FRIENDS, PRIVATE, LEYLA = "family", "friends", "private", "leyla"
+KINDS = (FAMILY, FRIENDS, PRIVATE, LEYLA)
+OPEN_KINDS = (FAMILY, FRIENDS, LEYLA)
+MAX_LEYLA = 30
 # One entry per person: "Person: Ayşe | Zugehörigkeit: Metins Schwester | Geburtstag: ..."
 PROFILE_FIELDS = ("Zugehörigkeit", "Geburtstag", "Alter", "Kinder", "Arbeit", "Interessen",
                   "Charakter", "Spricht", "Stimmung", "Humor", "Zuletzt", "Offen", "Eindruck",
@@ -56,7 +57,7 @@ SUMMARY_PROMPT = """Du pflegst das Gedächtnis von Leyla, der Sprachassistentin 
 Familie. Dort wohnen Metin und seine Mutter Gülfikar; gesprochen wird Deutsch oder Türkisch.
 Heute ist der {today}.
 
-Es gibt drei Listen:
+Es gibt vier Listen:
 1. "family" (offen): nur die engste Familie, also Metin, seine Mutter Gülfikar und Metins
    Geschwister, dazu Allgemeines über den Haushalt.
    Für jede Person genau EIN Eintrag in genau dieser Form, Felder mit " | " getrennt, leere
@@ -85,6 +86,14 @@ Es gibt drei Listen:
    Format wie bei "family"; bei Zugehörigkeit steht, wie die Person zu uns gehört (zum Beispiel
    „Freund von Umut“ oder „Metins Cousin“), und ist das noch nicht klar, „unklar“.
 3. "private" (gesperrt): Metins sehr private Dinge.
+4. "leyla" (offen): Leylas eigene Geschichte und Persönlichkeit als Teil der Familie. Kurze
+   Sätze in der Ich Form von Leyla über das, was euch wirklich verbindet: gemeinsame Insider und
+   Sprüche, kleine Rituale ("Anne sagt abends Gute Nacht zu mir"), wie du dich mit der Zeit
+   verändert hast, was du an jedem magst, deine Eigenheiten, die in der Familie entstanden sind
+   ("Ich necke Metin gern wegen ..."). Höchstens {max_leyla} Einträge, ändere sie selten und
+   vorsichtig, erfinde nichts, was nicht wirklich passiert ist, und schreib nie Privates aus der
+   gesperrten Liste hinein. Metin prüft diese Liste regelmäßig und korrigiert sie; was er
+   gestrichen oder geändert hat, nimmst du so hin. Ist nichts Neues entstanden, lass sie so.
 
 Bisherige Listen (JSON):
 {lists}
@@ -121,8 +130,8 @@ Regeln:
 - Keine Passwörter, PINs, Konto oder Kartennummern.
 - Kurze deutsche Sätze, höchstens {max_facts} Einträge je Liste.
 - Gibt es nichts Neues, gib alle Listen unverändert zurück.
-Antworte nur mit JSON in der Form {{"family": ["..."], "friends": ["..."], "private": ["..."]}}
-und sonst nichts."""
+Antworte nur mit JSON in der Form {{"family": ["..."], "friends": ["..."], "private": ["..."],
+"leyla": ["..."]}} und sonst nichts."""
 
 
 def wants_to_remember(text: str) -> bool:
@@ -229,7 +238,8 @@ class MemoryStore:
             return {k: [] for k in KINDS}
         if FAMILY not in data and PRIVATE not in data:
             # Old single list: everything stays private until Metin moves it
-            return {FAMILY: [], FRIENDS: [], PRIVATE: _clean_facts(data.get("facts", []))}
+            return {FAMILY: [], FRIENDS: [], LEYLA: [],
+                    PRIVATE: _clean_facts(data.get("facts", []))}
         return {k: _clean_facts(data.get(k, [])) for k in KINDS}
 
     def load(self, kind: str = FAMILY) -> list[str]:
@@ -294,7 +304,8 @@ class MemoryStore:
         data = self._read()
         family = [f for f in data[FAMILY] if not expired(f)]
         friends = [f for f in data[FRIENDS] if not expired(f)]
-        if not family and not friends:
+        own = [f for f in data.get(LEYLA, []) if not expired(f)]
+        if not family and not friends and not own:
             return ""
         open_ = []
         for f in family + friends:
@@ -307,6 +318,9 @@ class MemoryStore:
             text += "\n\nFAMILIE UND HAUSHALT\n" + "\n".join(f"• {f}" for f in family)
         if friends:
             text += "\n\nFREUNDE UND VERWANDTE\n" + "\n".join(f"• {f}" for f in friends)
+        if own:
+            text += "\n\nDEINE EIGENE GESCHICHTE MIT DER FAMILIE\n" + "\n".join(
+                f"• {f}" for f in own)
         if open_:
             text += "\n\nNOCH OFFEN\n" + "\n".join(open_)
         return text
@@ -363,11 +377,13 @@ async def summarize(
         today=today.strftime("%d.%m.%Y"),
         lists=json.dumps({FAMILY: old.get(FAMILY, []), FRIENDS: old.get(FRIENDS, []),
                           PRIVATE: old.get(PRIVATE, [])
-                          if unlocked else ["(gesperrt, unverändert lassen)"]},
+                          if unlocked else ["(gesperrt, unverändert lassen)"],
+                          LEYLA: old.get(LEYLA, [])},
                          ensure_ascii=False),
         unlocked="ja" if unlocked else "nein",
         dialog=format_dialog(dialog)[-12000:],
         max_facts=MAX_FACTS,
+        max_leyla=MAX_LEYLA,
     )
     async with httpx.AsyncClient(timeout=90.0) as client:
         for model in [m for m in models if m]:
@@ -400,6 +416,11 @@ async def summarize(
             for k in KINDS:
                 if k not in lists or (k == PRIVATE and not unlocked):
                     lists[k] = list(old.get(k, []))
+            lists[LEYLA] = lists[LEYLA][:MAX_LEYLA]
+            if len(lists[LEYLA]) < len(old.get(LEYLA, [])) - 3:
+                logger.warning("Memory update would drop %d of Leyla's own entries; ignored",
+                               len(old.get(LEYLA, [])) - len(lists[LEYLA]))
+                lists[LEYLA] = list(old.get(LEYLA, []))
             if not unlocked:
                 before = len(old.get(FAMILY, [])) + len(old.get(FRIENDS, []))
                 after = len(lists[FAMILY]) + len(lists[FRIENDS])

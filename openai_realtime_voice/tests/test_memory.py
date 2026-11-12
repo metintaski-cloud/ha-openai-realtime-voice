@@ -272,3 +272,40 @@ def test_profile_with_memory_fields_parses():
     assert fields["Zuletzt"].startswith("12.11.") and fields["Offen"].startswith("nachfragen")
     assert len(memory._clean_facts([fact])[0]) == len(fact)
     assert "Zuletzt" in memory.PROFILE_FIELDS and "Eindruck" in memory.PROFILE_FIELDS
+
+
+def test_leyla_own_list_is_stored_and_shown(tmp_path):
+    store = memory.MemoryStore(str(tmp_path / "m.json"))
+    store.save_all({"leyla": ["Ich necke Metin gern wegen seiner Lampen"]})
+    assert store.load(memory.LEYLA) == ["Ich necke Metin gern wegen seiner Lampen"]
+    assert "DEINE EIGENE GESCHICHTE" in store.instructions_block()
+    assert store.load(memory.FAMILY) == []
+
+
+async def test_summarize_keeps_leyla_list_when_model_wipes_it(monkeypatch):
+    import httpx
+
+    class Resp:
+        status_code = 200
+
+        def json(self):
+            return {"output_text": '{"family": [], "friends": [], "private": [], "leyla": []}'}
+
+    class Client:
+        def __init__(self, *a, **k):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        async def post(self, *a, **k):
+            return Resp()
+
+    monkeypatch.setattr(httpx, "AsyncClient", Client)
+    old = {"family": [], "friends": [], "private": [],
+           "leyla": ["a", "b", "c", "d", "e"]}
+    out = await memory.summarize("k", ["m"], old, [["user", "hi"]], unlocked=True)
+    assert out["leyla"] == old["leyla"]

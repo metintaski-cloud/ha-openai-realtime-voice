@@ -527,9 +527,9 @@ class LiveVoiceBridge:
             if self.todo_sync:
                 self.todo_sync.kick()
         else:
-            logger.info("Memory unchanged (%d family, %d friends, %d private)",
+            logger.info("Memory unchanged (%d family, %d friends, %d private, %d Leyla)",
                         len(lists[memory.FAMILY]), len(lists[memory.FRIENDS]),
-                        len(lists[memory.PRIVATE]))
+                        len(lists[memory.PRIVATE]), len(lists[memory.LEYLA]))
 
     def _schedule_memory_update(self, state: dict, reason: str = "") -> None:
         dialog = [d for d in state.get("dialog", []) if d[1].strip()]
@@ -1660,10 +1660,10 @@ class LiveVoiceBridge:
         for fact in self.memory.expire():
             logger.info("Memory: expired: %s", fact)
         lists = self.memory.load_all()
-        logger.info("Memory: %d family, %d friends, %d private entries (private ones are "
+        logger.info("Memory: %d family, %d friends, %d private, %d Leyla entries (private ones are "
                     "not logged; see the Home Assistant to-do lists)",
                     len(lists[memory.FAMILY]), len(lists[memory.FRIENDS]),
-                    len(lists[memory.PRIVATE]))
+                    len(lists[memory.PRIVATE]), len(lists[memory.LEYLA]))
         for i, fact in enumerate(lists[memory.FAMILY], 1):
             logger.info("Family %d: %s", i, fact)
         for i, fact in enumerate(lists[memory.FRIENDS], 1):
