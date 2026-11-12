@@ -37,7 +37,8 @@ import websockets
 from app.audio_recorder import AudioRecorder
 from app import memory
 from app import context
-from app import costs, fan, lights, messages, persona, purifier, report, rf, todo_sync, tv, vacuum
+from app import (costs, fan, lights, messages, persona, purifier, report, rf, technik, todo_sync,
+                 tv, vacuum)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -275,6 +276,7 @@ class LiveVoiceBridge:
         self.tv = tv.from_env(self.rf)
         self.vacuum = vacuum.VacuumController()
         self.purifier = purifier.PurifierController()
+        self.technik = technik.TechnikChecker()
         self.messages = messages.from_env(self._speak_once)
         self.messages.on_command = self._automation_command
         self.messages.converse = self._converse
@@ -357,6 +359,10 @@ class LiveVoiceBridge:
             backend_instructions += purifier.PURIFIER_BACKEND_HINT
             devices.append("den Luftreiniger (an, aus, Auto, Schlaf, Turbo, Stufe 1 bis 4, "
                            "Timer, Luftqualität)")
+        if self.technik.available:
+            tools.append(technik.TECHNIK_TOOL)
+            backend_instructions += technik.TECHNIK_BACKEND_HINT
+            devices.append("die Technik im Haus prüfen (Automationen, Gerätezustände, nur lesen)")
         if self.messages.available:
             tools.append(messages.TO_METIN_TOOL)
             backend_instructions += messages.TO_METIN_BACKEND_HINT
@@ -1010,6 +1016,23 @@ class LiveVoiceBridge:
         except Exception as e:
             logger.warning("Could not return purifier result: %s", e)
 
+    async def _run_technik_tool(self, live_ws, call_id: str, raw_args) -> None:
+        """Read only check of automations and devices without blocking the audio loop."""
+        try:
+            args = json.loads(raw_args) if isinstance(raw_args, str) and raw_args else (raw_args or {})
+        except json.JSONDecodeError:
+            args = {}
+        try:
+            result = await asyncio.wait_for(self.technik.run(args), timeout=15.0)
+        except Exception as e:
+            logger.warning("Technik check failed: %s", e)
+            result = {"error": "Die Technik konnte gerade nicht geprüft werden."}
+        logger.info("Technik %s -> %s hits", args, result.get("treffer"))
+        try:
+            await self._send_function_output(live_ws, call_id, result)
+        except Exception as e:
+            logger.warning("Could not return technik result: %s", e)
+
     async def _run_tv_tool(self, live_ws, call_id: str, raw_args) -> None:
         """Control the TV without blocking the audio loop."""
         try:
@@ -1071,6 +1094,11 @@ class LiveVoiceBridge:
             elif name == purifier.PURIFIER_TOOL["name"]:
                 task = asyncio.create_task(
                     self._run_purifier_tool(live_ws, call_id, item.get("arguments")))
+                self._memory_tasks.add(task)
+                task.add_done_callback(self._memory_tasks.discard)
+            elif name == technik.TECHNIK_TOOL["name"]:
+                task = asyncio.create_task(
+                    self._run_technik_tool(live_ws, call_id, item.get("arguments")))
                 self._memory_tasks.add(task)
                 task.add_done_callback(self._memory_tasks.discard)
             elif name == vacuum.VACUUM_TOOL["name"]:
