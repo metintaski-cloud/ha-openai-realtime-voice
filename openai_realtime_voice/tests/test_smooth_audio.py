@@ -420,3 +420,9 @@ def test_persona_never_guesses_the_speaker():
     text = persona.build([], False, False, False)
     assert "Du ratest nie, wer spricht" in text
     assert "verabschiedest dich ohne Namen" in text
+
+
+def test_persona_asks_who_is_there_late_and_gently():
+    from app import persona
+    text = persona.build([], False, False, False)
+    assert "Frag nie gleich zu Beginn" in text and "nach einer Ansage, die von selbst kam" in text
