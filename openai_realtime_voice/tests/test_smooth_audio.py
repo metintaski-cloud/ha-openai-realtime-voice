@@ -413,3 +413,10 @@ def test_unknown_names_are_asked_about():
     text = persona.build([])
     assert "Fällt im Gespräch ein Name, den du nicht kennst" in text
     assert "alle anderen sind Freunde und Verwandte" in text
+
+
+def test_persona_never_guesses_the_speaker():
+    from app import persona
+    text = persona.build([], False, False, False)
+    assert "Du ratest nie, wer spricht" in text
+    assert "verabschiedest dich ohne Namen" in text
