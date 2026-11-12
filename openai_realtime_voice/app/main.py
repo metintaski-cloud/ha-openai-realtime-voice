@@ -37,7 +37,7 @@ import websockets
 from app.audio_recorder import AudioRecorder
 from app import memory
 from app import context
-from app import costs, fan, lights, messages, persona, report, rf, todo_sync, tv
+from app import costs, fan, lights, messages, persona, report, rf, todo_sync, tv, vacuum
 
 logging.basicConfig(
     level=logging.INFO,
@@ -273,6 +273,7 @@ class LiveVoiceBridge:
             os.path.dirname(os.environ.get("MEMORY_PATH", "/data/memory.json")) or "/data",
             "fan_state.json") if os.path.isdir("/data") else None)
         self.tv = tv.from_env(self.rf)
+        self.vacuum = vacuum.VacuumController()
         self.messages = messages.from_env(self._speak_once)
         self.messages.on_command = self._automation_command
         self.messages.converse = self._converse
@@ -345,6 +346,11 @@ class LiveVoiceBridge:
             backend_instructions += tv.TV_BACKEND_HINT.format(names=self.tv.names)
             devices.append(f"den Fernseher (an, aus, Sender {self.tv.names}, lauter, leiser, "
                            "stumm)")
+        if self.vacuum.available:
+            tools.append(vacuum.VACUUM_TOOL)
+            backend_instructions += vacuum.VACUUM_BACKEND_HINT
+            devices.append("den Saugroboter (saugen, wischen, einzelne Räume, zur Station, "
+                           "Akku, Wassertanks, Bürsten und Filter)")
         if self.messages.available:
             tools.append(messages.TO_METIN_TOOL)
             backend_instructions += messages.TO_METIN_BACKEND_HINT
@@ -964,6 +970,23 @@ class LiveVoiceBridge:
         except Exception as e:
             logger.warning("Could not return fan result: %s", e)
 
+    async def _run_vacuum_tool(self, live_ws, call_id: str, raw_args) -> None:
+        """Control the robot vacuum without blocking the audio loop."""
+        try:
+            args = json.loads(raw_args) if isinstance(raw_args, str) and raw_args else (raw_args or {})
+        except json.JSONDecodeError:
+            args = {}
+        try:
+            result = await asyncio.wait_for(self.vacuum.run(args), timeout=20.0)
+        except Exception as e:
+            logger.warning("Vacuum control failed: %s", e)
+            result = {"error": "Der Saugroboter konnte gerade nicht gesteuert werden."}
+        logger.info("Vacuum %s -> %s", args, result)
+        try:
+            await self._send_function_output(live_ws, call_id, result)
+        except Exception as e:
+            logger.warning("Could not return vacuum result: %s", e)
+
     async def _run_tv_tool(self, live_ws, call_id: str, raw_args) -> None:
         """Control the TV without blocking the audio loop."""
         try:
@@ -1020,6 +1043,11 @@ class LiveVoiceBridge:
             elif name == "fernseher_steuern":
                 task = asyncio.create_task(
                     self._run_tv_tool(live_ws, call_id, item.get("arguments")))
+                self._memory_tasks.add(task)
+                task.add_done_callback(self._memory_tasks.discard)
+            elif name == vacuum.VACUUM_TOOL["name"]:
+                task = asyncio.create_task(
+                    self._run_vacuum_tool(live_ws, call_id, item.get("arguments")))
                 self._memory_tasks.add(task)
                 task.add_done_callback(self._memory_tasks.discard)
             elif name == fan.FAN_TOOL["name"]:
