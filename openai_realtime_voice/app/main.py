@@ -162,8 +162,9 @@ TURKISH_GREETINGS = ("merhaba", "selam", "günaydın", "iyi akşamlar", "iyi gü
 GREETING_TEMPLATE = (
     "Man hat dich gerade gerufen. Antworte sofort mit einem kurzen, warmen, fröhlichen Satz "
     "mit „{word}“, in der Sprache des Grußworts und jedes Mal etwas anders, zum Beispiel "
-    "„{word}, schön dich zu hören! Was kann ich für dich tun?“ oder „{word}, buyur, seni "
-    "dinliyorum!“. Frag bei der Begrüßung noch nicht, wer da ist. Dann hör zu. Redet danach "
+    "„{word}, was kann ich für dich tun?“ oder „{word}, buyur, seni dinliyorum!“. Sag bei "
+    "der Begrüßung nichts Persönliches, kein Kompliment und nicht, dass es schön ist, die "
+    "Stimme zu hören, denn du weißt noch nicht, wer da ist. Frag auch noch nicht danach. Dann hör zu. Redet danach "
     "niemand mit dir und ist nur Fernsehen oder ein Gespräch zwischen anderen zu hören, sag "
     "nichts und beende das Gespräch still."
 )
