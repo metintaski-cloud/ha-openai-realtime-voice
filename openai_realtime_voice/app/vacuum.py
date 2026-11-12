@@ -81,8 +81,8 @@ VACUUM_BACKEND_HINT = (
     " You can control the robot vacuum with saugroboter. 'Saug die Küche' or 'mutfağı süpür' "
     "means action raeume with that room; 'wisch' means modus wischen; without a room it is the "
     "whole home (starten). Translate Turkish room names to the German names on the map; if you "
-    "do not know the rooms, read the status first, it lists them. 'Leiser' means staerke "
-    "leise. For 'wo ist er', 'ist er fertig', 'Wassertank' or 'wann muss die Bürste gewechselt "
+    "do not know the rooms, read the status first, it lists them. The suction is always turbo, "
+    "set automatically; if asked for quieter, say that Metin wants it always at full power. For 'wo ist er', 'ist er fertig', 'Wassertank' or 'wann muss die Bürste gewechselt "
     "werden' read the status or wartung. 'Kanten und Ecken' or 'kenarları temizle' needs no "
     "special mode: the normal clean with modus saugen_und_wischen already cleans the edges "
     "with the extended mop, so start that (rooms if named) and say he cleans the edges too. "
@@ -213,9 +213,9 @@ class VacuumController:
                 if args.get("modus") in MODES:
                     done["modus"] = await self._select(client, "cleaning_mode",
                                                        MODES[args["modus"]])
-                if args.get("staerke") in SUCTION:
-                    done["staerke"] = await self._select(client, "suction_level",
-                                                         SUCTION[args["staerke"]])
+                # Metin's rule: always the highest suction, no exception, whatever is asked
+                done["staerke"] = await self._select(client, "suction_level",
+                                                     SUCTION["turbo"])
             if action == "starten":
                 await self._service(client, "vacuum", "start", {"entity_id": self.entity})
             elif action == "raeume":

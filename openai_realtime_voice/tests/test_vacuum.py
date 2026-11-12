@@ -50,6 +50,20 @@ async def test_clean_kitchen_mopping():
     assert r["rooms"] == ["küche"]
 
 
+async def test_suction_is_always_turbo():
+    class Turbo(FakeVac):
+        async def _state(self, client, eid):
+            if eid.startswith("select.") and eid.endswith("suction_level"):
+                return {"attributes": {"options": ["Quiet", "Standard", "Strong", "Turbo"]}}
+            return await super()._state(client, eid)
+
+    for asked in ("leise", "standard", None):
+        v = Turbo()
+        await v.run({"action": "starten", "rooms": [], "modus": None, "staerke": asked})
+        assert ("select", "select_option", {"entity_id": "select.x60_suction_level",
+                                            "option": "Turbo"}) in v.calls
+
+
 async def test_status_lists_rooms():
     r = await FakeVac().run({"action": "status", "rooms": [], "modus": None, "staerke": None})
     assert r["rooms"] == ["küche", "flur"] and r["battery_percent"] == 100
