@@ -225,7 +225,9 @@ class MessageCenter:
         text = (text or "").strip()
         if not text:
             return
-        prompt = ("Mach jetzt eine kurze Ansage im Wohnzimmer, in der Sprache des Textes. Sag sie "
+        prompt = ("Mach jetzt eine kurze Ansage im Wohnzimmer. Sprich sie in genau der Sprache, "
+                  "in der der Inhalt unten geschrieben ist: ist er Türkisch, dann komplett auf "
+                  "Türkisch, ohne ein deutsches Wort, auch wenn diese Anweisung Deutsch ist. Sag sie "
                   "nicht vorgelesen, sondern lebendig, herzlich und fröhlich mit deinen eigenen "
                   "Worten, als Teil der Familie, gern mit einem kleinen netten Satz "
                   "dazu, aber ohne Kosewörter wie „canım“. Alle Informationen wie Uhrzeit und was du tust müssen drin bleiben. "
