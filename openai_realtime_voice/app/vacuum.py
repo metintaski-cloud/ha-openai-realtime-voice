@@ -83,7 +83,10 @@ VACUUM_BACKEND_HINT = (
     "whole home (starten). Translate Turkish room names to the German names on the map; if you "
     "do not know the rooms, read the status first, it lists them. 'Leiser' means staerke "
     "leise. For 'wo ist er', 'ist er fertig', 'Wassertank' or 'wann muss die Bürste gewechselt "
-    "werden' read the status or wartung. Report only what the result says, briefly."
+    "werden' read the status or wartung. 'Kanten und Ecken' or 'kenarları temizle' needs no "
+    "special mode: the normal clean with modus saugen_und_wischen already cleans the edges "
+    "with the extended mop, so start that (rooms if named) and say he cleans the edges too. "
+    "Report only what the result says, briefly."
 )
 
 
