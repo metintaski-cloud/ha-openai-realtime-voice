@@ -37,7 +37,7 @@ import websockets
 from app.audio_recorder import AudioRecorder
 from app import memory
 from app import context
-from app import costs, fan, lights, messages, persona, report, rf, todo_sync, tv, vacuum
+from app import costs, fan, lights, messages, persona, purifier, report, rf, todo_sync, tv, vacuum
 
 logging.basicConfig(
     level=logging.INFO,
@@ -274,6 +274,7 @@ class LiveVoiceBridge:
             "fan_state.json") if os.path.isdir("/data") else None)
         self.tv = tv.from_env(self.rf)
         self.vacuum = vacuum.VacuumController()
+        self.purifier = purifier.PurifierController()
         self.messages = messages.from_env(self._speak_once)
         self.messages.on_command = self._automation_command
         self.messages.converse = self._converse
@@ -351,6 +352,11 @@ class LiveVoiceBridge:
             backend_instructions += vacuum.VACUUM_BACKEND_HINT
             devices.append("den Saugroboter (saugen, wischen, einzelne Räume, zur Station, "
                            "Akku, Wassertanks, Bürsten und Filter)")
+        if self.purifier.available:
+            tools.append(purifier.PURIFIER_TOOL)
+            backend_instructions += purifier.PURIFIER_BACKEND_HINT
+            devices.append("den Luftreiniger (an, aus, Auto, Schlaf, Turbo, Stufe 1 bis 4, "
+                           "Timer, Luftqualität)")
         if self.messages.available:
             tools.append(messages.TO_METIN_TOOL)
             backend_instructions += messages.TO_METIN_BACKEND_HINT
@@ -987,6 +993,23 @@ class LiveVoiceBridge:
         except Exception as e:
             logger.warning("Could not return vacuum result: %s", e)
 
+    async def _run_purifier_tool(self, live_ws, call_id: str, raw_args) -> None:
+        """Control the air purifier without blocking the audio loop."""
+        try:
+            args = json.loads(raw_args) if isinstance(raw_args, str) and raw_args else (raw_args or {})
+        except json.JSONDecodeError:
+            args = {}
+        try:
+            result = await asyncio.wait_for(self.purifier.run(args), timeout=15.0)
+        except Exception as e:
+            logger.warning("Purifier control failed: %s", e)
+            result = {"error": "Der Luftreiniger konnte gerade nicht gesteuert werden."}
+        logger.info("Purifier %s -> %s", args, result)
+        try:
+            await self._send_function_output(live_ws, call_id, result)
+        except Exception as e:
+            logger.warning("Could not return purifier result: %s", e)
+
     async def _run_tv_tool(self, live_ws, call_id: str, raw_args) -> None:
         """Control the TV without blocking the audio loop."""
         try:
@@ -1043,6 +1066,11 @@ class LiveVoiceBridge:
             elif name == "fernseher_steuern":
                 task = asyncio.create_task(
                     self._run_tv_tool(live_ws, call_id, item.get("arguments")))
+                self._memory_tasks.add(task)
+                task.add_done_callback(self._memory_tasks.discard)
+            elif name == purifier.PURIFIER_TOOL["name"]:
+                task = asyncio.create_task(
+                    self._run_purifier_tool(live_ws, call_id, item.get("arguments")))
                 self._memory_tasks.add(task)
                 task.add_done_callback(self._memory_tasks.discard)
             elif name == vacuum.VACUUM_TOOL["name"]:
