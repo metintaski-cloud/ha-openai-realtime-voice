@@ -261,3 +261,14 @@ async def test_summary_keeps_friends_the_model_left_out(monkeypatch):
     lists = await memory.summarize("k", ["m"], old, [["user", "hallo"]])
     assert lists["friends"] == ["Person: Ali | Zugehörigkeit: Nachbar"]
     assert lists["private"] == ["geheim"]
+
+
+def test_profile_with_memory_fields_parses():
+    fact = ("Person: Gülfikar | Zugehörigkeit: Metins Mutter | Stimmung: gut gelaunt | "
+            "Humor: lacht über Leylas Sprüche | Zuletzt: 12.11.: Arzttermin am Montag | "
+            "Offen: nachfragen, wie der Arzttermin war | Eindruck: erzählt gern von früher")
+    name, fields = memory.parse_profile(fact)
+    assert name == "Gülfikar"
+    assert fields["Zuletzt"].startswith("12.11.") and fields["Offen"].startswith("nachfragen")
+    assert len(memory._clean_facts([fact])[0]) == len(fact)
+    assert "Zuletzt" in memory.PROFILE_FIELDS and "Eindruck" in memory.PROFILE_FIELDS

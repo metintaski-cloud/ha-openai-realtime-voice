@@ -28,13 +28,14 @@ logger = logging.getLogger(__name__)
 
 RESPONSES_URL = "https://api.openai.com/v1/responses"
 MAX_FACTS = 250
-MAX_FACT_CHARS = 400
+MAX_FACT_CHARS = 700
 FAMILY, FRIENDS, PRIVATE = "family", "friends", "private"
 KINDS = (FAMILY, FRIENDS, PRIVATE)
 OPEN_KINDS = (FAMILY, FRIENDS)
 # One entry per person: "Person: Ayşe | Zugehörigkeit: Metins Schwester | Geburtstag: ..."
 PROFILE_FIELDS = ("Zugehörigkeit", "Geburtstag", "Alter", "Kinder", "Arbeit", "Interessen",
-                  "Charakter", "Spricht", "Sonst")
+                  "Charakter", "Spricht", "Stimmung", "Humor", "Zuletzt", "Offen", "Eindruck",
+                  "Sonst")
 # What Leyla tries to find out by herself, now and then, with a casual question
 ASK_FIELDS = ("Geburtstag", "Kinder", "Arbeit", "Interessen")
 STATE_RE = re.compile(r"^\s*Aktuell bis (\d{1,2})\.(\d{1,2})\.(\d{4})", re.IGNORECASE)
@@ -62,9 +63,19 @@ Es gibt drei Listen:
    Felder weglassen, Reihenfolge beibehalten:
    "Person: <Name> | Zugehörigkeit: <zum Beispiel Metins Schwester> | Geburtstag: <TT.MM.JJJJ oder
    TT.MM.> | Alter: ... | Kinder: ... | Arbeit: ... | Interessen: ... | Charakter: ... |
-   Spricht: <Sprache, Art zu reden, wie sie angesprochen werden möchte> | Sonst: ..."
+   Spricht: <Sprache, Art zu reden, wie sie angesprochen werden möchte> | Stimmung: <wie die
+   Person beim letzten Mal drauf war> | Humor: <worüber sie lacht, eure Insider und Sprüche> |
+   Zuletzt: <TT.MM.: worüber ihr zuletzt wirklich geredet habt, ein Satz> | Offen: <was Leyla
+   nachfragen wollte oder zugesagt hat> | Eindruck: <Leylas eigener Eindruck von der Person, ein
+   Satz> | Sonst: ..."
    Ergänze und verbessere den Eintrag mit jedem Gespräch, statt neue Einträge für dieselbe
    Person anzulegen. Einträge in einem älteren Format bringst du in diese Form.
+   Das Gedächtnis soll sich wie das einer guten Freundin anfühlen: "Zuletzt" und "Stimmung" ersetzt
+   du bei jedem echten Gespräch mit dieser Person (nicht anhäufen), aber nur wenn es um etwas
+   Persönliches oder Bleibendes ging, nicht bei Befehlen, Smalltalk oder einmaligen Wissensfragen.
+   "Offen" sind echte Fäden: ein Termin, eine Prüfung, eine Sorge, ein Vorhaben oder etwas, das
+   Leyla zugesagt hat; ist es erledigt, entferne es. "Humor" nur, wenn wirklich ein Spruch oder
+   Witz entstanden ist, der euch verbindet. Jedes Feld höchstens ein kurzer Satz.
    Vorübergehendes (Krankheit, Prüfung, Reise, Sorge, Freude mit Anlass) als eigener Eintrag:
    "Aktuell bis TT.MM.JJJJ: <Name> ..." mit einem Datum etwa zwei Wochen nach heute. Ist es
    erledigt oder besser, entferne den Eintrag.
