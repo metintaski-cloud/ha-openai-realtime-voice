@@ -37,7 +37,7 @@ import websockets
 from app.audio_recorder import AudioRecorder
 from app import memory
 from app import context
-from app import (costs, fan, lights, messages, persona, purifier, report, rf, technik, todo_sync,
+from app import (cleanup, costs, fan, lights, messages, persona, purifier, report, rf, technik, todo_sync,
                  tv, vacuum)
 
 logging.basicConfig(
@@ -292,6 +292,10 @@ class LiveVoiceBridge:
         if self.fan.power_sensor:
             self.messages.state_listeners[self.fan.power_sensor] = self.fan.on_power_state
         self.memory = memory.MemoryStore(os.environ.get("MEMORY_PATH", "/data/memory.json"))
+        self.cleaner = cleanup.Cleaner(
+            self.memory, self.openai_api_key, [self.memory_model, self.backend_model],
+            url=os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL),
+            notify=self.messages.push if self.messages.available else None)
         self.todo_sync = None
         if self.enable_memory and os.environ.get("SUPERVISOR_TOKEN"):
             self.todo_sync = todo_sync.TodoSync(self.memory, state_path=os.path.join(
@@ -364,6 +368,10 @@ class LiveVoiceBridge:
             tools.append(technik.TECHNIK_TOOL)
             backend_instructions += technik.TECHNIK_BACKEND_HINT
             devices.append("die Technik im Haus prüfen (Automationen, Gerätezustände, nur lesen)")
+        if self.enable_memory and self.code_phrase:
+            tools.append(cleanup.CLEANUP_TOOL)
+            backend_instructions += cleanup.CLEANUP_BACKEND_HINT
+            devices.append("das Gedächtnis aufräumen (nur Metin, nach dem Codewort)")
         if self.messages.available:
             tools.append(messages.TO_METIN_TOOL)
             backend_instructions += messages.TO_METIN_BACKEND_HINT
@@ -1040,6 +1048,49 @@ class LiveVoiceBridge:
         except Exception as e:
             logger.warning("Could not return technik result: %s", e)
 
+    async def _run_cleanup_tool(self, live_ws, call_id: str, raw_args, state: dict) -> None:
+        """Memory cleanup, only for Metin: the bridge itself heard the code phrase."""
+        try:
+            args = json.loads(raw_args) if isinstance(raw_args, str) and raw_args else (raw_args or {})
+        except json.JSONDecodeError:
+            args = {}
+        try:
+            if not (self.code_phrase and state.get("unlocked")):
+                result = {"error": "Nicht erlaubt: Das Gedächtnis räumt nur Metin auf, und nur "
+                                   "nachdem er das Codewort gesagt hat."}
+            else:
+                result = await asyncio.wait_for(self.cleaner.run(args), timeout=60.0)
+                if args.get("action") == "streichen" and self.todo_sync:
+                    self.todo_sync.kick()
+        except Exception as e:
+            logger.warning("Cleanup failed: %s", e)
+            result = {"error": "Das Aufräumen hat gerade nicht geklappt."}
+        logger.info("Cleanup %s -> %s", args.get("action"), {k: v for k, v in result.items()
+                                                              if k != "vorschlaege"})
+        try:
+            await self._send_function_output(live_ws, call_id, result)
+        except Exception as e:
+            logger.warning("Could not return cleanup result: %s", e)
+
+    async def _cleanup_loop(self) -> None:
+        """Once a night at 03:30 the review proposes trivial entries. It never deletes."""
+        from datetime import timedelta
+        try:
+            from zoneinfo import ZoneInfo
+            tz = ZoneInfo(os.environ.get("TZ") or "Europe/Berlin")
+        except Exception:
+            tz = None
+        while True:
+            now = datetime.now(tz)
+            target = now.replace(hour=3, minute=30, second=0, microsecond=0)
+            if target <= now:
+                target += timedelta(days=1)
+            await asyncio.sleep((target - now).total_seconds())
+            try:
+                await self.cleaner.review()
+            except Exception as e:
+                logger.warning("Nightly cleanup review failed: %s", e)
+
     async def _run_tv_tool(self, live_ws, call_id: str, raw_args) -> None:
         """Control the TV without blocking the audio loop."""
         try:
@@ -1101,6 +1152,11 @@ class LiveVoiceBridge:
             elif name == purifier.PURIFIER_TOOL["name"]:
                 task = asyncio.create_task(
                     self._run_purifier_tool(live_ws, call_id, item.get("arguments")))
+                self._memory_tasks.add(task)
+                task.add_done_callback(self._memory_tasks.discard)
+            elif name == cleanup.CLEANUP_TOOL["name"]:
+                task = asyncio.create_task(
+                    self._run_cleanup_tool(live_ws, call_id, item.get("arguments"), state))
                 self._memory_tasks.add(task)
                 task.add_done_callback(self._memory_tasks.discard)
             elif name == technik.TECHNIK_TOOL["name"]:
@@ -1618,6 +1674,8 @@ class LiveVoiceBridge:
         self._memory_maintenance()
         if self.todo_sync:
             self._in_background(self.todo_sync.run())
+        if self.enable_memory and self.openai_api_key:
+            self._in_background(self._cleanup_loop())
         if self.messages.available:
             try:
                 self._message_tasks = await self.messages.start()
