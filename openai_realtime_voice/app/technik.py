@@ -1,10 +1,13 @@
 """
-Read only look at the house technology: Leyla can check automations (is it on, when does it
-run, when did it run last, what does it do) and the state of devices, so she can answer
+A look at the house technology: Leyla can check automations (is it on, when does it run,
+when did it run last, what does it do) and the state of devices, so she can answer
 "schaltet die Automation um 23:30 die Lampen aus?" from the real configuration.
 
-She can not change anything with this tool.
+The only thing she can change is the clock time of a time trigger of an existing automation
+("zeit_aendern"), and only for Metin: main.py lets that action through only when the code
+phrase was heard in the conversation. Metin gets a push message about every change.
 """
+import re
 import logging
 import os
 from datetime import datetime, timezone
@@ -21,18 +24,24 @@ TECHNIK_TOOL = {
         "Check the house technology, read only. 'automationen' lists the automations matching "
         "a search word with on/off, trigger times, conditions, what they do and when they last "
         "ran. 'geraete' reads the state of devices (lights, switches, fan, TV, sensors) "
-        "matching a search word. Use it to answer questions about whether something is set up "
-        "or switched on."
+        "matching a search word. 'zeit_aendern' changes the clock time of an existing automation, "
+        "only when Metin asks and said the code phrase. Use the rest to answer questions about "
+        "whether something is set up or switched on."
     ),
     "parameters": {
         "type": "object",
         "properties": {
-            "action": {"type": "string", "enum": ["automationen", "geraete"]},
+            "action": {"type": "string", "enum": ["automationen", "geraete", "zeit_aendern"]},
             "suche": {"type": ["string", "null"],
                       "description": "Search word, for example 'Lampen', 'Sonnenuntergang', "
                                      "'23:30'. Null lists the first ones."},
+            "alt": {"type": ["string", "null"],
+                    "description": "For 'zeit_aendern': the current time HH:MM when the "
+                                   "automation has several times, otherwise null."},
+            "neu": {"type": ["string", "null"],
+                    "description": "For 'zeit_aendern': the new time HH:MM (24 hours)."},
         },
-        "required": ["action", "suche"],
+        "required": ["action", "suche", "alt", "neu"],
         "additionalProperties": False,
     },
 }
@@ -41,7 +50,11 @@ TECHNIK_BACKEND_HINT = (
     " You can check the technology with technik_pruefen (read only): 'automationen' for "
     "questions like 'schaltet die Automation um 23:30 die Lampen aus' or 'wann lief sie zuletzt', "
     "'geraete' for the state of devices. Answer only from the result, in simple words, and say "
-    "plainly if no automation matches. You can not change anything with it."
+    "plainly if no automation matches. The only change you can make is the time of an "
+    "automation with 'zeit_aendern', and only when Metin himself asks and has said the code "
+    "phrase: first say which automation and which times (alt to neu) you understood, and call "
+    "it only after he confirms. If the result says it is not allowed, say that only Metin can "
+    "change times. Never change anything else."
 )
 
 DEVICE_DOMAINS = ("light", "switch", "fan", "media_player", "vacuum", "climate", "cover",
@@ -123,8 +136,22 @@ def _condition_texts(conds) -> list:
     return out
 
 
+TIME_RE = re.compile(r"^\s*(\d{1,2})[:.](\d{2})\s*$")
+
+
+def parse_time(text: Optional[str]) -> Optional[str]:
+    """'23:45' -> '23:45:00', None when it is not a valid clock time."""
+    m = TIME_RE.match(text or "")
+    if not m:
+        return None
+    h, mi = int(m.group(1)), int(m.group(2))
+    return f"{h:02d}:{mi:02d}:00" if h < 24 and mi < 60 else None
+
+
 class TechnikChecker:
-    def __init__(self, api_url: Optional[str] = None, token: Optional[str] = None) -> None:
+    def __init__(self, api_url: Optional[str] = None, token: Optional[str] = None,
+                 notify=None) -> None:
+        self.notify = notify  # async (title, message), set by main when push is available
         self.api_url = api_url or os.environ.get("HA_API_URL") or "http://supervisor/core/api"
         self.token = token if token is not None else os.environ.get("SUPERVISOR_TOKEN", "")
 
@@ -211,6 +238,63 @@ class TechnikChecker:
             return {"treffer": 0, "hinweis": "Kein passendes Gerät."}
         return {"treffer": len(found), "geraete": found}
 
+    async def change_time(self, client, search: Optional[str], old: Optional[str],
+                          new: Optional[str]) -> dict:
+        """Change the clock time of one time trigger of the one automation that matches."""
+        new_t = parse_time(new)
+        if not new_t:
+            return {"error": "Die neue Uhrzeit habe ich nicht verstanden (Format HH:MM)."}
+        words = _words(search)
+        if not words:
+            return {"error": "Welche Automation? Es fehlt ein Suchwort."}
+        states = await self._get(client, "states") or []
+        matches = []
+        for st in states:
+            attrs = st.get("attributes", {})
+            if not st.get("entity_id", "").startswith("automation.") or not attrs.get("id"):
+                continue
+            cfg = await self._get(client, f"config/automation/config/{attrs['id']}") or {}
+            trigs = cfg.get("triggers") or cfg.get("trigger") or []
+            times = [t for t in trigs if isinstance(t, dict)
+                     and (t.get("trigger") or t.get("platform")) == "time"
+                     and isinstance(t.get("at"), str) and parse_time(t["at"][:5])]
+            text = " ".join([attrs.get("friendly_name") or "", cfg.get("description") or "",
+                             *[_trigger_text(t) for t in trigs if isinstance(t, dict)],
+                             *_action_texts(cfg.get("actions") or cfg.get("action"))])
+            if _matches(text, words):
+                matches.append((attrs["id"], attrs.get("friendly_name") or attrs["id"],
+                                cfg, times))
+        if not matches:
+            return {"error": "Keine passende Automation gefunden."}
+        if len(matches) > 1:
+            return {"error": "Mehrere Automationen passen, welche meinst du?",
+                    "automationen": [m[1] for m in matches][:6]}
+        aid, name, cfg, times = matches[0]
+        if not times:
+            return {"error": f"{name} hat keine feste Uhrzeit, die ich ändern könnte."}
+        if len(times) > 1:
+            want = parse_time(old)
+            picked = [t for t in times if want and parse_time(t["at"][:5]) == want]
+            if len(picked) != 1:
+                return {"error": "Die Automation hat mehrere Uhrzeiten, welche ändern?",
+                        "uhrzeiten": [t["at"][:5] for t in times]}
+            times = picked
+        trig = times[0]
+        before = trig["at"][:5]
+        trig["at"] = new_t
+        resp = await client.post(f"{self.api_url}/config/automation/config/{aid}", json=cfg,
+                                 headers=self._headers())
+        if resp.status_code >= 300:
+            raise RuntimeError(f"HA HTTP {resp.status_code}: {resp.text[:200]}")
+        logger.info("Automation %s: time %s -> %s", aid, before, new_t[:5])
+        if self.notify:
+            try:
+                await self.notify("Leyla hat eine Zeit geändert",
+                                  f"{name}: von {before} auf {new_t[:5]} Uhr.")
+            except Exception as e:
+                logger.warning("Could not push the time change: %s", e)
+        return {"geaendert": name, "von": before, "auf": new_t[:5]}
+
     async def run(self, args: dict) -> dict:
         action = args.get("action")
         async with httpx.AsyncClient(timeout=10.0) as client:
@@ -218,4 +302,7 @@ class TechnikChecker:
                 return await self.automations(client, args.get("suche"))
             if action == "geraete":
                 return await self.devices(client, args.get("suche"))
+            if action == "zeit_aendern":
+                return await self.change_time(client, args.get("suche"), args.get("alt"),
+                                              args.get("neu"))
         return {"error": f"Unbekannte Aktion: {action}"}

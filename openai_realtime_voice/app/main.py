@@ -276,8 +276,9 @@ class LiveVoiceBridge:
         self.tv = tv.from_env(self.rf)
         self.vacuum = vacuum.VacuumController()
         self.purifier = purifier.PurifierController()
-        self.technik = technik.TechnikChecker()
         self.messages = messages.from_env(self._speak_once)
+        self.technik = technik.TechnikChecker(
+            notify=self.messages.push if self.messages.available else None)
         self.messages.on_command = self._automation_command
         self.messages.converse = self._converse
         # Home Assistant action of the Voice PE that starts a conversation (see the
@@ -1016,14 +1017,20 @@ class LiveVoiceBridge:
         except Exception as e:
             logger.warning("Could not return purifier result: %s", e)
 
-    async def _run_technik_tool(self, live_ws, call_id: str, raw_args) -> None:
-        """Read only check of automations and devices without blocking the audio loop."""
+    async def _run_technik_tool(self, live_ws, call_id: str, raw_args, state: dict) -> None:
+        """Check automations and devices, and change a time for Metin, without blocking."""
         try:
             args = json.loads(raw_args) if isinstance(raw_args, str) and raw_args else (raw_args or {})
         except json.JSONDecodeError:
             args = {}
         try:
-            result = await asyncio.wait_for(self.technik.run(args), timeout=15.0)
+            if args.get("action") == "zeit_aendern" and not (
+                    self.code_phrase and state.get("unlocked")):
+                # only Metin (code phrase heard by the bridge itself) may change a time
+                result = {"error": "Nicht erlaubt: Uhrzeiten ändert nur Metin, und nur nachdem "
+                                   "er das Codewort gesagt hat."}
+            else:
+                result = await asyncio.wait_for(self.technik.run(args), timeout=15.0)
         except Exception as e:
             logger.warning("Technik check failed: %s", e)
             result = {"error": "Die Technik konnte gerade nicht geprüft werden."}
@@ -1098,7 +1105,7 @@ class LiveVoiceBridge:
                 task.add_done_callback(self._memory_tasks.discard)
             elif name == technik.TECHNIK_TOOL["name"]:
                 task = asyncio.create_task(
-                    self._run_technik_tool(live_ws, call_id, item.get("arguments")))
+                    self._run_technik_tool(live_ws, call_id, item.get("arguments"), state))
                 self._memory_tasks.add(task)
                 task.add_done_callback(self._memory_tasks.discard)
             elif name == vacuum.VACUUM_TOOL["name"]:
