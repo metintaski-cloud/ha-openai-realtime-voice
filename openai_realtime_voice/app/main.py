@@ -1073,7 +1073,7 @@ class LiveVoiceBridge:
             logger.warning("Could not return cleanup result: %s", e)
 
     async def _cleanup_loop(self) -> None:
-        """Once a night at 03:30 the review proposes trivial entries. It never deletes."""
+        """Once a night at 00:00 the review proposes trivial entries. It never deletes."""
         from datetime import timedelta
         try:
             from zoneinfo import ZoneInfo
@@ -1082,7 +1082,7 @@ class LiveVoiceBridge:
             tz = None
         while True:
             now = datetime.now(tz)
-            target = now.replace(hour=3, minute=30, second=0, microsecond=0)
+            target = now.replace(hour=0, minute=0, second=0, microsecond=0)
             if target <= now:
                 target += timedelta(days=1)
             await asyncio.sleep((target - now).total_seconds())
