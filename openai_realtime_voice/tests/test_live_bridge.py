@@ -291,7 +291,7 @@ async def test_waits_for_speech_before_greeting():
 
     await _run(fake, scenario)
     assert fake.start_msg["session"]["input"][0]["role"] == "developer"
-    assert "Frag bei der Begrüßung noch nicht, wer da ist" in fake.start_msg["session"]["input"][0]["content"][0]["text"]
+    assert "kein Kompliment" in fake.start_msg["session"]["input"][0]["content"][0]["text"]
     assert "session.commentary.append" in fake.received
 
 
@@ -317,6 +317,6 @@ def test_greeting_words_and_language():
     assert m.parse_greeting_words(None)[2] == "Selamünaleyküm"
     assert m.parse_greeting_words("") == []
     assert "Selamünaleyküm" in m.greeting_instruction("Selamünaleyküm")
-    assert "Frag bei der Begrüßung noch nicht, wer da ist" in m.greeting_instruction("Hallo")
+    assert "kein Kompliment" in m.greeting_instruction("Hallo")
     seen = {m.pick_greeting(["Hallo", "Merhaba"], 20) for _ in range(200)}
     assert {"Hallo", "Merhaba", "Guten Abend", "İyi akşamlar"} <= seen
