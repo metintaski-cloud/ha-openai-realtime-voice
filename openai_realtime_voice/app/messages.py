@@ -220,14 +220,16 @@ class MessageCenter:
             logger.warning("Could not tell Metin about the confirmation: %s", e)
         return True
 
-    async def say(self, text: str) -> None:
+    async def say(self, text: str, bilingual: bool = False) -> None:
         """One announcement from an automation (HA event leyla_announce), no repeats."""
         text = (text or "").strip()
         if not text:
             return
-        prompt = ("Mach jetzt eine kurze Ansage im Wohnzimmer, zweisprachig: erst auf Deutsch, "
-                  "dann dasselbe noch einmal auf Türkisch, egal in welcher Sprache der Inhalt "
-                  "unten geschrieben ist. Sag sie "
+        language = ("zweisprachig: erst auf Deutsch, dann dasselbe noch einmal auf Türkisch, "
+                    "egal in welcher Sprache der Inhalt unten geschrieben ist" if bilingual else
+                    "in genau der Sprache, in der der Inhalt unten geschrieben ist; ist er "
+                    "Türkisch, dann komplett auf Türkisch, ohne ein deutsches Wort")
+        prompt = ("Mach jetzt eine kurze Ansage im Wohnzimmer, " + language + ". Sag sie "
                   "nicht vorgelesen, sondern lebendig, herzlich und fröhlich mit deinen eigenen "
                   "Worten, als Teil der Familie, gern mit einem kleinen netten Satz "
                   "dazu, aber ohne Kosewörter wie „canım“. Alle Informationen wie Uhrzeit und was du tust müssen drin bleiben. "
@@ -374,7 +376,8 @@ class MessageCenter:
                                 lambda t: t.exception() and logger.warning(
                                     "Command failed: %s", t.exception()))
                         elif ev.get("event_type") == "leyla_announce":
-                            task = asyncio.create_task(self.say(data.get("text", "")))
+                            task = asyncio.create_task(self.say(data.get("text", ""),
+                                                             bool(data.get("zweisprachig"))))
                             task.add_done_callback(
                                 lambda t: t.exception() and logger.warning(
                                     "Announcement failed: %s", t.exception()))
