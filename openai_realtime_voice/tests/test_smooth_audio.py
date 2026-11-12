@@ -426,3 +426,9 @@ def test_persona_asks_who_is_there_late_and_gently():
     from app import persona
     text = persona.build([], False, False, False)
     assert "Frag nie gleich zu Beginn" in text and "nach einer Ansage, die von selbst kam" in text
+
+
+def test_persona_blooms_for_metin_only():
+    from app import persona
+    text = persona.build([], False, False, False)
+    assert "blühst du auf" in text and "die Freude ist für Metin" in text
