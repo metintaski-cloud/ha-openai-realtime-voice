@@ -27,6 +27,7 @@ import time
 import random
 import re
 import shutil
+import signal
 import uuid
 from datetime import datetime
 from typing import Optional
@@ -38,7 +39,7 @@ import websockets
 from app.audio_recorder import AudioRecorder
 from app import memory
 from app import context
-from app import (cleanup, costs, fan, lights, messages, persona, purifier, report, rf, technik, todo_sync,
+from app import (cleanup, costs, fan, health, lights, messages, persona, purifier, report, rf, technik, todo_sync,
                  tv, vacuum)
 
 logging.basicConfig(
@@ -297,6 +298,9 @@ class LiveVoiceBridge:
         self.cleaner = cleanup.Cleaner(
             self.memory, self.openai_api_key, [self.memory_model, self.backend_model],
             url=os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL),
+            notify=self.messages.push if self.messages.available else None)
+        self.health = health.Health(
+            os.path.join(os.path.dirname(self.memory.path) or ".", "health.json"),
             notify=self.messages.push if self.messages.available else None)
         self.todo_sync = None
         if self.enable_memory and os.environ.get("SUPERVISOR_TOKEN"):
@@ -1332,6 +1336,7 @@ class LiveVoiceBridge:
                         logger.error("OpenAI quota exceeded, notifying client")
                         await output_queue.put(("error", "insufficient_quota"))
                         state["fatal"] = True
+                        self._in_background(self.health.quota_exceeded())
                 else:
                     logger.info("GPT Live event: %s", raw[:300])
         except websockets.exceptions.ConnectionClosed as e:
@@ -1572,6 +1577,8 @@ class LiveVoiceBridge:
         try:
             live_ws = await self._connect_live()
             started = await self._start_session(live_ws)
+            state["live_started"] = True
+            self._in_background(self.health.openai_ok())
             if self._started_as_followup:
                 state["no_speech_s"] = FOLLOWUP_NO_SPEECH_S  # time to listen and answer
                 state["followup"] = True
@@ -1626,6 +1633,8 @@ class LiveVoiceBridge:
         except Exception as e:
             logger.error("Session error: %s", e, exc_info=True)
             end_reason["reason"] = "session_error"
+            if not state.get("live_started"):
+                self._in_background(self.health.openai_failed(str(e)))
         finally:
             if self._active_sessions.get(client_id) is client_ws:
                 del self._active_sessions[client_id]
@@ -1707,9 +1716,21 @@ class LiveVoiceBridge:
         for i, fact in enumerate(lists[memory.FRIENDS], 1):
             logger.info("Friends %d: %s", i, fact)
 
+    async def _heartbeat_loop(self) -> None:
+        """Say once if the last run was killed unexpectedly, then keep the heartbeat fresh."""
+        try:
+            await asyncio.sleep(20)  # let Home Assistant and the messages come up first
+            await self.health.report_start()
+        except Exception as e:
+            logger.warning("Health start report failed: %s", e)
+        while True:
+            await asyncio.sleep(health.HEARTBEAT_S)
+            self.health.beat()
+
     async def run(self) -> None:
         """Start WebSocket server and run forever."""
         self._memory_maintenance()
+        self._in_background(self._heartbeat_loop())
         if self.todo_sync:
             self._in_background(self.todo_sync.run())
         if self.enable_memory and self.openai_api_key:
@@ -1741,9 +1762,16 @@ class LiveVoiceBridge:
 
 async def main() -> None:
     bridge = LiveVoiceBridge()
+    current = asyncio.current_task()
+    try:
+        # A normal stop (update, restart) arrives as SIGTERM: remember it was clean.
+        asyncio.get_running_loop().add_signal_handler(signal.SIGTERM, current.cancel)
+    except (NotImplementedError, RuntimeError):
+        pass
     try:
         await bridge.run()
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, asyncio.CancelledError):
+        bridge.health.mark_clean()
         logger.info("Shutting down")
     except Exception as e:
         logger.error("Fatal error: %s", e, exc_info=True)
