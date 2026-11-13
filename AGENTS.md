@@ -134,6 +134,8 @@ Optional scope in parentheses: `fix(client):`, `feat(server):`, `chore(build):`.
 
 ## Keeping docs current
 
+Read `STATUS.md` first in every new session: it holds decisions, current state and open items. Update it whenever one of them changes.
+
 | What changed                         | Update |
 |--------------------------------------|--------|
 | Audio format, WebSocket protocol, control messages | This file (contract) |
