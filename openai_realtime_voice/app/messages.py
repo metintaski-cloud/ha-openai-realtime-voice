@@ -229,10 +229,13 @@ class MessageCenter:
                     "egal in welcher Sprache der Inhalt unten geschrieben ist" if bilingual else
                     "in genau der Sprache, in der der Inhalt unten geschrieben ist; ist er "
                     "Türkisch, dann komplett auf Türkisch, ohne ein deutsches Wort")
-        prompt = ("Mach jetzt eine kurze Ansage im Wohnzimmer, " + language + ". Sag sie "
-                  "nicht vorgelesen, sondern lebendig, herzlich und fröhlich mit deinen eigenen "
-                  "Worten, als Teil der Familie, gern mit einem kleinen netten Satz "
-                  "dazu, aber ohne Kosewörter wie „canım“. Alle Informationen wie Uhrzeit und was du tust müssen drin bleiben. "
+        prompt = ("Sag der Familie jetzt etwas im Wohnzimmer, " + language + ". Das ist keine "
+                  "Durchsage und nichts zum Vorlesen: Sprich so, wie du es einem lieben "
+                  "Familienmitglied sagen würdest, das du sehr magst, warm, zugewandt, mit "
+                  "Lächeln und natürlicher Betonung, mit deinen eigenen Worten und nur dem "
+                  "Sinn des Inhalts unten. Fasse dich sehr kurz, höchstens zwei kurze Sätze, "
+                  "damit es schnell geht, ohne Kosewörter wie „canım“. Alle wichtigen "
+                  "Informationen wie Name, Uhrzeit und was du tust müssen drin bleiben. "
                   "Danach sagst du nichts mehr. Inhalt: \"" + text + "\"")
         await self._play(await self.speak(prompt))
         logger.info("Announced: %r", text)

@@ -655,7 +655,7 @@ class LiveVoiceBridge:
 
     async def _speak_once(self, prompt: str, max_s: float = 40.0) -> bytes:
         """Let GPT Live speak one announcement without a listener; return 24 kHz PCM."""
-        ws = await self._connect_live()
+        ws, _ = await self._take_live()
         pcm = bytearray()
         try:
             await ws.send(json.dumps({
@@ -694,7 +694,7 @@ class LiveVoiceBridge:
             feeder = None
             loud_end = 0
             while loop.time() < end:
-                wait = 2.0 if last_audio else end - loop.time()
+                wait = 1.2 if last_audio else end - loop.time()
                 try:
                     raw = await asyncio.wait_for(ws.recv(), timeout=max(0.1, wait))
                 except asyncio.TimeoutError:
@@ -721,7 +721,7 @@ class LiveVoiceBridge:
                         loud_end = len(pcm)
                     elif last_audio:
                         pcm += chunk_pcm  # pauses inside the speech
-                    if last_audio and loop.time() - last_audio > 2.0:
+                    if last_audio and loop.time() - last_audio > 1.2:
                         break  # GPT Live keeps sending silence after the speech
                 elif t == "error":
                     raise RuntimeError(f"GPT Live: {ev.get('error')}")
