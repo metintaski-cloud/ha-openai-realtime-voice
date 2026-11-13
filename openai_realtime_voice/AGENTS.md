@@ -56,9 +56,9 @@ ESP32 Voice PE                    Addon
 
 ## Adding a tool
 
-1. Add the tool schema to the `TOOLS` list in `main.py`.
-2. **Session-ending tools** (e.g. `disconnect_client`): In `_handle_tool_call`, handle the name, perform the action, return `True` to end the session.
-3. **Other tools** (e.g. `search_web`): In `response.done`, schedule `_run_tool_in_background(openai_ws, item, response_idle, in_flight_searches)`. Implement the tool logic in `_run_tool_in_background` (it runs the tool, waits for `response_idle`, then calls `_send_tool_result`). For `search_web`, same-query in-flight calls are deduplicated via `in_flight_searches`. Do not block the event loop with long-running work in `_handle_tool_call`.
+1. Put the tool schema (`..._TOOL` dict with `name`) and its `run(args)` coroutine in its own module and add the schema to the tools list of `_session_start`.
+2. Register it in `LiveVoiceBridge._build_tools` (`main.py`): label, timeout, `run`, the friendly error text, and optionally `gate(args, state)` (return an error result to refuse, for example for anyone but Metin), `after`, `log`, `phase`. The generic `_run_tool` runs it in the background with a timeout and returns the result, so there is no per tool runner code. `end_conversation` is the only function handled inline in `_handle_backend_event`.
+3. Add a case to `tests/test_session_flow.py` when the tool has a gate or special behavior.
 
 ## Docker build
 
@@ -76,7 +76,7 @@ When you change the addon (behavior, config, contract, or fixes), update the add
 - `app/audio_recorder.py` — Optional WAV recording when `enable_recording` is true.
 - `requirements.txt` — websockets, httpx, python-dotenv.
 - `requirements-dev.txt` — for tests: pytest, pytest-asyncio.
-- `tests/` — pytest tests (happy-flow and regression).
+- `tests/` — pytest tests. `tests/test_session_flow.py` plays whole sessions against a fake GPT Live server (ready, audio both ways, phases, tools and their gates, quota, hang up reasons).
 - `pytest.ini` — asyncio_mode = auto for tests.
 - `Dockerfile` — Single-stage; no Poetry. Used by `.github/workflows/build-addon.yml`.
 
@@ -91,7 +91,7 @@ Tests use the virtualenv at `openai_realtime_voice/.venv/`. System `python`/`pyt
 Or a single file:
 
 ```bash
-.venv/bin/pytest tests/test_phase_decisions.py -v
+.venv/bin/pytest tests/test_session_flow.py -v
 ```
 
 ## Keeping this doc current

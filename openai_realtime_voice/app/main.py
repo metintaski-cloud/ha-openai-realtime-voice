@@ -321,6 +321,7 @@ class LiveVoiceBridge:
 
         self._active_sessions: dict[str, websockets.WebSocketServerProtocol] = {}
         self._background: set = set()
+        self._tools = self._build_tools()
 
         if not self.openai_api_key:
             raise ValueError("OPENAI_API_KEY environment variable is required")
@@ -697,17 +698,6 @@ class LiveVoiceBridge:
         logger.info("Automation command %s -> %s", data, result)
         return result
 
-    async def _run_message_tool(self, live_ws, call_id: str, raw_args) -> None:
-        try:
-            args = json.loads(raw_args) if isinstance(raw_args, str) and raw_args else (raw_args or {})
-        except json.JSONDecodeError:
-            args = {}
-        result = await self.messages.to_metin(args)
-        try:
-            await self._send_function_output(live_ws, call_id, result)
-        except Exception as e:
-            logger.warning("Could not return message result: %s", e)
-
     async def _start_session(self, live_ws, timeout: float = 15.0) -> dict:
         """Send session.start and wait for session.started. Returns the started event."""
         followup, self._followup = self._followup, None
@@ -944,6 +934,98 @@ class LiveVoiceBridge:
         except Exception as e:
             logger.warning("Failed to send phase '%s': %s", phase, e)
 
+    @staticmethod
+    def _tool_args(raw_args) -> dict:
+        try:
+            args = json.loads(raw_args) if isinstance(raw_args, str) and raw_args else (raw_args or {})
+        except json.JSONDecodeError:
+            return {}
+        return args if isinstance(args, dict) else {}
+
+    def _only_metin(self, state: dict) -> bool:
+        """True when the bridge itself heard the code phrase in this session."""
+        return bool(self.code_phrase and state.get("unlocked"))
+
+    def _build_tools(self) -> dict:
+        """Backend function name -> how to run it, all served by the generic _run_tool.
+        run(args) is awaited with a timeout, gate(args, state) may return an error result
+        instead (only Metin), after(args, result) runs on success, log(args, result) is what
+        goes to the log, phase is sent to the client first."""
+        def metin_error(what):
+            return {"error": f"Nicht erlaubt: {what} nur Metin, und nur nachdem er das "
+                             "Codewort gesagt hat."}
+
+        def technik_gate(args, state):
+            if args.get("action") == "zeit_aendern" and not self._only_metin(state):
+                return metin_error("Uhrzeiten ändert")
+
+        def cleanup_gate(args, state):
+            if not self._only_metin(state):
+                return metin_error("Das Gedächtnis räumt")
+
+        def cleanup_after(args, result):
+            if args.get("action") == "streichen" and self.todo_sync:
+                self.todo_sync.kick()
+
+        return {
+            costs.COSTS_TOOL["name"]: {
+                "label": "Costs", "phase": "thinking", "timeout": 15.0,
+                "run": lambda a: costs.cost_report(self.admin_key, self.monthly_budget),
+                "error": "Could not read OpenAI costs right now.",
+                "log": lambda a, r: "done"},
+            lights.LIGHTS_TOOL["name"]: {
+                "label": "Lights", "timeout": 25.0, "run": self.lights.run,
+                "error": "Die Lampen konnten gerade nicht gesteuert werden."},
+            fan.FAN_TOOL["name"]: {
+                "label": "Fan", "timeout": 15.0, "run": self.fan.run,
+                "error": "Der Ventilator konnte gerade nicht gesteuert werden."},
+            vacuum.VACUUM_TOOL["name"]: {
+                "label": "Vacuum", "timeout": 20.0, "run": self.vacuum.run,
+                "error": "Der Saugroboter konnte gerade nicht gesteuert werden."},
+            purifier.PURIFIER_TOOL["name"]: {
+                "label": "Purifier", "timeout": 15.0, "run": self.purifier.run,
+                "error": "Der Luftreiniger konnte gerade nicht gesteuert werden."},
+            "fernseher_steuern": {
+                "label": "TV", "timeout": 20.0, "run": self.tv.run,
+                "error": "Der Fernseher konnte gerade nicht gesteuert werden."},
+            technik.TECHNIK_TOOL["name"]: {
+                "label": "Technik", "timeout": 15.0, "run": self.technik.run,
+                "gate": technik_gate,
+                "error": "Die Technik konnte gerade nicht geprüft werden.",
+                "log": lambda a, r: f"{a} -> {r.get('treffer')} hits"},
+            cleanup.CLEANUP_TOOL["name"]: {
+                "label": "Cleanup", "timeout": 60.0, "run": self.cleaner.run,
+                "gate": cleanup_gate, "after": cleanup_after,
+                "error": "Das Aufräumen hat gerade nicht geklappt.",
+                "log": lambda a, r: f"{a.get('action')} -> " + str(
+                    {k: v for k, v in r.items() if k != "vorschlaege"})},
+            messages.TO_METIN_TOOL["name"]: {
+                "label": "Message", "timeout": 20.0, "run": self.messages.to_metin,
+                "error": "Die Nachricht konnte gerade nicht gesendet werden.",
+                "log": lambda a, r: "done"},
+        }
+
+    async def _run_tool(self, spec: dict, live_ws, call_id: str, raw_args, state: dict) -> None:
+        """Run one backend function without blocking the audio loop and return its result."""
+        args = self._tool_args(raw_args)
+        try:
+            blocked = spec["gate"](args, state) if spec.get("gate") else None
+            if blocked is not None:
+                result = blocked
+            else:
+                result = await asyncio.wait_for(spec["run"](args), timeout=spec["timeout"])
+                if spec.get("after"):
+                    spec["after"](args, result)
+        except Exception as e:
+            logger.warning("%s failed: %s", spec["label"], e)
+            result = {"error": spec["error"]}
+        log = spec.get("log")
+        logger.info("%s %s", spec["label"], log(args, result) if log else f"{args} -> {result}")
+        try:
+            await self._send_function_output(live_ws, call_id, result)
+        except Exception as e:
+            logger.warning("Could not return %s result: %s", spec["label"], e)
+
     async def _send_function_output(self, live_ws, call_id: str, output: dict) -> None:
         """Return a function result to the backend and let it continue."""
         await live_ws.send(
@@ -957,134 +1039,6 @@ class LiveVoiceBridge:
             })
         )
         await live_ws.send(json.dumps({"type": "response.create"}))
-
-    async def _run_costs_tool(self, live_ws, call_id: str) -> None:
-        """Fetch the OpenAI spending report without blocking the audio loop."""
-        try:
-            report = await asyncio.wait_for(
-                costs.cost_report(self.admin_key, self.monthly_budget),
-                timeout=15.0,
-            )
-        except Exception as e:
-            logger.warning("Costs report failed: %s", e)
-            report = {"error": "Could not read OpenAI costs right now."}
-        try:
-            await self._send_function_output(live_ws, call_id, report)
-        except Exception as e:
-            logger.warning("Could not return costs report: %s", e)
-
-    async def _run_lights_tool(self, live_ws, call_id: str, raw_args) -> None:
-        """Switch the living room lamps without blocking the audio loop."""
-        try:
-            args = json.loads(raw_args) if isinstance(raw_args, str) and raw_args else (raw_args or {})
-        except json.JSONDecodeError:
-            args = {}
-        try:
-            result = await asyncio.wait_for(self.lights.run(args), timeout=25.0)
-        except Exception as e:
-            logger.warning("Light control failed: %s", e)
-            result = {"error": "Die Lampen konnten gerade nicht gesteuert werden."}
-        try:
-            await self._send_function_output(live_ws, call_id, result)
-        except Exception as e:
-            logger.warning("Could not return light result: %s", e)
-
-    async def _run_fan_tool(self, live_ws, call_id: str, raw_args) -> None:
-        """Press a fan remote button without blocking the audio loop."""
-        try:
-            args = json.loads(raw_args) if isinstance(raw_args, str) and raw_args else (raw_args or {})
-        except json.JSONDecodeError:
-            args = {}
-        try:
-            result = await asyncio.wait_for(self.fan.run(args), timeout=15.0)
-        except Exception as e:
-            logger.warning("Fan control failed: %s", e)
-            result = {"error": "Der Ventilator konnte gerade nicht gesteuert werden."}
-        try:
-            await self._send_function_output(live_ws, call_id, result)
-        except Exception as e:
-            logger.warning("Could not return fan result: %s", e)
-
-    async def _run_vacuum_tool(self, live_ws, call_id: str, raw_args) -> None:
-        """Control the robot vacuum without blocking the audio loop."""
-        try:
-            args = json.loads(raw_args) if isinstance(raw_args, str) and raw_args else (raw_args or {})
-        except json.JSONDecodeError:
-            args = {}
-        try:
-            result = await asyncio.wait_for(self.vacuum.run(args), timeout=20.0)
-        except Exception as e:
-            logger.warning("Vacuum control failed: %s", e)
-            result = {"error": "Der Saugroboter konnte gerade nicht gesteuert werden."}
-        logger.info("Vacuum %s -> %s", args, result)
-        try:
-            await self._send_function_output(live_ws, call_id, result)
-        except Exception as e:
-            logger.warning("Could not return vacuum result: %s", e)
-
-    async def _run_purifier_tool(self, live_ws, call_id: str, raw_args) -> None:
-        """Control the air purifier without blocking the audio loop."""
-        try:
-            args = json.loads(raw_args) if isinstance(raw_args, str) and raw_args else (raw_args or {})
-        except json.JSONDecodeError:
-            args = {}
-        try:
-            result = await asyncio.wait_for(self.purifier.run(args), timeout=15.0)
-        except Exception as e:
-            logger.warning("Purifier control failed: %s", e)
-            result = {"error": "Der Luftreiniger konnte gerade nicht gesteuert werden."}
-        logger.info("Purifier %s -> %s", args, result)
-        try:
-            await self._send_function_output(live_ws, call_id, result)
-        except Exception as e:
-            logger.warning("Could not return purifier result: %s", e)
-
-    async def _run_technik_tool(self, live_ws, call_id: str, raw_args, state: dict) -> None:
-        """Check automations and devices, and change a time for Metin, without blocking."""
-        try:
-            args = json.loads(raw_args) if isinstance(raw_args, str) and raw_args else (raw_args or {})
-        except json.JSONDecodeError:
-            args = {}
-        try:
-            if args.get("action") == "zeit_aendern" and not (
-                    self.code_phrase and state.get("unlocked")):
-                # only Metin (code phrase heard by the bridge itself) may change a time
-                result = {"error": "Nicht erlaubt: Uhrzeiten ändert nur Metin, und nur nachdem "
-                                   "er das Codewort gesagt hat."}
-            else:
-                result = await asyncio.wait_for(self.technik.run(args), timeout=15.0)
-        except Exception as e:
-            logger.warning("Technik check failed: %s", e)
-            result = {"error": "Die Technik konnte gerade nicht geprüft werden."}
-        logger.info("Technik %s -> %s hits", args, result.get("treffer"))
-        try:
-            await self._send_function_output(live_ws, call_id, result)
-        except Exception as e:
-            logger.warning("Could not return technik result: %s", e)
-
-    async def _run_cleanup_tool(self, live_ws, call_id: str, raw_args, state: dict) -> None:
-        """Memory cleanup, only for Metin: the bridge itself heard the code phrase."""
-        try:
-            args = json.loads(raw_args) if isinstance(raw_args, str) and raw_args else (raw_args or {})
-        except json.JSONDecodeError:
-            args = {}
-        try:
-            if not (self.code_phrase and state.get("unlocked")):
-                result = {"error": "Nicht erlaubt: Das Gedächtnis räumt nur Metin auf, und nur "
-                                   "nachdem er das Codewort gesagt hat."}
-            else:
-                result = await asyncio.wait_for(self.cleaner.run(args), timeout=60.0)
-                if args.get("action") == "streichen" and self.todo_sync:
-                    self.todo_sync.kick()
-        except Exception as e:
-            logger.warning("Cleanup failed: %s", e)
-            result = {"error": "Das Aufräumen hat gerade nicht geklappt."}
-        logger.info("Cleanup %s -> %s", args.get("action"), {k: v for k, v in result.items()
-                                                              if k != "vorschlaege"})
-        try:
-            await self._send_function_output(live_ws, call_id, result)
-        except Exception as e:
-            logger.warning("Could not return cleanup result: %s", e)
 
     async def _cleanup_loop(self) -> None:
         """Once a night at 00:00 the review proposes trivial entries. It never deletes."""
@@ -1104,23 +1058,6 @@ class LiveVoiceBridge:
                 await self.cleaner.review()
             except Exception as e:
                 logger.warning("Nightly cleanup review failed: %s", e)
-
-    async def _run_tv_tool(self, live_ws, call_id: str, raw_args) -> None:
-        """Control the TV without blocking the audio loop."""
-        try:
-            args = json.loads(raw_args) if isinstance(raw_args, str) and raw_args else (raw_args or {})
-        except json.JSONDecodeError:
-            args = {}
-        try:
-            result = await asyncio.wait_for(self.tv.run(args), timeout=20.0)
-        except Exception as e:
-            logger.warning("TV control failed: %s", e)
-            result = {"error": "Der Fernseher konnte gerade nicht gesteuert werden."}
-        logger.info("TV %s -> %s", args, result)
-        try:
-            await self._send_function_output(live_ws, call_id, result)
-        except Exception as e:
-            logger.warning("Could not return TV result: %s", e)
 
     async def _handle_backend_event(
         self,
@@ -1143,51 +1080,12 @@ class LiveVoiceBridge:
             if name == "end_conversation":
                 state["closing"] = True
                 await self._send_function_output(live_ws, call_id, {"status": "ok"})
-            elif name == costs.COSTS_TOOL["name"]:
-                await output_queue.put(("phase", "thinking"))
-                task = asyncio.create_task(self._run_costs_tool(live_ws, call_id))
-                self._memory_tasks.add(task)
-                task.add_done_callback(self._memory_tasks.discard)
-            elif name == lights.LIGHTS_TOOL["name"]:
-                task = asyncio.create_task(
-                    self._run_lights_tool(live_ws, call_id, item.get("arguments")))
-                self._memory_tasks.add(task)
-                task.add_done_callback(self._memory_tasks.discard)
-            elif name == messages.TO_METIN_TOOL["name"]:
-                task = asyncio.create_task(
-                    self._run_message_tool(live_ws, call_id, item.get("arguments")))
-                self._memory_tasks.add(task)
-                task.add_done_callback(self._memory_tasks.discard)
-            elif name == "fernseher_steuern":
-                task = asyncio.create_task(
-                    self._run_tv_tool(live_ws, call_id, item.get("arguments")))
-                self._memory_tasks.add(task)
-                task.add_done_callback(self._memory_tasks.discard)
-            elif name == purifier.PURIFIER_TOOL["name"]:
-                task = asyncio.create_task(
-                    self._run_purifier_tool(live_ws, call_id, item.get("arguments")))
-                self._memory_tasks.add(task)
-                task.add_done_callback(self._memory_tasks.discard)
-            elif name == cleanup.CLEANUP_TOOL["name"]:
-                task = asyncio.create_task(
-                    self._run_cleanup_tool(live_ws, call_id, item.get("arguments"), state))
-                self._memory_tasks.add(task)
-                task.add_done_callback(self._memory_tasks.discard)
-            elif name == technik.TECHNIK_TOOL["name"]:
-                task = asyncio.create_task(
-                    self._run_technik_tool(live_ws, call_id, item.get("arguments"), state))
-                self._memory_tasks.add(task)
-                task.add_done_callback(self._memory_tasks.discard)
-            elif name == vacuum.VACUUM_TOOL["name"]:
-                task = asyncio.create_task(
-                    self._run_vacuum_tool(live_ws, call_id, item.get("arguments")))
-                self._memory_tasks.add(task)
-                task.add_done_callback(self._memory_tasks.discard)
-            elif name == fan.FAN_TOOL["name"]:
-                task = asyncio.create_task(
-                    self._run_fan_tool(live_ws, call_id, item.get("arguments")))
-                self._memory_tasks.add(task)
-                task.add_done_callback(self._memory_tasks.discard)
+            elif name in self._tools:
+                spec = self._tools[name]
+                if spec.get("phase"):
+                    await output_queue.put(("phase", spec["phase"]))
+                self._in_background(
+                    self._run_tool(spec, live_ws, call_id, item.get("arguments"), state))
             else:
                 await self._send_function_output(
                     live_ws, call_id, {"error": f"Unknown function: {name}"}
