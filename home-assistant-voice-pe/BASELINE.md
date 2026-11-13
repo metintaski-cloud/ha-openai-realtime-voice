@@ -4,7 +4,7 @@ Purpose: numbers of the current component (the one taken over from upstream) to 
 
 ## How it is measured
 - Server side: `/data/metrics.jsonl` in the add on (events `ready`, `first_audio`, `interrupt`, `session_end`), written since add on 2.53.0 (13 Nov 2026). Summary: median and 90th percentile per number.
-- Device side (still to collect): free heap and CPU from the ESPHome log, WiFi dropouts, wake to ready on the device, interrupt reaction on the device.
+- Device side: Home Assistant sensors "Leyla free heap", "Leyla largest free block", "Leyla loop time" (a measure for CPU load), "Leyla WiFi signal" and "Leyla uptime" (installed 13 Nov 2026 at 23:35); read their history in Home Assistant. Still to collect: wake to ready on the device, interrupt reaction on the device.
 - Wake behaviour: false wakes per day from the event `esphome.wake_word_detected` and the collected false wake recordings.
 
 ## Values

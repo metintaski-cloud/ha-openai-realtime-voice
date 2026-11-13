@@ -12,6 +12,8 @@ The template was synced with the live file on the same day (wake word, component
 
 - `voice_kit` `channel_0_stage` stays `AGC` (stock). Test with `NS` on 13 Nov 2026 failed: the raw voice was only about rms 100 to 250, even the software gain of up to 6x could not lift it, GPT Live heard nothing and Leyla hung up (`no_speech`). With `AGC` the level to the server is high (rms 19000 to 25000, peaks to 32766) but she understands everyone reliably. Next idea if the level must come down: keep `AGC` and lower it on the server side or find a middle XMOS setting, not `NS`.
 
+- Extra diagnostic sensors in the live `sensor:` block (added 13 Nov 2026, for the baseline): `platform: debug` (free heap, largest free block, loop time; `debug: update_interval: 5s` already existed), `wifi_signal`, `uptime`, all named "Leyla ..." and `entity_category: diagnostic`. They show up in Home Assistant with history, so memory trends, WiFi quality and reboots can be read over days.
+
 ## Keep this file true
 - Whenever the live config is changed (by Claude or by hand), update the list above in the same session and commit it.
 - Before relying on any value, re-check the live file instead of trusting this list. Quick check in the browser pane on the ESPHome editor page: find the element `ESPHOME-YAML-EDITOR` through the shadow roots and iframe, its `.value` holds the whole YAML. Compare line by line with the raw template from GitHub; the lines that exist only on one side are the differences.
