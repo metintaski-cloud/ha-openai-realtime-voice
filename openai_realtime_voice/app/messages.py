@@ -111,6 +111,9 @@ class MessageCenter:
         self.audio: dict[str, bytes] = {}
         self._wake = asyncio.Event()
         self.on_command: Optional[Callable[[dict], Awaitable[dict]]] = None
+        # Turn the TV down before an announcement and back up after it (set by main).
+        self.before_play: Optional[Callable[[], Awaitable[None]]] = None
+        self.after_play: Optional[Callable[[], Awaitable[None]]] = None
         # entity_id -> callback(new state string), for state_changed events
         self.state_listeners: dict[str, Callable[[str], None]] = {}
         self.mute_switch = ""
@@ -304,14 +307,29 @@ class MessageCenter:
                 await self._service("switch", "turn_on", {"entity_id": self.mute_switch})
             except Exception as e:
                 logger.info("Could not mute during announcement: %s", e)
+        if self.before_play:
+            try:
+                await asyncio.wait_for(self.before_play(), 8)
+            except Exception as e:
+                logger.info("Could not turn the TV down for the announcement: %s", e)
         await self._service("media_player", "play_media", {
             "entity_id": self.media_player, "media_content_id": url,
             "media_content_type": "music", "announce": True,
         })
+        seconds = len(pcm) / 48000 + 2.5
         if self.mute_switch:
-            seconds = len(pcm) / 48000 + 2.5
             asyncio.get_event_loop().call_later(
                 seconds, lambda: asyncio.ensure_future(self._unmute()))
+        if self.after_play:
+            asyncio.get_event_loop().call_later(
+                seconds + 1, lambda: asyncio.ensure_future(self._safe(self.after_play())))
+
+    @staticmethod
+    async def _safe(coro) -> None:
+        try:
+            await coro
+        except Exception as e:
+            logger.info("After announcement step failed: %s", e)
 
     async def _unmute(self) -> None:
         try:

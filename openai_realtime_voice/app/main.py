@@ -291,6 +291,8 @@ class LiveVoiceBridge:
             notify=self.messages.push if self.messages.available else None)
         self.technik.lamp_count = len(self.lights.entities)
         self.messages.on_command = self._automation_command
+        self.messages.before_play = self._tv_down_for_announcement
+        self.messages.after_play = self._tv_up_after_announcement
         self.messages.converse = self._converse
         # Home Assistant action of the Voice PE that starts a conversation (see the
         # api actions in voice_pe_config.yaml)
@@ -738,6 +740,15 @@ class LiveVoiceBridge:
         pcm = pcm[:loud_end + BYTES_PER_SEC // 4]  # drop trailing silence
         logger.info("Announcement audio: %.1f s", len(pcm) / (SAMPLE_RATE * 2))
         return bytes(pcm)
+
+    async def _tv_down_for_announcement(self) -> None:
+        """Turn the TV down before an announcement, unless a conversation already did."""
+        if self.tv.available and not self._active_sessions:
+            await self.tv.duck()
+
+    async def _tv_up_after_announcement(self) -> None:
+        if self.tv.available and not self._active_sessions:
+            await self.tv.unduck()
 
     async def _automation_command(self, data: dict) -> dict:
         """Event leyla_command from a Home Assistant automation, e.g.

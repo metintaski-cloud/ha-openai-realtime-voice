@@ -98,6 +98,22 @@ async def test_say_remember(tmp_path):
         server.shutdown()
 
 
+async def test_tv_down_before_announcement(tmp_path):
+    _HA.calls.clear()
+    server = _server(19996)
+    mc = _center(tmp_path, 19996, [])
+    order = []
+
+    async def before():
+        order.append("down")
+    mc.before_play = before
+    try:
+        await mc._play(b"\x01\x00" * 100)
+        assert order == ["down"] and _HA.calls[-1][1] == "play_media"
+    finally:
+        server.shutdown()
+
+
 async def test_message_brought_up_in_a_conversation(tmp_path):
     spoken = []
 
