@@ -38,7 +38,7 @@ import websockets
 from app.audio_recorder import AudioRecorder
 from app import memory
 from app import context
-from app import (night, cleanup, costs, fan, health, lights, messages, persona, purifier, report, rf, technik, todo_sync,
+from app import (after_talk, live_link, night, cleanup, costs, fan, health, lights, messages, persona, purifier, rf, technik, todo_sync,
                  tv, vacuum)
 
 logging.basicConfig(
@@ -55,7 +55,6 @@ SAMPLE_RATE = 24000
 BYTES_PER_SEC = SAMPLE_RATE * 2  # 16-bit = 2 bytes per sample -> 48 000 B/s
 SEND_CHUNK_SIZE = BYTES_PER_SEC * 20 // 1000  # 960 bytes = 20 ms of audio
 
-LIVE_URL = "wss://api.openai.com/v1/live/sessions"
 
 # A reply is considered finished when no audio arrived for this long.
 REPLY_GAP_S = 1.0
@@ -64,7 +63,6 @@ GOODBYE_IDLE_S = 1.5
 GOODBYE_MAX_WAIT_S = 15.0
 # End the session when nobody spoke for this long (GPT Live is billed per minute).
 IDLE_TIMEOUT_S = 30.0
-WARM_MAX_AGE_S = 90.0  # a pre opened connection older than this is replaced
 WARM_START_TIMEOUT_S = 4.0  # a warm connection that does not answer is dropped quickly
 NO_SPEECH_TIMEOUT_S = 8.0  # false wake: nobody speaks, end silently
 FOLLOWUP_MAX_WAIT_S = 15.0  # Leyla starts a conversation: the Voice PE connects within this
@@ -232,7 +230,7 @@ def pcm_level(pcm: bytes) -> tuple[int, int]:
     return rms, peak
 
 
-class LiveVoiceBridge(night.NightMixin):
+class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.AfterTalkMixin):
     """Bridges ESP32 WebSocket to the OpenAI GPT Live API."""
 
     def __init__(self) -> None:
@@ -514,132 +512,6 @@ class LiveVoiceBridge(night.NightMixin):
             dialog[-1][1] += delta
         else:
             dialog.append([speaker, delta])
-
-    async def _update_memory(self, dialog: list, unlocked: bool) -> None:
-        old = self.memory.load_all()
-        lists = await memory.summarize(
-            self.openai_api_key, [self.memory_model, self.backend_model], old, dialog,
-            unlocked=unlocked,
-            url=os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL),
-        )
-        if lists is None:
-            logger.warning("Memory not updated")
-            return
-        if lists != old:
-            self.memory.save_all(lists)
-            for kind in memory.KINDS:
-                for f in lists[kind]:
-                    if f not in old[kind]:
-                        logger.info("Memory %s: + %s", kind, f if kind in memory.OPEN_KINDS
-                                    else "(private entry)")
-                for f in old[kind]:
-                    if f not in lists[kind]:
-                        logger.info("Memory %s: - %s", kind, f if kind in memory.OPEN_KINDS
-                                    else "(private entry)")
-            if self.todo_sync:
-                self.todo_sync.kick()
-        else:
-            logger.info("Memory unchanged (%d family, %d friends, %d private, %d Leyla)",
-                        len(lists[memory.FAMILY]), len(lists[memory.FRIENDS]),
-                        len(lists[memory.PRIVATE]), len(lists[memory.LEYLA]))
-
-    def _schedule_memory_update(self, state: dict, reason: str = "") -> None:
-        dialog = [d for d in state.get("dialog", []) if d[1].strip()]
-        if not self.enable_memory:
-            return
-        said = sum(len(t) for s, t in dialog if s == "user")
-        if reason == "no_speech" or said < 15 or not any(s == "bot" for s, _ in dialog):
-            return  # nothing worth learning (false wake, only the greeting)
-        unlocked = bool(state.get("unlocked")) or not self.code_phrase
-        task = asyncio.create_task(self._update_memory(dialog, unlocked))
-        self._memory_tasks.add(task)
-        task.add_done_callback(self._memory_tasks.discard)
-
-    def _schedule_rude_report(self, state: dict) -> None:
-        """Leyla said she would tell Metin: after the talk she does, in her own words."""
-        dialog = [d for d in state.get("dialog", []) if d[1].strip()]
-        if self.messages.available and report.needs_report(dialog):
-            self._in_background(self._send_rude_report(dialog))
-
-    async def _send_rude_report(self, dialog: list) -> None:
-        text = await report.write_report(
-            self.openai_api_key, [self.backend_model, self.memory_model], dialog,
-            url=os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL))
-        if not text:
-            logger.info("Rudeness report: nothing to tell Metin")
-            return
-        try:
-            await self.messages.push(report.TITLE, text)
-            logger.info("Rudeness report sent to Metin")
-        except Exception as e:
-            logger.warning("Could not send the rudeness report: %s", e)
-
-    async def _connect_live(self):
-        """Open WebSocket to the GPT Live API."""
-        url = os.environ.get("OPENAI_LIVE_URL", LIVE_URL)
-        ws = await websockets.connect(
-            url,
-            additional_headers={"Authorization": f"Bearer {self.openai_api_key}"},
-            ping_interval=20,
-            ping_timeout=20,
-            close_timeout=5,
-            max_size=None,
-        )
-        logger.info("Connected to OpenAI GPT Live API")
-        return ws
-
-    @staticmethod
-    def _ws_open(ws) -> bool:
-        try:
-            return ws.state.name == "OPEN"
-        except Exception:
-            return not getattr(ws, "closed", True)
-
-    async def _close_quietly(self, ws) -> None:
-        try:
-            await ws.close()
-        except Exception:
-            pass
-
-    async def _open_warm(self) -> None:
-        try:
-            ws = await self._connect_live()
-        except Exception as e:
-            logger.info("Warm connection not possible: %s", e)
-            return
-        old, self._warm = self._warm, (ws, time.monotonic())
-        if old:
-            self._in_background(self._close_quietly(old[0]))
-
-    def _warm_up(self) -> None:
-        """Make sure a pre opened connection is on its way (at most one at a time)."""
-        if not self.warm_connection or (self._warm_task and not self._warm_task.done()):
-            return
-        self._warm_task = asyncio.create_task(self._open_warm())
-
-    async def _warm_loop(self) -> None:
-        """Keep one fresh pre opened connection ready, replacing it before it gets old."""
-        while True:
-            warm = self._warm
-            if warm is None or time.monotonic() - warm[1] > WARM_MAX_AGE_S * 0.6 \
-                    or not self._ws_open(warm[0]):
-                self._warm_up()
-            await asyncio.sleep(15)
-
-    async def _take_live(self):
-        """A connection for a new session: the pre opened one when it is still good, else a
-        new one. Returns (websocket, was_warm). The next warm one is prepared right away."""
-        warm, self._warm = self._warm, None
-        self._warm_up()
-        if warm:
-            ws, opened = warm
-            age = time.monotonic() - opened
-            if age < WARM_MAX_AGE_S and self._ws_open(ws):
-                logger.info("Using the warm GPT Live connection (%.0f s old)", age)
-                return ws, True
-            logger.info("Warm GPT Live connection was stale (%.0f s), opening a new one", age)
-            self._in_background(self._close_quietly(ws))
-        return await self._connect_live(), False
 
     async def _speak_once(self, prompt: str, max_s: float = 40.0) -> bytes:
         """Let GPT Live speak one announcement without a listener; return 24 kHz PCM."""
@@ -1447,6 +1319,92 @@ class LiveVoiceBridge(night.NightMixin):
         if dropped:
             logger.info("Cleared %d chunks from output queue (interrupt)", dropped)
 
+    async def _open_live(self, state: dict):
+        """Take a GPT Live connection (the warm one when possible) and start the session.
+        Falls back to a new connection when the warm one does not answer. The connection
+        is also kept in state["live_ws"] so the caller can close it on any failure."""
+        live_ws, was_warm = await self._take_live()
+        state["live_ws"] = live_ws
+        followup_before = self._followup
+        try:
+            started = await self._start_session(
+                live_ws, timeout=WARM_START_TIMEOUT_S if was_warm else 15.0)
+        except Exception as e:
+            if not was_warm:
+                raise
+            logger.info("Warm GPT Live connection did not work (%s), opening a new one", e)
+            self._in_background(self._close_quietly(live_ws))
+            self._followup = followup_before  # the retry must still start as a followup
+            live_ws = await self._connect_live()
+            state["live_ws"] = live_ws
+            started = await self._start_session(live_ws)
+        return live_ws, started
+
+    async def _forward_until_done(self, client_ws, live_ws, output_queue: asyncio.Queue,
+                                  end_reason: dict, state: dict) -> None:
+        """Run the forwarding tasks of one session; when the first one ends, stop the rest."""
+        first_audio_from_client = [False]
+        first_audio_to_client = [False]
+        tasks = [
+            asyncio.create_task(self._client_to_live(
+                client_ws, live_ws, output_queue, first_audio_from_client, end_reason, state)),
+            asyncio.create_task(self._live_to_client(live_ws, output_queue, end_reason, state)),
+            asyncio.create_task(self._output_sender(
+                client_ws, output_queue, first_audio_to_client, end_reason)),
+            asyncio.create_task(
+                self._session_watcher(client_ws, live_ws, output_queue, end_reason, state)),
+        ]
+        pump = asyncio.create_task(self._silence_pump(live_ws, state))
+        finished, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+
+        pump.cancel()
+        await asyncio.gather(pump, return_exceptions=True)
+        for task in pending:
+            task.cancel()
+        if pending:
+            await asyncio.gather(*pending, return_exceptions=True)
+
+        for task in finished:
+            if task.cancelled():
+                continue
+            exc = task.exception()
+            if exc is not None:
+                logger.error("Task exited with error: %s", exc)
+
+    async def _end_session(self, client_id: str, client_ws, state: dict, end_reason: dict,
+                           start_time: float) -> None:
+        """Everything after a session: unregister, close GPT Live, recording, TV volume,
+        memory update and rudeness report, log line."""
+        if self._active_sessions.get(client_id) is client_ws:
+            del self._active_sessions[client_id]
+        if client_id in self._live_sessions and self._live_sessions[client_id][1] is state:
+            del self._live_sessions[client_id]
+        live_ws = state.get("live_ws")
+        if live_ws:
+            try:
+                await live_ws.close()
+            except Exception:
+                pass
+        rec_path = None
+        if self.recorder:
+            self.recorder.stop_recording()
+            rec_path = self.recorder.input_path
+        if self.tv.available:
+            self._in_background(self.tv.unduck())
+        duration = time.monotonic() - start_time
+        reason = end_reason.get("reason", "unknown")
+        self._finish_recording(rec_path, reason, state)
+        try:
+            self._schedule_memory_update(state, reason)
+        except Exception as e:
+            logger.warning("Could not start memory update: %s", e)
+        try:
+            self._schedule_rude_report(state)
+        except Exception as e:
+            logger.warning("Could not start the rudeness report: %s", e)
+        logger.info("Session ended: %s (duration: %.1fs, reason: %s)",
+                    client_id, duration, reason)
+
     async def handle_client(self, client_ws) -> None:
         """One client connection = one GPT Live session. Connect, send ready to the
         client, then run the forwarding tasks. Client only sends audio after ready."""
@@ -1469,8 +1427,6 @@ class LiveVoiceBridge(night.NightMixin):
             self.recorder.start_recording(client_id)
 
         end_reason: dict = {}
-        first_audio_from_client = [False]
-        first_audio_to_client = [False]
         output_queue: asyncio.Queue = asyncio.Queue()
         state: dict = {
             "closing": False,
@@ -1480,22 +1436,9 @@ class LiveVoiceBridge(night.NightMixin):
             "input_clock": time.monotonic(),
             "silence_filled_s": 0.0,
         }
-        live_ws = None
 
         try:
-            live_ws, was_warm = await self._take_live()
-            followup_before = self._followup
-            try:
-                started = await self._start_session(
-                    live_ws, timeout=WARM_START_TIMEOUT_S if was_warm else 15.0)
-            except Exception as e:
-                if not was_warm:
-                    raise
-                logger.info("Warm GPT Live connection did not work (%s), opening a new one", e)
-                self._in_background(self._close_quietly(live_ws))
-                self._followup = followup_before  # the retry must still start as a followup
-                live_ws = await self._connect_live()
-                started = await self._start_session(live_ws)
+            live_ws, started = await self._open_live(state)
             state["live_started"] = True
             self._in_background(self.health.openai_ok())
             if self._started_as_followup:
@@ -1513,78 +1456,14 @@ class LiveVoiceBridge(night.NightMixin):
             logger.info("Sent ready signal to client")
             state["input_clock"] = time.monotonic()
             state["last_activity"] = time.monotonic()
-
-            tasks = [
-                asyncio.create_task(
-                    self._client_to_live(
-                        client_ws, live_ws, output_queue, first_audio_from_client, end_reason,
-                        state,
-                    )
-                ),
-                asyncio.create_task(
-                    self._live_to_client(live_ws, output_queue, end_reason, state)
-                ),
-                asyncio.create_task(
-                    self._output_sender(
-                        client_ws, output_queue, first_audio_to_client, end_reason
-                    )
-                ),
-                asyncio.create_task(
-                    self._session_watcher(client_ws, live_ws, output_queue, end_reason, state)
-                ),
-            ]
-            pump = asyncio.create_task(self._silence_pump(live_ws, state))
-            finished, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-
-            pump.cancel()
-            await asyncio.gather(pump, return_exceptions=True)
-            for task in pending:
-                task.cancel()
-            if pending:
-                await asyncio.gather(*pending, return_exceptions=True)
-
-            for task in finished:
-                if task.cancelled():
-                    continue
-                exc = task.exception()
-                if exc is not None:
-                    logger.error("Task exited with error: %s", exc)
+            await self._forward_until_done(client_ws, live_ws, output_queue, end_reason, state)
         except Exception as e:
             logger.error("Session error: %s", e, exc_info=True)
             end_reason["reason"] = "session_error"
             if not state.get("live_started"):
                 self._in_background(self.health.openai_failed(str(e)))
         finally:
-            if self._active_sessions.get(client_id) is client_ws:
-                del self._active_sessions[client_id]
-            if client_id in self._live_sessions and self._live_sessions[client_id][1] is state:
-                del self._live_sessions[client_id]
-            if live_ws:
-                try:
-                    await live_ws.close()
-                except Exception:
-                    pass
-            rec_path = None
-            if self.recorder:
-                self.recorder.stop_recording()
-                rec_path = self.recorder.input_path
-            if self.tv.available:
-                self._in_background(self.tv.unduck())
-            duration = time.monotonic() - start_time
-            reason = end_reason.get("reason", "unknown")
-            self._finish_recording(rec_path, reason, state)
-            try:
-                self._schedule_memory_update(state, reason)
-            except Exception as e:
-                logger.warning("Could not start memory update: %s", e)
-            try:
-                self._schedule_rude_report(state)
-            except Exception as e:
-                logger.warning("Could not start the rudeness report: %s", e)
-            logger.info(
-                "Session ended: %s (duration: %.1fs, reason: %s)",
-                client_id, duration, reason,
-            )
+            await self._end_session(client_id, client_ws, state, end_reason, start_time)
 
     def _finish_recording(self, path: Optional[str], reason: str, state: dict) -> None:
         """Keep the microphone recording only of a false wake (the wake word fired, nobody
