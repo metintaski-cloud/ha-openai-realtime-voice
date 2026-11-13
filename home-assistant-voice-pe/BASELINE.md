@@ -10,4 +10,5 @@ Purpose: numbers of the current component (the one taken over from upstream) to 
 ## Values
 First device values (13 Nov 2026, 23:50, 8 minutes after boot, idle): WiFi signal -51 dBm (good), free heap 122 KB, largest free block 111 KB, loop time 17 ms. Look again after a conversation and after a day of uptime: a free heap that keeps sinking means a memory leak, a loop time that jumps during talking shows CPU load.
 Microphone level to the server (add on 2.53.x, XMOS AGC on): Leyla speaking about rms 2600 (peak 6900), quiet about rms 380 (peak 860) in the first clean test after the reflash.
+With leyla_voice built in but idle (14 Nov 2026, 00:20): free heap 107 KB, largest block 94 KB, loop time 17 ms. Cost of the idle component: about 15 KB heap, no loop time change.
 Collection started 13 Nov 2026 at 22:30. Fill in after a few days of normal use.
