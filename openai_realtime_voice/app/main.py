@@ -1100,6 +1100,92 @@ class LiveVoiceBridge(night.NightMixin):
             if inner_type.endswith(".in_progress") or inner_type.endswith(".searching"):
                 await output_queue.put(("phase", "searching"))
 
+    @staticmethod
+    def _log_reply_audio(audio: dict) -> None:
+        if audio["count"]:
+            logger.info("Reply audio: %d deltas, %d bytes (%.1f s), max peak %d",
+                        audio["count"], audio["bytes"], audio["bytes"] / BYTES_PER_SEC,
+                        audio["peak"])
+
+    async def _on_audio_delta(self, delta_b64, output_queue: asyncio.Queue, state: dict,
+                              audio: dict) -> None:
+        """One piece of reply audio: drop quiet frames outside speech, mark a new reply,
+        queue the rest for the Voice PE. `audio` holds the counters of the current reply."""
+        if not delta_b64:
+            return
+        now = time.monotonic()
+        audio_bytes = base64.standard_b64decode(delta_b64)
+        _, out_peak = pcm_level(audio_bytes)
+        if out_peak >= OUTPUT_SILENCE_PEAK:
+            audio["last_loud"] = now
+        elif now - audio["last_loud"] > OUTPUT_HANGOVER_S:
+            # Quiet frame outside of speech: do not send, or the Voice PE
+            # would mute its mic and never hear the user.
+            audio["dropped"] += 1
+            if audio["dropped"] % 100 == 1:
+                logger.info("Dropping quiet output audio (peak=%d, dropped so far %d)",
+                            out_peak, audio["dropped"])
+            return
+        if now - state["last_audio_time"] > REPLY_GAP_S:
+            self._log_reply_audio(audio)
+            await output_queue.put(("phase", "replying"))
+            audio["count"] = audio["bytes"] = audio["peak"] = 0
+        state["last_audio_time"] = now
+        state["last_activity"] = now
+        await output_queue.put(audio_bytes)
+        audio["count"] += 1
+        audio["bytes"] += len(audio_bytes)
+        audio["peak"] = max(audio["peak"], out_peak)
+        if self.recorder:
+            self.recorder.record_output_audio(audio_bytes)
+
+    async def _on_user_text(self, live_ws, output_queue: asyncio.Queue, state: dict,
+                            delta: str) -> None:
+        """A piece of what the user said: barge-in, code phrase, remember, goodbye."""
+        if (delta.strip() and not output_queue.empty()
+                and time.monotonic() - state["last_audio_time"] > BARGE_IN_GAP_S):
+            # The user talks while queued reply audio is still waiting and GPT
+            # Live stopped sending more: it yielded the turn (barge-in). Drop the
+            # rest and tell the Voice PE to stop playing right away.
+            self._clear_output_queue(output_queue)
+            await output_queue.put(("interrupt", None))
+            logger.info("Barge-in: user talks over the reply, playback stopped")
+        if delta.strip():
+            state["user_spoke"] = True
+        self._add_dialog(state, "user", delta)
+        state["last_activity"] = time.monotonic()
+        recent = (state.get("recent_user_text", "") + delta)[-80:]
+        state["recent_user_text"] = recent
+        if self._night is not None:
+            self._night["text"] += delta
+        self._note_name_mention(live_ws, state, delta)
+        if self.messages.available and messages.is_ack(recent) \
+                and self.messages.pending():
+            await self.messages.acknowledge(recent)
+        if (self.code_phrase and not state.get("unlocked")
+                and memory.has_code(recent, self.code_phrase)):
+            await self._unlock(live_ws, state)
+        if not state.get("remember_requested") and memory.wants_to_remember(recent):
+            state["remember_requested"] = True
+            logger.info("User asked to remember something")
+        if not state.get("forget_requested") and memory.wants_to_forget(recent):
+            state["forget_requested"] = True
+            logger.info("User asked to forget something")
+        if not state.get("closing") and contains_goodbye(recent):
+            logger.info("Goodbye heard from user: %r", recent.strip())
+            state["closing"] = True
+        logger.info("User said: %r", delta)
+
+    def _on_bot_text(self, state: dict, delta: str) -> None:
+        """A piece of what Leyla said: keep the dialog and notice her goodbye."""
+        self._add_dialog(state, "bot", delta)
+        recent = (state.get("recent_bot_text", "") + delta)[-80:]
+        state["recent_bot_text"] = recent
+        if not state.get("closing") and contains_goodbye(recent, from_user=False):
+            logger.info("Goodbye said by assistant: %r", recent.strip())
+            state["closing"] = True
+        logger.info("Bot said: %r", delta)
+
     async def _live_to_client(
         self,
         live_ws,
@@ -1108,11 +1194,7 @@ class LiveVoiceBridge(night.NightMixin):
         state: dict,
     ) -> None:
         """Forward GPT Live events to ESP32; audio and phases go through one output queue."""
-        delta_count = 0
-        delta_bytes_total = 0
-        reply_peak = 0
-        dropped_silent = 0
-        last_loud = 0.0
+        audio = {"count": 0, "bytes": 0, "peak": 0, "dropped": 0, "last_loud": 0.0}
         user_text: list[str] = []
         bot_text: list[str] = []
         try:
@@ -1128,42 +1210,7 @@ class LiveVoiceBridge(night.NightMixin):
                 ev_type = event.get("type")
 
                 if ev_type == "session.output_audio.delta":
-                    delta_b64 = event.get("delta")
-                    if delta_b64:
-                        now = time.monotonic()
-                        audio_bytes = base64.standard_b64decode(delta_b64)
-                        _, out_peak = pcm_level(audio_bytes)
-                        if out_peak >= OUTPUT_SILENCE_PEAK:
-                            last_loud = now
-                        elif now - last_loud > OUTPUT_HANGOVER_S:
-                            # Quiet frame outside of speech: do not send, or the Voice PE
-                            # would mute its mic and never hear the user.
-                            dropped_silent += 1
-                            if dropped_silent % 100 == 1:
-                                logger.info(
-                                    "Dropping quiet output audio (peak=%d, dropped so far %d)",
-                                    out_peak, dropped_silent,
-                                )
-                            continue
-                        if now - state["last_audio_time"] > REPLY_GAP_S:
-                            if delta_count:
-                                logger.info(
-                                    "Reply audio: %d deltas, %d bytes (%.1f s), max peak %d",
-                                    delta_count, delta_bytes_total,
-                                    delta_bytes_total / BYTES_PER_SEC, reply_peak,
-                                )
-                            await output_queue.put(("phase", "replying"))
-                            delta_count = 0
-                            delta_bytes_total = 0
-                            reply_peak = 0
-                        state["last_audio_time"] = now
-                        state["last_activity"] = now
-                        await output_queue.put(audio_bytes)
-                        delta_count += 1
-                        delta_bytes_total += len(audio_bytes)
-                        reply_peak = max(reply_peak, out_peak)
-                        if self.recorder:
-                            self.recorder.record_output_audio(audio_bytes)
+                    await self._on_audio_delta(event.get("delta"), output_queue, state, audio)
 
                 elif ev_type == "response.event":
                     inner = event.get("event") or {}
@@ -1177,50 +1224,12 @@ class LiveVoiceBridge(night.NightMixin):
 
                 elif ev_type == "session.input_transcript.delta":
                     delta = event.get("delta", "")
-                    if (delta.strip() and not output_queue.empty()
-                            and time.monotonic() - state["last_audio_time"] > BARGE_IN_GAP_S):
-                        # The user talks while queued reply audio is still waiting and GPT
-                        # Live stopped sending more: it yielded the turn (barge-in). Drop the
-                        # rest and tell the Voice PE to stop playing right away.
-                        self._clear_output_queue(output_queue)
-                        await output_queue.put(("interrupt", None))
-                        logger.info("Barge-in: user talks over the reply, playback stopped")
                     user_text.append(delta)
-                    if delta.strip():
-                        state["user_spoke"] = True
-                    self._add_dialog(state, "user", delta)
-                    state["last_activity"] = time.monotonic()
-                    recent = (state.get("recent_user_text", "") + delta)[-80:]
-                    state["recent_user_text"] = recent
-                    if self._night is not None:
-                        self._night["text"] += delta
-                    self._note_name_mention(live_ws, state, delta)
-                    if self.messages.available and messages.is_ack(recent) \
-                            and self.messages.pending():
-                        await self.messages.acknowledge(recent)
-                    if (self.code_phrase and not state.get("unlocked")
-                            and memory.has_code(recent, self.code_phrase)):
-                        await self._unlock(live_ws, state)
-                    if not state.get("remember_requested") and memory.wants_to_remember(recent):
-                        state["remember_requested"] = True
-                        logger.info("User asked to remember something")
-                    if not state.get("forget_requested") and memory.wants_to_forget(recent):
-                        state["forget_requested"] = True
-                        logger.info("User asked to forget something")
-                    if not state.get("closing") and contains_goodbye(recent):
-                        logger.info("Goodbye heard from user: %r", recent.strip())
-                        state["closing"] = True
-                    logger.info("User said: %r", event.get("delta", ""))
+                    await self._on_user_text(live_ws, output_queue, state, delta)
                 elif ev_type == "session.output_transcript.delta":
                     delta = event.get("delta", "")
                     bot_text.append(delta)
-                    self._add_dialog(state, "bot", delta)
-                    recent = (state.get("recent_bot_text", "") + delta)[-80:]
-                    state["recent_bot_text"] = recent
-                    if not state.get("closing") and contains_goodbye(recent, from_user=False):
-                        logger.info("Goodbye said by assistant: %r", recent.strip())
-                        state["closing"] = True
-                    logger.info("Bot said: %r", event.get("delta", ""))
+                    self._on_bot_text(state, delta)
 
                 elif ev_type == "session.usage.updated":
                     logger.debug("Usage: %s", event.get("usage"))
@@ -1253,14 +1262,9 @@ class LiveVoiceBridge(night.NightMixin):
             logger.error("Error in live_to_client: %s", e, exc_info=True)
             end_reason["reason"] = "live_to_client_error"
         finally:
-            if delta_count:
-                logger.info(
-                    "Reply audio: %d deltas, %d bytes (%.1f s), max peak %d",
-                    delta_count, delta_bytes_total,
-                    delta_bytes_total / BYTES_PER_SEC, reply_peak,
-                )
-            if dropped_silent:
-                logger.info("Dropped %d quiet output deltas in total", dropped_silent)
+            self._log_reply_audio(audio)
+            if audio["dropped"]:
+                logger.info("Dropped %d quiet output deltas in total", audio["dropped"])
             if user_text or bot_text:
                 logger.info("Transcript user: %s", "".join(user_text).strip())
                 logger.info("Transcript bot: %s", "".join(bot_text).strip())
