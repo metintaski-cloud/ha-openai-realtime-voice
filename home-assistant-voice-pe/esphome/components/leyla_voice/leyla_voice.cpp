@@ -4,6 +4,7 @@
 
 #include <cstring>
 
+#include <esp_heap_caps.h>
 #include <esp_system.h>
 
 #include "esphome/components/audio/audio.h"
@@ -20,7 +21,17 @@ enum TriggerIndex : uint8_t {
   T_DISCONNECTED, T_ERROR, T_QUOTA,
 };
 
-LeylaVoice::LeylaVoice() { this->lock_ = xSemaphoreCreateMutex(); }
+// Audio buffers go to external RAM: the internal heap is small and the audio drivers need it
+static uint8_t *psram_alloc(size_t n) {
+  return static_cast<uint8_t *>(heap_caps_malloc(n, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
+}
+static void psram_free(uint8_t *p) { heap_caps_free(p); }
+
+LeylaVoice::LeylaVoice() {
+  this->lock_ = xSemaphoreCreateMutex();
+  leyla::g_alloc = psram_alloc;
+  leyla::g_free = psram_free;
+}
 
 void LeylaVoice::setup() {
   this->machine_ = leyla::Machine(this->config_);
@@ -45,10 +56,18 @@ void LeylaVoice::dump_config() {
 void LeylaVoice::start() {
   uint32_t now = millis();
   xSemaphoreTake(this->lock_, portMAX_DELAY);
-  this->rx_.acquire(kRxBytes);
-  this->tx_.acquire(kTxBytes);
+  bool memory_ok = this->rx_.acquire(kRxBytes) && this->tx_.acquire(kTxBytes);
   this->carry_has_ = false;
   xSemaphoreGive(this->lock_);
+  if (!memory_ok) {
+    ESP_LOGE(TAG, "No external RAM for the audio buffers, conversation not started");
+    xSemaphoreTake(this->lock_, portMAX_DELAY);
+    this->rx_.release();
+    this->tx_.release();
+    xSemaphoreGive(this->lock_);
+    this->fire_(T_ERROR);
+    return;
+  }
   this->play_len_ = this->play_off_ = 0;
   this->ev_connected_ = this->ev_closed_ = this->ev_error_ = false;
   this->texts_.clear();
