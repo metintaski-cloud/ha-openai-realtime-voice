@@ -64,7 +64,7 @@ GOODBYE_IDLE_S = 1.5
 GOODBYE_MAX_WAIT_S = 15.0
 # End the session when nobody spoke for this long (GPT Live is billed per minute).
 IDLE_TIMEOUT_S = 30.0
-NO_SPEECH_TIMEOUT_S = 15.0  # false wake: nobody speaks, end silently
+NO_SPEECH_TIMEOUT_S = 8.0  # false wake: nobody speaks, end silently
 FOLLOWUP_MAX_WAIT_S = 15.0  # Leyla starts a conversation: the Voice PE connects within this
 FOLLOWUP_NO_SPEECH_S = 35.0  # she speaks first, then the family needs time to answer
 
