@@ -9,6 +9,10 @@ Diese Datei ist das Gedaechtnis des Projekts. Wer eine Sitzung beginnt, liest si
 - Antwortstil fuer Metin: kurz, hoechstens 3 Saetze, keine Gedankenstriche, Anleitungen Schritt fuer Schritt mit "weiter".
 - Code immer aufraeumen und Metin ueber Struktur und Dateigroesse informieren.
 
+## Regel gegen veraltete Infos
+- Jede Aenderung an Server, Geraet oder Entscheidungen wird noch in derselben Sitzung in STATUS.md, DEPLOYED.md und der passenden AGENTS.md nachgezogen und committed.
+- Werte aus diesen Dateien vor der Nutzung gegen das echte System pruefen (Add on Version, Live Config), Datum der letzten Pruefung steht in DEPLOYED.md.
+
 ## Umgebung
 - HAOS 192.168.2.240, Voice PE ha-voice-openai 192.168.2.241, Add on Slug 5b94124a_openai_realtime_voice, ESPHome Add on 5c53de3b_esphome.
 - Deploy Ablauf Server: Tests, Version in config.yaml erhoehen, commit, push, Store neu laden, ohne aktive Sitzung Update ausloesen. Details in openai_realtime_voice/AGENTS.md.
