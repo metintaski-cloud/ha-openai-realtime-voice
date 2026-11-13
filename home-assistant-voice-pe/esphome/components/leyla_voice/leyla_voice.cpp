@@ -45,8 +45,8 @@ void LeylaVoice::dump_config() {
 void LeylaVoice::start() {
   uint32_t now = millis();
   xSemaphoreTake(this->lock_, portMAX_DELAY);
-  this->rx_.clear();
-  this->tx_.clear();
+  this->rx_.acquire(kRxBytes);
+  this->tx_.acquire(kTxBytes);
   this->carry_has_ = false;
   xSemaphoreGive(this->lock_);
   this->play_len_ = this->play_off_ = 0;
@@ -109,7 +109,16 @@ void LeylaVoice::apply_(const leyla::Effects &e, uint32_t now) {
   if (e.fire_disconnected) this->fire_(T_DISCONNECTED);
   if (e.fire_stopped) this->fire_(T_STOPPED);
   this->bot_speaking_ = this->machine_.bot_speaking();
-  if (e.fire_stopped || e.fire_error || e.fire_disconnected) this->log_summary_();
+  if (e.fire_stopped || e.fire_error || e.fire_disconnected) {
+    this->log_summary_();
+    if (!this->machine_.running()) {  // give the audio memory back between conversations
+      this->mic_active_ = false;
+      xSemaphoreTake(this->lock_, portMAX_DELAY);
+      this->rx_.release();
+      this->tx_.release();
+      xSemaphoreGive(this->lock_);
+    }
+  }
 }
 
 void LeylaVoice::log_summary_() {

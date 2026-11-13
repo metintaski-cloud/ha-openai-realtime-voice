@@ -95,8 +95,8 @@ class LeylaVoice : public Component {
   leyla::Machine machine_;
   leyla::GainStage gain_;
   leyla::Resampler mic_resampler_{kMicRate, kWireRate};
-  leyla::RingBuffer rx_{kRxBytes};  // reply audio from the socket thread to the loop
-  leyla::RingBuffer tx_{kTxBytes};  // microphone audio from the microphone thread to the loop
+  leyla::RingBuffer rx_{0};  // reply audio from the socket thread to the loop
+  leyla::RingBuffer tx_{0};  // microphone audio from the microphone thread to the loop
   SemaphoreHandle_t lock_{nullptr};
 
   // Socket

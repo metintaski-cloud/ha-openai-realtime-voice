@@ -10,7 +10,19 @@ namespace leyla {
 
 class RingBuffer {
  public:
-  explicit RingBuffer(size_t capacity) : buf_(capacity) {}
+  explicit RingBuffer(size_t capacity = 0) : buf_(capacity) {}
+
+  // The memory is only held while a conversation runs: acquire() at the start, release() at the end.
+  void acquire(size_t capacity) {
+    if (buf_.size() != capacity) buf_.assign(capacity, 0);
+    head_ = 0;
+    size_ = 0;
+  }
+  void release() {
+    std::vector<uint8_t>().swap(buf_);
+    head_ = 0;
+    size_ = 0;
+  }
 
   size_t write(const uint8_t *data, size_t len) {
     size_t room = buf_.size() - size_;
@@ -22,6 +34,7 @@ class RingBuffer {
   }
   size_t read(uint8_t *out, size_t len) {
     size_t n = len < size_ ? len : size_;
+    if (n == 0) return 0;
     for (size_t i = 0; i < n; i++) out[i] = buf_[(head_ + i) % buf_.size()];
     head_ = (head_ + n) % buf_.size();
     size_ -= n;

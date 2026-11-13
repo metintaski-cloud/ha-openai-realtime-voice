@@ -121,6 +121,11 @@ static void test_ring() {
   CHECK(rb.write(big, 20) == 8 && rb.dropped() == 12);
   rb.clear();
   CHECK(rb.size() == 0 && rb.read(o, 4) == 0);
+  // memory only held while in use: released buffer is safe to touch, acquire gives it back
+  rb.release();
+  CHECK(rb.capacity() == 0 && rb.write(a, 4) == 0 && rb.read(o, 4) == 0 && rb.size() == 0);
+  rb.acquire(8);
+  CHECK(rb.capacity() == 8 && rb.write(a, 6) == 6 && rb.read(o, 6) == 6 && o[5] == 6);
 }
 
 static void test_messages() {
