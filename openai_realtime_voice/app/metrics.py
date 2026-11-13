@@ -48,3 +48,16 @@ def load(path: str = "") -> list[dict]:
     except OSError:
         pass
     return out
+
+
+def mic_summary(stats: dict | None) -> dict:
+    """Median rms and highest peak of the microphone, while Leyla spoke and while she was quiet."""
+    out: dict = {}
+    for key in ("speaking", "quiet"):
+        rows = (stats or {}).get(key) or []
+        if rows:
+            rms = sorted(r for r, _ in rows)
+            out[f"mic_{key}_rms_median"] = rms[len(rms) // 2]
+            out[f"mic_{key}_peak_max"] = max(p for _, p in rows)
+            out[f"mic_{key}_windows"] = len(rows)
+    return out

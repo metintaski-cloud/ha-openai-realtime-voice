@@ -593,6 +593,11 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             logger.info("Mic level (2 s): max rms=%d peak=%d chunks=%d silence_fill=%.1fs",
                         level["rms"], level["peak"], level["chunks"], state["silence_filled_s"])
             state["silence_filled_s"] = 0.0
+            # Same number split by whether Leyla was speaking: tells her own voice in the
+            # microphone (echo, housing vibration) from the room.
+            speaking = time.monotonic() - state["last_audio_time"] < 1.5
+            state.setdefault("mic_stats", {"speaking": [], "quiet": []})[
+                "speaking" if speaking else "quiet"].append((level["rms"], level["peak"]))
             level.update(start=time.monotonic(), rms=0, peak=0, chunks=0)
 
     async def _send_mic_audio(self, live_ws, message: bytes, state: dict) -> None:
@@ -1257,7 +1262,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         logger.info("Session ended: %s (duration: %.1fs, reason: %s)",
                     client_id, duration, reason)
         metrics.record("session_end", duration_s=duration, reason=reason,
-                       followup=bool(state.get("followup")))
+                       followup=bool(state.get("followup")),
+                       **metrics.mic_summary(state.get("mic_stats")))
 
     async def handle_client(self, client_ws) -> None:
         """One client connection = one GPT Live session. Connect, send ready to the
