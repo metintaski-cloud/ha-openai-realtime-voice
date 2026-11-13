@@ -4,11 +4,11 @@
 #include <cstdlib>
 #include <vector>
 
-#include "../gain.h"
-#include "../message.h"
-#include "../resample.h"
-#include "../ring_buffer.h"
-#include "../state_machine.h"
+#include "../esphome/components/leyla_voice/gain.h"
+#include "../esphome/components/leyla_voice/message.h"
+#include "../esphome/components/leyla_voice/resample.h"
+#include "../esphome/components/leyla_voice/ring_buffer.h"
+#include "../esphome/components/leyla_voice/state_machine.h"
 
 static int failures = 0, checks = 0;
 #define CHECK(c) do { checks++; if (!(c)) { failures++; printf("FAIL %s:%d  %s\n", __FILE__, __LINE__, #c); } } while (0)
