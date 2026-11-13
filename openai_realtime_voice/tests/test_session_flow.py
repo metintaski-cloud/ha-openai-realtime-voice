@@ -32,7 +32,8 @@ def b64(pcm: bytes) -> str:
 def env(tmp_path, monkeypatch):
     for k, v in {"ENABLE_MEMORY": "false", "ENABLE_CONTEXT": "false", "GREETING_WORDS": "",
                  "MEMORY_PATH": str(tmp_path / "memory.json"), "CODE_PHRASE": "sesam",
-                 "ENABLE_WEB_SEARCH": "false", "RECORD_FALSE_WAKES": "false"}.items():
+                 "ENABLE_WEB_SEARCH": "false", "RECORD_FALSE_WAKES": "false",
+                 "WARM_CONNECTION": "false"}.items():
         monkeypatch.setenv(k, v)
     monkeypatch.delenv("SUPERVISOR_TOKEN", raising=False)
     return tmp_path
@@ -46,12 +47,20 @@ class FakeLive:
         self.received = []
         self.port = free_port()
         self.server = None
+        self.connections = 0
+        self.session_conns = []  # which connection (1, 2, ...) each session.start arrived on
+        self.mute_first = False  # the first connection never answers session.start
 
     async def handler(self, ws):
+        self.connections += 1
+        mine = self.connections
         async for raw in ws:
             event = json.loads(raw)
             self.received.append(event)
             if event["type"] == "session.start":
+                self.session_conns.append(mine)
+                if self.mute_first and mine == 1:
+                    continue
                 await ws.send(json.dumps({"type": "session.started",
                                           "session": {"id": "s1", "model": "fake"}}))
                 if self.script:
@@ -308,3 +317,50 @@ def test_every_registered_tool_has_a_runner_and_every_runner_a_tool_name(env):
                  m.purifier.PURIFIER_TOOL, m.technik.TECHNIK_TOOL, m.cleanup.CLEANUP_TOOL,
                  m.messages.TO_METIN_TOOL, m.costs.COSTS_TOOL):
         assert tool["name"] in bridge._tools
+
+
+# ---- the pre opened (warm) connection -----------------------------------------------------
+
+async def test_a_warm_connection_is_used_for_the_session(env, monkeypatch):
+    monkeypatch.setenv("WARM_CONNECTION", "true")
+    async with FakeLive() as fake, Bridge() as b:
+        await b.bridge._open_warm()
+        assert fake.connections == 1  # opened before anybody said the wake word
+        async with b.connect() as client:
+            assert json.loads(await asyncio.wait_for(client.recv(), 5))["type"] == "ready"
+        assert fake.session_conns == [1]  # the session started on the warm connection
+        await asyncio.sleep(0.2)
+        assert fake.connections == 2  # and the next warm one is already on its way
+
+
+async def test_a_stale_warm_connection_is_replaced_not_used(env, monkeypatch):
+    monkeypatch.setenv("WARM_CONNECTION", "true")
+    async with FakeLive() as fake, Bridge() as b:
+        await b.bridge._open_warm()
+        ws, _ = b.bridge._warm
+        b.bridge._warm = (ws, m.time.monotonic() - 1000)
+        async with b.connect() as client:
+            assert json.loads(await asyncio.wait_for(client.recv(), 5))["type"] == "ready"
+        assert 1 not in fake.session_conns
+
+
+async def test_a_warm_connection_that_does_not_answer_falls_back_quickly(env, monkeypatch):
+    monkeypatch.setenv("WARM_CONNECTION", "true")
+    monkeypatch.setattr(m, "WARM_START_TIMEOUT_S", 0.5)
+    async with FakeLive() as fake, Bridge() as b:
+        fake.mute_first = True
+        await b.bridge._open_warm()
+        loop = asyncio.get_event_loop()
+        t0 = loop.time()
+        async with b.connect() as client:
+            assert json.loads(await asyncio.wait_for(client.recv(), 5))["type"] == "ready"
+        assert loop.time() - t0 < 3.0
+        assert fake.session_conns[0] == 1 and len(fake.session_conns) == 2
+
+
+async def test_without_a_warm_connection_everything_still_works(env, monkeypatch):
+    monkeypatch.setenv("WARM_CONNECTION", "true")
+    async with FakeLive() as fake, Bridge() as b:
+        async with b.connect() as client:
+            assert json.loads(await asyncio.wait_for(client.recv(), 5))["type"] == "ready"
+        assert len(fake.session_conns) == 1

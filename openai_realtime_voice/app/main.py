@@ -65,6 +65,8 @@ GOODBYE_IDLE_S = 1.5
 GOODBYE_MAX_WAIT_S = 15.0
 # End the session when nobody spoke for this long (GPT Live is billed per minute).
 IDLE_TIMEOUT_S = 30.0
+WARM_MAX_AGE_S = 90.0  # a pre opened connection older than this is replaced
+WARM_START_TIMEOUT_S = 4.0  # a warm connection that does not answer is dropped quickly
 NO_SPEECH_TIMEOUT_S = 8.0  # false wake: nobody speaks, end silently
 FOLLOWUP_MAX_WAIT_S = 15.0  # Leyla starts a conversation: the Voice PE connects within this
 FOLLOWUP_NO_SPEECH_S = 35.0  # she speaks first, then the family needs time to answer
@@ -269,6 +271,11 @@ class LiveVoiceBridge:
         self.enable_recording = os.environ.get("ENABLE_RECORDING", "false").lower() == "true"
         self.enable_memory = os.environ.get("ENABLE_MEMORY", "true").lower() == "true"
         self.enable_context = os.environ.get("ENABLE_CONTEXT", "true").lower() == "true"
+        # One GPT Live connection is opened ahead of time (no session yet, so no cost): the
+        # TLS and WebSocket handshake of about half a second is then done before the wake word.
+        self.warm_connection = os.environ.get("WARM_CONNECTION", "true").lower() == "true"
+        self._warm = None  # (websocket, opened at)
+        self._warm_task = None
         self.memory_model = os.environ.get("MEMORY_MODEL", "gpt-6-luna")
         self.admin_key, self.monthly_budget = costs.config_from_env()
         self.lights = lights.LightController(lights.entities_from_env())
@@ -590,6 +597,59 @@ class LiveVoiceBridge:
         )
         logger.info("Connected to OpenAI GPT Live API")
         return ws
+
+    @staticmethod
+    def _ws_open(ws) -> bool:
+        try:
+            return ws.state.name == "OPEN"
+        except Exception:
+            return not getattr(ws, "closed", True)
+
+    async def _close_quietly(self, ws) -> None:
+        try:
+            await ws.close()
+        except Exception:
+            pass
+
+    async def _open_warm(self) -> None:
+        try:
+            ws = await self._connect_live()
+        except Exception as e:
+            logger.info("Warm connection not possible: %s", e)
+            return
+        old, self._warm = self._warm, (ws, time.monotonic())
+        if old:
+            self._in_background(self._close_quietly(old[0]))
+
+    def _warm_up(self) -> None:
+        """Make sure a pre opened connection is on its way (at most one at a time)."""
+        if not self.warm_connection or (self._warm_task and not self._warm_task.done()):
+            return
+        self._warm_task = asyncio.create_task(self._open_warm())
+
+    async def _warm_loop(self) -> None:
+        """Keep one fresh pre opened connection ready, replacing it before it gets old."""
+        while True:
+            warm = self._warm
+            if warm is None or time.monotonic() - warm[1] > WARM_MAX_AGE_S * 0.6 \
+                    or not self._ws_open(warm[0]):
+                self._warm_up()
+            await asyncio.sleep(15)
+
+    async def _take_live(self):
+        """A connection for a new session: the pre opened one when it is still good, else a
+        new one. Returns (websocket, was_warm). The next warm one is prepared right away."""
+        warm, self._warm = self._warm, None
+        self._warm_up()
+        if warm:
+            ws, opened = warm
+            age = time.monotonic() - opened
+            if age < WARM_MAX_AGE_S and self._ws_open(ws):
+                logger.info("Using the warm GPT Live connection (%.0f s old)", age)
+                return ws, True
+            logger.info("Warm GPT Live connection was stale (%.0f s), opening a new one", age)
+            self._in_background(self._close_quietly(ws))
+        return await self._connect_live(), False
 
     async def _speak_once(self, prompt: str, max_s: float = 40.0) -> bytes:
         """Let GPT Live speak one announcement without a listener; return 24 kHz PCM."""
@@ -1473,8 +1533,19 @@ class LiveVoiceBridge:
         live_ws = None
 
         try:
-            live_ws = await self._connect_live()
-            started = await self._start_session(live_ws)
+            live_ws, was_warm = await self._take_live()
+            followup_before = self._followup
+            try:
+                started = await self._start_session(
+                    live_ws, timeout=WARM_START_TIMEOUT_S if was_warm else 15.0)
+            except Exception as e:
+                if not was_warm:
+                    raise
+                logger.info("Warm GPT Live connection did not work (%s), opening a new one", e)
+                self._in_background(self._close_quietly(live_ws))
+                self._followup = followup_before  # the retry must still start as a followup
+                live_ws = await self._connect_live()
+                started = await self._start_session(live_ws)
             state["live_started"] = True
             self._in_background(self.health.openai_ok())
             if self._started_as_followup:
@@ -1629,6 +1700,8 @@ class LiveVoiceBridge:
         """Start WebSocket server and run forever."""
         self._memory_maintenance()
         self._in_background(self._heartbeat_loop())
+        if self.warm_connection and self.openai_api_key:
+            self._in_background(self._warm_loop())
         if self.todo_sync:
             self._in_background(self.todo_sync.run())
         if self.enable_memory and self.openai_api_key:
