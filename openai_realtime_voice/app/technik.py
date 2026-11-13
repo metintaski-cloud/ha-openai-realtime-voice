@@ -3,12 +3,14 @@ A look at the house technology: Leyla can check automations (is it on, when does
 when did it run last, what does it do) and the state of devices, so she can answer
 "schaltet die Automation um 23:30 die Lampen aus?" from the real configuration.
 
-She can change four things in an existing automation, only for Metin (main.py lets these
+She can change five things in an existing automation, only for Metin (main.py lets these
 actions through only when the code phrase was heard in the conversation): the clock time of a
 time trigger ("zeit_aendern") and the colour, brightness or white tone of the lamps the
 automation switches on ("licht_aendern"), and which lamps it switches on ("lampen_aendern":
 take some out, add some, or only these) and which fan steps it runs ("ventilator_aendern":
-the leyla_command events for the ceiling fan and its light, add, remove or replace). Metin gets a push message about every change.
+the leyla_command events for the ceiling fan and its light, add, remove or replace) and the
+night check ("nacht_aendern": which lamps, fan and fan light it switches off, whether it asks
+first, how long it waits). Metin gets a push message about every change.
 """
 import re
 import logging
@@ -31,14 +33,14 @@ TECHNIK_TOOL = {
         "'licht_aendern' changes the colour, brightness or white tone the lamps get when an "
         "automation switches them on, 'lampen_aendern' changes which lamps it switches on (take "
         "out, add, or only these), 'ventilator_aendern' changes which fan steps it runs, all "
-        "four only when Metin asks and said the code phrase. Use the rest to answer questions about "
+        "five only when Metin asks, 'nacht_aendern' changes the 23:30 night check and said the code phrase. Use the rest to answer questions about "
         "whether something is set up or switched on."
     ),
     "parameters": {
         "type": "object",
         "properties": {
             "action": {"type": "string", "enum": ["automationen", "geraete", "zeit_aendern", "licht_aendern",
-                               "lampen_aendern", "ventilator_aendern"]},
+                               "lampen_aendern", "ventilator_aendern", "nacht_aendern"]},
             "suche": {"type": ["string", "null"],
                       "description": "Search word, for example 'Lampen', 'Sonnenuntergang', "
                                      "'23:30'. Null lists the first ones."},
@@ -71,6 +73,22 @@ TECHNIK_TOOL = {
             "stufe": {"type": ["integer", "null"],
                       "description": "For 'ventilator_aendern': speed 1 to 6 of the step "
                                      "stufe (the new one when replacing), else null."},
+            "nacht_lampen": {"type": ["array", "null"], "items": {"type": "integer"},
+                             "description": "For 'nacht_aendern': the lamp numbers the night "
+                                            "check switches off, an empty list means no lamp, "
+                                            "null keeps it."},
+            "nacht_ventilator": {"type": ["boolean", "null"],
+                                 "description": "For 'nacht_aendern': does the night check "
+                                                "switch the fan off. Null keeps it."},
+            "nacht_ventilatorlicht": {"type": ["boolean", "null"],
+                                      "description": "For 'nacht_aendern': does it switch the "
+                                                     "fan light off. Null keeps it."},
+            "nacht_fragen": {"type": ["boolean", "null"],
+                             "description": "For 'nacht_aendern': false switches off without "
+                                            "asking first, true asks first. Null keeps it."},
+            "nacht_warten": {"type": ["integer", "null"],
+                             "description": "For 'nacht_aendern': seconds to wait for an answer "
+                                            "(0 to 600). Null keeps it."},
             "stunden": {"type": ["integer", "null"],
                         "description": "For 'ventilator_aendern': timer 1, 2 or 4 hours, "
                                        "else null."},
@@ -88,7 +106,9 @@ TECHNIK_TOOL = {
                     "description": "For 'zeit_aendern': the new time HH:MM (24 hours)."},
         },
         "required": ["action", "suche", "alt", "neu", "lampe", "farbe", "helligkeit", "modus",
-                     "lampen", "ventilator", "ventilator_neu", "stufe", "stunden"],
+                     "lampen", "ventilator", "ventilator_neu", "stufe", "stunden", "nacht_lampen",
+                     "nacht_ventilator", "nacht_ventilatorlicht", "nacht_fragen",
+                     "nacht_warten"],
         "additionalProperties": False,
     },
 }
@@ -97,15 +117,17 @@ TECHNIK_BACKEND_HINT = (
     " You can check the technology with technik_pruefen (read only): 'automationen' for "
     "questions like 'schaltet die Automation um 23:30 die Lampen aus' or 'wann lief sie zuletzt', "
     "'geraete' for the state of devices. Answer only from the result, in simple words, and say "
-    "plainly if no automation matches. You can make four changes in an automation, only when "
+    "plainly if no automation matches. You can make five changes in an automation, only when "
     "Metin himself asks and has said the code phrase: the time with 'zeit_aendern', the "
     "colour, brightness or white tone of its lamps with 'licht_aendern' and which lamps it "
     "switches on with 'lampen_aendern' (modus entfernen, hinzufuegen or nur, lampen by name; "
     "if a name is not clear the result lists the candidates, ask which one) and which steps "
     "it runs for the ceiling fan and its light with 'ventilator_aendern' (modus hinzufuegen, "
     "entfernen or ersetzen; ventilator aus, an, licht_an, licht_aus, stufe, timer and so on). "
-    "The fan light is licht_an or licht_aus, the fan itself an or aus. The 23:30 night "
-    "check is fixed and cannot be changed this way. First say which "
+    "The fan light is licht_an or licht_aus, the fan itself an or aus. With 'nacht_aendern' "
+    "you change the 23:30 night check (suche 'alles aus' or the automation name): which "
+    "lamps by number, fan, fan light, whether to ask first and how long to wait; what you "
+    "leave null stays. First say which "
     "automation and what you understood (times alt to neu, colour and brightness, or which "
     "lamps), and call "
     "it only after he confirms. 'automationen' shows the current colour and brightness of the "
@@ -372,6 +394,7 @@ class TechnikChecker:
     def __init__(self, api_url: Optional[str] = None, token: Optional[str] = None,
                  notify=None) -> None:
         self.notify = notify  # async (title, message), set by main when push is available
+        self.lamp_count = 0  # number of floor lamps, set by main
         self.api_url = api_url or os.environ.get("HA_API_URL") or "http://supervisor/core/api"
         self.token = token if token is not None else os.environ.get("SUPERVISOR_TOKEN", "")
 
@@ -667,6 +690,63 @@ class TechnikChecker:
         return {"geaendert": name, "jetzt": [a for a in _action_texts(cfg[key])
                                              if a.startswith("Leyla Befehl")]}
 
+    async def change_night(self, client, search: Optional[str], lamps, fan, fan_light, ask,
+                           wait) -> dict:
+        """Change the options of the night check (leyla_command device nacht) in the one
+        matching automation. What is None stays, defaults are written as no key."""
+        if lamps is not None:
+            if not isinstance(lamps, list) or not all(
+                    isinstance(n, int) and not isinstance(n, bool) and n >= 1 for n in lamps) \
+                    or (self.lamp_count and any(n > self.lamp_count for n in lamps)):
+                return {"error": "Die Lampennummern stimmen nicht"
+                        + (f", es gibt Lampe 1 bis {self.lamp_count}." if self.lamp_count
+                           else ".")}
+        if wait is not None and not (isinstance(wait, int) and not isinstance(wait, bool)
+                                     and 0 <= wait <= 600):
+            return {"error": "Die Wartezeit muss zwischen 0 und 600 Sekunden liegen."}
+        if all(v is None for v in (lamps, fan, fan_light, ask, wait)):
+            return {"error": "Es fehlt, was an der Nachtabfrage geändert werden soll."}
+        found = await self._find_one(client, search)
+        if isinstance(found, dict):
+            return found
+        aid, name, cfg = found
+        key = "actions" if "actions" in cfg or "action" not in cfg else "action"
+        steps = _find_steps(cfg.get(key), lambda a: a.get("event") == "leyla_command"
+                            and (a.get("event_data") or {}).get("device") == "nacht")
+        if not steps:
+            return {"error": f"{name} ist keine Nachtabfrage."}
+        for a in steps:
+            data = a["event_data"]
+            if lamps is not None:
+                if self.lamp_count and sorted(set(lamps)) == list(range(1, self.lamp_count + 1)):
+                    data.pop("lampen", None)  # all lamps is the default
+                else:
+                    data["lampen"] = sorted(set(lamps))
+            for key_, value in (("ventilator", fan), ("ventilatorlicht", fan_light),
+                                ("fragen", ask)):
+                if value is True:
+                    data.pop(key_, None)  # true is the default
+                elif value is False:
+                    data[key_] = False
+            if wait is not None:
+                data["warten"] = wait
+        resp = await client.post(f"{self.api_url}/config/automation/config/{aid}", json=cfg,
+                                 headers=self._headers())
+        if resp.status_code >= 300:
+            raise RuntimeError(f"HA HTTP {resp.status_code}: {resp.text[:200]}")
+        from app import night
+        o = night.parse(steps[0]["event_data"])
+        now = {"lampen": "alle" if o.lamps is None else o.lamps, "ventilator": o.fan,
+               "ventilatorlicht": o.fan_light, "fragt_zuerst": o.ask,
+               "wartet_sekunden": o.wait_s if o.wait_s is not None else "Standard (70)"}
+        logger.info("Automation %s: night check now %s", aid, now)
+        if self.notify:
+            try:
+                await self.notify("Leyla hat die Nachtabfrage geändert", f"{name}: {now}.")
+            except Exception as e:
+                logger.warning("Could not push the night change: %s", e)
+        return {"geaendert": name, "jetzt": now}
+
     async def change_light(self, client, search: Optional[str], lamp: Optional[str],
                            color: Optional[str], brightness) -> dict:
         """Change colour, brightness or white tone in the light.turn_on actions of the one
@@ -723,6 +803,11 @@ class TechnikChecker:
             if action == "zeit_aendern":
                 return await self.change_time(client, args.get("suche"), args.get("alt"),
                                               args.get("neu"))
+            if action == "nacht_aendern":
+                return await self.change_night(
+                    client, args.get("suche"), args.get("nacht_lampen"),
+                    args.get("nacht_ventilator"), args.get("nacht_ventilatorlicht"),
+                    args.get("nacht_fragen"), args.get("nacht_warten"))
             if action == "ventilator_aendern":
                 return await self.change_fan(client, args.get("suche"), args.get("modus"),
                                              args.get("ventilator"), args.get("ventilator_neu"),

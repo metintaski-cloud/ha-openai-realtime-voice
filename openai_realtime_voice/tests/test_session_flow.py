@@ -293,6 +293,8 @@ async def test_cleanup_and_time_change_are_only_for_metin(env):
                                           {"action": "licht_aendern"}, stranger))[0].result()["error"]
     assert "Nicht erlaubt" in (await call(bridge, "technik_pruefen",
                                           {"action": "ventilator_aendern"}, stranger))[0].result()["error"]
+    assert "Nicht erlaubt" in (await call(bridge, "technik_pruefen",
+                                          {"action": "nacht_aendern"}, stranger))[0].result()["error"]
     assert ran == []
     # reading the technik status is fine for everyone
     assert (await call(bridge, "technik_pruefen", {"action": "pruefen"}, stranger))[0].result() == {"ok": True}

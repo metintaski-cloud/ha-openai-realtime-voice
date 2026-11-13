@@ -39,7 +39,7 @@ import websockets
 from app.audio_recorder import AudioRecorder
 from app import memory
 from app import context
-from app import (cleanup, costs, fan, health, lights, messages, persona, purifier, report, rf, technik, todo_sync,
+from app import (night, cleanup, costs, fan, health, lights, messages, persona, purifier, report, rf, technik, todo_sync,
                  tv, vacuum)
 
 logging.basicConfig(
@@ -78,12 +78,12 @@ NIGHT_KEEP_RE = re.compile(
     r"\b(hay[ıi]r|kals[ıi]n|kapatma|istemiyorum|bekle|nein|nicht|lass|bleib)\b", re.IGNORECASE)
 NIGHT_PROMPT = (
     "Du meldest dich gerade von selbst, weil es spät ist (es ist {time} Uhr). Frag auf Türkisch "
-    "kurz und lieb, ob du die Lampen und den Ventilator ausschalten sollst, und sag dazu, dass "
-    "du es in einer Minute machst, wenn niemand antwortet, zum Beispiel „Saat on bir buçuk "
-    "oldu. Lambaları ve vantilatörü kapatayım mı? Cevap gelmezse bir dakika sonra "
+    "kurz und lieb, ob du {was_de} ausschalten sollst, und sag dazu, dass "
+    "du es {wait_de} machst, wenn niemand antwortet, zum Beispiel „Saat on bir buçuk "
+    "oldu. {was_tr} kapatayım mı? Cevap gelmezse {wait_tr} "
     "kapatacağım.“ Nenn dabei die richtige Uhrzeit. Sagt jemand ja, "
-    "schalte über deinen Hintergrund alle Stehlampen aus, dazu Ventilator und Ventilatorlicht "
-    "(licht_aus), und wünsch kurz eine gute Nacht. Sagt jemand nein oder will etwas anlassen, "
+    "schalte über deinen Hintergrund genau das aus ({was_de}; Ventilatorlicht mit licht_aus), "
+    "und wünsch kurz eine gute Nacht. Sagt jemand nein oder will etwas anlassen, "
     "lass es so und sag kurz tamam. Antwortet niemand, sag nichts mehr."
 )
 MAX_SESSION_S = 600.0
@@ -289,6 +289,7 @@ class LiveVoiceBridge:
         self.messages = messages.from_env(self._speak_once)
         self.technik = technik.TechnikChecker(
             notify=self.messages.push if self.messages.available else None)
+        self.technik.lamp_count = len(self.lights.entities)
         self.messages.on_command = self._automation_command
         self.messages.converse = self._converse
         # Home Assistant action of the Voice PE that starts a conversation (see the
@@ -298,6 +299,7 @@ class LiveVoiceBridge:
         self._followup: Optional[dict] = None
         self._started_as_followup = False
         self._live_sessions: dict = {}
+        self._night_opts = night.NightOptions()
         self._night: Optional[dict] = None  # the 23:00 question is open, collects answers
         if self.fan.power_sensor:
             self.messages.state_listeners[self.fan.power_sensor] = self.fan.on_power_state
@@ -742,6 +744,7 @@ class LiveVoiceBridge:
         {"device": "ventilator", "action": "licht"} or {"device": "fernseher", "action": "aus"}."""
         device = (data.get("device") or "").lower()
         if device == "nacht":
+            self._night_opts = night.parse(data)
             self._in_background(self._night_check())
             return {"started": "night check"}
         args = {k: v for k, v in data.items() if k != "device"}
@@ -805,29 +808,50 @@ class LiveVoiceBridge:
                     logger.info("Greeting requested")
                 return event
 
+    def _night_lamps(self) -> list:
+        """Entity ids of the lamps the night check looks after."""
+        o = self._night_opts
+        ids, _ = lights.select_entities(self.lights.entities, o.lamps)
+        return [] if o.lamps == [] else ids
+
     async def _anything_on(self) -> bool:
-        if self.lights.available:
+        o = self._night_opts
+        ids = self._night_lamps()
+        if ids and self.lights.available:
             try:
                 async with httpx.AsyncClient(timeout=10.0) as client:
-                    states = await self.lights._states(client, self.lights.entities)
+                    states = await self.lights._states(client, ids)
                 if any(st.get("state") == "on" for st in states):
                     return True
             except Exception as e:
                 logger.info("Lamp status for the night check: %s", e)
+        if not (o.fan or o.fan_light):
+            return False
         watts = await self.fan.power()
-        return bool(watts and watts >= fan.OFF_W)
+        if not (watts and watts >= fan.OFF_W):
+            return False
+        if o.fan and o.fan_light:
+            return True
+        state = self.fan.describe(watts)
+        return (o.fan and state.get("ventilator") != "aus") or \
+            (o.fan_light and state.get("licht") != "aus")
 
     async def _all_off(self) -> None:
-        if self.lights.available:
-            await self.lights.run({"lamps": [], "action": "off", "brightness_percent": None,
+        o = self._night_opts
+        ids = self._night_lamps()
+        if ids and self.lights.available:
+            numbers = [self.lights.entities.index(e) + 1 for e in ids]
+            await self.lights.run({"lamps": numbers, "action": "off", "brightness_percent": None,
                                    "white": None, "color": None})
+        if not (o.fan or o.fan_light):
+            return
         watts = await self.fan.power()
         if watts is not None and watts >= fan.OFF_W:
             state = self.fan.describe(watts)
-            if state.get("ventilator") != "aus":
+            if o.fan and state.get("ventilator") != "aus":
                 await self.fan.run({"action": "aus", "speed": None, "hours": None})
                 await asyncio.sleep(2.5)
-            if state.get("licht") != "aus":
+            if o.fan_light and state.get("licht") != "aus":
                 await self.fan.run({"action": "licht_aus", "speed": None, "hours": None})
 
     async def _night_check(self) -> None:
@@ -835,8 +859,8 @@ class LiveVoiceBridge:
         if self._night is not None:
             return
         try:
-            if not await self._anything_on():
-                logger.info("Night check: everything is already off")
+            if self._night_opts.nothing or not await self._anything_on():
+                logger.info("Night check: nothing to switch off")
                 return
             self._night = {"text": ""}
             try:
@@ -844,9 +868,19 @@ class LiveVoiceBridge:
                 now = datetime.now(ZoneInfo(os.environ.get("TZ") or "Europe/Berlin"))
             except Exception:
                 now = datetime.now()
-            asked = await self._converse(NIGHT_PROMPT.format(time=now.strftime("%H:%M")))
+            o = self._night_opts
+            wait_s = o.wait_s if o.wait_s is not None else NIGHT_WAIT_S
+            if not o.ask:
+                await self._all_off()
+                logger.info("Night check: switched off without asking")
+                return
+            was_de, was_tr = night.things(o)
+            wait_de, wait_tr = night.wait_phrase(wait_s)
+            asked = await self._converse(NIGHT_PROMPT.format(
+                time=now.strftime("%H:%M"), was_de=was_de, was_tr=was_tr[0].upper() + was_tr[1:],
+                wait_de=wait_de, wait_tr=wait_tr))
             logger.info("Night check: asked %s", "in a conversation" if asked else "not possible")
-            await asyncio.sleep(NIGHT_WAIT_S if asked else 0)
+            await asyncio.sleep(wait_s if asked else 0)
             answer = self._night["text"]
             if NIGHT_KEEP_RE.search(answer):
                 logger.info("Night check: keep on (%r)", answer[-120:])
@@ -1017,7 +1051,7 @@ class LiveVoiceBridge:
 
         def technik_gate(args, state):
             if args.get("action") in ("zeit_aendern", "licht_aendern", "lampen_aendern",
-                                      "ventilator_aendern") \
+                                      "ventilator_aendern", "nacht_aendern") \
                     and not self._only_metin(state):
                 return metin_error("Zeiten, Lampen und Ventilator in Automationen ändert")
 
