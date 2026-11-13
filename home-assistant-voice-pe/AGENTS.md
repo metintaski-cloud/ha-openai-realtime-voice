@@ -25,7 +25,7 @@ disconnects, the mic keeps running so wake word detection continues
 without interruption. This is intentional — stopping and restarting the
 mic causes glitches in wake word detection.
 
-**Software mic gain.** `mic_gain` (default 1.0, range 0.5 to 8) multiplies the mono samples sent to the server and clips at 16 bit. The deployed config uses 2.5 because quiet speakers were barely heard. It does not affect wake word detection.
+**Software mic gain.** `mic_auto_gain_max` (default 1.0 = off), `mic_auto_gain_target` (RMS, default 3000) and `mic_noise_floor` (RMS, default 150) drive `MicAgc` in `mic_agc.h`: a slow automatic gain on the mono 16 kHz signal sent to the server. Quiet speakers are lifted towards the target up to the max, gain never drops below 1, pauses below the noise floor hold the gain, loud passages pull it down fast (50 ms) and it rises slowly (1.5 s), and a soft limiter above 24000 avoids hard clipping. It does not affect wake word detection. A level line `Mic level rms=... gain=...` is logged every 3 s at DEBUG during a session, use it to tune. `mic_agc.h` has no ESPHome dependencies, so it can be compiled and tested on a host with g++ and synthetic tones.
 
 **Mic is muted during bot speech.** While the bot is speaking
 (`is_bot_speaking()` — 500ms threshold since last received audio), the

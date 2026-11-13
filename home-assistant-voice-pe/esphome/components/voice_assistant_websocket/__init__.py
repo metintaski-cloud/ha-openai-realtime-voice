@@ -18,7 +18,9 @@ VoiceAssistantWebSocket = voice_assistant_websocket_ns.class_(
 CONF_SERVER_URL = "server_url"
 CONF_AUTO_STOP_TIMEOUT = "auto_stop_timeout"
 CONF_FULL_DUPLEX = "full_duplex"
-CONF_MIC_GAIN = "mic_gain"
+CONF_MIC_AUTO_GAIN_MAX = "mic_auto_gain_max"
+CONF_MIC_AUTO_GAIN_TARGET = "mic_auto_gain_target"
+CONF_MIC_NOISE_FLOOR = "mic_noise_floor"
 CONF_VOICE_ASSISTANT_WEBSOCKET = "voice_assistant_websocket"
 CONF_ON_CONNECTED = "on_connected"
 CONF_ON_DISCONNECTED = "on_disconnected"
@@ -39,7 +41,9 @@ CONFIG_SCHEMA = cv.Schema(
         cv.Optional(CONF_SPEAKER): cv.use_id(speaker.Speaker),
         cv.Optional(CONF_AUTO_STOP_TIMEOUT, default="20s"): cv.positive_time_period_milliseconds,
         cv.Optional(CONF_FULL_DUPLEX, default=False): cv.boolean,
-        cv.Optional(CONF_MIC_GAIN, default=1.0): cv.float_range(min=0.5, max=8.0),
+        cv.Optional(CONF_MIC_AUTO_GAIN_MAX, default=1.0): cv.float_range(min=1.0, max=12.0),
+        cv.Optional(CONF_MIC_AUTO_GAIN_TARGET, default=3000): cv.float_range(min=500, max=12000),
+        cv.Optional(CONF_MIC_NOISE_FLOOR, default=150): cv.float_range(min=0, max=3000),
         cv.Optional(CONF_ON_CONNECTED): automation.validate_automation(single=True),
         cv.Optional(CONF_ON_DISCONNECTED): automation.validate_automation(single=True),
         cv.Optional(CONF_ON_ERROR): automation.validate_automation(single=True),
@@ -74,7 +78,10 @@ async def to_code(config):
     cg.add(var.set_server_url(config[CONF_SERVER_URL]))
     cg.add(var.set_auto_stop_timeout(config[CONF_AUTO_STOP_TIMEOUT]))
     cg.add(var.set_full_duplex(config[CONF_FULL_DUPLEX]))
-    cg.add(var.set_mic_gain(config[CONF_MIC_GAIN]))
+    cg.add(var.set_mic_auto_gain(
+        config[CONF_MIC_AUTO_GAIN_MAX],
+        config[CONF_MIC_AUTO_GAIN_TARGET],
+        config[CONF_MIC_NOISE_FLOOR]))
 
     if CONF_MICROPHONE in config:
         mic = await cg.get_variable(config[CONF_MICROPHONE])

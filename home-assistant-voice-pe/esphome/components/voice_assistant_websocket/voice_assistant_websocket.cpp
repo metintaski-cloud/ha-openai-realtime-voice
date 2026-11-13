@@ -462,15 +462,16 @@ void VoiceAssistantWebSocket::on_microphone_data_(const std::vector<uint8_t> &da
 
   for (size_t i = 0; i < stereo_32bit_samples; i++) {
     int32_t left_sample = stereo_32bit[i * 2];
-    int32_t sample = left_sample >> 16;
-    if (this->mic_gain_ != 1.0f) {
-      // Software gain for quiet speakers, clipped so loud speech does not wrap around
-      float amplified = static_cast<float>(sample) * this->mic_gain_;
-      if (amplified > 32767.0f) amplified = 32767.0f;
-      if (amplified < -32768.0f) amplified = -32768.0f;
-      sample = static_cast<int32_t>(amplified);
+    mono_16bit[i] = static_cast<int16_t>(left_sample >> 16);
+  }
+
+  if (this->mic_agc_.enabled()) {
+    this->mic_agc_.process(mono_16bit, mono_16khz_samples, (float) MICROPHONE_SAMPLE_RATE);
+    uint32_t now = millis();
+    if (now - this->last_agc_log_ms_ > 3000) {
+      this->last_agc_log_ms_ = now;
+      ESP_LOGD(TAG, "Mic level rms=%.0f gain=%.2f", this->mic_agc_.last_rms(), this->mic_agc_.gain());
     }
-    mono_16bit[i] = static_cast<int16_t>(sample);
   }
 
   size_t resampled_24khz_samples =

@@ -1209,8 +1209,11 @@ voice_assistant_websocket:
   
   # Audio input (microphone) - reference to I2S audio input
   microphone: i2s_mics
-  # Software gain on top of the XMOS gain so quiet voices (for example the mother) are heard
-  mic_gain: 2.5
+  # Slow automatic software gain on top of the XMOS gain: quiet voices (for example the
+  # mother) are lifted up to 6x towards the target level, loud voices stay untouched
+  mic_auto_gain_max: 6.0
+  mic_auto_gain_target: 3000
+  mic_noise_floor: 150
   
   # Audio output - server sends 24kHz; ESPHome resampler converts 24kHz -> 48kHz for I2S
   speaker: voice_resampling_speaker

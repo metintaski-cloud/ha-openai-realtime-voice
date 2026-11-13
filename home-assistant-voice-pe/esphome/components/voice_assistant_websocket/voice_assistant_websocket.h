@@ -38,8 +38,9 @@ class VoiceAssistantWebSocket : public Component {
   // Full duplex: keep sending the microphone while the bot speaks, so the user can
   // talk over the assistant (barge-in). Relies on the XMOS echo cancellation.
   void set_full_duplex(bool full_duplex) { this->full_duplex_ = full_duplex; }
-  void set_mic_gain(float mic_gain) { this->mic_gain_ = mic_gain; }
-  void set_mic_gain(float mic_gain) { this->mic_gain_ = mic_gain; }
+  void set_mic_auto_gain(float max_gain, float target, float floor) {
+    this->mic_agc_.configure(max_gain, target, floor);
+  }
 
   void start();
   void stop(const char *reason = "action");
@@ -156,8 +157,8 @@ class VoiceAssistantWebSocket : public Component {
   bool first_audio_received_{false};
   bool was_bot_speaking_{false};
   bool full_duplex_{false};
-  float mic_gain_{1.0f};
-  float mic_gain_{1.0f};
+  MicAgc mic_agc_;
+  uint32_t last_agc_log_ms_{0};
   bool was_bot_speaking_for_phase_{false};
   bool first_data_after_connect_{false};
   uint32_t connection_count_{0};
