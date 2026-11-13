@@ -67,7 +67,7 @@ WARM_START_TIMEOUT_S = 4.0  # a warm connection that does not answer is dropped 
 NO_SPEECH_TIMEOUT_S = 6.0  # false wake: nobody speaks, end silently (counted from the end of her greeting)
 VOICE_RMS = 300  # a microphone chunk this loud counts as someone speaking (room noise is below 250)
 VOICE_HOLD_S = 2.5  # while a voice was heard this recently the session is not ended for silence
-NO_SPEECH_MAX_S = 20.0  # but never longer than this after the start (TV noise must not hold a false wake)
+NO_SPEECH_MAX_S = 14.0  # but never longer than this after the start (TV noise must not hold a false wake)
 FOLLOWUP_MAX_WAIT_S = 15.0  # Leyla starts a conversation: the Voice PE connects within this
 FOLLOWUP_NO_SPEECH_S = 35.0  # she speaks first, then the family needs time to answer
 

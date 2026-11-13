@@ -12,8 +12,8 @@ def test_counts_from_end_of_greeting():
 def test_voice_holds_session_open_but_not_forever():
     state = {"last_audio_time": 105.0, "last_voice_at": 111.0}
     assert not over(state, 100.0, 112.0)   # heard a voice a second ago
-    state["last_voice_at"] = 119.0
-    assert over(state, 100.0, 121.0)       # past the hard limit of 20 s
+    state["last_voice_at"] = 113.0
+    assert over(state, 100.0, 114.5)       # past the hard limit of 14 s
 
 
 def test_followup_keeps_its_long_wait():
