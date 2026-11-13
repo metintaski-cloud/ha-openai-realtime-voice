@@ -15,6 +15,7 @@ served as a WAV file on a small HTTP port and played with media_player.play_medi
 (announce) on the Voice PE.
 """
 import asyncio
+import hashlib
 import base64
 import io
 import json
@@ -110,8 +111,6 @@ class MessageCenter:
         self.audio: dict[str, bytes] = {}
         self._wake = asyncio.Event()
         self.on_command: Optional[Callable[[dict], Awaitable[dict]]] = None
-        # Fast path: text to 24 kHz PCM without a live session (set by main).
-        self.direct: Optional[Callable[[str], Awaitable[bytes]]] = None
         # entity_id -> callback(new state string), for state_changed events
         self.state_listeners: dict[str, Callable[[str], None]] = {}
         self.mute_switch = ""
@@ -222,33 +221,75 @@ class MessageCenter:
             logger.warning("Could not tell Metin about the confirmation: %s", e)
         return True
 
-    async def say(self, text: str, bilingual: bool = False, direct: bool = False) -> None:
-        """One announcement from an automation (HA event leyla_announce), no repeats."""
-        text = (text or "").strip()
-        if not text:
-            return
-        if direct and self.direct and not bilingual:
-            try:
-                pcm = await self.direct(text)
-                await self._play(pcm)
-                logger.info("Announced directly: %r", text)
-                return
-            except Exception as e:
-                logger.warning("Direct announcement failed, using GPT Live: %s", e)
+    CACHE_DIR = "/data/announce_cache"
+    CACHE_VERSION = "v1"  # change when the wording prompt changes, old clips are then ignored
+
+    def _cache_file(self, text: str) -> str:
+        key = hashlib.sha1((self.CACHE_VERSION + "|" + text).encode("utf-8")).hexdigest()[:16]
+        return os.path.join(self.CACHE_DIR, key + ".pcm")
+
+    def _cache_get(self, text: str) -> bytes:
+        try:
+            with open(self._cache_file(text), "rb") as f:
+                return f.read()
+        except OSError:
+            return b""
+
+    def _cache_put(self, text: str, pcm: bytes) -> None:
+        try:
+            os.makedirs(self.CACHE_DIR, exist_ok=True)
+            files = sorted((os.path.join(self.CACHE_DIR, n) for n in os.listdir(self.CACHE_DIR)),
+                           key=os.path.getmtime)
+            for old in files[:-199]:  # at most 200 clips
+                os.remove(old)
+            with open(self._cache_file(text), "wb") as f:
+                f.write(pcm)
+        except OSError as e:
+            logger.info("Could not store the announcement clip: %s", e)
+
+    def _announce_prompt(self, text: str, bilingual: bool) -> str:
         language = ("zweisprachig: erst auf Deutsch, dann dasselbe noch einmal auf Türkisch, "
                     "egal in welcher Sprache der Inhalt unten geschrieben ist" if bilingual else
                     "in genau der Sprache, in der der Inhalt unten geschrieben ist; ist er "
                     "Türkisch, dann komplett auf Türkisch, ohne ein deutsches Wort")
-        prompt = ("Sag der Familie jetzt etwas im Wohnzimmer, " + language + ". Das ist keine "
-                  "Durchsage und nichts zum Vorlesen: Sprich so, wie du es einem lieben "
-                  "Familienmitglied sagen würdest, das du sehr magst, warm, zugewandt, mit "
-                  "Lächeln und natürlicher Betonung, mit deinen eigenen Worten und nur dem "
-                  "Sinn des Inhalts unten. Fasse dich sehr kurz, höchstens zwei kurze Sätze, "
-                  "damit es schnell geht, ohne Kosewörter wie „canım“. Alle wichtigen "
-                  "Informationen wie Name, Uhrzeit und was du tust müssen drin bleiben. "
-                  "Danach sagst du nichts mehr. Inhalt: \"" + text + "\"")
-        await self._play(await self.speak(prompt))
+        return ("Mach jetzt eine kurze Ansage im Wohnzimmer, " + language + ". Sprich ganz "
+                "normal, ruhig und weich in normaler Lautstärke, auf deine liebe Art, wie du "
+                "mit einem Familienmitglied sprichst, das du sehr magst: nicht laut, nicht "
+                "aufgeregt, nicht wie eine Durchsage und nicht vorgelesen, mit deinen "
+                "eigenen Worten. Höchstens zwei kurze Sätze, ohne Kosewörter wie „canım“. "
+                "Alle wichtigen Informationen wie Name, Uhrzeit und was du tust müssen drin "
+                "bleiben. Danach sagst du nichts mehr. Inhalt: \"" + text + "\"")
+
+    async def say(self, text: str, bilingual: bool = False, remember: bool = False) -> None:
+        """One announcement from an automation (HA event leyla_announce), no repeats.
+        With remember the finished clip is kept: the same text later plays at once."""
+        text = (text or "").strip()
+        if not text:
+            return
+        pcm = self._cache_get(text) if remember and not bilingual else b""
+        if pcm:
+            await self._play(pcm)
+            logger.info("Announced from stored clip: %r", text)
+            return
+        pcm = await self.speak(self._announce_prompt(text, bilingual))
+        if remember and not bilingual and pcm:
+            self._cache_put(text, pcm)
+        await self._play(pcm)
         logger.info("Announced: %r", text)
+
+    async def prepare(self, texts: list) -> None:
+        """Record clips ahead (HA event leyla_announce_prepare), one after the other."""
+        for text in texts:
+            text = (text or "").strip()
+            if not text or self._cache_get(text):
+                continue
+            try:
+                pcm = await self.speak(self._announce_prompt(text, False))
+                if pcm:
+                    self._cache_put(text, pcm)
+                    logger.info("Prepared announcement clip: %r", text)
+            except Exception as e:
+                logger.warning("Could not prepare %r: %s", text, e)
 
     async def _play(self, pcm: bytes) -> None:
         if not pcm:
@@ -376,6 +417,8 @@ class MessageCenter:
                                               "event_type": "leyla_announce"}))
                     await ws.send(json.dumps({"id": 4, "type": "subscribe_events",
                                               "event_type": "leyla_command"}))
+                    await ws.send(json.dumps({"id": 5, "type": "subscribe_events",
+                                              "event_type": "leyla_announce_prepare"}))
                     logger.info("Listening for messages from Metin")
                     async for raw in ws:
                         msg = json.loads(raw)
@@ -388,10 +431,15 @@ class MessageCenter:
                             task.add_done_callback(
                                 lambda t: t.exception() and logger.warning(
                                     "Command failed: %s", t.exception()))
+                        elif ev.get("event_type") == "leyla_announce_prepare":
+                            task = asyncio.create_task(self.prepare(list(data.get("texts") or [])))
+                            task.add_done_callback(
+                                lambda t: t.exception() and logger.warning(
+                                    "Prepare failed: %s", t.exception()))
                         elif ev.get("event_type") == "leyla_announce":
                             task = asyncio.create_task(self.say(data.get("text", ""),
                                                              bool(data.get("zweisprachig")),
-                                                                bool(data.get("direkt"))))
+                                                                bool(data.get("merken"))))
                             task.add_done_callback(
                                 lambda t: t.exception() and logger.warning(
                                     "Announcement failed: %s", t.exception()))

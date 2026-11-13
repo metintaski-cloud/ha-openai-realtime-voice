@@ -79,18 +79,21 @@ async def test_say(tmp_path):
         server.shutdown()
 
 
-async def test_say_direct(tmp_path):
+async def test_say_remember(tmp_path):
     _HA.calls.clear()
-    server = _server(19994)
+    server = _server(19995)
     spoken = []
-    mc = _center(tmp_path, 19994, spoken)
-
-    async def direct(text):
-        return b"\x01\x00" * 100
-    mc.direct = direct
+    mc = _center(tmp_path, 19995, spoken)
+    mc.CACHE_DIR = str(tmp_path / "clips")
     try:
-        await mc.say("Anne, Metin seni arıyor.", direct=True)
-        assert not spoken and _HA.calls[-1][1] == "play_media"
+        await mc.say("Anne, Metin seni arıyor.", remember=True)
+        await mc.say("Anne, Metin seni arıyor.", remember=True)
+        assert len(spoken) == 1  # the second time it came from the stored clip
+        assert _HA.calls[-1][1] == "play_media"
+        await mc.prepare(["Anne, Umut seni arıyor.", "Anne, Umut seni arıyor."])
+        assert len(spoken) == 2
+        await mc.say("Anne, Umut seni arıyor.", remember=True)
+        assert len(spoken) == 2
     finally:
         server.shutdown()
 
