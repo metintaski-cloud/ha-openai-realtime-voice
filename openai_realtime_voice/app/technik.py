@@ -3,9 +3,10 @@ A look at the house technology: Leyla can check automations (is it on, when does
 when did it run last, what does it do) and the state of devices, so she can answer
 "schaltet die Automation um 23:30 die Lampen aus?" from the real configuration.
 
-The only thing she can change is the clock time of a time trigger of an existing automation
-("zeit_aendern"), and only for Metin: main.py lets that action through only when the code
-phrase was heard in the conversation. Metin gets a push message about every change.
+She can change two things in an existing automation, only for Metin (main.py lets these
+actions through only when the code phrase was heard in the conversation): the clock time of a
+time trigger ("zeit_aendern") and the colour, brightness or white tone of the lamps the
+automation switches on ("licht_aendern"). Metin gets a push message about every change.
 """
 import re
 import logging
@@ -25,23 +26,35 @@ TECHNIK_TOOL = {
         "a search word with on/off, trigger times, conditions, what they do and when they last "
         "ran. 'geraete' reads the state of devices (lights, switches, fan, TV, sensors) "
         "matching a search word. 'zeit_aendern' changes the clock time of an existing automation, "
-        "only when Metin asks and said the code phrase. Use the rest to answer questions about "
+        "'licht_aendern' changes the colour, brightness or white tone the lamps get when an "
+        "automation switches them on, both only when Metin asks and said the code phrase. Use the rest to answer questions about "
         "whether something is set up or switched on."
     ),
     "parameters": {
         "type": "object",
         "properties": {
-            "action": {"type": "string", "enum": ["automationen", "geraete", "zeit_aendern"]},
+            "action": {"type": "string", "enum": ["automationen", "geraete", "zeit_aendern", "licht_aendern"]},
             "suche": {"type": ["string", "null"],
                       "description": "Search word, for example 'Lampen', 'Sonnenuntergang', "
                                      "'23:30'. Null lists the first ones."},
             "alt": {"type": ["string", "null"],
                     "description": "For 'zeit_aendern': the current time HH:MM when the "
                                    "automation has several times, otherwise null."},
+            "lampe": {"type": ["string", "null"],
+                      "description": "For 'licht_aendern': a word for one lamp or room, for "
+                                     "example 'Wohnzimmer', when the automation switches "
+                                     "several lamps and only some should change, else null."},
+            "farbe": {"type": ["string", "null"],
+                      "description": "For 'licht_aendern': colour in German, for example "
+                                     "'rot', 'orange', 'blau', 'warmweiß', 'kaltweiß', or "
+                                     "'255,120,0' (red,green,blue). Null keeps it."},
+            "helligkeit": {"type": ["integer", "null"],
+                           "description": "For 'licht_aendern': brightness 1 to 100 percent. "
+                                          "Null keeps it."},
             "neu": {"type": ["string", "null"],
                     "description": "For 'zeit_aendern': the new time HH:MM (24 hours)."},
         },
-        "required": ["action", "suche", "alt", "neu"],
+        "required": ["action", "suche", "alt", "neu", "lampe", "farbe", "helligkeit"],
         "additionalProperties": False,
     },
 }
@@ -50,11 +63,13 @@ TECHNIK_BACKEND_HINT = (
     " You can check the technology with technik_pruefen (read only): 'automationen' for "
     "questions like 'schaltet die Automation um 23:30 die Lampen aus' or 'wann lief sie zuletzt', "
     "'geraete' for the state of devices. Answer only from the result, in simple words, and say "
-    "plainly if no automation matches. The only change you can make is the time of an "
-    "automation with 'zeit_aendern', and only when Metin himself asks and has said the code "
-    "phrase: first say which automation and which times (alt to neu) you understood, and call "
-    "it only after he confirms. If the result says it is not allowed, say that only Metin can "
-    "change times. Never change anything else."
+    "plainly if no automation matches. You can make two changes in an automation, only when "
+    "Metin himself asks and has said the code phrase: the time with 'zeit_aendern' and the "
+    "colour, brightness or white tone of its lamps with 'licht_aendern'. First say which "
+    "automation and what you understood (times alt to neu, or colour and brightness), and call "
+    "it only after he confirms. 'automationen' shows the current colour and brightness of the "
+    "lamps, so read it first. If the result says it is not allowed, say that only Metin can "
+    "change this. Never change anything else."
 )
 
 DEVICE_DOMAINS = ("light", "switch", "fan", "media_player", "vacuum", "climate", "cover",
@@ -115,8 +130,68 @@ def _action_texts(actions) -> list:
             name = a.get("action") or a.get("service")
             if name:
                 tgt = _target_text(a)
-                out.append(name + (f" auf {tgt}" if tgt else ""))
+                text = name + (f" auf {tgt}" if tgt else "")
+                look = _light_look(a)
+                out.append(text + (f" ({look})" if look else ""))
     return out
+
+
+LIGHT_KEYS = ("rgb_color", "color_name", "color_temp_kelvin", "color_temp", "kelvin",
+              "hs_color", "xy_color", "rgbw_color", "rgbww_color", "brightness_pct",
+              "brightness", "effect")
+COLOR_KEYS = ("rgb_color", "color_name", "color_temp_kelvin", "color_temp", "kelvin",
+              "hs_color", "xy_color", "rgbw_color", "rgbww_color", "effect")
+COLORS = {
+    "rot": (255, 0, 0), "grün": (0, 200, 0), "gruen": (0, 200, 0), "blau": (0, 0, 255),
+    "gelb": (255, 220, 0), "orange": (255, 120, 0), "lila": (150, 0, 255),
+    "violett": (150, 0, 255), "pink": (255, 40, 150), "rosa": (255, 120, 170),
+    "türkis": (0, 220, 200), "tuerkis": (0, 220, 200), "cyan": (0, 220, 255),
+}
+WHITES = {"warmweiß": 2700, "warmweiss": 2700, "warm": 2700, "neutralweiß": 4000,
+          "neutralweiss": 4000, "weiß": 4000, "weiss": 4000, "kaltweiß": 6000,
+          "kaltweiss": 6000, "kalt": 6000, "tageslicht": 5500}
+
+
+def _light_look(a: dict) -> str:
+    """Colour and brightness an action sets, in short words (empty when it sets none)."""
+    data = a.get("data") or {}
+    parts = [f"{k} {data[k]}" for k in LIGHT_KEYS if k in data]
+    return ", ".join(parts)
+
+
+def parse_color(text: Optional[str]) -> Optional[dict]:
+    """'rot', 'warmweiß' or '255,120,0' -> light.turn_on data, None when not understood."""
+    t = (text or "").strip().lower()
+    if not t:
+        return None
+    if t in COLORS:
+        return {"rgb_color": list(COLORS[t])}
+    if t in WHITES:
+        return {"color_temp_kelvin": WHITES[t]}
+    m = re.match(r"^(\d{1,3})\s*[, ]\s*(\d{1,3})\s*[, ]\s*(\d{1,3})$", t)
+    if m and all(int(x) <= 255 for x in m.groups()):
+        return {"rgb_color": [int(x) for x in m.groups()]}
+    return None
+
+
+def _light_on_actions(actions) -> list:
+    """All light.turn_on actions in a list of actions, also inside choose and if."""
+    found = []
+    for a in actions if isinstance(actions, list) else []:
+        if not isinstance(a, dict):
+            continue
+        if "choose" in a:
+            for opt in a.get("choose") or []:
+                found.extend(_light_on_actions(opt.get("sequence")))
+            found.extend(_light_on_actions(a.get("default")))
+        elif "if" in a:
+            found.extend(_light_on_actions(a.get("then")))
+            found.extend(_light_on_actions(a.get("else")))
+        elif "sequence" in a:
+            found.extend(_light_on_actions(a.get("sequence")))
+        elif (a.get("action") or a.get("service")) == "light.turn_on":
+            found.append(a)
+    return found
 
 
 def _condition_texts(conds) -> list:
@@ -295,6 +370,70 @@ class TechnikChecker:
                 logger.warning("Could not push the time change: %s", e)
         return {"geaendert": name, "von": before, "auf": new_t[:5]}
 
+    async def change_light(self, client, search: Optional[str], lamp: Optional[str],
+                           color: Optional[str], brightness) -> dict:
+        """Change colour, brightness or white tone in the light.turn_on actions of the one
+        automation that matches. Nothing else in the automation is touched."""
+        new = {}
+        if color:
+            parsed = parse_color(color)
+            if not parsed:
+                return {"error": "Die Farbe habe ich nicht verstanden."}
+            new.update(parsed)
+        if brightness is not None:
+            if not isinstance(brightness, int) or isinstance(brightness, bool) \
+                    or not 1 <= brightness <= 100:
+                return {"error": "Die Helligkeit muss zwischen 1 und 100 Prozent liegen."}
+            new["brightness_pct"] = brightness
+        if not new:
+            return {"error": "Es fehlt eine Farbe oder eine Helligkeit."}
+        words = _words(search)
+        if not words:
+            return {"error": "Welche Automation? Es fehlt ein Suchwort."}
+        states = await self._get(client, "states") or []
+        matches = []
+        for st in states:
+            attrs = st.get("attributes", {})
+            if not st.get("entity_id", "").startswith("automation.") or not attrs.get("id"):
+                continue
+            cfg = await self._get(client, f"config/automation/config/{attrs['id']}") or {}
+            trigs = cfg.get("triggers") or cfg.get("trigger") or []
+            text = " ".join([attrs.get("friendly_name") or "", cfg.get("description") or "",
+                             *[_trigger_text(t) for t in trigs if isinstance(t, dict)],
+                             *_action_texts(cfg.get("actions") or cfg.get("action"))])
+            if _matches(text, words):
+                matches.append((attrs["id"], attrs.get("friendly_name") or attrs["id"], cfg))
+        if not matches:
+            return {"error": "Keine passende Automation gefunden."}
+        if len(matches) > 1:
+            return {"error": "Mehrere Automationen passen, welche meinst du?",
+                    "automationen": [m[1] for m in matches][:6]}
+        aid, name, cfg = matches[0]
+        lamp_words = _words(lamp)
+        actions = [a for a in _light_on_actions(cfg.get("actions") or cfg.get("action"))
+                   if not lamp_words or _matches(_target_text(a), lamp_words)]
+        if not actions:
+            return {"error": f"{name} schaltet keine Lampen direkt ein (zum Beispiel über eine "
+                             "Szene), deshalb kann ich ihre Farbe dort nicht ändern."}
+        for a in actions:
+            data = a.setdefault("data", {})
+            if any(k in new for k in COLOR_KEYS):
+                for k in COLOR_KEYS:
+                    data.pop(k, None)
+            data.update(new)
+        resp = await client.post(f"{self.api_url}/config/automation/config/{aid}", json=cfg,
+                                 headers=self._headers())
+        if resp.status_code >= 300:
+            raise RuntimeError(f"HA HTTP {resp.status_code}: {resp.text[:200]}")
+        what = ", ".join(x for x in [color, f"{brightness} Prozent" if brightness else None] if x)
+        logger.info("Automation %s: light changed to %s", aid, new)
+        if self.notify:
+            try:
+                await self.notify("Leyla hat Lampen geändert", f"{name}: jetzt {what}.")
+            except Exception as e:
+                logger.warning("Could not push the light change: %s", e)
+        return {"geaendert": name, "lampen": len(actions), "jetzt": what}
+
     async def run(self, args: dict) -> dict:
         action = args.get("action")
         async with httpx.AsyncClient(timeout=10.0) as client:
@@ -305,4 +444,7 @@ class TechnikChecker:
             if action == "zeit_aendern":
                 return await self.change_time(client, args.get("suche"), args.get("alt"),
                                               args.get("neu"))
+            if action == "licht_aendern":
+                return await self.change_light(client, args.get("suche"), args.get("lampe"),
+                                               args.get("farbe"), args.get("helligkeit"))
         return {"error": f"Unbekannte Aktion: {action}"}
