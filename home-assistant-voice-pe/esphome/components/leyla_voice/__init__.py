@@ -102,7 +102,9 @@ ACTION_SCHEMA = automation.maybe_simple_id({cv.GenerateID(): cv.use_id(LeylaVoic
 
 async def _parented(config, action_id, template_arg):
     parent = await cg.get_variable(config[CONF_ID])
-    return cg.new_Pvariable(action_id, template_arg, parent)
+    var = cg.new_Pvariable(action_id, template_arg)
+    cg.add(var.set_parent(parent))
+    return var
 
 
 @automation.register_action("leyla_voice.start", StartAction, ACTION_SCHEMA, synchronous=True)
