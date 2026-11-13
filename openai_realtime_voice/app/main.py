@@ -69,6 +69,8 @@ FOLLOWUP_NO_SPEECH_S = 35.0  # she speaks first, then the family needs time to a
 
 # 23:30 every day (Home Assistant automation, event leyla_command device "nacht"): Leyla
 # asks whether to switch lamps and fan off; without an answer she switches them off.
+# OpenAI names an empty credit balance differently over time
+QUOTA_ERRORS = {"insufficient_quota", "credit_balance_exhausted"}
 MAX_SESSION_S = 600.0
 FALSE_WAKE_MAX_FILES = 300  # oldest false wake recordings are dropped beyond this
 
@@ -579,6 +581,42 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             return ws.remote_address[0].replace(".", "_")
         return f"client_{uuid.uuid4().hex[:8]}"
 
+    @staticmethod
+    def _log_mic_level(message: bytes, level: dict, state: dict) -> None:
+        """Every 2 s: log the loudest microphone chunk and how much silence was filled in."""
+        rms, peak = pcm_level(message)
+        level["rms"] = max(level["rms"], rms)
+        level["peak"] = max(level["peak"], peak)
+        level["chunks"] += 1
+        if time.monotonic() - level["start"] >= 2.0:
+            logger.info("Mic level (2 s): max rms=%d peak=%d chunks=%d silence_fill=%.1fs",
+                        level["rms"], level["peak"], level["chunks"], state["silence_filled_s"])
+            state["silence_filled_s"] = 0.0
+            level.update(start=time.monotonic(), rms=0, peak=0, chunks=0)
+
+    async def _send_mic_audio(self, live_ws, message: bytes, state: dict) -> None:
+        """One microphone chunk to GPT Live (and the debug recording)."""
+        if len(message) % 2 != 0:
+            message = message + b"\x00"
+        now = time.monotonic()
+        state["input_clock"] = max(state["input_clock"], now) + len(message) / BYTES_PER_SEC
+        b64 = base64.standard_b64encode(message).decode("ascii")
+        await live_ws.send(json.dumps({"type": "session.input_audio.append", "audio": b64}))
+        if self.recorder:
+            self.recorder.record_input_audio(message)
+
+    def _on_client_control(self, message, output_queue: asyncio.Queue) -> None:
+        """A JSON message from the Voice PE (only "interrupt" is known)."""
+        try:
+            data = json.loads(message) if isinstance(message, str) else message
+            if data.get("type") == "interrupt":
+                # GPT Live decides by itself when to stop speaking when it hears the
+                # user. We only drop audio that is still waiting to be played.
+                logger.info("Interrupt received from client")
+                self._clear_output_queue(output_queue)
+        except (json.JSONDecodeError, TypeError, AttributeError):
+            pass
+
     async def _client_to_live(
         self,
         client_ws,
@@ -589,48 +627,17 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         state: dict,
     ) -> None:
         """Forward ESP32 binary audio to GPT Live. Client only sends audio after ready."""
-        window_start = time.monotonic()
-        window_rms = 0
-        window_peak = 0
-        window_chunks = 0
+        level = {"start": time.monotonic(), "rms": 0, "peak": 0, "chunks": 0}
         try:
             async for message in client_ws:
                 if isinstance(message, bytes):
-                    rms, peak = pcm_level(message)
-                    window_rms = max(window_rms, rms)
-                    window_peak = max(window_peak, peak)
-                    window_chunks += 1
-                    if time.monotonic() - window_start >= 2.0:
-                        logger.info(
-                            "Mic level (2 s): max rms=%d peak=%d chunks=%d silence_fill=%.1fs",
-                            window_rms, window_peak, window_chunks, state["silence_filled_s"],
-                        )
-                        state["silence_filled_s"] = 0.0
-                        window_start = time.monotonic()
-                        window_rms = window_peak = window_chunks = 0
                     if not first_audio_from_client[0]:
                         first_audio_from_client[0] = True
                         logger.info("First audio from client (%d bytes)", len(message))
-                    if len(message) % 2 != 0:
-                        message = message + b"\x00"
-                    now = time.monotonic()
-                    state["input_clock"] = max(state["input_clock"], now) + len(message) / BYTES_PER_SEC
-                    b64 = base64.standard_b64encode(message).decode("ascii")
-                    await live_ws.send(
-                        json.dumps({"type": "session.input_audio.append", "audio": b64})
-                    )
-                    if self.recorder:
-                        self.recorder.record_input_audio(message)
+                    self._log_mic_level(message, level, state)
+                    await self._send_mic_audio(live_ws, message, state)
                 else:
-                    try:
-                        data = json.loads(message) if isinstance(message, str) else message
-                        if data.get("type") == "interrupt":
-                            # GPT Live decides by itself when to stop speaking when it hears the
-                            # user. We only drop audio that is still waiting to be played.
-                            logger.info("Interrupt received from client")
-                            self._clear_output_queue(output_queue)
-                    except (json.JSONDecodeError, TypeError, AttributeError):
-                        pass
+                    self._on_client_control(message, output_queue)
         except websockets.exceptions.ConnectionClosed as e:
             end_reason["reason"] = "client_disconnected"
             end_reason["code"] = e.code
@@ -927,6 +934,18 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             state["closing"] = True
         logger.info("Bot said: %r", delta)
 
+    async def _on_live_error(self, event: dict, output_queue: asyncio.Queue, state: dict) -> None:
+        """An error event from GPT Live; used up credit ends the session and tells the client."""
+        err = event.get("error", event)
+        logger.error("GPT Live error: %s", err)
+        code = err.get("code") if isinstance(err, dict) else None
+        etype = err.get("type") if isinstance(err, dict) else None
+        if {str(code), str(etype)} & QUOTA_ERRORS:
+            logger.error("OpenAI quota exceeded, notifying client")
+            await output_queue.put(("error", "insufficient_quota"))
+            state["fatal"] = True
+            self._in_background(self.health.quota_exceeded())
+
     async def _live_to_client(
         self,
         live_ws,
@@ -982,15 +1001,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                     return
 
                 elif ev_type == "error":
-                    err = event.get("error", event)
-                    logger.error("GPT Live error: %s", err)
-                    code = err.get("code") if isinstance(err, dict) else None
-                    etype = err.get("type") if isinstance(err, dict) else None
-                    if "insufficient_quota" in (str(code), str(etype)):
-                        logger.error("OpenAI quota exceeded, notifying client")
-                        await output_queue.put(("error", "insufficient_quota"))
-                        state["fatal"] = True
-                        self._in_background(self.health.quota_exceeded())
+                    await self._on_live_error(event, output_queue, state)
                 else:
                     logger.info("GPT Live event: %s", raw[:300])
         except websockets.exceptions.ConnectionClosed as e:

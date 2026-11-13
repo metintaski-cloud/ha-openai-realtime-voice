@@ -181,6 +181,25 @@ async def test_quota_error_reaches_the_client_and_the_phone(env):
     assert len(sent) == 1 and "Guthaben" in sent[0]
 
 
+async def test_empty_credit_error_of_today_is_treated_as_quota(env):
+    async def script(ws, fake):
+        await asyncio.sleep(0.2)
+        await ws.send(json.dumps({"type": "error", "error": {"type": "invalid_request_error", "code": "credit_balance_exhausted"}}))
+
+    async with FakeLive(script) as fake, Bridge() as b:
+        sent = []
+
+        async def notify(title, message):
+            sent.append(message)
+        b.bridge.health.notify = notify
+        async with b.connect() as client:
+            assert json.loads(await asyncio.wait_for(client.recv(), 5))["type"] == "ready"
+            got = await collect(client, lambda g: isinstance(g, str) and "insufficient_quota" in g)
+        await asyncio.sleep(0.2)
+    assert any('"insufficient_quota"' in g for g in got if isinstance(g, str))
+    assert len(sent) == 1 and "Guthaben" in sent[0]
+
+
 async def test_goodbye_from_the_backend_function_hangs_up_after_the_farewell(env, monkeypatch):
     monkeypatch.setattr(m, "GOODBYE_MAX_WAIT_S", 1.0)
 
