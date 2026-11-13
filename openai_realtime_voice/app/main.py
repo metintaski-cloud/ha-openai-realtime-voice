@@ -64,7 +64,10 @@ GOODBYE_MAX_WAIT_S = 15.0
 # End the session when nobody spoke for this long (GPT Live is billed per minute).
 IDLE_TIMEOUT_S = 30.0
 WARM_START_TIMEOUT_S = 4.0  # a warm connection that does not answer is dropped quickly
-NO_SPEECH_TIMEOUT_S = 8.0  # false wake: nobody speaks, end silently
+NO_SPEECH_TIMEOUT_S = 6.0  # false wake: nobody speaks, end silently (counted from the end of her greeting)
+VOICE_RMS = 300  # a microphone chunk this loud counts as someone speaking (room noise is below 250)
+VOICE_HOLD_S = 2.5  # while a voice was heard this recently the session is not ended for silence
+NO_SPEECH_MAX_S = 20.0  # but never longer than this after the start (TV noise must not hold a false wake)
 FOLLOWUP_MAX_WAIT_S = 15.0  # Leyla starts a conversation: the Voice PE connects within this
 FOLLOWUP_NO_SPEECH_S = 35.0  # she speaks first, then the family needs time to answer
 
@@ -588,6 +591,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         rms, peak = pcm_level(message)
         level["rms"] = max(level["rms"], rms)
         level["peak"] = max(level["peak"], peak)
+        if rms >= VOICE_RMS:
+            state["last_voice_at"] = time.monotonic()
         level["chunks"] += 1
         if time.monotonic() - level["start"] >= 2.0:
             logger.info("Mic level (2 s): max rms=%d peak=%d chunks=%d silence_fill=%.1fs",
@@ -1034,6 +1039,19 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             if "reason" not in end_reason:
                 end_reason["reason"] = "live_disconnected"
 
+    @staticmethod
+    def _no_speech_over(state: dict, session_start: float, now: float) -> bool:
+        """Nobody spoke: the wait counts from the end of Leyla's own greeting (it used to
+        count from the start, so a slow answer was cut off), and a voice heard just now
+        (the transcript comes a little later) holds the session open up to a limit."""
+        limit = state.get("no_speech_s", NO_SPEECH_TIMEOUT_S)
+        quiet_since = max(session_start, state.get("last_audio_time", 0.0))
+        if now - session_start > max(limit, NO_SPEECH_MAX_S):
+            return True
+        if now - state.get("last_voice_at", 0.0) < VOICE_HOLD_S:
+            return False
+        return now - quiet_since > limit
+
     async def _session_watcher(
         self,
         client_ws,
@@ -1053,8 +1071,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 if state.get("closing"):
                     await self._wait_for_farewell(output_queue, state)
                     reason = "end_conversation"
-                elif not state.get("user_spoke") and \
-                        now - session_start > state.get("no_speech_s", NO_SPEECH_TIMEOUT_S):
+                elif not state.get("user_spoke") and self._no_speech_over(
+                        state, session_start, now):
                     reason = "no_speech"
                 elif now - state["last_activity"] > IDLE_TIMEOUT_S:
                     reason = "idle_timeout"

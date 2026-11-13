@@ -111,6 +111,8 @@ Update when:
 
 ## Session learnings (GPT Live)
 
+- A false wake is ended with `no_speech` (`_no_speech_over`): the wait of 6 s counts from the end of Leyla's own greeting, not from the start (before, the greeting used up about half of the 8 s and she hung up while the user was answering), a voice heard in the last 2.5 s (microphone chunk rms 300 or more) holds the session open, and a hard limit of 20 s after the start applies so TV noise cannot keep a false wake alive. The transcript, which sets `user_spoke`, arrives a little after the words.
+
 - The httpx logger is set to WARNING: it wrote one INFO line per Home Assistant request (to-do sync every minute, four lists) and pushed the useful lines out of the Supervisor log, which only keeps about the last 100 lines. The to-do sync interval is 60 s (was 30 s).
 
 - GPT Live streams reply audio at about real time. `_output_sender` holds each reply until 200 ms are buffered and then stays 200 ms ahead of playback; without that reserve the first words stuttered. The Voice PE queues only 10 chunks of 20 ms while its speaker starts, so keep the lead at 200 ms or the ESP drops audio.
