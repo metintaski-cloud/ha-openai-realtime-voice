@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Leyla fork (deployed setup, 13 Nov 2026)
+
+- Own wake word "Hallo Leyla" (`hallo_leyla.json`, 99% cutoff, gain factor 4). "Okay Nabu" and "Hey Mycroft" are removed on the device.
+- Announcements (for example "Mama, X calls you on WhatsApp") play pre-recorded clips from a cache in Leyla's own voice, the TV is turned down before and restored after (add on 2.51.0 to 2.52.0).
+- Server refactor into modules (night, live link, after talk, announce voice, pacing, automation edit), `credit_balance_exhausted` counts as used up credit (add on 2.52.1 to 2.52.7).
+- Project notes: STATUS.md (decisions, state, open items) and home-assistant-voice-pe/DEPLOYED.md (live config differences).
+
+### Upstream changes before the fork (kept for reference)
+
 ### Features
 
 - **Dual pipeline support** — the device now supports two voice pipelines:

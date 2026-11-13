@@ -1,16 +1,18 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Build](https://github.com/just-jeb/ha-openai-realtime-voice/actions/workflows/build-addon.yml/badge.svg)](https://github.com/just-jeb/ha-openai-realtime-voice/actions/workflows/build-addon.yml)
+[![Build](https://github.com/metintaski-cloud/ha-openai-realtime-voice/actions/workflows/build-addon.yml/badge.svg)](https://github.com/metintaski-cloud/ha-openai-realtime-voice/actions/workflows/build-addon.yml)
 
-# OpenAI Realtime Voice
+# OpenAI Realtime Voice (Leyla)
+
+> This is the deployed fork of the family voice assistant "Leyla". Current decisions, state and open items live in [STATUS.md](STATUS.md); differences between the template config and the real device are in [home-assistant-voice-pe/DEPLOYED.md](home-assistant-voice-pe/DEPLOYED.md). Parts of this README still describe the original upstream project.
 
 Voice interface for Home Assistant using the OpenAI Realtime API for low-latency, natural conversation. The device wakes on a phrase, streams speech to the addon, and plays back answers; web search is available for live information (e.g. current weather, today’s events) via the Responses API.
 
 ## Purpose and intended use
 
 - **Primary use:** Stationary voice Q&A device — you can tune it (e.g. short answers, language, tone) via the addon’s `instructions`. Common use cases include a family/kids device or a general-purpose voice assistant.
-- **Voice path (OpenAI):** "Okay Nabu" / button → WebSocket → HA addon → OpenAI Realtime API (speech-to-speech).
+- **Voice path (OpenAI):** "Hallo Leyla" / button → WebSocket → HA addon → OpenAI Realtime API (speech-to-speech).
 - **Web search:** Handled inside the addon via a `search_web` tool that calls the OpenAI Responses API (optional separate API key).
-- **Smart home (HA Assist):** "Hey Mycroft" (99% cutoff) / double-click → ESPHome built-in `voice_assistant` → HA Assist pipeline (Speech-to-Phrase STT → Assist → Piper TTS). Fully local, no cloud. See [HA Assist setup](#ha-assist-pipeline-setup) below.
+- **Smart home (HA Assist):** double-click (no wake word, "Hey Mycroft" was removed) → ESPHome built-in `voice_assistant` → HA Assist pipeline (Speech-to-Phrase STT → Assist → Piper TTS). Fully local, no cloud. See [HA Assist setup](#ha-assist-pipeline-setup) below.
 
 ## Components
 
@@ -30,8 +32,8 @@ Voice interface for Home Assistant using the OpenAI Realtime API for low-latency
 ### Client (Voice PE)
 
 - Wake word detection on device with wake-word-based pipeline routing.
-- **OpenAI pipeline:** “Okay Nabu” / single-click → real-time voice over WebSocket to the addon.
-- **HA Assist pipeline:** “Hey Mycroft” (99% probability cutoff) / double-click → local smart home commands via HA Assist.
+- **OpenAI pipeline:** “Hallo Leyla” (custom wake word, 99% probability cutoff) / single-click → real-time voice over WebSocket to the addon.
+- **HA Assist pipeline:** double-click → local smart home commands via HA Assist.
 - Each wake word detection is logged and fired as the HA event `esphome.wake_word_detected` (`wake_word` data) for tracing false wakes.
 - Interrupt by saying the wake word while the assistant is speaking.
 - LED feedback, button, mute switch, AGC, AEC.
@@ -80,7 +82,7 @@ The device must be adopted in Home Assistant (Settings → Devices → ESPHome) 
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for how to report issues, submit pull requests, and set up a development environment.
 
-Found a bug? [Open an issue](https://github.com/just-jeb/ha-openai-realtime-voice/issues/new/choose).
+Found a bug? [Open an issue](https://github.com/metintaski-cloud/ha-openai-realtime-voice/issues/new/choose).
 
 ## Acknowledgments
 

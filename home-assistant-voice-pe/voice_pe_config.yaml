@@ -41,9 +41,9 @@ substitutions:
   # Server URL is now defined in secrets.yaml as server_url
   # Sound files — fetched from GitHub at compile time, embedded in firmware (no manual copying needed)
   # Override these substitutions with a local path if you want a custom sound
-  wake_word_triggered_sound_file: https://github.com/just-jeb/ha-openai-realtime-voice/raw/main/home-assistant-voice-pe/sounds/wake_sound.flac
-  ready_sound_file: https://github.com/just-jeb/ha-openai-realtime-voice/raw/main/home-assistant-voice-pe/sounds/ready_sound.flac
-  error_quota_sound_file: https://github.com/just-jeb/ha-openai-realtime-voice/raw/main/home-assistant-voice-pe/sounds/error_quota_sound.flac
+  wake_word_triggered_sound_file: https://github.com/metintaski-cloud/ha-openai-realtime-voice/raw/main/home-assistant-voice-pe/sounds/wake_sound.flac
+  ready_sound_file: https://github.com/metintaski-cloud/ha-openai-realtime-voice/raw/main/home-assistant-voice-pe/sounds/ready_sound.flac
+  error_quota_sound_file: https://github.com/metintaski-cloud/ha-openai-realtime-voice/raw/main/home-assistant-voice-pe/sounds/error_quota_sound.flac
 
 esphome:
   name: ha-voice-openai
@@ -56,9 +56,8 @@ esphome:
       - script.execute: control_leds
       - delay: 1s
       - switch.turn_on: internal_speaker_amp
-      # ESPHome enables only the first model on a fresh device; enable both explicitly
-      - micro_wake_word.enable_model: okay_nabu
-      - micro_wake_word.enable_model: hey_mycroft
+      # ESPHome enables only the first model on a fresh device; enable it explicitly
+      - micro_wake_word.enable_model: hallo_leyla
       - micro_wake_word.start:
           id: mww
       - lambda: id(init_in_progress) = false;
@@ -1146,11 +1145,11 @@ micro_wake_word:
     gain_factor: 4
   stop_after_detection: false
   models:
-    - model: https://github.com/kahrendt/microWakeWord/releases/download/okay_nabu_20241226.3/okay_nabu.json
-      id: okay_nabu
-    - model: hey_mycroft
-      id: hey_mycroft
+    - model: github://metintaski-cloud/ha-openai-realtime-voice/hallo_leyla.json@main
+      id: hallo_leyla
+      # 99%: at 97% talk about Leyla woke her too often, at 98% she woke too often after the device was moved higher
       probability_cutoff: 99%
+      sliding_window_size: 6
   vad:
   on_wake_word_detected:
     # Attribution for false wakes: INFO log plus an HA event (esphome.wake_word_detected)
@@ -1173,7 +1172,7 @@ micro_wake_word:
               then:
                 - script.execute: play_wake_sound
                 - delay: 300ms
-          # Route on the manifest phrase: "Hey Mycroft" → HA Assist, "Okay Nabu" → OpenAI
+          # Route on the manifest phrase: every wake word → OpenAI (no Hey Mycroft model is loaded)
           - if:
               condition:
                 lambda: 'return wake_word == "Hey Mycroft";'
@@ -1187,11 +1186,11 @@ external_components:
   # Custom Voice Assistant WebSocket Component
   - source:
       type: git
-      url: https://github.com/just-jeb/ha-openai-realtime-voice
+      url: https://github.com/metintaski-cloud/ha-openai-realtime-voice
       ref: main
       path: home-assistant-voice-pe/esphome/components
     components: [voice_assistant_websocket]
-    refresh: 0s
+    refresh: always
   # Voice PE Hardware Components
   - source:
       type: git
@@ -1204,6 +1203,10 @@ external_components:
 # Voice Assistant WebSocket Component
 voice_assistant_websocket:
   id: voice_assistant_ws
+  # Keep the microphone open while the assistant speaks so the user can talk over it
+  full_duplex: true
+  # Do not cut off in the middle of a sentence when someone speaks longer or talks aside
+  auto_stop_timeout: 60s
   # Server URL - uses secret from secrets.yaml
   server_url: !secret server_url
   
@@ -1233,7 +1236,12 @@ voice_assistant_websocket:
   on_ready:
     - lambda: id(voice_assistant_phase) = ${voice_assist_listening_for_command_phase_id};  # Green: ready, speak now
     - script.execute: control_leds
-    - script.execute: play_ready_sound
+    # Ready sound only when the wake sound switch is on
+    - if:
+        condition:
+          switch.is_on: wake_sound
+        then:
+          - script.execute: play_ready_sound
   on_thinking:
     - lambda: id(voice_assistant_phase) = ${voice_assist_thinking_phase_id};  # Blue: processing
     - script.execute: control_leds

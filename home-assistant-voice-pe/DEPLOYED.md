@@ -2,12 +2,13 @@
 
 Checked against the live file on the Mini PC on 13 Nov 2026 (1397 lines, template has 1386). The live file is `voice_pe_config.yaml` in the ESPHome Device Builder add on (slug `5c53de3b_esphome`). The repo file `voice_pe_config.yaml` is only the template.
 
-## What differs in the live file
-- Wake words: only `hallo_leyla` (model `github://metintaski-cloud/ha-openai-realtime-voice/hallo_leyla.json@main`, `sliding_window_size: 6`, `probability_cutoff` 99 percent, `gain_factor` 4). `okay_nabu` and `hey_mycroft` are removed, `micro_wake_word.enable_model: hallo_leyla` replaces them in the wake routing.
-- Component source: `https://github.com/metintaski-cloud/ha-openai-realtime-voice` (template points to the just-jeb fork), `refresh: always`.
+The template was synced with the live file on the same day (wake word, component source, full duplex, auto stop timeout, ready sound switch). What is still different is listed here.
+
+## What still differs in the live file
+- Wake words: only `hallo_leyla` (the template now matches this too) (model `github://metintaski-cloud/ha-openai-realtime-voice/hallo_leyla.json@main`, `sliding_window_size: 6`, `probability_cutoff` 99 percent, `gain_factor` 4). `okay_nabu` and `hey_mycroft` are removed, `micro_wake_word.enable_model: hallo_leyla` replaces them in the wake routing.
 - WiFi: a second network `wifi_ssid_neu` from secrets is added.
-- Voice assistant block: `full_duplex: true`, `auto_stop_timeout: 60s`, automatic gain comment says up to 6x for quiet voices.
-- Log line "Wake word ignored: conversation already running" and a ready sound that only plays when the switch "Wake sound" is on.
+- Log line "Wake word ignored: conversation already running" in the wake while running branch.
+- Template still contains the routing lambda for "Hey Mycroft" which never fires.
 
 ## Keep this file true
 - Whenever the live config is changed (by Claude or by hand), update the list above in the same session and commit it.

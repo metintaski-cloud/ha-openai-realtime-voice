@@ -1,6 +1,6 @@
 # Leyla: Stand, Entscheidungen, offene Punkte
 
-Diese Datei ist das Gedaechtnis des Projekts. Wer eine Sitzung beginnt, liest sie zuerst. Wer etwas entscheidet oder abschliesst, traegt es hier ein (Stand: 13 Nov 2026).
+Diese Datei ist das Gedaechtnis des Projekts. Wer eine Sitzung beginnt, liest sie zuerst. Wer etwas entscheidet oder abschliesst, traegt es hier ein (Stand: 13 Nov 2026). README, CHANGELOG, Vorlage voice_pe_config.yaml und die Notizen im Client Ordner wurden am 13 Nov 2026 auf den echten Stand gebracht.
 
 ## Feste Entscheidungen
 - Leyla behaelt ihre Stimme, kein Stimmenwechsel. Die Stimme "Brise" gibt es nicht auf dem Speech Endpoint, deshalb Ansagen ueber GPT Live mit gespeicherten Clips (merken: true).

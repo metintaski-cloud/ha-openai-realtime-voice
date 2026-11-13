@@ -13,7 +13,7 @@ Home Assistant addon that bridges the Voice PE device to the OpenAI Realtime API
 ### From repository
 
 1. **Supervisor** → **Add-on Store** → **⋮** → **Repositories**
-2. Add: `https://github.com/just-jeb/ha-openai-realtime-voice` (or your fork)
+2. Add: `https://github.com/metintaski-cloud/ha-openai-realtime-voice` (or your fork)
 3. Install **OpenAI Realtime Voice**
 
 ### Manual

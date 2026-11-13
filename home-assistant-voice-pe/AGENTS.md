@@ -5,9 +5,9 @@
 This is ESPHome firmware for the Home Assistant Voice PE (ESP32-S3). It
 supports two voice pipelines selected by wake word or button press:
 
-- **OpenAI (ChatGPT)** ("Okay Nabu" / single-click):
+- **OpenAI (ChatGPT)** ("Hallo Leyla" / single-click):
   Streams audio to the server addon via `voice_assistant_websocket`.
-- **HA Assist** ("Hey Mycroft" / double-click): Uses ESPHome's built-in
+- **HA Assist** (double-click; the "Hey Mycroft" wake word was removed): Uses ESPHome's built-in
   `voice_assistant` component → HA native API → local Assist pipeline
   (Speech-to-Phrase STT → Assist → Piper TTS).
 
@@ -56,14 +56,7 @@ and the user says a wake word mapped to OpenAI, the client sends
 bot is NOT speaking and a wake word is detected, the client disconnects
 instead (session is over, user wants a fresh start).
 
-**Wake word routing.** `on_wake_word_detected` receives a `wake_word`
-string: the `wake_word` phrase from the model manifest, not the model
-id ("Okay Nabu", "Hey Mycroft"; source: `micro_wake_word.cpp` triggers
-with `WakeWordModel::get_wake_word()`). "Hey Mycroft" routes to HA Assist;
-all others route to OpenAI. "Hey Mycroft" runs with
-`probability_cutoff: 99%`; "Okay Nabu" uses its manifest default. The
-routing calls `start_ha_assist_pipeline` or
-`start_openai_pipeline` scripts which handle mutual exclusion (stopping
+**Wake word routing.** `on_wake_word_detected` receives a `wake_word` string: the `wake_word` phrase from the model manifest, not the model id (source: `micro_wake_word.cpp`, `WakeWordModel::get_wake_word()`). Only the custom model `hallo_leyla` is active (`probability_cutoff: 99%`, `sliding_window_size: 6`, `gain_factor: 4` on the microphone); every detected word routes to OpenAI. The routing lambda still compares with "Hey Mycroft" for HA Assist but no such model is loaded. The routing calls `start_ha_assist_pipeline` or `start_openai_pipeline` scripts which handle mutual exclusion (stopping
 the other pipeline if active) and mute/connection checks.
 
 **Single click always stops.** The `button_single_click` script stops whichever
@@ -79,7 +72,7 @@ Assistant actions".
 
 **Wake word models are enabled on boot.** ESPHome enables only the first
 `micro_wake_word` model on a fresh device, so `on_boot` calls
-`micro_wake_word.enable_model` for both `okay_nabu` and `hey_mycroft`.
+`micro_wake_word.enable_model` for `hallo_leyla`.
 
 **HA Assist pipeline.** Uses ESPHome's built-in `voice_assistant`
 component with `media_player: voice_media_player` for TTS playback.

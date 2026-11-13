@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-If you discover a security vulnerability, please report it through [GitHub's private vulnerability reporting](https://github.com/just-jeb/ha-openai-realtime-voice/security/advisories/new).
+If you discover a security vulnerability, please report it through [GitHub's private vulnerability reporting](https://github.com/metintaski-cloud/ha-openai-realtime-voice/security/advisories/new).
 
 **Do not open a public issue for security vulnerabilities.**
 

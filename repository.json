@@ -1,6 +1,6 @@
 {
   "name": "OpenAI Realtime Voice",
-  "url": "https://github.com/just-jeb/ha-openai-realtime-voice",
+  "url": "https://github.com/metintaski-cloud/ha-openai-realtime-voice",
   "maintainer": "Jenia Barabanov",
   "addons": [
     {

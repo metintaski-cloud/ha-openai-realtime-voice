@@ -4,8 +4,8 @@ Thanks for your interest in contributing to OpenAI Realtime Voice!
 
 ## Reporting issues
 
-- Use the [bug report template](https://github.com/just-jeb/ha-openai-realtime-voice/issues/new?template=bug_report.yml) for bugs.
-- Use the [feature request template](https://github.com/just-jeb/ha-openai-realtime-voice/issues/new?template=feature_request.yml) for suggestions.
+- Use the [bug report template](https://github.com/metintaski-cloud/ha-openai-realtime-voice/issues/new?template=bug_report.yml) for bugs.
+- Use the [feature request template](https://github.com/metintaski-cloud/ha-openai-realtime-voice/issues/new?template=feature_request.yml) for suggestions.
 - Include addon and client logs when reporting bugs — they make debugging much faster.
 
 ## Pull requests

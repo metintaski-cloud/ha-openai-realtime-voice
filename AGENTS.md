@@ -15,8 +15,8 @@ The device supports two voice pipelines, selected by wake word or button press:
 
 | Pipeline | Trigger | Path | Use case |
 |----------|---------|------|----------|
-| **OpenAI (ChatGPT)** | "Okay Nabu", single-click | `voice_assistant_websocket` → HA addon → OpenAI Realtime API | General Q&A, web search |
-| **HA Assist** | "Hey Mycroft" (probability cutoff 99%), double-click | ESPHome `voice_assistant` → HA native API → Assist pipeline | Local smart home commands |
+| **OpenAI (ChatGPT)** | "Hallo Leyla", single-click | `voice_assistant_websocket` → HA addon → OpenAI Realtime API | General Q&A, web search |
+| **HA Assist** | double-click only ("Hey Mycroft" removed) | ESPHome `voice_assistant` → HA native API → Assist pipeline | Local smart home commands |
 
 ```
 ESP32-S3 Voice PE
@@ -75,7 +75,7 @@ Every detection is logged at INFO (`Wake word detected: <phrase>`) and fired as 
 
 The addon lives in the repo under `openai_realtime_voice/` (directory name matches slug). To install from this repo:
 
-1. **Settings → Add-ons → Add-on Store → ⋮ → Repositories** → add `https://github.com/just-jeb/ha-openai-realtime-voice`
+1. **Settings → Add-ons → Add-on Store → ⋮ → Repositories** → add `https://github.com/metintaski-cloud/ha-openai-realtime-voice`
 2. Install “OpenAI Realtime Voice”
 3. Configure in the addon Configuration tab (see `openai_realtime_voice/config.yaml`). Required: `openai_api_key`. Optional: `web_search_api_key`, VAD, `instructions`, `enable_recording`
 
