@@ -38,7 +38,9 @@ import websockets
 from app.audio_recorder import AudioRecorder
 from app import memory
 from app import context
-from app import (after_talk, live_link, night, cleanup, costs, fan, health, lights, messages, persona, purifier, rf, technik, todo_sync,
+from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, PacedSender, pcm_level
+from app.live_link import END_CONVERSATION_TOOL
+from app import (after_talk, announce_voice, live_link, night, cleanup, costs, fan, health, lights, messages, persona, purifier, rf, technik, todo_sync,
                  tv, vacuum)
 
 logging.basicConfig(
@@ -51,9 +53,6 @@ logging.getLogger("websockets").setLevel(logging.WARNING)
 dotenv.load_dotenv()
 
 # Contract: 24kHz, 16-bit, mono PCM (both directions)
-SAMPLE_RATE = 24000
-BYTES_PER_SEC = SAMPLE_RATE * 2  # 16-bit = 2 bytes per sample -> 48 000 B/s
-SEND_CHUNK_SIZE = BYTES_PER_SEC * 20 // 1000  # 960 bytes = 20 ms of audio
 
 
 # A reply is considered finished when no audio arrived for this long.
@@ -81,18 +80,7 @@ SILENCE_FILL_MAX_S = 0.5
 # GPT Live may stream quiet frames while it is not talking. The Voice PE treats any
 # received audio as "bot speaking" and mutes its mic, so quiet frames are dropped
 # unless they are a short pause inside real speech.
-OUTPUT_SILENCE_PEAK = 300
 OUTPUT_HANGOVER_S = 0.4
-
-# GPT Live streams reply audio at about real time. Sent on to the Voice PE without any
-# reserve, every late delta is a gap and the first words stutter. So each reply starts
-# only once PREBUFFER_S is buffered (or after PREBUFFER_MAX_WAIT_S), and the sender then
-# stays OUTPUT_LEAD_S ahead of playback. The Voice PE queues 10 chunks of 20 ms while
-# its speaker starts, so the lead stays at 200 ms.
-PREBUFFER_S = 0.2
-PREBUFFER_BYTES = int(BYTES_PER_SEC * PREBUFFER_S) // 2 * 2
-PREBUFFER_MAX_WAIT_S = 0.25
-OUTPUT_LEAD_S = 0.2
 
 # With the TV on or several people talking, GPT Live may never see the end of a turn and
 # stays silent. When someone addresses Leyla by name and she has not reacted after
@@ -181,27 +169,6 @@ def pick_greeting(words: list[str], hour: int) -> str:
     return random.choice(pool)
 
 
-END_CONVERSATION_TOOL = {
-    "type": "function",
-    "name": "end_conversation",
-    "description": (
-        "End the conversation. Call this when the user says goodbye, farewell, stop, "
-        "or clearly wants to finish."
-    ),
-    "parameters": {
-        "type": "object",
-        "properties": {
-            "reason": {
-                "type": "string",
-                "enum": ["user_requested_stop", "conversation_ended"],
-            }
-        },
-        "required": ["reason"],
-        "additionalProperties": False,
-    },
-}
-
-
 def addressed_by_name(snippet: str) -> bool:
     """True when the text starting with Leyla's name talks to her rather than about her:
     the name is followed by a comma, '!' or '?', or the sentence it is in is a question.
@@ -216,21 +183,8 @@ def addressed_by_name(snippet: str) -> bool:
     return "?" in sentence[:100]
 
 
-def pcm_level(pcm: bytes) -> tuple[int, int]:
-    """Return (rms, peak) of 16-bit little-endian mono PCM. Used for diagnostics."""
-    import array
-    if len(pcm) < 2:
-        return 0, 0
-    samples = array.array("h")
-    samples.frombytes(pcm[: len(pcm) // 2 * 2])
-    if sys.byteorder == "big":
-        samples.byteswap()
-    peak = max(abs(x) for x in samples)
-    rms = int((sum(x * x for x in samples) / len(samples)) ** 0.5)
-    return rms, peak
-
-
-class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.AfterTalkMixin):
+class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.AfterTalkMixin,
+                      announce_voice.AnnounceVoiceMixin):
     """Bridges ESP32 WebSocket to the OpenAI GPT Live API."""
 
     def __init__(self) -> None:
@@ -512,101 +466,6 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             dialog[-1][1] += delta
         else:
             dialog.append([speaker, delta])
-
-    async def _speak_once(self, prompt: str, max_s: float = 40.0) -> bytes:
-        """Let GPT Live speak one announcement without a listener; return 24 kHz PCM."""
-        ws, _ = await self._take_live()
-        pcm = bytearray()
-        try:
-            await ws.send(json.dumps({
-                "type": "session.start",
-                "event_id": "event_announce",
-                "session": {
-                    "model": self.live_model,
-                    "instructions": ("Du bist Leyla, eine warme, fröhliche und lebendige "
-                                     "Sprachassistentin der Familie. Du sprichst mit viel "
-                                     "Gefühl, natürlicher Betonung und einem Lächeln in der "
-                                     "Stimme, nie monoton, aber ohne Kosewörter wie „canım“. "
-                                     "Du machst nur die verlangte kurze "
-                                     "Ansage und redest danach nicht weiter."),
-                    "audio": {"format": {"type": "audio/pcm", "rate": SAMPLE_RATE},
-                              "output": {"voice": self.voice}},
-                    "delegation": {"type": "responses", "responses": {
-                        "model": self.backend_model, "instructions": "Do nothing.",
-                        "tools": [END_CONVERSATION_TOOL], "tool_choice": "auto",
-                        "parallel_tool_calls": False}},
-                },
-            }))
-            loop = asyncio.get_event_loop()
-            end = loop.time() + max_s
-            started = False
-            last_audio = None
-
-            async def feed_silence():
-                # GPT Live runs on the input audio clock: without input it never
-                # finishes injecting the commentary, so feed real-time silence.
-                chunk = base64.standard_b64encode(b"\x00" * (BYTES_PER_SEC // 10)).decode("ascii")
-                while True:
-                    await ws.send(json.dumps({"type": "session.input_audio.append",
-                                              "audio": chunk}))
-                    await asyncio.sleep(0.1)
-
-            feeder = None
-            loud_end = 0
-            while loop.time() < end:
-                wait = 1.2 if last_audio else end - loop.time()
-                try:
-                    raw = await asyncio.wait_for(ws.recv(), timeout=max(0.1, wait))
-                except asyncio.TimeoutError:
-                    if last_audio:
-                        break
-                    continue
-                if not isinstance(raw, str):
-                    continue
-                ev = json.loads(raw)
-                t = ev.get("type")
-                if t == "session.started" and not started:
-                    started = True
-                    feeder = asyncio.create_task(feed_silence())
-                    await ws.send(json.dumps({
-                        "type": "session.commentary.append",
-                        "event_id": f"announce_{uuid.uuid4().hex[:8]}",
-                        "delegation_id": None, "content": prompt}))
-                elif t == "session.output_audio.delta" and ev.get("delta"):
-                    chunk_pcm = base64.standard_b64decode(ev["delta"])
-                    _, peak = pcm_level(chunk_pcm)
-                    if peak >= OUTPUT_SILENCE_PEAK:
-                        last_audio = loop.time()
-                        pcm += chunk_pcm
-                        loud_end = len(pcm)
-                    elif last_audio:
-                        pcm += chunk_pcm  # pauses inside the speech
-                    if last_audio and loop.time() - last_audio > 1.2:
-                        break  # GPT Live keeps sending silence after the speech
-                elif t == "error":
-                    raise RuntimeError(f"GPT Live: {ev.get('error')}")
-            if feeder:
-                feeder.cancel()
-            try:
-                await ws.send(json.dumps({"type": "session.close"}))
-            except Exception:
-                pass
-        finally:
-            if feeder and not feeder.done():
-                feeder.cancel()
-            await ws.close()
-        pcm = pcm[:loud_end + BYTES_PER_SEC // 4]  # drop trailing silence
-        logger.info("Announcement audio: %.1f s", len(pcm) / (SAMPLE_RATE * 2))
-        return bytes(pcm)
-
-    async def _tv_down_for_announcement(self) -> None:
-        """Turn the TV down before an announcement, unless a conversation already did."""
-        if self.tv.available and not self._active_sessions:
-            await self.tv.duck()
-
-    async def _tv_up_after_announcement(self) -> None:
-        if self.tv.available and not self._active_sessions:
-            await self.tv.unduck()
 
     async def _automation_command(self, data: dict) -> dict:
         """Event leyla_command from a Home Assistant automation, e.g.
@@ -1218,60 +1077,28 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         """Send buffered audio and phase messages to client. Audio is paced at playback
         rate; phases are sent in order. One ordered stream avoids race conditions.
         GPT Live has no end of audio event, so silence on the queue ends a reply."""
-        buffer = bytearray()
-        bytes_sent = 0
-        start_time: Optional[float] = None
-        first_chunk_at: Optional[float] = None
+        sender = PacedSender(client_ws)
         idle_ticks = 0
-        loop = asyncio.get_event_loop()
-
-        async def pump(flush: bool = False, force: bool = False) -> None:
-            """Send what is buffered at playback rate, OUTPUT_LEAD_S ahead. A reply starts
-            only once PREBUFFER_S is buffered or PREBUFFER_MAX_WAIT_S has passed."""
-            nonlocal bytes_sent, start_time
-            if not buffer:
-                return
-            if start_time is None:
-                waited = loop.time() - (first_chunk_at or loop.time())
-                if not force and len(buffer) < PREBUFFER_BYTES and waited < PREBUFFER_MAX_WAIT_S:
-                    return
-                start_time = loop.time()
-            while len(buffer) >= SEND_CHUNK_SIZE or (flush and buffer):
-                n = min(SEND_CHUNK_SIZE, len(buffer))
-                to_send = bytes(buffer[:n])
-                del buffer[:n]
-                bytes_sent += n
-                target_time = start_time + bytes_sent / BYTES_PER_SEC - OUTPUT_LEAD_S
-                now = loop.time()
-                if target_time > now:
-                    await asyncio.sleep(target_time - now)
-                await client_ws.send(to_send)
-
         try:
             while True:
                 try:
                     chunk = await asyncio.wait_for(output_queue.get(), timeout=0.1)
                 except asyncio.TimeoutError:
                     idle_ticks += 1
-                    await pump(flush=True)
-                    if idle_ticks >= 3 and not buffer:
-                        # Reply is over: restart the pacing clock for the next one.
-                        bytes_sent = 0
-                        start_time = None
-                        first_chunk_at = None
+                    await sender.pump(flush=True)
+                    if idle_ticks >= 3 and not sender.buffer:
+                        sender.reset()  # reply is over: restart the pacing clock
                     continue
                 idle_ticks = 0
 
                 if isinstance(chunk, tuple) and chunk[0] == "phase":
-                    await pump(flush=True, force=True)
+                    await sender.pump(flush=True, force=True)
                     await self._send_phase(client_ws, chunk[1])
                     continue
 
                 if isinstance(chunk, tuple) and chunk[0] == "interrupt":
-                    buffer.clear()
-                    bytes_sent = 0
-                    start_time = None
-                    first_chunk_at = None
+                    sender.buffer.clear()
+                    sender.reset()
                     try:
                         await client_ws.send(json.dumps({"type": "interrupt"}))
                     except Exception as e:
@@ -1279,7 +1106,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                     continue
 
                 if isinstance(chunk, tuple) and chunk[0] == "error":
-                    await pump(flush=True, force=True)
+                    await sender.pump(flush=True, force=True)
                     error_code = chunk[1]
                     try:
                         await client_ws.send(json.dumps({"type": "error", "code": error_code}))
@@ -1292,10 +1119,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                     first_audio_to_client[0] = True
                     logger.info("First audio to client (%d bytes)", len(chunk))
 
-                if start_time is None and not buffer:
-                    first_chunk_at = loop.time()
-                buffer.extend(chunk)
-                await pump()
+                sender.add(chunk)
+                await sender.pump()
         except asyncio.CancelledError:
             raise
         except websockets.exceptions.ConnectionClosed:

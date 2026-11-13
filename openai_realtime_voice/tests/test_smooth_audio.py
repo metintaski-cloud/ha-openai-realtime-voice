@@ -5,12 +5,11 @@ import os
 import sys
 import time
 
-import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 os.environ.setdefault("OPENAI_API_KEY", "test")
 
-from app import main as m, night  # noqa: E402
+from app import main as m, night, pacing  # noqa: E402
 
 
 class FakeWs:
@@ -47,13 +46,13 @@ async def test_reply_starts_with_reserve_and_keeps_lead():
     assert 0.08 <= first <= 0.3, first  # held until 200 ms (two deltas) were buffered
     # In the first instant at least the 200 ms reserve goes out at once
     burst = sum(len(d) for t, d in audio if t - audio[0][0] < 0.02)
-    assert burst >= m.PREBUFFER_BYTES
+    assert burst >= pacing.PREBUFFER_BYTES
     # Never more than the lead ahead of real time playback
     sent = 0
     for t, d in audio:
         sent += len(d)
         played = t - audio[0][0]
-        assert sent / m.BYTES_PER_SEC - played <= m.OUTPUT_LEAD_S + 0.05
+        assert sent / m.BYTES_PER_SEC - played <= pacing.OUTPUT_LEAD_S + 0.05
 
 
 async def test_burst_is_paced_after_the_lead():

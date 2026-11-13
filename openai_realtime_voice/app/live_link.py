@@ -14,6 +14,26 @@ import websockets
 logger = logging.getLogger(__name__)
 
 LIVE_URL = "wss://api.openai.com/v1/live/sessions"
+
+END_CONVERSATION_TOOL = {
+    "type": "function",
+    "name": "end_conversation",
+    "description": (
+        "End the conversation. Call this when the user says goodbye, farewell, stop, "
+        "or clearly wants to finish."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "reason": {
+                "type": "string",
+                "enum": ["user_requested_stop", "conversation_ended"],
+            }
+        },
+        "required": ["reason"],
+        "additionalProperties": False,
+    },
+}
 WARM_MAX_AGE_S = 90.0  # a pre opened connection older than this is replaced
 
 
