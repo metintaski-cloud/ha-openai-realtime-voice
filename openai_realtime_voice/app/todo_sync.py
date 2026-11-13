@@ -26,7 +26,7 @@ from app import memory
 
 logger = logging.getLogger(__name__)
 
-SYNC_INTERVAL_S = 30.0
+SYNC_INTERVAL_S = 60.0
 DEFAULT_LISTS = {memory.FAMILY: "todo.leyla_familie",
                  memory.FRIENDS: "todo.leyla_freunde_und_verwandte",
                  memory.PRIVATE: "todo.leyla_privat",

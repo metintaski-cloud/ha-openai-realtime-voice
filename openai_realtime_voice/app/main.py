@@ -40,7 +40,7 @@ from app import memory
 from app import context
 from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, PacedSender, pcm_level
 from app.live_link import END_CONVERSATION_TOOL
-from app import (after_talk, announce_voice, live_link, night, cleanup, costs, fan, health, lights, messages, persona, purifier, rf, technik, todo_sync,
+from app import (metrics, after_talk, announce_voice, live_link, night, cleanup, costs, fan, health, lights, messages, persona, purifier, rf, technik, todo_sync,
                  tv, vacuum)
 
 logging.basicConfig(
@@ -49,6 +49,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 logging.getLogger("websockets").setLevel(logging.WARNING)
+logging.getLogger("httpx").setLevel(logging.WARNING)  # one INFO line per request buried the useful log
 
 dotenv.load_dotenv()
 
@@ -613,6 +614,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 # GPT Live decides by itself when to stop speaking when it hears the
                 # user. We only drop audio that is still waiting to be played.
                 logger.info("Interrupt received from client")
+                metrics.record("interrupt")
                 self._clear_output_queue(output_queue)
         except (json.JSONDecodeError, TypeError, AttributeError):
             pass
@@ -862,6 +864,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         if not delta_b64:
             return
         now = time.monotonic()
+        if state.pop("reply_pending", False) and state.get("last_speech_at"):
+            metrics.record("first_audio", after_last_word_s=now - state["last_speech_at"])
         audio_bytes = base64.standard_b64decode(delta_b64)
         _, out_peak = pcm_level(audio_bytes)
         if out_peak >= OUTPUT_SILENCE_PEAK:
@@ -983,6 +987,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                     await output_queue.put(("phase", "thinking"))
 
                 elif ev_type == "session.input_transcript.delta":
+                    state["last_speech_at"] = time.monotonic()
+                    state["reply_pending"] = True
                     delta = event.get("delta", "")
                     user_text.append(delta)
                     await self._on_user_text(live_ws, output_queue, state, delta)
@@ -1250,6 +1256,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             logger.warning("Could not start the rudeness report: %s", e)
         logger.info("Session ended: %s (duration: %.1fs, reason: %s)",
                     client_id, duration, reason)
+        metrics.record("session_end", duration_s=duration, reason=reason,
+                       followup=bool(state.get("followup")))
 
     async def handle_client(self, client_ws) -> None:
         """One client connection = one GPT Live session. Connect, send ready to the
@@ -1284,7 +1292,9 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         }
 
         try:
+            t_live = time.monotonic()
             live_ws, started = await self._open_live(state)
+            live_open_s = time.monotonic() - t_live
             state["live_started"] = True
             self._in_background(self.health.openai_ok())
             if self._started_as_followup:
@@ -1300,6 +1310,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                             if len(self.instructions) > 100 else self.instructions)
             await client_ws.send(json.dumps({"type": "ready"}))
             logger.info("Sent ready signal to client")
+            metrics.record("ready", client=client_id, live_open_s=live_open_s,
+                           connect_to_ready_s=time.monotonic() - start_time)
             state["input_clock"] = time.monotonic()
             state["last_activity"] = time.monotonic()
             await self._forward_until_done(client_ws, live_ws, output_queue, end_reason, state)
