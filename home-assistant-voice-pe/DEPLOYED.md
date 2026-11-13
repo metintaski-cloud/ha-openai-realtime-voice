@@ -10,7 +10,7 @@ The template was synced with the live file on the same day (wake word, component
 - Log line "Wake word ignored: conversation already running" in the wake while running branch.
 - Template still contains the routing lambda for "Hey Mycroft" which never fires.
 
-- `voice_kit` `channel_0_stage: NS` instead of the template and stock default `AGC` (test since 13 Nov 2026 22:55): the microphone level to the server was near full scale (rms median about 19000 to 25000, peaks 32766) even in quiet phases, so the XMOS hardware AGC on channel 0 (the channel the component uses) is suspected. The software gain (`mic_auto_gain_max: 6.0`, only up, never below 1) then lifts quiet voices. Revert to AGC if Mama is no longer understood or the wake word gets worse.
+- `voice_kit` `channel_0_stage` stays `AGC` (stock). Test with `NS` on 13 Nov 2026 failed: the raw voice was only about rms 100 to 250, even the software gain of up to 6x could not lift it, GPT Live heard nothing and Leyla hung up (`no_speech`). With `AGC` the level to the server is high (rms 19000 to 25000, peaks to 32766) but she understands everyone reliably. Next idea if the level must come down: keep `AGC` and lower it on the server side or find a middle XMOS setting, not `NS`.
 
 ## Keep this file true
 - Whenever the live config is changed (by Claude or by hand), update the list above in the same session and commit it.
