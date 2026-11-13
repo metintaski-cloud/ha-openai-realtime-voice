@@ -10,7 +10,7 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 os.environ.setdefault("OPENAI_API_KEY", "test")
 
-from app import main as m  # noqa: E402
+from app import main as m, night  # noqa: E402
 
 
 class FakeWs:
@@ -244,7 +244,7 @@ async def test_no_conversation_when_device_does_not_answer(monkeypatch):
 
 
 async def _night(monkeypatch, answer, lamps_on=True, can_ask=True):
-    monkeypatch.setattr(m, "NIGHT_WAIT_S", 0.05)
+    monkeypatch.setattr(night, "NIGHT_WAIT_S", 0.05)
     bridge = _bridge()
     actions = []
     lamps = {"on": lamps_on}

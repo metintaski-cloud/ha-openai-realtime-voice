@@ -31,7 +31,7 @@ def test_things_and_wait_texts():
 
 
 async def _run_night(monkeypatch, data):
-    monkeypatch.setattr(m, "NIGHT_WAIT_S", 0.05)
+    monkeypatch.setattr(night, "NIGHT_WAIT_S", 0.05)
     bridge = _bridge()
     seen = {"prompt": None, "lamp_calls": [], "fan_calls": []}
 
