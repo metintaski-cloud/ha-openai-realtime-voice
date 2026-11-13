@@ -1016,9 +1016,10 @@ class LiveVoiceBridge:
                              "Codewort gesagt hat."}
 
         def technik_gate(args, state):
-            if args.get("action") in ("zeit_aendern", "licht_aendern", "lampen_aendern") \
+            if args.get("action") in ("zeit_aendern", "licht_aendern", "lampen_aendern",
+                                      "ventilator_aendern") \
                     and not self._only_metin(state):
-                return metin_error("Uhrzeiten und Lampenfarben ändert")
+                return metin_error("Zeiten, Lampen und Ventilator in Automationen ändert")
 
         def cleanup_gate(args, state):
             if not self._only_metin(state):

@@ -294,3 +294,68 @@ async def test_lamps_by_area_are_refused(monkeypatch):
         return r
     w._get = get
     assert "Bereich" in (await _lamps(w, "entfernen", ["Flur"]))["error"] and posted == []
+
+
+def _evening():
+    return {"alias": "Abends Stehlampen an",
+            "triggers": [{"trigger": "sun", "event": "sunset", "offset": "-00:15:00"}],
+            "actions": [
+                {"event": "leyla_announce", "event_data": {"text": "x"}},
+                {"action": "light.turn_on", "target": {"entity_id": ["light.flur"]},
+                 "data": {"brightness_pct": 60}},
+                {"event": "leyla_command",
+                 "event_data": {"device": "ventilator", "action": "licht_an"}}]}
+
+
+def _with_evening(monkeypatch):
+    import httpx
+    states = [{"entity_id": "automation.abends", "state": "on",
+               "attributes": {"friendly_name": "Abends Stehlampen an", "id": "e1"}}]
+    posted = []
+    monkeypatch.setattr(httpx, "AsyncClient", _client(posted))
+
+    class W(Writer):
+        async def _get(self, client, path):
+            if path == "states":
+                return states
+            if path == "config/automation/config/e1":
+                return _evening()
+            return None
+    return W(), posted
+
+
+def _fan(w, mode, step, new=None, speed=None, hours=None):
+    return w.run({"action": "ventilator_aendern", "suche": "Abends", "modus": mode,
+                  "ventilator": step, "ventilator_neu": new, "stufe": speed, "stunden": hours})
+
+
+async def test_automation_text_shows_fan_steps(monkeypatch):
+    w, _ = _with_evening(monkeypatch)
+    r = await w.run({"action": "automationen", "suche": "Abends"})
+    assert "Leyla Befehl: ventilator licht_an" in r["automationen"][0]["macht"]
+
+
+async def test_fan_step_removed_added_replaced(monkeypatch):
+    w, posted = _with_evening(monkeypatch)
+    await _fan(w, "entfernen", "licht_an")
+    acts = posted[0][1]["actions"]
+    assert len(acts) == 2 and not any(a.get("event_data", {}).get("device") == "ventilator"
+                                      for a in acts)
+    await _fan(w, "hinzufuegen", "stufe", speed=3)
+    assert posted[1][1]["actions"][-1] == {"event": "leyla_command", "event_data": {
+        "device": "ventilator", "action": "stufe", "speed": 3}}
+    assert len(posted[1][1]["actions"]) == 4
+    await _fan(w, "ersetzen", "licht_an", new="an")
+    assert posted[2][1]["actions"][2]["event_data"] == {"device": "ventilator", "action": "an"}
+    assert w.pushed
+
+
+async def test_fan_step_rejects_bad_input(monkeypatch):
+    w, posted = _with_evening(monkeypatch)
+    assert "error" in await _fan(w, "hinzufuegen", "stufe", speed=9)
+    assert "error" in await _fan(w, "hinzufuegen", "timer", hours=3)
+    assert "error" in await _fan(w, "hinzufuegen", "blinken")
+    assert "keinen Ventilator Schritt" in (await _fan(w, "entfernen", "aus"))["error"]
+    assert "error" in await _fan(w, "ersetzen", "licht_an", new="stufe", speed=0)
+    assert "error" in await _fan(w, None, "an")
+    assert posted == []

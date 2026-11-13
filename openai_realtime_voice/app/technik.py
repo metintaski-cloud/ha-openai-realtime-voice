@@ -3,11 +3,12 @@ A look at the house technology: Leyla can check automations (is it on, when does
 when did it run last, what does it do) and the state of devices, so she can answer
 "schaltet die Automation um 23:30 die Lampen aus?" from the real configuration.
 
-She can change three things in an existing automation, only for Metin (main.py lets these
+She can change four things in an existing automation, only for Metin (main.py lets these
 actions through only when the code phrase was heard in the conversation): the clock time of a
 time trigger ("zeit_aendern") and the colour, brightness or white tone of the lamps the
 automation switches on ("licht_aendern"), and which lamps it switches on ("lampen_aendern":
-take some out, add some, or only these). Metin gets a push message about every change.
+take some out, add some, or only these) and which fan steps it runs ("ventilator_aendern":
+the leyla_command events for the ceiling fan and its light, add, remove or replace). Metin gets a push message about every change.
 """
 import re
 import logging
@@ -29,14 +30,15 @@ TECHNIK_TOOL = {
         "matching a search word. 'zeit_aendern' changes the clock time of an existing automation, "
         "'licht_aendern' changes the colour, brightness or white tone the lamps get when an "
         "automation switches them on, 'lampen_aendern' changes which lamps it switches on (take "
-        "out, add, or only these), all three only when Metin asks and said the code phrase. Use the rest to answer questions about "
+        "out, add, or only these), 'ventilator_aendern' changes which fan steps it runs, all "
+        "four only when Metin asks and said the code phrase. Use the rest to answer questions about "
         "whether something is set up or switched on."
     ),
     "parameters": {
         "type": "object",
         "properties": {
             "action": {"type": "string", "enum": ["automationen", "geraete", "zeit_aendern", "licht_aendern",
-                               "lampen_aendern"]},
+                               "lampen_aendern", "ventilator_aendern"]},
             "suche": {"type": ["string", "null"],
                       "description": "Search word, for example 'Lampen', 'Sonnenuntergang', "
                                      "'23:30'. Null lists the first ones."},
@@ -47,11 +49,31 @@ TECHNIK_TOOL = {
                       "description": "For 'licht_aendern': a word for one lamp or room, for "
                                      "example 'Wohnzimmer', when the automation switches "
                                      "several lamps and only some should change, else null."},
-            "modus": {"type": ["string", "null"], "enum": ["entfernen", "hinzufuegen", "nur", None],
+            "modus": {"type": ["string", "null"], "enum": ["entfernen", "hinzufuegen", "nur", "ersetzen", None],
                       "description": "For 'lampen_aendern': 'entfernen' takes the lamps out "
                                      "of the automation (they stay as they are), "
                                      "'hinzufuegen' adds them, 'nur' makes exactly these "
-                                     "lamps the ones it switches on."},
+                                     "lamps the ones it switches on. For 'ventilator_aendern': "
+                                     "'hinzufuegen' adds the fan step 'ventilator', "
+                                     "'entfernen' removes it, 'ersetzen' replaces it by "
+                                     "'ventilator_neu'."},
+            "ventilator": {"type": ["string", "null"],
+                           "enum": ["aus", "an", "stufe", "licht_an", "licht_aus", "naturwind",
+                                    "links", "rechts", "timer", None],
+                           "description": "For 'ventilator_aendern': the fan step: aus or an "
+                                          "(fan itself), licht_an or licht_aus (fan light), "
+                                          "stufe (speed), timer, naturwind, links, rechts."},
+            "ventilator_neu": {"type": ["string", "null"],
+                               "enum": ["aus", "an", "stufe", "licht_an", "licht_aus",
+                                        "naturwind", "links", "rechts", "timer", None],
+                               "description": "For 'ventilator_aendern' with modus ersetzen: "
+                                              "the new step."},
+            "stufe": {"type": ["integer", "null"],
+                      "description": "For 'ventilator_aendern': speed 1 to 6 of the step "
+                                     "stufe (the new one when replacing), else null."},
+            "stunden": {"type": ["integer", "null"],
+                        "description": "For 'ventilator_aendern': timer 1, 2 or 4 hours, "
+                                       "else null."},
             "lampen": {"type": ["array", "null"], "items": {"type": "string"},
                        "description": "For 'lampen_aendern': the lamps by name as Metin says "
                                       "them, for example ['Wohnzimmer Lamba 1', 'Flur']."},
@@ -66,7 +88,7 @@ TECHNIK_TOOL = {
                     "description": "For 'zeit_aendern': the new time HH:MM (24 hours)."},
         },
         "required": ["action", "suche", "alt", "neu", "lampe", "farbe", "helligkeit", "modus",
-                     "lampen"],
+                     "lampen", "ventilator", "ventilator_neu", "stufe", "stunden"],
         "additionalProperties": False,
     },
 }
@@ -75,11 +97,15 @@ TECHNIK_BACKEND_HINT = (
     " You can check the technology with technik_pruefen (read only): 'automationen' for "
     "questions like 'schaltet die Automation um 23:30 die Lampen aus' or 'wann lief sie zuletzt', "
     "'geraete' for the state of devices. Answer only from the result, in simple words, and say "
-    "plainly if no automation matches. You can make three changes in an automation, only when "
+    "plainly if no automation matches. You can make four changes in an automation, only when "
     "Metin himself asks and has said the code phrase: the time with 'zeit_aendern', the "
     "colour, brightness or white tone of its lamps with 'licht_aendern' and which lamps it "
     "switches on with 'lampen_aendern' (modus entfernen, hinzufuegen or nur, lampen by name; "
-    "if a name is not clear the result lists the candidates, ask which one). First say which "
+    "if a name is not clear the result lists the candidates, ask which one) and which steps "
+    "it runs for the ceiling fan and its light with 'ventilator_aendern' (modus hinzufuegen, "
+    "entfernen or ersetzen; ventilator aus, an, licht_an, licht_aus, stufe, timer and so on). "
+    "The fan light is licht_an or licht_aus, the fan itself an or aus. The 23:30 night "
+    "check is fixed and cannot be changed this way. First say which "
     "automation and what you understood (times alt to neu, colour and brightness, or which "
     "lamps), and call "
     "it only after he confirms. 'automationen' shows the current colour and brightness of the "
@@ -140,7 +166,13 @@ def _action_texts(actions) -> list:
         elif "delay" in a:
             out.append("wartet kurz")
         elif "event" in a:
-            out.append(f"Ereignis {a['event']}")
+            data = a.get("event_data") or {}
+            if a["event"] == "leyla_command" and data.get("device"):
+                step = " ".join(str(data[k]) for k in ("device", "action", "speed", "hours")
+                                if data.get(k) is not None)
+                out.append(f"Leyla Befehl: {step}")
+            else:
+                out.append(f"Ereignis {a['event']}")
         else:
             name = a.get("action") or a.get("service")
             if name:
@@ -230,21 +262,78 @@ def _set_lamp_ids(a: dict, ids: list) -> None:
 def _filter_light_actions(actions, keep) -> list:
     """Same list of actions, where light.turn_on actions for which keep(action) is False are
     dropped, also inside choose, if and sequence."""
+    return _filter_actions(actions, lambda a: (a.get("action") or a.get("service"))
+                           == "light.turn_on" and not keep(a))
+
+
+FAN_STEPS = ("aus", "an", "stufe", "licht_an", "licht_aus", "naturwind", "links", "rechts",
+             "timer")
+
+
+def _find_steps(actions, match) -> list:
+    """All actions for which match(action) is true, also inside choose, if and sequence."""
+    found = []
+    for a in actions if isinstance(actions, list) else []:
+        if not isinstance(a, dict):
+            continue
+        if "choose" in a:
+            for opt in a.get("choose") or []:
+                found.extend(_find_steps(opt.get("sequence"), match))
+            found.extend(_find_steps(a.get("default"), match))
+        elif "if" in a:
+            found.extend(_find_steps(a.get("then"), match))
+            found.extend(_find_steps(a.get("else"), match))
+        elif "sequence" in a:
+            found.extend(_find_steps(a.get("sequence"), match))
+        elif match(a):
+            found.append(a)
+    return found
+
+
+def _is_fan_step(a: dict) -> bool:
+    data = a.get("event_data") or {}
+    return a.get("event") == "leyla_command" and str(data.get("device", "")).lower() in (
+        "ventilator", "fan")
+
+
+def _fan_event(step: str, speed, hours) -> dict:
+    data = {"device": "ventilator", "action": step}
+    if step == "stufe":
+        data["speed"] = speed
+    if step == "timer":
+        data["hours"] = hours
+    return {"event": "leyla_command", "event_data": data}
+
+
+def _check_fan_step(step, speed, hours):
+    """Error text when the fan step is not valid, else None."""
+    if step not in FAN_STEPS:
+        return "Welcher Ventilator Schritt? Zum Beispiel an, aus, licht_an oder licht_aus."
+    if step == "stufe" and not (isinstance(speed, int) and 1 <= speed <= 6):
+        return "Die Stufe muss zwischen 1 und 6 liegen."
+    if step == "timer" and hours not in (1, 2, 4):
+        return "Der Timer kann nur 1, 2 oder 4 Stunden."
+    return None
+
+
+def _filter_actions(actions, drop) -> list:
+    """Same list of actions without the ones for which drop(action) is true, also inside
+    choose, if and sequence."""
     out = []
     for a in actions if isinstance(actions, list) else []:
         if isinstance(a, dict):
             if "choose" in a:
                 for opt in a.get("choose") or []:
-                    opt["sequence"] = _filter_light_actions(opt.get("sequence"), keep)
+                    opt["sequence"] = _filter_actions(opt.get("sequence"), drop)
                 if "default" in a:
-                    a["default"] = _filter_light_actions(a.get("default"), keep)
+                    a["default"] = _filter_actions(a.get("default"), drop)
             elif "if" in a:
-                a["then"] = _filter_light_actions(a.get("then"), keep)
+                a["then"] = _filter_actions(a.get("then"), drop)
                 if "else" in a:
-                    a["else"] = _filter_light_actions(a.get("else"), keep)
+                    a["else"] = _filter_actions(a.get("else"), drop)
             elif "sequence" in a:
-                a["sequence"] = _filter_light_actions(a.get("sequence"), keep)
-            elif (a.get("action") or a.get("service")) == "light.turn_on" and not keep(a):
+                a["sequence"] = _filter_actions(a.get("sequence"), drop)
+            elif drop(a):
                 continue
         out.append(a)
     return out
@@ -524,6 +613,60 @@ class TechnikChecker:
                 logger.warning("Could not push the lamp change: %s", e)
         return {"geaendert": name, "modus": mode, "lampen": ids, "schaltet_jetzt": now}
 
+    async def change_fan(self, client, search: Optional[str], mode: Optional[str], step,
+                         new_step, speed, hours) -> dict:
+        """Add, remove or replace the fan steps (leyla_command events for the ceiling fan) of
+        the one matching automation. Everything else in it stays."""
+        if mode not in ("hinzufuegen", "entfernen", "ersetzen"):
+            return {"error": "Es fehlt, ob der Schritt hinzugefügt, entfernt oder ersetzt "
+                             "werden soll."}
+        if mode == "ersetzen":
+            err = _check_fan_step(new_step, speed, hours)
+        elif mode == "hinzufuegen":
+            err = _check_fan_step(step, speed, hours)
+        else:
+            err = None if step in FAN_STEPS else \
+                "Welcher Ventilator Schritt soll weg? Zum Beispiel licht_an."
+        if err:
+            return {"error": err}
+        if mode == "ersetzen" and step not in FAN_STEPS:
+            return {"error": "Welcher Ventilator Schritt soll ersetzt werden?"}
+        found = await self._find_one(client, search)
+        if isinstance(found, dict):
+            return found
+        aid, name, cfg = found
+        key = "actions" if "actions" in cfg or "action" not in cfg else "action"
+        actions = cfg.get(key) if isinstance(cfg.get(key), list) else []
+
+        def is_old(a):
+            return _is_fan_step(a) and (a.get("event_data") or {}).get("action") == step
+
+        if mode in ("entfernen", "ersetzen"):
+            if not any(_find_steps(actions, is_old)):
+                return {"error": f"{name} hat keinen Ventilator Schritt '{step}'."}
+        if mode == "entfernen":
+            cfg[key] = _filter_actions(actions, is_old)
+        elif mode == "ersetzen":
+            for a in _find_steps(actions, is_old):
+                a["event_data"] = _fan_event(new_step, speed, hours)["event_data"]
+        else:
+            actions.append(_fan_event(step, speed, hours))
+            cfg[key] = actions
+        resp = await client.post(f"{self.api_url}/config/automation/config/{aid}", json=cfg,
+                                 headers=self._headers())
+        if resp.status_code >= 300:
+            raise RuntimeError(f"HA HTTP {resp.status_code}: {resp.text[:200]}")
+        shown = {"hinzufuegen": f"Ventilator {step} dazu", "entfernen": f"Ventilator {step} weg",
+                 "ersetzen": f"Ventilator {step} durch {new_step}"}[mode]
+        logger.info("Automation %s: %s", aid, shown)
+        if self.notify:
+            try:
+                await self.notify("Leyla hat den Ventilator geändert", f"{name}: {shown}.")
+            except Exception as e:
+                logger.warning("Could not push the fan change: %s", e)
+        return {"geaendert": name, "jetzt": [a for a in _action_texts(cfg[key])
+                                             if a.startswith("Leyla Befehl")]}
+
     async def change_light(self, client, search: Optional[str], lamp: Optional[str],
                            color: Optional[str], brightness) -> dict:
         """Change colour, brightness or white tone in the light.turn_on actions of the one
@@ -580,6 +723,10 @@ class TechnikChecker:
             if action == "zeit_aendern":
                 return await self.change_time(client, args.get("suche"), args.get("alt"),
                                               args.get("neu"))
+            if action == "ventilator_aendern":
+                return await self.change_fan(client, args.get("suche"), args.get("modus"),
+                                             args.get("ventilator"), args.get("ventilator_neu"),
+                                             args.get("stufe"), args.get("stunden"))
             if action == "lampen_aendern":
                 return await self.change_lamps(client, args.get("suche"), args.get("modus"),
                                                args.get("lampen"))
