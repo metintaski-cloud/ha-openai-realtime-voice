@@ -8,4 +8,6 @@ Purpose: numbers of the current component (the one taken over from upstream) to 
 - Wake behaviour: false wakes per day from the event `esphome.wake_word_detected` and the collected false wake recordings.
 
 ## Values
+First device values (13 Nov 2026, 23:50, 8 minutes after boot, idle): WiFi signal -51 dBm (good), free heap 122 KB, largest free block 111 KB, loop time 17 ms. Look again after a conversation and after a day of uptime: a free heap that keeps sinking means a memory leak, a loop time that jumps during talking shows CPU load.
+Microphone level to the server (add on 2.53.x, XMOS AGC on): Leyla speaking about rms 2600 (peak 6900), quiet about rms 380 (peak 860) in the first clean test after the reflash.
 Collection started 13 Nov 2026 at 22:30. Fill in after a few days of normal use.
