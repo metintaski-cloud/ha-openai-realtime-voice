@@ -753,7 +753,8 @@ class LiveVoiceBridge:
                                        "liebe Enkelin oder Tochter, die ihrer Mutter freundlich "
                                        "und zugewandt etwas sagt. Normale Lautstärke, nicht "
                                        "aufgeregt, nicht laut, nicht wie eine Durchsage.")})
-            r.raise_for_status()
+            if r.status_code >= 400:
+                raise RuntimeError(f"speech endpoint {r.status_code}: {r.text[:300]}")
             pcm = r.content
         if len(pcm) < SAMPLE_RATE:
             raise RuntimeError("speech audio too short")
