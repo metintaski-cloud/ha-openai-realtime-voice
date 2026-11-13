@@ -23,6 +23,7 @@ Diese Datei ist das Gedaechtnis des Projekts. Wer eine Sitzung beginnt, liest si
 - Wake Word Cutoff 99 Prozent wurde am 13 Nov 2026 per Netzwerk installiert, Ergebnis noch zu pruefen.
 
 ## Offen
+- Vorhaben "Eigene Firmware Komponente": voice_assistant_websocket (ca. 1000 Zeilen C++/Python) ist noch zu ca. 95 Prozent Original (Stand 13 Nov 2026), der Server ist praktisch komplett eigen (ca. 7000 gegen 900 Zeilen). Ziel: komplett neu schreiben nach dem Protokoll in AGENTS.md (Vertrag), mit eigener Struktur, danach Originalvermerk pruefen. Vorgehen: Schritt fuer Schritt, jede Stufe auf dem Geraet testen (Stimme, Unterbrechen, Suche, Fehler), Mama nicht stoeren (nicht waehrend sie das Geraet nutzt), alte Version bleibt als Rueckfall im Git. Bis zum Abschluss bleibt der Lizenzvermerk unveraendert.
 - Pruefen, ob Fehlaktivierungen seltener werden und Mamas "Hallo Leyla" noch erkannt wird.
 - Mikrofonpegel von Mamas echter Sitzung ansehen (Log "Mic level (2 s)").
 - Weiteres Aufraeumen: lange Funktionen in main.py, technik.py.
