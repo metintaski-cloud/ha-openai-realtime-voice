@@ -90,4 +90,6 @@ The client firmware and WebSocket component in this repo were forked from [fjfri
 
 ## License
 
+See also [NOTICE.md](NOTICE.md) for the origin of the code.
+
 MIT — see [LICENSE](LICENSE).
