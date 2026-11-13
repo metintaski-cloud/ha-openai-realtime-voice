@@ -214,3 +214,9 @@ Update this file when:
 - Hardware changes (different board, different I2S pins)
 - When shipping a fix or feature to the C++ component: bump version in `.esphome_component.yml` (see Component Version above)
 - **Session learnings:** If you discover something during a session that cost time or caused confusion (e.g. environment quirks, build steps, non-obvious gotchas), add it here before finishing. Future sessions start fresh and won't have that context unless it's written down.
+
+## Changing the deployed device config from a browser session (learned 13 Nov 2026)
+
+- The repo file `voice_pe_config.yaml` is only the template. The deployed one is `voice_pe_config.yaml` in the ESPHome Device Builder add-on (slug `5c53de3b_esphome`) and differs: wake word model `hallo_leyla` (`github://metintaski-cloud/ha-openai-realtime-voice/hallo_leyla.json@main`), `probability_cutoff`, `sliding_window_size`, `gain_factor` under `micro_wake_word`. Read the deployed values before talking about them.
+- The old `edit?configuration=` URL of the dashboard no longer returns the file (it returns the web app). Working route in the built-in browser: open `http://192.168.2.240/5c53de3b_esphome` in a preview tab, click Bearbeiten, then read the CodeMirror lines from the iframe (`.cm-line`, scroll `.cm-scroller` in steps), change a value by double clicking it and typing, check the lines again, click Speichern, then Installieren and choose "Im Netzwerk". The device is offline for a few minutes while it compiles and flashes.
+- Every browser pane action on the HA address needs a fresh `request_access`; the HA token in `hass.auth.data.access_token` expires, call `hass.auth.refreshAccessToken()` and use `hass.auth.accessToken` before fetching add-on logs. The add-on log endpoint only returns the most recent lines.
