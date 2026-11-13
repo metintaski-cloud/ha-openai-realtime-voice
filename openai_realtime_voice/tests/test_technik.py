@@ -209,3 +209,88 @@ async def test_change_light_rejects_bad_input_and_non_light_automations(monkeypa
     assert "error" in await w.run({"action": "licht_aendern", "suche": "anderes", "lampe": None,
                                    "farbe": "rot", "helligkeit": None})
     assert posted == []
+
+
+def _lamp_states():
+    return [{"entity_id": e, "state": "off", "attributes": {"friendly_name": f}}
+            for e, f in [("light.wohnzimmer_lamba_1", "Wohnzimmer Lamba 1"),
+                         ("light.wohnzimmer_lamba_2", "Wohnzimmer Lamba 2"),
+                         ("light.flur", "Flur"), ("light.keller", "Keller")]]
+
+
+def _with_lamps(monkeypatch):
+    import httpx
+    configs = dict(CONFIGS, a3={
+        "alias": "Licht bei Sonnenuntergang",
+        "triggers": [{"trigger": "sun", "event": "sunset"}],
+        "actions": [{"action": "light.turn_on",
+                     "target": {"entity_id": ["light.wohnzimmer_lamba_1",
+                                              "light.wohnzimmer_lamba_2", "light.flur"]},
+                     "data": {"brightness_pct": 80}}]})
+    states = [x for x in STATES if not x['entity_id'].startswith('light.')] + _lamp_states() + [
+        {"entity_id": "automation.sonnenuntergang", "state": "on",
+         "attributes": {"friendly_name": "Licht bei Sonnenuntergang", "id": "a3"}}]
+    posted = []
+    monkeypatch.setattr(httpx, "AsyncClient", _client(posted))
+
+    class W(Writer):
+        async def _get(self, client, path):
+            if path == "states":
+                return states
+            if path.startswith("config/automation/config/"):
+                return configs.get(path.rsplit("/", 1)[1])
+            return await super()._get(client, path)
+    return W(), posted
+
+
+def _lamps(w, mode, names):
+    return w.run({"action": "lampen_aendern", "suche": "Sonnenuntergang", "modus": mode,
+                  "lampen": names})
+
+
+async def test_lamps_taken_out_keep_the_rest(monkeypatch):
+    w, posted = _with_lamps(monkeypatch)
+    r = await _lamps(w, "entfernen", ["Wohnzimmer Lamba 1", "Wohnzimmer Lamba 2"])
+    assert r["schaltet_jetzt"] == ["light.flur"]
+    act = posted[0][1]["actions"][0]
+    assert act["target"]["entity_id"] == ["light.flur"] and act["data"] == {"brightness_pct": 80}
+    assert w.pushed
+
+
+async def test_lamps_added_and_only(monkeypatch):
+    w, posted = _with_lamps(monkeypatch)
+    r = await _lamps(w, "hinzufuegen", ["Keller"])
+    assert r["schaltet_jetzt"] == ["light.flur", "light.keller", "light.wohnzimmer_lamba_1",
+                                   "light.wohnzimmer_lamba_2"]
+    r = await _lamps(w, "nur", ["Flur", "Keller"])
+    assert posted[1][1]["actions"][0]["target"]["entity_id"] == ["light.flur", "light.keller"]
+
+
+async def test_lamp_names_must_be_clear(monkeypatch):
+    w, posted = _with_lamps(monkeypatch)
+    amb = await _lamps(w, "entfernen", ["Wohnzimmer"])
+    assert "nicht eindeutig" in amb["error"] and len(amb["lampen"]) == 2
+    assert "nicht gefunden" in (await _lamps(w, "entfernen", ["Garage"]))["error"]
+    assert "error" in await _lamps(w, "entfernen", [])
+    assert "error" in await _lamps(w, None, ["Flur"])
+    assert posted == []
+
+
+async def test_cannot_remove_the_last_lamp(monkeypatch):
+    w, posted = _with_lamps(monkeypatch)
+    r = await _lamps(w, "entfernen", ["Flur", "Wohnzimmer Lamba 1", "Wohnzimmer Lamba 2"])
+    assert "keine Lampe mehr" in r["error"] and posted == []
+
+
+async def test_lamps_by_area_are_refused(monkeypatch):
+    import httpx
+    w, posted = _with_lamps(monkeypatch)
+    orig = w._get
+
+    async def get(client, path):
+        r = await orig(client, path)
+        if path.endswith("/a3"):
+            r = {**r, "actions": [{"action": "light.turn_on", "target": {"area_id": "wohnzimmer"}}]}
+        return r
+    w._get = get
+    assert "Bereich" in (await _lamps(w, "entfernen", ["Flur"]))["error"] and posted == []

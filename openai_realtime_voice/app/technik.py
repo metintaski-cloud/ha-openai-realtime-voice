@@ -3,10 +3,11 @@ A look at the house technology: Leyla can check automations (is it on, when does
 when did it run last, what does it do) and the state of devices, so she can answer
 "schaltet die Automation um 23:30 die Lampen aus?" from the real configuration.
 
-She can change two things in an existing automation, only for Metin (main.py lets these
+She can change three things in an existing automation, only for Metin (main.py lets these
 actions through only when the code phrase was heard in the conversation): the clock time of a
 time trigger ("zeit_aendern") and the colour, brightness or white tone of the lamps the
-automation switches on ("licht_aendern"). Metin gets a push message about every change.
+automation switches on ("licht_aendern"), and which lamps it switches on ("lampen_aendern":
+take some out, add some, or only these). Metin gets a push message about every change.
 """
 import re
 import logging
@@ -27,13 +28,15 @@ TECHNIK_TOOL = {
         "ran. 'geraete' reads the state of devices (lights, switches, fan, TV, sensors) "
         "matching a search word. 'zeit_aendern' changes the clock time of an existing automation, "
         "'licht_aendern' changes the colour, brightness or white tone the lamps get when an "
-        "automation switches them on, both only when Metin asks and said the code phrase. Use the rest to answer questions about "
+        "automation switches them on, 'lampen_aendern' changes which lamps it switches on (take "
+        "out, add, or only these), all three only when Metin asks and said the code phrase. Use the rest to answer questions about "
         "whether something is set up or switched on."
     ),
     "parameters": {
         "type": "object",
         "properties": {
-            "action": {"type": "string", "enum": ["automationen", "geraete", "zeit_aendern", "licht_aendern"]},
+            "action": {"type": "string", "enum": ["automationen", "geraete", "zeit_aendern", "licht_aendern",
+                               "lampen_aendern"]},
             "suche": {"type": ["string", "null"],
                       "description": "Search word, for example 'Lampen', 'Sonnenuntergang', "
                                      "'23:30'. Null lists the first ones."},
@@ -44,6 +47,14 @@ TECHNIK_TOOL = {
                       "description": "For 'licht_aendern': a word for one lamp or room, for "
                                      "example 'Wohnzimmer', when the automation switches "
                                      "several lamps and only some should change, else null."},
+            "modus": {"type": ["string", "null"], "enum": ["entfernen", "hinzufuegen", "nur", None],
+                      "description": "For 'lampen_aendern': 'entfernen' takes the lamps out "
+                                     "of the automation (they stay as they are), "
+                                     "'hinzufuegen' adds them, 'nur' makes exactly these "
+                                     "lamps the ones it switches on."},
+            "lampen": {"type": ["array", "null"], "items": {"type": "string"},
+                       "description": "For 'lampen_aendern': the lamps by name as Metin says "
+                                      "them, for example ['Wohnzimmer Lamba 1', 'Flur']."},
             "farbe": {"type": ["string", "null"],
                       "description": "For 'licht_aendern': colour in German, for example "
                                      "'rot', 'orange', 'blau', 'warmweiß', 'kaltweiß', or "
@@ -54,7 +65,8 @@ TECHNIK_TOOL = {
             "neu": {"type": ["string", "null"],
                     "description": "For 'zeit_aendern': the new time HH:MM (24 hours)."},
         },
-        "required": ["action", "suche", "alt", "neu", "lampe", "farbe", "helligkeit"],
+        "required": ["action", "suche", "alt", "neu", "lampe", "farbe", "helligkeit", "modus",
+                     "lampen"],
         "additionalProperties": False,
     },
 }
@@ -63,10 +75,13 @@ TECHNIK_BACKEND_HINT = (
     " You can check the technology with technik_pruefen (read only): 'automationen' for "
     "questions like 'schaltet die Automation um 23:30 die Lampen aus' or 'wann lief sie zuletzt', "
     "'geraete' for the state of devices. Answer only from the result, in simple words, and say "
-    "plainly if no automation matches. You can make two changes in an automation, only when "
-    "Metin himself asks and has said the code phrase: the time with 'zeit_aendern' and the "
-    "colour, brightness or white tone of its lamps with 'licht_aendern'. First say which "
-    "automation and what you understood (times alt to neu, or colour and brightness), and call "
+    "plainly if no automation matches. You can make three changes in an automation, only when "
+    "Metin himself asks and has said the code phrase: the time with 'zeit_aendern', the "
+    "colour, brightness or white tone of its lamps with 'licht_aendern' and which lamps it "
+    "switches on with 'lampen_aendern' (modus entfernen, hinzufuegen or nur, lampen by name; "
+    "if a name is not clear the result lists the candidates, ask which one). First say which "
+    "automation and what you understood (times alt to neu, colour and brightness, or which "
+    "lamps), and call "
     "it only after he confirms. 'automationen' shows the current colour and brightness of the "
     "lamps, so read it first. If the result says it is not allowed, say that only Metin can "
     "change this. Never change anything else."
@@ -192,6 +207,47 @@ def _light_on_actions(actions) -> list:
         elif (a.get("action") or a.get("service")) == "light.turn_on":
             found.append(a)
     return found
+
+
+def _lamp_ids(a: dict):
+    """Entity ids a light action targets, None when it targets by area or device."""
+    target = a.get("target") or {}
+    if target.get("area_id") or target.get("device_id") or target.get("label_id"):
+        return None
+    data = a.get("data") or {}
+    ents = target.get("entity_id") or data.get("entity_id") or a.get("entity_id") or []
+    if isinstance(ents, str):
+        ents = [e.strip() for e in ents.split(",") if e.strip()]
+    return [str(e) for e in ents]
+
+
+def _set_lamp_ids(a: dict, ids: list) -> None:
+    a.setdefault("target", {})["entity_id"] = list(ids)
+    (a.get("data") or {}).pop("entity_id", None)
+    a.pop("entity_id", None)
+
+
+def _filter_light_actions(actions, keep) -> list:
+    """Same list of actions, where light.turn_on actions for which keep(action) is False are
+    dropped, also inside choose, if and sequence."""
+    out = []
+    for a in actions if isinstance(actions, list) else []:
+        if isinstance(a, dict):
+            if "choose" in a:
+                for opt in a.get("choose") or []:
+                    opt["sequence"] = _filter_light_actions(opt.get("sequence"), keep)
+                if "default" in a:
+                    a["default"] = _filter_light_actions(a.get("default"), keep)
+            elif "if" in a:
+                a["then"] = _filter_light_actions(a.get("then"), keep)
+                if "else" in a:
+                    a["else"] = _filter_light_actions(a.get("else"), keep)
+            elif "sequence" in a:
+                a["sequence"] = _filter_light_actions(a.get("sequence"), keep)
+            elif (a.get("action") or a.get("service")) == "light.turn_on" and not keep(a):
+                continue
+        out.append(a)
+    return out
 
 
 def _condition_texts(conds) -> list:
@@ -370,23 +426,8 @@ class TechnikChecker:
                 logger.warning("Could not push the time change: %s", e)
         return {"geaendert": name, "von": before, "auf": new_t[:5]}
 
-    async def change_light(self, client, search: Optional[str], lamp: Optional[str],
-                           color: Optional[str], brightness) -> dict:
-        """Change colour, brightness or white tone in the light.turn_on actions of the one
-        automation that matches. Nothing else in the automation is touched."""
-        new = {}
-        if color:
-            parsed = parse_color(color)
-            if not parsed:
-                return {"error": "Die Farbe habe ich nicht verstanden."}
-            new.update(parsed)
-        if brightness is not None:
-            if not isinstance(brightness, int) or isinstance(brightness, bool) \
-                    or not 1 <= brightness <= 100:
-                return {"error": "Die Helligkeit muss zwischen 1 und 100 Prozent liegen."}
-            new["brightness_pct"] = brightness
-        if not new:
-            return {"error": "Es fehlt eine Farbe oder eine Helligkeit."}
+    async def _find_one(self, client, search: Optional[str]):
+        """(id, name, config) of the one automation matching the search, else an error dict."""
         words = _words(search)
         if not words:
             return {"error": "Welche Automation? Es fehlt ein Suchwort."}
@@ -408,7 +449,102 @@ class TechnikChecker:
         if len(matches) > 1:
             return {"error": "Mehrere Automationen passen, welche meinst du?",
                     "automationen": [m[1] for m in matches][:6]}
-        aid, name, cfg = matches[0]
+        return matches[0]
+
+    async def _resolve_lamps(self, client, names):
+        """Names as Metin says them -> light entity ids, or an error dict with candidates."""
+        if not isinstance(names, list) or not [n for n in names if str(n).strip()]:
+            return {"error": "Welche Lampen? Es fehlen die Namen."}
+        lights = [(st["entity_id"], (st.get("attributes") or {}).get("friendly_name") or "")
+                  for st in (await self._get(client, "states") or [])
+                  if st.get("entity_id", "").startswith("light.")]
+        ids = []
+        for name in names:
+            words = _words(str(name))
+            exact = [e for e, f in lights if f.lower() == str(name).strip().lower()]
+            hits = exact or [e for e, f in lights if _matches(f"{e} {f}", words)]
+            if len(hits) != 1:
+                return {"error": f"Die Lampe '{name}' ist nicht eindeutig." if hits
+                        else f"Die Lampe '{name}' habe ich nicht gefunden.",
+                        "lampen": [f or e for e, f in lights
+                                   if not hits or e in hits][:12]}
+            if hits[0] not in ids:
+                ids.append(hits[0])
+        return ids
+
+    async def change_lamps(self, client, search: Optional[str], mode: Optional[str],
+                           names) -> dict:
+        """Take lamps out of, add them to, or restrict the lamps the light.turn_on actions of
+        the one matching automation switch on. Colours and brightness stay as they are."""
+        if mode not in ("entfernen", "hinzufuegen", "nur"):
+            return {"error": "Es fehlt, ob Lampen entfernt, hinzugefügt oder nur diese "
+                             "geschaltet werden sollen."}
+        found = await self._find_one(client, search)
+        if isinstance(found, dict):
+            return found
+        aid, name, cfg = found
+        ids = await self._resolve_lamps(client, names)
+        if isinstance(ids, dict):
+            return ids
+        key = "actions" if "actions" in cfg or "action" not in cfg else "action"
+        lamp_actions = _light_on_actions(cfg.get(key))
+        if not lamp_actions:
+            return {"error": f"{name} schaltet keine Lampen direkt ein (zum Beispiel über eine "
+                             "Szene), deshalb kann ich die Lampen dort nicht ändern."}
+        if any(_lamp_ids(a) is None for a in lamp_actions):
+            return {"error": f"{name} wählt die Lampen über einen Bereich oder ein Gerät, "
+                             "das kann ich nicht ändern."}
+        if mode in ("entfernen", "nur"):
+            for a in lamp_actions:
+                _set_lamp_ids(a, [e for e in _lamp_ids(a) if (e in ids) == (mode == "nur")])
+            cfg[key] = _filter_light_actions(cfg.get(key), lambda a: bool(_lamp_ids(a)))
+        remaining = _light_on_actions(cfg[key])
+        if mode in ("hinzufuegen", "nur"):
+            have = {e for a in remaining for e in _lamp_ids(a)}
+            missing = [e for e in ids if e not in have]
+            if missing:
+                if not remaining:  # "nur" with lamps that none of the actions had
+                    return {"error": "Diese Lampen sind in der Automation nicht dabei, ich "
+                                     "ändere nichts."}
+                _set_lamp_ids(remaining[0], _lamp_ids(remaining[0]) + missing)
+        if not _light_on_actions(cfg[key]):
+            return {"error": "Dann würde die Automation gar keine Lampe mehr einschalten, "
+                             "deshalb ändere ich nichts."}
+        resp = await client.post(f"{self.api_url}/config/automation/config/{aid}", json=cfg,
+                                 headers=self._headers())
+        if resp.status_code >= 300:
+            raise RuntimeError(f"HA HTTP {resp.status_code}: {resp.text[:200]}")
+        now = sorted({e for a in _light_on_actions(cfg[key]) for e in _lamp_ids(a)})
+        logger.info("Automation %s: lamps %s %s", aid, mode, ids)
+        if self.notify:
+            try:
+                await self.notify("Leyla hat Lampen geändert",
+                                  f"{name}: Lampen {mode}: {', '.join(ids)}.")
+            except Exception as e:
+                logger.warning("Could not push the lamp change: %s", e)
+        return {"geaendert": name, "modus": mode, "lampen": ids, "schaltet_jetzt": now}
+
+    async def change_light(self, client, search: Optional[str], lamp: Optional[str],
+                           color: Optional[str], brightness) -> dict:
+        """Change colour, brightness or white tone in the light.turn_on actions of the one
+        automation that matches. Nothing else in the automation is touched."""
+        new = {}
+        if color:
+            parsed = parse_color(color)
+            if not parsed:
+                return {"error": "Die Farbe habe ich nicht verstanden."}
+            new.update(parsed)
+        if brightness is not None:
+            if not isinstance(brightness, int) or isinstance(brightness, bool) \
+                    or not 1 <= brightness <= 100:
+                return {"error": "Die Helligkeit muss zwischen 1 und 100 Prozent liegen."}
+            new["brightness_pct"] = brightness
+        if not new:
+            return {"error": "Es fehlt eine Farbe oder eine Helligkeit."}
+        found = await self._find_one(client, search)
+        if isinstance(found, dict):
+            return found
+        aid, name, cfg = found
         lamp_words = _words(lamp)
         actions = [a for a in _light_on_actions(cfg.get("actions") or cfg.get("action"))
                    if not lamp_words or _matches(_target_text(a), lamp_words)]
@@ -444,6 +580,9 @@ class TechnikChecker:
             if action == "zeit_aendern":
                 return await self.change_time(client, args.get("suche"), args.get("alt"),
                                               args.get("neu"))
+            if action == "lampen_aendern":
+                return await self.change_lamps(client, args.get("suche"), args.get("modus"),
+                                               args.get("lampen"))
             if action == "licht_aendern":
                 return await self.change_light(client, args.get("suche"), args.get("lampe"),
                                                args.get("farbe"), args.get("helligkeit"))
