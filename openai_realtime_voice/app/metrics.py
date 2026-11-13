@@ -23,6 +23,8 @@ def record(event: str, **fields) -> None:
                               for k, v in fields.items()}}, ensure_ascii=False)
         with open(PATH, "a", encoding="utf-8") as f:
             f.write(line + "\n")
+        if event != "interrupt":  # also in the add on log, which is the only place to read it from
+            logger.info("Metrics %s", line)
         if os.path.getsize(PATH) > MAX_BYTES:
             _trim()
     except Exception as e:  # pragma: no cover
