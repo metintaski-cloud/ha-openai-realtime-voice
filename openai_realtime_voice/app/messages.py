@@ -16,7 +16,6 @@ served as a WAV file on a small HTTP port and played with media_player.play_medi
 """
 import asyncio
 import hashlib
-import base64
 import io
 import json
 import logging

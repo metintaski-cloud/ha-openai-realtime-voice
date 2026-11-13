@@ -74,6 +74,7 @@ When you change the addon (behavior, config, contract, or fixes), update the add
 - `root/run.sh` — Entrypoint; reads bashio config and exports env for `app.main`.
 - `app/main.py` — Bridge logic, tools, WebSocket handlers.
 - `app/night.py` — Night check options and `NightMixin` (the 23:30 check, mixed into the bridge; `NIGHT_WAIT_S` lives here).
+- `app/technik.py` — the `technik_pruefen` tool: reads and writes the Home Assistant automation configs (network). `app/automation_edit.py` — its pure helpers (search words, colours, lamp and fan step handling, clock times; dicts in and out, no network); names are imported into `technik.py`.
 - `app/audio_recorder.py` — Optional WAV recording when `enable_recording` is true.
 - `requirements.txt` — websockets, httpx, python-dotenv.
 - `requirements-dev.txt` — for tests: pytest, pytest-asyncio.
