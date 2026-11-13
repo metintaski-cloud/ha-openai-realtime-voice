@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 class AudioRecorder:
     """Records audio to WAV files for debugging."""
     
-    def __init__(self, output_dir: str = "recordings"):
+    def __init__(self, output_dir: str = "recordings", record_output: bool = True):
         """
         Initialize audio recorder.
         
@@ -19,6 +19,8 @@ class AudioRecorder:
             output_dir: Directory to save recordings
         """
         self.output_dir = output_dir
+        self.record_output = record_output
+        self.input_path: Optional[str] = None
         os.makedirs(output_dir, exist_ok=True)
         
         # File handles for recording
@@ -41,10 +43,15 @@ class AudioRecorder:
             self.output_dir,
             f"input_{client_id}_{timestamp}.wav"
         )
+        self.input_path = input_filename
         self._input_file = open(input_filename, "wb")
         self._write_wav_header(self._input_file, sample_rate=24000, channels=1, bits_per_sample=16)
         self._input_bytes = 0
         
+        if not self.record_output:
+            logger.info("Started input recording: %s", input_filename)
+            return
+
         # Output audio (from OpenAI) - 24kHz, 16-bit, mono
         output_filename = os.path.join(
             self.output_dir,

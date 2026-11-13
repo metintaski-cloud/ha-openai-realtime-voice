@@ -26,6 +26,7 @@ import logging
 import time
 import random
 import re
+import shutil
 import uuid
 from datetime import datetime
 from typing import Optional
@@ -83,6 +84,7 @@ NIGHT_PROMPT = (
     "lass es so und sag kurz tamam. Antwortet niemand, sag nichts mehr."
 )
 MAX_SESSION_S = 600.0
+FALSE_WAKE_MAX_FILES = 300  # oldest false wake recordings are dropped beyond this
 
 # GPT Live is full duplex and wants a continuous input stream. The Voice PE mutes its
 # mic while it plays audio, so the bridge fills such gaps with silence.
@@ -301,9 +303,17 @@ class LiveVoiceBridge:
             self.todo_sync = todo_sync.TodoSync(self.memory, state_path=os.path.join(
                 os.path.dirname(self.memory.path) or ".", "todo_sync_state.json"))
         self._memory_tasks: set = set()
+        self.record_false_wakes = os.environ.get("RECORD_FALSE_WAKES", "true").lower() == "true"
+        self.false_wake_dir = os.environ.get("FALSE_WAKE_DIR", "/data/false_wakes")
         self.recorder: Optional[AudioRecorder] = None
         if self.enable_recording:
             self.recorder = AudioRecorder(output_dir="recordings")
+        elif self.record_false_wakes:
+            # only the microphone, in a temp folder; kept only when nobody answered (see
+            # _finish_recording), so real conversations are deleted right away
+            self.recorder = AudioRecorder(
+                output_dir=os.environ.get("RECORD_TMP_DIR", "/tmp/leyla_input"),
+                record_output=False)
 
         self._active_sessions: dict[str, websockets.WebSocketServerProtocol] = {}
         self._background: set = set()
@@ -1564,6 +1574,7 @@ class LiveVoiceBridge:
             started = await self._start_session(live_ws)
             if self._started_as_followup:
                 state["no_speech_s"] = FOLLOWUP_NO_SPEECH_S  # time to listen and answer
+                state["followup"] = True
             self._live_sessions[client_id] = (live_ws, state)
             session = started.get("session") or {}
             logger.info(
@@ -1625,12 +1636,15 @@ class LiveVoiceBridge:
                     await live_ws.close()
                 except Exception:
                     pass
+            rec_path = None
             if self.recorder:
                 self.recorder.stop_recording()
+                rec_path = self.recorder.input_path
             if self.tv.available:
                 self._in_background(self.tv.unduck())
             duration = time.monotonic() - start_time
             reason = end_reason.get("reason", "unknown")
+            self._finish_recording(rec_path, reason, state)
             try:
                 self._schedule_memory_update(state, reason)
             except Exception as e:
@@ -1643,6 +1657,30 @@ class LiveVoiceBridge:
                 "Session ended: %s (duration: %.1fs, reason: %s)",
                 client_id, duration, reason,
             )
+
+    def _finish_recording(self, path: Optional[str], reason: str, state: dict) -> None:
+        """Keep the microphone recording only of a false wake (the wake word fired, nobody
+        spoke, and Leyla did not start it herself), as training material for a better wake
+        word model. Every other recording is deleted right away. With enable_recording on,
+        everything stays (debug mode)."""
+        if not path or self.enable_recording or not os.path.exists(path):
+            return
+        try:
+            false_wake = (reason == "no_speech" and not state.get("followup")
+                          and os.path.getsize(path) > 48000)  # more than about a second
+            if not false_wake:
+                os.remove(path)
+                return
+            os.makedirs(self.false_wake_dir, exist_ok=True)
+            dest = os.path.join(self.false_wake_dir, "falsewake_" + os.path.basename(path)
+                                .replace("input_", "", 1))
+            shutil.move(path, dest)
+            kept = sorted(f for f in os.listdir(self.false_wake_dir) if f.endswith(".wav"))
+            for old in kept[:-FALSE_WAKE_MAX_FILES]:
+                os.remove(os.path.join(self.false_wake_dir, old))
+            logger.info("False wake recorded: %s", os.path.basename(dest))
+        except Exception as e:
+            logger.warning("Could not handle the recording %s: %s", path, e)
 
     def _in_background(self, coro) -> None:
         task = asyncio.create_task(coro)

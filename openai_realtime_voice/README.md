@@ -41,6 +41,7 @@ In **Supervisor** → **OpenAI Realtime Voice** → **Configuration**:
 - `light_entities`: Comma separated light entities the assistant may control, in order (first one is "Lampe 1"). Needs `homeassistant_api: true`.
 - `rf_host`, `rf_frequency`: Broadlink RM4 Pro for the ceiling fan remote (433.87 MHz). Buttons are learned three times each via `http://<host>:8081/rf/learn?name=<button>_<n>`; the assistant rotates through the captures because the fan ignores a frame identical to the last one. Tool `ventilator_steuern`: off, speed 1 to 6, power, light, natural wind, direction, timer 1/2/4 h.
 - `enable_recording`: Set to `true` to record input/output WAVs under `recordings/` (debug only)
+- `record_false_wakes`: Default `true`. Keeps only the microphone audio of false wakes (wake word fired, nobody spoke) under `/data/false_wakes/` as training material for the wake word model; all other recordings are deleted right away
 
 Then start the addon.
 
