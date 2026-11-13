@@ -11,6 +11,7 @@
 #include "freertos/task.h"
 #include "esp_system.h"
 #endif
+#include "mic_agc.h"
 #include <string>
 #include <vector>
 #include <queue>
