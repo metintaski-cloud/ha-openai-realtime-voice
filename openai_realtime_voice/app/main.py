@@ -246,6 +246,10 @@ def pcm_level(pcm: bytes) -> tuple[int, int]:
     return rms, peak
 
 
+SPEECH_VOICES = {"alloy", "echo", "fable", "onyx", "nova", "shimmer", "coral", "verse",
+                 "ballad", "ash", "sage", "marin", "cedar"}
+
+
 class LiveVoiceBridge:
     """Bridges ESP32 WebSocket to the OpenAI GPT Live API."""
 
@@ -743,11 +747,13 @@ class LiveVoiceBridge:
     async def _speak_direct(self, text: str) -> bytes:
         """Fast announcement: the text is spoken as given by the speech endpoint (about 1 to 2 s,
         24 kHz PCM), no live session. Used for events with direkt: true."""
+        # GPT Live voices such as "Brise" do not exist on the speech endpoint: use marin.
+        voice = self.voice if self.voice in SPEECH_VOICES else "marin"
         async with httpx.AsyncClient(timeout=20.0) as client:
             r = await client.post(
                 "https://api.openai.com/v1/audio/speech",
                 headers={"Authorization": f"Bearer {self.openai_api_key}"},
-                json={"model": "gpt-4o-mini-tts", "voice": self.voice, "input": text,
+                json={"model": "gpt-4o-mini-tts", "voice": voice, "input": text,
                       "response_format": "pcm",
                       "instructions": ("Sprich ganz ruhig, leise, weich und natürlich, wie eine "
                                        "liebe Enkelin oder Tochter, die ihrer Mutter freundlich "
