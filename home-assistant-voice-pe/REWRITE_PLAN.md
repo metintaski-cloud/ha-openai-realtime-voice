@@ -23,4 +23,4 @@ Goal: an independent component written by us, more efficient and faster than the
 5. Switch the live config, watch the sensors for a few days, then remove the old component and its mentions, and create the new repo with the own license (history of the old repo stays as an archive).
 
 ## Status
-Not started (13 Nov 2026). Baseline collection runs since 13 Nov 2026 22:30.
+Step 1 done: specification in `leyla_voice_spec.md` (13 Nov 2026). Next: step 2, the pure logic with tests. Baseline collection runs since 13 Nov 2026 22:30.
