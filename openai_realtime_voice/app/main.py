@@ -188,6 +188,21 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
     """Bridges ESP32 WebSocket to the OpenAI GPT Live API."""
 
     def __init__(self) -> None:
+        self._init_settings()
+        self._init_devices()
+        self._init_session_state()
+        self._init_memory()
+        self._init_recording()
+
+        self._active_sessions: dict[str, websockets.WebSocketServerProtocol] = {}
+        self._background: set = set()
+        self._tools = self._build_tools()
+
+        if not self.openai_api_key:
+            raise ValueError("OPENAI_API_KEY environment variable is required")
+
+    def _init_settings(self) -> None:
+        """Options from the environment (config.yaml, run.sh)."""
         self.openai_api_key = os.environ.get("OPENAI_API_KEY", "")
         self.websocket_host = os.environ.get("WEBSOCKET_HOST", "0.0.0.0")
         self.websocket_port = int(os.environ.get("WEBSOCKET_PORT", "8080"))
@@ -215,6 +230,9 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self._warm = None  # (websocket, opened at)
         self._warm_task = None
         self.memory_model = os.environ.get("MEMORY_MODEL", "gpt-6-luna")
+
+    def _init_devices(self) -> None:
+        """The devices Leyla controls and the message center that connects them to HA."""
         self.admin_key, self.monthly_budget = costs.config_from_env()
         self.lights = lights.LightController(lights.entities_from_env())
         self.rf = rf.remote_from_env()
@@ -232,6 +250,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self.messages.before_play = self._tv_down_for_announcement
         self.messages.after_play = self._tv_up_after_announcement
         self.messages.converse = self._converse
+
+    def _init_session_state(self) -> None:
         # Home Assistant action of the Voice PE that starts a conversation (see the
         # api actions in voice_pe_config.yaml)
         self.conversation_service = (os.environ.get("CONVERSATION_SERVICE") or
@@ -243,6 +263,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self._night: Optional[dict] = None  # the 23:00 question is open, collects answers
         if self.fan.power_sensor:
             self.messages.state_listeners[self.fan.power_sensor] = self.fan.on_power_state
+
+    def _init_memory(self) -> None:
         self.memory = memory.MemoryStore(os.environ.get("MEMORY_PATH", "/data/memory.json"))
         self.cleaner = cleanup.Cleaner(
             self.memory, self.openai_api_key, [self.memory_model, self.backend_model],
@@ -256,6 +278,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             self.todo_sync = todo_sync.TodoSync(self.memory, state_path=os.path.join(
                 os.path.dirname(self.memory.path) or ".", "todo_sync_state.json"))
         self._memory_tasks: set = set()
+
+    def _init_recording(self) -> None:
         self.record_false_wakes = os.environ.get("RECORD_FALSE_WAKES", "true").lower() == "true"
         self.false_wake_dir = os.environ.get("FALSE_WAKE_DIR", "/data/false_wakes")
         self.recorder: Optional[AudioRecorder] = None
@@ -268,12 +292,6 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 output_dir=os.environ.get("RECORD_TMP_DIR", "/tmp/leyla_input"),
                 record_output=False)
 
-        self._active_sessions: dict[str, websockets.WebSocketServerProtocol] = {}
-        self._background: set = set()
-        self._tools = self._build_tools()
-
-        if not self.openai_api_key:
-            raise ValueError("OPENAI_API_KEY environment variable is required")
 
     def _choose_greeting(self) -> str:
         if not self.greeting_words:
@@ -287,60 +305,52 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         logger.info("Greeting word: %s", word)
         return greeting_instruction(word)
 
+    def _capabilities(self) -> list:
+        """What Leyla can do, in the order she is told: (available, tool, hint for the
+        backend, what she says she can do). A tool of None means a built in one."""
+        lamp_count = len(self.lights.entities)
+        return [
+            (self.enable_web_search, {"type": "web_search"}, "",
+             "Fragen, die aktuelle Infos aus dem Internet brauchen"),
+            (bool(self.admin_key), costs.COSTS_TOOL, costs.COSTS_BACKEND_HINT,
+             "die OpenAI Kosten"),
+            (self.lights.available, lights.LIGHTS_TOOL,
+             lights.LIGHTS_BACKEND_HINT.format(count=lamp_count) if self.lights.available else "",
+             f"die {lamp_count} Stehlampen (an, aus, Helligkeit, warm oder kalt, Farben)"),
+            (self.fan.available, fan.FAN_TOOL, fan.FAN_BACKEND_HINT,
+             "den Deckenventilator (aus, Stufe 1 bis 6, Licht am Ventilator, "
+             "Naturwind, Drehrichtung, Timer; ein Strommesser zeigt, was an ist, "
+             "und kennt die Stromkosten)"),
+            (self.tv.available,
+             tv.build_tool(self.tv.channels) if self.tv.available else None,
+             tv.TV_BACKEND_HINT.format(names=self.tv.names) if self.tv.available else "",
+             f"den Fernseher (an, aus, Sender {self.tv.names}, lauter, leiser, stumm)"),
+            (self.vacuum.available, vacuum.VACUUM_TOOL, vacuum.VACUUM_BACKEND_HINT,
+             "den Saugroboter (saugen, wischen, einzelne Räume, zur Station, "
+             "Akku, Wassertanks, Bürsten und Filter)"),
+            (self.purifier.available, purifier.PURIFIER_TOOL, purifier.PURIFIER_BACKEND_HINT,
+             "den Luftreiniger (an, aus, Auto, Schlaf, Turbo, Stufe 1 bis 4, "
+             "Timer, Luftqualität)"),
+            (self.technik.available, technik.TECHNIK_TOOL, technik.TECHNIK_BACKEND_HINT,
+             "die Technik im Haus prüfen (Automationen, Gerätezustände, nur lesen)"),
+            (self.enable_memory and bool(self.code_phrase), cleanup.CLEANUP_TOOL,
+             cleanup.CLEANUP_BACKEND_HINT,
+             "das Gedächtnis aufräumen (nur Metin, nach dem Codewort)"),
+            (self.messages.available, messages.TO_METIN_TOOL, messages.TO_METIN_BACKEND_HINT,
+             "Nachrichten an Metin"),
+        ]
+
     def _session_start(self, extra: str = "") -> dict:
         """Build the session.start payload for GPT Live."""
         tools: list[dict] = [END_CONVERSATION_TOOL]
-        if self.enable_web_search:
-            tools.append({"type": "web_search"})
         backend_instructions = self.backend_instructions
         devices: list[str] = []
-        live_extra = ""
-        if self.enable_web_search:
-            devices.append("Fragen, die aktuelle Infos aus dem Internet brauchen")
-        if self.admin_key:
-            tools.append(costs.COSTS_TOOL)
-            backend_instructions += costs.COSTS_BACKEND_HINT
-            devices.append("die OpenAI Kosten")
-        if self.lights.available:
-            tools.append(lights.LIGHTS_TOOL)
-            backend_instructions += lights.LIGHTS_BACKEND_HINT.format(
-                count=len(self.lights.entities))
-            devices.append(f"die {len(self.lights.entities)} Stehlampen (an, aus, Helligkeit, "
-                           "warm oder kalt, Farben)")
-        if self.fan.available:
-            tools.append(fan.FAN_TOOL)
-            backend_instructions += fan.FAN_BACKEND_HINT
-            devices.append("den Deckenventilator (aus, Stufe 1 bis 6, Licht am Ventilator, "
-                           "Naturwind, Drehrichtung, Timer; ein Strommesser zeigt, was an ist, "
-                           "und kennt die Stromkosten)")
-        if self.tv.available:
-            tools.append(tv.build_tool(self.tv.channels))
-            backend_instructions += tv.TV_BACKEND_HINT.format(names=self.tv.names)
-            devices.append(f"den Fernseher (an, aus, Sender {self.tv.names}, lauter, leiser, "
-                           "stumm)")
-        if self.vacuum.available:
-            tools.append(vacuum.VACUUM_TOOL)
-            backend_instructions += vacuum.VACUUM_BACKEND_HINT
-            devices.append("den Saugroboter (saugen, wischen, einzelne Räume, zur Station, "
-                           "Akku, Wassertanks, Bürsten und Filter)")
-        if self.purifier.available:
-            tools.append(purifier.PURIFIER_TOOL)
-            backend_instructions += purifier.PURIFIER_BACKEND_HINT
-            devices.append("den Luftreiniger (an, aus, Auto, Schlaf, Turbo, Stufe 1 bis 4, "
-                           "Timer, Luftqualität)")
-        if self.technik.available:
-            tools.append(technik.TECHNIK_TOOL)
-            backend_instructions += technik.TECHNIK_BACKEND_HINT
-            devices.append("die Technik im Haus prüfen (Automationen, Gerätezustände, nur lesen)")
-        if self.enable_memory and self.code_phrase:
-            tools.append(cleanup.CLEANUP_TOOL)
-            backend_instructions += cleanup.CLEANUP_BACKEND_HINT
-            devices.append("das Gedächtnis aufräumen (nur Metin, nach dem Codewort)")
-        if self.messages.available:
-            tools.append(messages.TO_METIN_TOOL)
-            backend_instructions += messages.TO_METIN_BACKEND_HINT
-            devices.append("Nachrichten an Metin")
-            live_extra += self.messages.live_hint()
+        for available, tool, hint, what in self._capabilities():
+            if available:
+                tools.append(tool)
+                backend_instructions += hint
+                devices.append(what)
+        live_extra = self.messages.live_hint() if self.messages.available else ""
         self._devices = (devices, self.fan.available, self.tv.available,
                          self.messages.available)
         session = {
