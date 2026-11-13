@@ -67,3 +67,55 @@ async def test_suction_is_always_turbo():
 async def test_status_lists_rooms():
     r = await FakeVac().run({"action": "status", "rooms": [], "modus": None, "staerke": None})
     assert r["rooms"] == ["küche", "flur"] and r["battery_percent"] == 100
+
+
+async def test_status_refreshes_first_and_reports_how_old_the_data_is():
+    class Old(FakeVac):
+        async def _state(self, client, eid):
+            st = await super()._state(client, eid)
+            if eid == "vacuum.x60":
+                st = dict(st, last_reported="2026-11-13T10:00:00+00:00")
+            return st
+
+    v = Old()
+    r = await v.run({"action": "status", "rooms": [], "modus": None, "staerke": None})
+    assert v.calls[0][:2] == ("homeassistant", "update_entity")
+    assert "vacuum.x60" in v.calls[0][2]["entity_id"]
+    assert r["refreshed"] is True and r["data_age_minutes"] > 15 and "warning" in r
+
+
+async def test_fresh_data_has_no_warning():
+    import datetime as dt
+
+    class Fresh(FakeVac):
+        async def _state(self, client, eid):
+            st = await super()._state(client, eid)
+            if eid == "vacuum.x60":
+                st = dict(st, last_reported=dt.datetime.now(dt.timezone.utc).isoformat())
+            return st
+
+    r = await Fresh().run({"action": "status", "rooms": [], "modus": None, "staerke": None})
+    assert r["data_age_minutes"] == 0 and "warning" not in r
+
+
+async def test_unreachable_robot_is_said_plainly_not_answered_with_old_values():
+    class Gone(FakeVac):
+        async def _state(self, client, eid):
+            if eid == "vacuum.x60":
+                return {"state": "unavailable", "attributes": {}}
+            return await super()._state(client, eid)
+
+    r = await Gone().run({"action": "status", "rooms": [], "modus": None, "staerke": None})
+    assert r["reachable"] is False and "nicht erreichbar" in r["error"]
+    assert "battery_percent" not in r
+
+
+async def test_a_failing_refresh_does_not_break_the_status():
+    class NoRefresh(FakeVac):
+        async def _service(self, client, domain, service, data):
+            if service == "update_entity":
+                raise RuntimeError("HA HTTP 500")
+            await super()._service(client, domain, service, data)
+
+    r = await NoRefresh().run({"action": "status", "rooms": [], "modus": None, "staerke": None})
+    assert r["refreshed"] is False and r["battery_percent"] == 100

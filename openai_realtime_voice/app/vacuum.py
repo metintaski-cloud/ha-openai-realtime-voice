@@ -7,15 +7,20 @@ battery, what it is doing, water tanks, dust bag and how much life the brushes a
 filter have left. Rooms come from the vacuum's own map (attribute "rooms"), so names
 like Küche or Flur work, and the common Turkish names are mapped to them.
 """
+import asyncio
 import logging
 import os
 from typing import Optional
 
 import httpx
 
+from app.freshness import STALE_AFTER_MIN, age_minutes
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_ENTITY = "vacuum.x60_pro_ultra_complete"
+
+REFRESH_TIMEOUT_S = 6.0
 
 MODES = {
     "saugen": "sweeping",
@@ -86,7 +91,7 @@ VACUUM_BACKEND_HINT = (
     "werden' read the status or wartung. 'Kanten und Ecken' or 'kenarları temizle' needs no "
     "special mode: the normal clean with modus saugen_und_wischen already cleans the edges "
     "with the extended mop, so start that (rooms if named) and say he cleans the edges too. "
-    "Report only what the result says, briefly."
+    "Report only what the result says, briefly. The status says how old its data is (data_age_minutes). If it has a warning, or says the robot is not reachable, say exactly that and never give old values as if they were current."
 )
 
 
@@ -176,8 +181,28 @@ class VacuumController:
     async def _sensor(self, client, name: str) -> str:
         return (await self._state(client, f"sensor.{self.prefix}_{name}")).get("state", "unknown")
 
+    async def _refresh(self, client) -> bool:
+        """Ask the integration for fresh data before reading, so the answer is not a cached
+        value from before a gap in the connection. Never fails the status."""
+        entities = [self.entity, f"sensor.{self.prefix}_current_room",
+                    f"sensor.{self.prefix}_cleaning_progress"]
+        try:
+            await asyncio.wait_for(
+                self._service(client, "homeassistant", "update_entity", {"entity_id": entities}),
+                timeout=REFRESH_TIMEOUT_S)
+            return True
+        except Exception as e:
+            logger.info("Vacuum refresh did not work: %s", e)
+            return False
+
     async def status(self, client, maintenance: bool = False) -> dict:
+        refreshed = await self._refresh(client)
         st = await self._state(client, self.entity)
+        if st.get("state") in ("unavailable", "unknown"):
+            return {"reachable": False,
+                    "error": "Der Roboter ist gerade nicht erreichbar, die Verbindung zu seiner "
+                             "Cloud ist unterbrochen. Seinen Stand kenne ich deshalb nicht."}
+        age = age_minutes(st)
         a = st.get("attributes", {})
         info = {
             "state": st.get("state"),
@@ -190,7 +215,12 @@ class VacuumController:
             "cleaning_mode": a.get("cleaning_mode"),
             "suction_level": a.get("suction_level"),
             "rooms": [r for r in map_rooms(a.get("rooms"))],
+            "data_age_minutes": age,
+            "refreshed": refreshed,
         }
+        if age is not None and age >= STALE_AFTER_MIN:
+            info["warning"] = (f"Die Daten sind {age} Minuten alt, die Verbindung zum Roboter "
+                               "hakt vielleicht.")
         if maintenance:
             info.update({
                 "main_brush_left_percent": a.get("main_brush_left"),

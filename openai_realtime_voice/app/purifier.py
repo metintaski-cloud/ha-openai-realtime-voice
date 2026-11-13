@@ -4,11 +4,14 @@ Air purifier (Dreo 530S through the HACS integration hass-dreo).
 Leyla switches it on or off, sets auto, sleep or turbo mode or a level from 1 to 4,
 sets an off timer and tells the air quality from its PM2.5 sensor.
 """
+import asyncio
 import logging
 import os
 from typing import Optional
 
 import httpx
+
+from app.freshness import STALE_AFTER_MIN, age_minutes
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +44,8 @@ PURIFIER_BACKEND_HINT = (
     " You can control the air purifier with luftreiniger: on, off, mode auto, schlaf (quiet "
     "for the night) or turbo, level 1 to 4, an off timer, and the status with the air quality. "
     "For 'wie ist die Luft' or 'hava nasıl' read the status and say the quality in simple "
-    "words. Report only what the result says, briefly."
+    "words. Report only what the result says, briefly. If the result has a warning or says the "
+    "purifier is not reachable, say exactly that and never give old values as current."
 )
 
 
@@ -86,13 +90,26 @@ class PurifierController:
             raise RuntimeError(f"HA HTTP {resp.status_code}: {resp.text[:200]}")
 
     async def status(self, client) -> dict:
+        try:  # fresh data first, a cloud device can lag; never fails the status
+            await asyncio.wait_for(self._service(client, "homeassistant", "update_entity", {
+                "entity_id": [self.entity, f"sensor.{self.name}_feinstaub"]}), timeout=6.0)
+        except Exception as e:
+            logger.info("Purifier refresh did not work: %s", e)
         st = await self._state(client, self.entity)
+        if st.get("state") in ("unavailable", "unknown"):
+            return {"reachable": False,
+                    "error": "Der Luftreiniger ist gerade nicht erreichbar. Seinen Stand kenne "
+                             "ich deshalb nicht."}
         a = st.get("attributes", {})
         pm = (await self._state(client, f"sensor.{self.name}_feinstaub")).get("state")
         pct = a.get("percentage")
-        return {"state": st.get("state"), "mode": a.get("preset_mode"),
+        age = age_minutes(st)
+        info = {"state": st.get("state"), "mode": a.get("preset_mode"),
                 "level": round(pct / 25) if isinstance(pct, (int, float)) else None,
-                "pm25": pm, "air_quality": air_quality(pm)}
+                "pm25": pm, "air_quality": air_quality(pm), "data_age_minutes": age}
+        if age is not None and age >= STALE_AFTER_MIN:
+            info["warning"] = f"Die Daten sind {age} Minuten alt."
+        return info
 
     async def run(self, args: dict) -> dict:
         action = args.get("action") or "status"
