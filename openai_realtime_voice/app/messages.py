@@ -110,6 +110,8 @@ class MessageCenter:
         self.audio: dict[str, bytes] = {}
         self._wake = asyncio.Event()
         self.on_command: Optional[Callable[[dict], Awaitable[dict]]] = None
+        # Fast path: text to 24 kHz PCM without a live session (set by main).
+        self.direct: Optional[Callable[[str], Awaitable[bytes]]] = None
         # entity_id -> callback(new state string), for state_changed events
         self.state_listeners: dict[str, Callable[[str], None]] = {}
         self.mute_switch = ""
@@ -220,11 +222,19 @@ class MessageCenter:
             logger.warning("Could not tell Metin about the confirmation: %s", e)
         return True
 
-    async def say(self, text: str, bilingual: bool = False) -> None:
+    async def say(self, text: str, bilingual: bool = False, direct: bool = False) -> None:
         """One announcement from an automation (HA event leyla_announce), no repeats."""
         text = (text or "").strip()
         if not text:
             return
+        if direct and self.direct and not bilingual:
+            try:
+                pcm = await self.direct(text)
+                await self._play(pcm)
+                logger.info("Announced directly: %r", text)
+                return
+            except Exception as e:
+                logger.warning("Direct announcement failed, using GPT Live: %s", e)
         language = ("zweisprachig: erst auf Deutsch, dann dasselbe noch einmal auf Türkisch, "
                     "egal in welcher Sprache der Inhalt unten geschrieben ist" if bilingual else
                     "in genau der Sprache, in der der Inhalt unten geschrieben ist; ist er "
@@ -380,7 +390,8 @@ class MessageCenter:
                                     "Command failed: %s", t.exception()))
                         elif ev.get("event_type") == "leyla_announce":
                             task = asyncio.create_task(self.say(data.get("text", ""),
-                                                             bool(data.get("zweisprachig"))))
+                                                             bool(data.get("zweisprachig")),
+                                                                bool(data.get("direkt"))))
                             task.add_done_callback(
                                 lambda t: t.exception() and logger.warning(
                                     "Announcement failed: %s", t.exception()))

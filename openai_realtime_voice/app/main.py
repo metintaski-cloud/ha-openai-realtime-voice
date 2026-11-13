@@ -291,6 +291,7 @@ class LiveVoiceBridge:
             notify=self.messages.push if self.messages.available else None)
         self.technik.lamp_count = len(self.lights.entities)
         self.messages.on_command = self._automation_command
+        self.messages.direct = self._speak_direct
         self.messages.converse = self._converse
         # Home Assistant action of the Voice PE that starts a conversation (see the
         # api actions in voice_pe_config.yaml)
@@ -738,6 +739,26 @@ class LiveVoiceBridge:
         pcm = pcm[:loud_end + BYTES_PER_SEC // 4]  # drop trailing silence
         logger.info("Announcement audio: %.1f s", len(pcm) / (SAMPLE_RATE * 2))
         return bytes(pcm)
+
+    async def _speak_direct(self, text: str) -> bytes:
+        """Fast announcement: the text is spoken as given by the speech endpoint (about 1 to 2 s,
+        24 kHz PCM), no live session. Used for events with direkt: true."""
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            r = await client.post(
+                "https://api.openai.com/v1/audio/speech",
+                headers={"Authorization": f"Bearer {self.openai_api_key}"},
+                json={"model": "gpt-4o-mini-tts", "voice": self.voice, "input": text,
+                      "response_format": "pcm",
+                      "instructions": ("Sprich ganz ruhig, leise, weich und natürlich, wie eine "
+                                       "liebe Enkelin oder Tochter, die ihrer Mutter freundlich "
+                                       "und zugewandt etwas sagt. Normale Lautstärke, nicht "
+                                       "aufgeregt, nicht laut, nicht wie eine Durchsage.")})
+            r.raise_for_status()
+            pcm = r.content
+        if len(pcm) < SAMPLE_RATE:
+            raise RuntimeError("speech audio too short")
+        logger.info("Direct announcement audio: %.1f s", len(pcm) / (SAMPLE_RATE * 2))
+        return pcm
 
     async def _automation_command(self, data: dict) -> dict:
         """Event leyla_command from a Home Assistant automation, e.g.

@@ -79,6 +79,22 @@ async def test_say(tmp_path):
         server.shutdown()
 
 
+async def test_say_direct(tmp_path):
+    _HA.calls.clear()
+    server = _server(19994)
+    spoken = []
+    mc = _center(tmp_path, 19994, spoken)
+
+    async def direct(text):
+        return b"\x01\x00" * 100
+    mc.direct = direct
+    try:
+        await mc.say("Anne, Metin seni arıyor.", direct=True)
+        assert not spoken and _HA.calls[-1][1] == "play_media"
+    finally:
+        server.shutdown()
+
+
 async def test_message_brought_up_in_a_conversation(tmp_path):
     spoken = []
 
