@@ -21,6 +21,6 @@ def test_record_never_raises(monkeypatch):
 
 def test_mic_summary():
     out = metrics.mic_summary({"speaking": [(100, 500), (300, 900), (200, 700)], "quiet": []})
-    assert out == {"mic_speaking_rms_median": 200, "mic_speaking_peak_max": 900,
+    assert out == {"mic_speaking_rms_avg_median": 200, "mic_speaking_peak_max": 900,
                    "mic_speaking_windows": 3}
     assert metrics.mic_summary(None) == {}

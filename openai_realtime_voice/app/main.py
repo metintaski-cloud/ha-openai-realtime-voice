@@ -590,6 +590,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         """Every 2 s: log the loudest microphone chunk and how much silence was filled in."""
         rms, peak = pcm_level(message)
         level["rms"] = max(level["rms"], rms)
+        level["sum"] = level.get("sum", 0) + rms
         level["peak"] = max(level["peak"], peak)
         if rms >= VOICE_RMS:
             state["last_voice_at"] = time.monotonic()
@@ -600,10 +601,13 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             state["silence_filled_s"] = 0.0
             # Same number split by whether Leyla was speaking: tells her own voice in the
             # microphone (echo, housing vibration) from the room.
-            speaking = time.monotonic() - state["last_audio_time"] < 1.5
+            # (average rms over the window, peak); the tail of her voice in the room counts
+            # as speaking too, hence 2.5 s after the last reply audio arrived.
+            speaking = time.monotonic() - state["last_audio_time"] < 2.5
             state.setdefault("mic_stats", {"speaking": [], "quiet": []})[
-                "speaking" if speaking else "quiet"].append((level["rms"], level["peak"]))
-            level.update(start=time.monotonic(), rms=0, peak=0, chunks=0)
+                "speaking" if speaking else "quiet"].append(
+                    (level["sum"] / max(level["chunks"], 1), level["peak"]))
+            level.update(start=time.monotonic(), rms=0, peak=0, chunks=0, sum=0)
 
     async def _send_mic_audio(self, live_ws, message: bytes, state: dict) -> None:
         """One microphone chunk to GPT Live (and the debug recording)."""
