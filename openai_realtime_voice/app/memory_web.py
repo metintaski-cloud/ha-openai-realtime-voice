@@ -90,34 +90,35 @@ def move_items(store: memory.MemoryStore, lists) -> bool:
 PAGE = """<!doctype html>
 <html lang="de"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#111111">
+<meta name="theme-color" content="#08103a">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" type="image/png" sizes="512x512" href="/icon.png?v=5">
 <link rel="apple-touch-icon" href="/icon.png?v=5">
 <title>Leyla Gedächtnis</title>
 <style>
-:root{color-scheme:dark}
-body{margin:0;background:#111;color:#eee;font:17px/1.4 system-ui,sans-serif;padding-bottom:90px}
-h1{font-size:20px;margin:0;padding:16px}
-h2{font-size:15px;margin:18px 16px 6px;color:#9ab;text-transform:uppercase;letter-spacing:.04em}
-label{display:flex;gap:14px;align-items:flex-start;padding:12px 16px;border-bottom:1px solid #262626}
-label.on{background:#2a1a1a}
-input{width:24px;height:24px;flex:none;margin-top:2px}
-.t{flex:1;word-break:break-word}.t small{display:block;color:#9ab}
-.empty{padding:12px 16px;color:#777}
+:root{color-scheme:dark;--cy:#22d3ee;--bl:#3b82f6;--vi:#a855f7;--mg:#d946ef}
+body{margin:0;background:radial-gradient(120% 60% at 50% 0,#14206b 0,#08103a 45%,#040822 100%) fixed;color:#e8ecff;font:17px/1.4 system-ui,sans-serif;padding-bottom:96px}
+header{display:flex;align-items:center;gap:12px;padding:16px}
+header img{width:44px;height:44px;border-radius:11px;box-shadow:0 0 14px #3b82f688}
+h1{font-size:21px;margin:0;background:linear-gradient(90deg,var(--cy),var(--vi),var(--mg));-webkit-background-clip:text;background-clip:text;color:transparent}
+h2{font-size:14px;margin:22px 16px 6px;color:var(--cy);text-transform:uppercase;letter-spacing:.08em;text-shadow:0 0 10px #22d3ee66}
+label{display:flex;gap:14px;align-items:flex-start;margin:0 12px 8px;padding:12px 14px;background:#0d1750cc;border:1px solid #3b82f655;border-radius:12px;box-shadow:0 0 12px #3b82f622 inset}
+label.on{background:#3a1457cc;border-color:var(--mg);box-shadow:0 0 14px #d946ef55}
+input[type=checkbox]{width:24px;height:24px;flex:none;margin-top:2px;accent-color:var(--vi)}
+.t{flex:1;word-break:break-word}.t b{color:#fff}.t small{display:block;color:#9fb4ff}
+.empty{margin:0 16px;padding:8px 0;color:#7b8ccf}
 .list:has(label) .empty{display:none}
 label{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-textarea{-webkit-user-select:text;user-select:text}
-.ph{margin:4px 16px;border:2px dashed #567;border-radius:8px}
-.float{position:fixed;left:8px;right:8px;z-index:10;pointer-events:none;background:#1f2a33;border:1px solid #567;border-radius:10px;box-shadow:0 6px 18px #000a;opacity:.96}
-textarea{width:100%;box-sizing:border-box;min-height:140px;font:inherit;color:#eee;background:#1d1d1d;border:1px solid #567;border-radius:8px;padding:8px}
-.row{display:flex;gap:10px;margin-top:8px}.row button{padding:10px;font-size:16px;background:#2d6a4f}.row .no{background:#444}
-#bar{position:fixed;left:0;right:0;bottom:0;padding:12px 16px;background:#1b1b1b;border-top:1px solid #333}
-button{width:100%;font-size:18px;padding:14px;border:0;border-radius:10px;background:#c0392b;color:#fff}
-button:disabled{background:#3a3a3a;color:#888}
+textarea{-webkit-user-select:text;user-select:text;width:100%;box-sizing:border-box;min-height:140px;font:inherit;color:#fff;background:#060c33;border:1px solid var(--bl);border-radius:10px;padding:8px}
+.row{display:flex;gap:10px;margin-top:8px}.row button{padding:10px;font-size:16px;background:linear-gradient(90deg,var(--bl),var(--vi));box-shadow:none}.row .no{background:#2a3468}
+.ph{margin:0 12px 8px;border:2px dashed var(--cy);border-radius:12px;background:#22d3ee14}
+.float{position:fixed;left:8px;right:8px;z-index:10;pointer-events:none;background:#1a1f6e;border:1px solid var(--cy);border-radius:12px;box-shadow:0 8px 24px #000a,0 0 18px #22d3ee66;opacity:.97;margin:0}
+#bar{position:fixed;left:0;right:0;bottom:0;padding:12px 16px;background:#060b2ae6;border-top:1px solid #3b82f655;backdrop-filter:blur(6px)}
+button{width:100%;font-size:18px;padding:14px;border:0;border-radius:12px;background:linear-gradient(90deg,var(--vi),var(--mg));color:#fff;box-shadow:0 0 16px #a855f777}
+button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 </style></head><body>
-<h1>Leyla Gedächtnis</h1><div id="root"></div>
+<header><img src="/icon.png?v=5" alt=""><h1>Leyla Gedächtnis</h1></header><div id="root"></div>
 <div id="bar"><button id="del" disabled>Markierte löschen</button></div>
 <script>
 let sel=new Set(),last='',editing=false,dragging=false,justDragged=0;
@@ -187,8 +188,8 @@ load();setInterval(load,4000);
 </script></body></html>"""
 
 MANIFEST = json.dumps({"name": "Leyla Gedächtnis", "short_name": "Leyla", "start_url": "/",
-                       "display": "standalone", "background_color": "#111111",
-                       "theme_color": "#111111",
+                       "display": "standalone", "background_color": "#08103a",
+                       "theme_color": "#08103a",
                        "icons": [{"src": "/icon.png?v=5", "sizes": "512x512", "type": "image/png",
                                   "purpose": "any"}]})
 
