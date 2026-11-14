@@ -13,7 +13,7 @@ import websockets
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 os.environ.setdefault("OPENAI_API_KEY", "test")
 
-from app import main as m  # noqa: E402
+from app import main as m, session_end  # noqa: E402
 
 LOUD = (b"\x10\x27" * 480)  # 20 ms of a loud signal (peak 10000)
 
@@ -137,7 +137,7 @@ async def test_ready_then_audio_both_ways_with_replying_phase(env):
 
 
 async def test_no_speech_ends_the_session_quietly(env, monkeypatch):
-    monkeypatch.setattr(m, "NO_SPEECH_TIMEOUT_S", 0.5)
+    monkeypatch.setattr(session_end, "NO_SPEECH_TIMEOUT_S", 0.5)
     async with FakeLive() as fake, Bridge() as b:
         async with b.connect() as client:
             assert json.loads(await asyncio.wait_for(client.recv(), 5))["type"] == "ready"
@@ -148,7 +148,7 @@ async def test_no_speech_ends_the_session_quietly(env, monkeypatch):
 
 
 async def test_speaking_keeps_the_session_open_past_the_no_speech_time(env, monkeypatch):
-    monkeypatch.setattr(m, "NO_SPEECH_TIMEOUT_S", 0.6)
+    monkeypatch.setattr(session_end, "NO_SPEECH_TIMEOUT_S", 0.6)
 
     async def script(ws, fake):
         await asyncio.sleep(0.2)
@@ -201,7 +201,7 @@ async def test_empty_credit_error_of_today_is_treated_as_quota(env):
 
 
 async def test_goodbye_from_the_backend_function_hangs_up_after_the_farewell(env, monkeypatch):
-    monkeypatch.setattr(m, "GOODBYE_MAX_WAIT_S", 1.0)
+    monkeypatch.setattr(session_end, "GOODBYE_MAX_WAIT_S", 1.0)
 
     async def script(ws, fake):
         await asyncio.sleep(0.2)

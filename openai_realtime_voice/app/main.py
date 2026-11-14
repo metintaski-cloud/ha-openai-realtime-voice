@@ -36,10 +36,10 @@ import websockets
 from app.audio_recorder import AudioRecorder
 from app import memory
 from app import context
-from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, PacedSender, pcm_level
+from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, pcm_level
 from app.live_link import END_CONVERSATION_TOOL
 from app.phrases import (NAME_NUDGE, NAME_NUDGE_AFTER_S, NAME_NUDGE_COOLDOWN_S, NAME_RE, addressed_by_name, contains_goodbye, greeting_instruction, parse_greeting_words, pick_greeting)
-from app import (metrics, tool_link, after_talk, announce_voice, live_link, night, cleanup, costs, fan, health, lights, messages, persona, purifier, rf, technik, todo_sync,
+from app import (metrics, output_link, session_end, tool_link, after_talk, announce_voice, live_link, night, cleanup, costs, fan, health, lights, messages, persona, purifier, rf, technik, todo_sync,
                  tv, vacuum)
 
 logging.basicConfig(
@@ -57,16 +57,8 @@ dotenv.load_dotenv()
 
 # A reply is considered finished when no audio arrived for this long.
 REPLY_GAP_S = 1.0
-# After the model said goodbye, wait this long without audio before hanging up.
-GOODBYE_IDLE_S = 1.5
-GOODBYE_MAX_WAIT_S = 15.0
-# End the session when nobody spoke for this long (GPT Live is billed per minute).
-IDLE_TIMEOUT_S = 30.0
 WARM_START_TIMEOUT_S = 4.0  # a warm connection that does not answer is dropped quickly
-NO_SPEECH_TIMEOUT_S = 6.0  # false wake: nobody speaks, end silently (counted from the end of her greeting)
 VOICE_RMS = 300  # a microphone chunk this loud counts as someone speaking (room noise is below 250)
-VOICE_HOLD_S = 2.5  # while a voice was heard this recently the session is not ended for silence
-NO_SPEECH_MAX_S = 14.0  # but never longer than this after the start (TV noise must not hold a false wake)
 FOLLOWUP_MAX_WAIT_S = 15.0  # Leyla starts a conversation: the Voice PE connects within this
 FOLLOWUP_NO_SPEECH_S = 35.0  # she speaks first, then the family needs time to answer
 
@@ -74,7 +66,6 @@ FOLLOWUP_NO_SPEECH_S = 35.0  # she speaks first, then the family needs time to a
 # asks whether to switch lamps and fan off; without an answer she switches them off.
 # OpenAI names an empty credit balance differently over time
 QUOTA_ERRORS = {"insufficient_quota", "credit_balance_exhausted"}
-MAX_SESSION_S = 600.0
 FALSE_WAKE_MAX_FILES = 300  # oldest false wake recordings are dropped beyond this
 
 # GPT Live is full duplex and wants a continuous input stream. The Voice PE mutes its
@@ -98,7 +89,8 @@ DEFAULT_BACKEND_INSTRUCTIONS = (
 )
 
 class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.AfterTalkMixin,
-                      announce_voice.AnnounceVoiceMixin, tool_link.ToolLinkMixin):
+                      announce_voice.AnnounceVoiceMixin, tool_link.ToolLinkMixin, session_end.SessionEndMixin,
+                      output_link.OutputMixin):
     """Bridges ESP32 WebSocket to the OpenAI GPT Live API."""
 
     def __init__(self) -> None:
@@ -609,14 +601,6 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         except Exception as e:
             logger.error("Error in silence pump: %s", e, exc_info=True)
 
-    async def _send_phase(self, client_ws, phase: str) -> None:
-        """Send phase message to client for LED/UX feedback."""
-        try:
-            await client_ws.send(json.dumps({"type": "phase", "phase": phase}))
-            logger.info("Phase -> %s", phase)
-        except Exception as e:
-            logger.warning("Failed to send phase '%s': %s", phase, e)
-
     async def _cleanup_loop(self) -> None:
         """Once a night at 00:00 the review proposes trivial entries. It never deletes."""
         from datetime import timedelta
@@ -849,161 +833,6 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 logger.info("Transcript bot: %s", "".join(bot_text).strip())
             if "reason" not in end_reason:
                 end_reason["reason"] = "live_disconnected"
-
-    @staticmethod
-    def _no_speech_over(state: dict, session_start: float, now: float) -> bool:
-        """Nobody spoke: the wait counts from the end of Leyla's own greeting (it used to
-        count from the start, so a slow answer was cut off), and a voice heard just now
-        (the transcript comes a little later) holds the session open up to a limit."""
-        limit = state.get("no_speech_s", NO_SPEECH_TIMEOUT_S)
-        quiet_since = max(session_start, state.get("last_audio_time", 0.0))
-        if now - session_start > max(limit, NO_SPEECH_MAX_S):
-            return True
-        if now - state.get("last_voice_at", 0.0) < VOICE_HOLD_S:
-            return False
-        return now - quiet_since > limit
-
-    async def _session_watcher(
-        self,
-        client_ws,
-        live_ws,
-        output_queue: asyncio.Queue,
-        end_reason: dict,
-        state: dict,
-    ) -> None:
-        """Ends the session: after end_conversation (once the farewell was played), when
-        nobody spoke for IDLE_TIMEOUT_S, or after MAX_SESSION_S."""
-        try:
-            session_start = time.monotonic()
-            reason = ""
-            while not reason:
-                await asyncio.sleep(0.1)
-                now = time.monotonic()
-                if state.get("closing"):
-                    await self._wait_for_farewell(output_queue, state)
-                    reason = "end_conversation"
-                elif not state.get("user_spoke") and self._no_speech_over(
-                        state, session_start, now):
-                    reason = "no_speech"
-                elif now - state["last_activity"] > IDLE_TIMEOUT_S:
-                    reason = "idle_timeout"
-                elif now - session_start > MAX_SESSION_S:
-                    reason = "max_duration"
-            logger.info("Ending session (%s), notifying client", reason)
-            end_reason["reason"] = reason
-            try:
-                await client_ws.send(
-                    json.dumps({
-                        "type": "disconnect",
-                        "message": "Session ended",
-                        "reason": "user_requested_stop" if reason == "end_conversation" else reason,
-                    })
-                )
-            except Exception:
-                pass
-            try:
-                await live_ws.send(json.dumps({"type": "session.close"}))
-            except Exception:
-                pass
-        except asyncio.CancelledError:
-            raise
-
-    async def _wait_for_farewell(self, output_queue: asyncio.Queue, state: dict) -> None:
-        """Wait until the goodbye audio has been played (or a time limit is reached)."""
-        loop = asyncio.get_event_loop()
-        started = loop.time()
-        heard_audio = False
-        baseline = state["last_audio_time"]
-        while True:
-            await asyncio.sleep(0.1)
-            if state["last_audio_time"] > baseline:
-                heard_audio = True
-            idle = time.monotonic() - state["last_audio_time"]
-            waited = loop.time() - started
-            if waited > GOODBYE_MAX_WAIT_S:
-                return
-            if heard_audio and idle > GOODBYE_IDLE_S and output_queue.empty():
-                return
-            # No farewell audio at all: do not hang up instantly, give it a moment.
-            if not heard_audio and waited > 6.0:
-                return
-
-    async def _output_sender(
-        self,
-        client_ws,
-        output_queue: asyncio.Queue,
-        first_audio_to_client: list,
-        end_reason: dict,
-    ) -> None:
-        """Send buffered audio and phase messages to client. Audio is paced at playback
-        rate; phases are sent in order. One ordered stream avoids race conditions.
-        GPT Live has no end of audio event, so silence on the queue ends a reply."""
-        sender = PacedSender(client_ws)
-        idle_ticks = 0
-        try:
-            while True:
-                try:
-                    chunk = await asyncio.wait_for(output_queue.get(), timeout=0.1)
-                except asyncio.TimeoutError:
-                    idle_ticks += 1
-                    await sender.pump(flush=True)
-                    if idle_ticks >= 3 and not sender.buffer:
-                        sender.reset()  # reply is over: restart the pacing clock
-                    continue
-                idle_ticks = 0
-
-                if isinstance(chunk, tuple) and chunk[0] == "phase":
-                    await sender.pump(flush=True, force=True)
-                    await self._send_phase(client_ws, chunk[1])
-                    continue
-
-                if isinstance(chunk, tuple) and chunk[0] == "interrupt":
-                    sender.buffer.clear()
-                    sender.reset()
-                    try:
-                        await client_ws.send(json.dumps({"type": "interrupt"}))
-                    except Exception as e:
-                        logger.warning("Failed to send interrupt: %s", e)
-                    continue
-
-                if isinstance(chunk, tuple) and chunk[0] == "error":
-                    await sender.pump(flush=True, force=True)
-                    error_code = chunk[1]
-                    try:
-                        await client_ws.send(json.dumps({"type": "error", "code": error_code}))
-                        logger.info("Sent error to client: code=%s", error_code)
-                    except Exception as e:
-                        logger.warning("Failed to send error '%s': %s", error_code, e)
-                    continue
-
-                if not first_audio_to_client[0]:
-                    first_audio_to_client[0] = True
-                    logger.info("First audio to client (%d bytes)", len(chunk))
-
-                sender.add(chunk)
-                await sender.pump()
-        except asyncio.CancelledError:
-            raise
-        except websockets.exceptions.ConnectionClosed:
-            if "reason" not in end_reason:
-                end_reason["reason"] = "client_disconnected"
-        except Exception as e:
-            logger.error("Error in output_sender: %s", e, exc_info=True)
-            if "reason" not in end_reason:
-                end_reason["reason"] = "output_sender_error"
-
-    @staticmethod
-    def _clear_output_queue(output_queue: asyncio.Queue) -> None:
-        """Drop all pending output (audio + phases) so stale data is never sent after interrupt."""
-        dropped = 0
-        while not output_queue.empty():
-            try:
-                output_queue.get_nowait()
-                dropped += 1
-            except asyncio.QueueEmpty:
-                break
-        if dropped:
-            logger.info("Cleared %d chunks from output queue (interrupt)", dropped)
 
     async def _open_live(self, state: dict):
         """Take a GPT Live connection (the warm one when possible) and start the session.

@@ -83,9 +83,11 @@ async def _run(fake, scenario, **overrides):
     _env()
     import importlib
     import app.main as m
+    import app.session_end as se
+    importlib.reload(se)  # the time limits live there; reload resets what an earlier test changed
     importlib.reload(m)
     for k, v in overrides.items():
-        setattr(m, k, v)
+        setattr(se if hasattr(se, k) else m, k, v)
     bridge = m.LiveVoiceBridge()
     live = ws_serve(fake, "127.0.0.1", LIVE_PORT)
     async with live:
