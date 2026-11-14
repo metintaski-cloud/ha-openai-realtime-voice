@@ -57,7 +57,7 @@ ESP32 Voice PE                    Addon
 ## Adding a tool
 
 1. Put the tool schema (`..._TOOL` dict with `name`) and its `run(args)` coroutine in its own module and add the schema to the tools list of `_session_start`.
-2. Register it in `LiveVoiceBridge._build_tools` (`main.py`): label, timeout, `run`, the friendly error text, and optionally `gate(args, state)` (return an error result to refuse, for example for anyone but Metin), `after`, `log`, `phase`. The generic `_run_tool` runs it in the background with a timeout and returns the result, so there is no per tool runner code. `end_conversation` is the only function handled inline in `_handle_backend_event`.
+2. Register it in `ToolLinkMixin._build_tools` (`app/tool_link.py`): label, timeout, `run`, the friendly error text, and optionally `gate(args, state)` (return an error result to refuse, for example for anyone but Metin), `after`, `log`, `phase`. The generic `_run_tool` runs it in the background with a timeout and returns the result, so there is no per tool runner code. `end_conversation` is the only function handled inline in `_handle_backend_event`.
 3. Add a case to `tests/test_session_flow.py` when the tool has a gate or special behavior.
 
 ## Docker build
@@ -75,6 +75,7 @@ When you change the addon (behavior, config, contract, or fixes), update the add
 - `app/main.py` — Bridge logic, tools, WebSocket handlers.
 - `app/night.py` — Night check options and `NightMixin` (the 23:30 check, mixed into the bridge; `NIGHT_WAIT_S` lives here).
 - `app/live_link.py` — `LiveLinkMixin`: opening the GPT Live connection and the warm connection (`_connect_live`, `_take_live`, `_warm_loop`). `app/after_talk.py` — `AfterTalkMixin`: memory update and rudeness report after a conversation. Both are mixed into the bridge in `main.py`.
+- `app/tool_link.py` — `ToolLinkMixin`: the table of backend functions (`_build_tools`, with the gates for Metin only) and the generic runner `_run_tool`; mixed into the bridge in `main.py`.
 - `app/phrases.py` — pure helpers without I/O: farewell phrases (`contains_goodbye`), greetings (`parse_greeting_words`, `pick_greeting`, `greeting_instruction`) and addressing Leyla by name (`NAME_RE`, `addressed_by_name`, `NAME_NUDGE`). `main.py` imports them, so tests can still reach them as `app.main.<name>`.
 - `app/announce_voice.py` — `AnnounceVoiceMixin`: GPT Live speaks one announcement without a listener (`_speak_once`) and the TV volume around it. `app/pacing.py` — `PacedSender` (reply audio at playback rate) and the audio constants and `pcm_level`.
 - `app/technik.py` — the `technik_pruefen` tool: reads and writes the Home Assistant automation configs (network). `app/automation_edit.py` — its pure helpers (search words, colours, lamp and fan step handling, clock times; dicts in and out, no network); names are imported into `technik.py`.
