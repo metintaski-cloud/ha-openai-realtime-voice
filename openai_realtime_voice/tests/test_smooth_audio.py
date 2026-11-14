@@ -514,3 +514,9 @@ def test_only_mama_confidences_stay_private_and_insults_are_always_reported():
     assert "Was dir jemand so anvertraut" not in core  # was too broad (Metin, 14 Nov 2026)
     assert "Frechheiten und Beleidigungen sind nie etwas Anvertrautes" in core
     assert "lässt du ganz weg" in report.PROMPT  # the report tells only the rude part
+
+
+def test_no_rule_to_end_the_talk_with_strangers():
+    from app import persona
+    # removed 14 Nov 2026 (Metin): it contradicted the other rules about unknown people
+    assert "nicht mit Fremden" not in persona.CORE
