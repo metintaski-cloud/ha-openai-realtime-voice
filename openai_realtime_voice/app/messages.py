@@ -96,7 +96,7 @@ def is_ack(text: str) -> bool:
 class MessageCenter:
     def __init__(self, speak: Callable[[str], Awaitable[bytes]],
                  notify_service: str = "", media_player: str = "",
-                 base_url: str = "", port: int = 8082,
+                 base_url: str = "", port: int = 8084,
                  path: str = "/data/messages.json",
                  api_url: Optional[str] = None, token: Optional[str] = None) -> None:
         self.speak = speak
@@ -522,8 +522,8 @@ def from_env(speak) -> MessageCenter:
         speak,
         notify_service=_env("NOTIFY_SERVICE"),
         media_player=_env("ANNOUNCE_PLAYER", "media_player.home_assistant_voice_0ae305_media_player"),
-        base_url=_env("ANNOUNCE_BASE_URL", "http://192.168.2.240:8082"),
-        port=int(_env("ANNOUNCE_PORT", "8082")),
+        base_url=_env("ANNOUNCE_BASE_URL", "http://192.168.2.240:8084"),
+        port=int(_env("ANNOUNCE_PORT", "8084")),
         path=_env("MESSAGES_PATH", "/data/messages.json"),
     )
     mc.mute_switch = _env("ANNOUNCE_MUTE_SWITCH", "switch.home_assistant_voice_0ae305_mute")

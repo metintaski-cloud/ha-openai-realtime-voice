@@ -149,3 +149,15 @@ async def test_message_brought_up_in_a_conversation(tmp_path):
     mc._save(p)
     await mc._tick()
     assert "Erinnerung" in prompts[1]
+
+
+def test_ports_do_not_clash(monkeypatch):
+    """The announcement clips and the memory page once fought for port 8082 (messages could not start)."""
+    from app import messages as msg
+    for name in ("ANNOUNCE_PORT", "ANNOUNCE_BASE_URL", "MEMORY_WEB_PORT"):
+        monkeypatch.delenv(name, raising=False)
+    mc = msg.from_env(lambda *a, **k: None)
+    assert mc.port == 8084 and mc.base_url.endswith(":8084")
+    import inspect
+    from app import memory_web
+    assert inspect.signature(memory_web.start_http).parameters["port"].default == 8082
