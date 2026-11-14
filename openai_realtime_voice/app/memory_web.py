@@ -25,6 +25,7 @@ TITLES = ((memory.FAMILY, "Familie und Haushalt"),
           (memory.LEYLA, "Leylas eigene Geschichte"))
 MAX_BODY = 64 * 1024
 ICON_PATH = os.path.join(os.path.dirname(__file__), "memory_icon.png")
+MASKABLE_PATH = os.path.join(os.path.dirname(__file__), "memory_icon_maskable.png")  # full square, no transparent corners
 
 
 def snapshot(store: memory.MemoryStore) -> dict:
@@ -295,7 +296,9 @@ MANIFEST = json.dumps({"name": "Leyla Gedächtnis", "short_name": "Leyla", "star
                        "theme_color": "#08103a",
                        "id": "/", "scope": "/",
                        "icons": [{"src": "/icon.png?v=5", "sizes": sz, "type": "image/png",
-                                  "purpose": "any"} for sz in ("192x192", "512x512")]})
+                                  "purpose": "any"} for sz in ("192x192", "512x512")]
+                                + [{"src": "/icon-maskable.png?v=6", "sizes": sz, "type": "image/png",
+                                    "purpose": "maskable"} for sz in ("192x192", "512x512")]})
 
 
 async def _respond(writer, status: str, ctype: str, body: str) -> None:
@@ -319,8 +322,8 @@ async def _handle(store, sync, reader, writer) -> None:
         body = await asyncio.wait_for(reader.readexactly(length), timeout=10) if length else b""
         if method == "GET" and path == "/":
             await _respond(writer, "200 OK", "text/html", PAGE)
-        elif method == "GET" and path == "/icon.png":
-            with open(ICON_PATH, "rb") as f:
+        elif method == "GET" and path in ("/icon.png", "/icon-maskable.png"):
+            with open(ICON_PATH if path == "/icon.png" else MASKABLE_PATH, "rb") as f:
                 raw = f.read()
             writer.write((f"HTTP/1.1 200 OK\r\nContent-Type: image/png\r\nContent-Length: {len(raw)}\r\n"
                           "Cache-Control: no-cache\r\nConnection: close\r\n\r\n").encode() + raw)

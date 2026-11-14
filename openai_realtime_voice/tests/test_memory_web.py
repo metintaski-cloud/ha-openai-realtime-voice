@@ -131,3 +131,23 @@ def test_edit_folder(tmp_path):
 
 def test_page_has_folders():
     assert "/api/folder" in memory_web.PAGE and "Punkt hinzufügen" in memory_web.PAGE and 'id="back"' in memory_web.PAGE
+
+
+def test_maskable_icon(tmp_path):
+    s = _store(tmp_path)
+
+    async def go():
+        server = await memory_web.start_http(s, None, host="127.0.0.1", port=0)
+        port = server.sockets[0].getsockname()[1]
+        r, w = await asyncio.open_connection("127.0.0.1", port)
+        w.write(b"GET /icon-maskable.png?v=6 HTTP/1.1\r\n\r\n")
+        await w.drain()
+        data = await r.read()
+        w.close()
+        server.close()
+        return data
+
+    data = asyncio.run(go())
+    assert data.startswith(b"HTTP/1.1 200") and b"\x89PNG" in data
+    m = json.loads(memory_web.MANIFEST)
+    assert {i["purpose"] for i in m["icons"]} == {"any", "maskable"}
