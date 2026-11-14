@@ -59,6 +59,7 @@ def _show(monkeypatch, tmp_path, fail=None):
     monkeypatch.setattr(ls, "AUDIO_LEAD_S", 0.0)
     monkeypatch.setattr(ls, "RESTORE_WAIT_S", 0.01)
     monkeypatch.setattr(ls, "VERIFY_WAIT_S", 0.0)
+    monkeypatch.setattr(ls, "LEVEL_TAU_S", 0.0001)
     monkeypatch.setattr(ls, "RETRY_DELAYS_S", (0.05, 0.05))
     show.lamps = lamps
     return show, calls
@@ -187,3 +188,55 @@ def test_is_show_look():
     assert not ls.is_show_look({"brightness": 153, "color_mode": "color_temp", "hs_color": [27, 19]})
     assert not ls.is_show_look({"brightness": 255, "color_mode": "hs", "hs_color": [30, 80]})  # orange
     assert not ls.is_show_look({"brightness": 120, "color_mode": "hs", "hs_color": [228, 62]})
+
+
+def test_colours_are_chosen_and_kept(tmp_path):
+    show = ls.LampShow(["light.a"], token="t", memory_path=str(tmp_path / "lamps.json"))
+    assert show.colors_hex()["listen"] == "#22d3ee"
+    assert not show.set_colors({"listen": "rot"}) and not show.set_colors({"other": "#ffffff"})
+    assert show.set_colors({"listen": "#ff0000", "speak_high": "#00ff00"})
+    again = ls.LampShow(["light.a"], token="t", memory_path=str(tmp_path / "lamps.json"))
+    assert again.colors["listen"] == (255, 0, 0) and again.colors["think"] == ls.VIOLET
+    assert again.set_colors({"listen": None}) and again.colors["listen"] == ls.CYAN
+    # a stuck red listen colour is a show colour now, the default blue is not any more
+    show.set_colors({"listen": "#ff0000", "think": "#ff0000", "speak_low": "#ff0000",
+                     "speak_high": "#ff0000"})
+    assert ls.is_show_look({"brightness": 255, "color_mode": "hs", "hs_color": [2, 100]}, show.colors)
+    assert not ls.is_show_look({"brightness": 255, "color_mode": "hs", "hs_color": [228, 62]}, show.colors)
+
+
+async def test_chosen_colours_are_shown_and_preview_restores(monkeypatch, tmp_path):
+    show, calls = _show(monkeypatch, tmp_path)
+    monkeypatch.setattr(ls, "PREVIEW_S", 0.6)
+    show.set_colors({"think": "#ff8800"})
+    assert await show.preview("think") == "ok"
+    sent = [c[1]["rgb_color"] for c in calls if "rgb_color" in c[1]]
+    assert sent and sent[0] == [255, 136, 0]
+    assert show.lamps["light.a"]["state"] == "off" and show._active == 0 and show._pending == {}
+    await show.begin()
+    assert await show.preview("listen") == "busy"  # never during a conversation
+    await show.end()
+
+
+async def test_reset_switches_off_a_lamp_left_in_a_show_colour(monkeypatch, tmp_path):
+    show, calls = _show(monkeypatch, tmp_path)
+    show.lamps["light.a"] = {"state": "on", "brightness": 255, "color_mode": "hs", "hs_color": [228, 62]}
+    assert await show.reset() == "ok"
+    assert show.lamps["light.a"]["state"] == "off" and show.lamps["light.b"]["state"] == "on"
+
+
+async def test_smoothing_sends_fewer_commands(monkeypatch, tmp_path):
+    import random
+    async def count(tau):
+        show, calls = _show(monkeypatch, tmp_path)
+        monkeypatch.setattr(ls, "LEVEL_TAU_S", tau)
+        monkeypatch.setattr(ls, "MIN_INTERVAL_S", 0.05)
+        await show.begin()
+        random.seed(3)
+        for _ in range(100):
+            show._set_level(ls.level_from_rms(max(0, random.gauss(2500, 1800))))
+            await asyncio.sleep(0.004)
+        n = len(calls)
+        await show.end()
+        return n
+    assert await count(0.08) < await count(0.0001)

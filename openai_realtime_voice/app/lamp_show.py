@@ -11,7 +11,10 @@ tried again in the background and at the next start; the next conversation start
 state, not from the stuck show colour; and a show colour is never learned as a lamp's normal setting.
 """
 import asyncio
+import colorsys
 import json
+import math
+import re
 import logging
 import os
 import time
@@ -25,12 +28,19 @@ CYAN = (34, 211, 238)
 BLUE = (59, 130, 246)
 VIOLET = (168, 85, 247)
 MAGENTA = (217, 70, 239)
+DEFAULT_COLORS = {"listen": CYAN, "think": VIOLET, "speak_low": BLUE, "speak_high": MAGENTA}
+COLOR_LABELS = {"listen": "Zuhören", "think": "Denken", "speak_low": "Reden leise",
+                "speak_high": "Reden laut"}
+PREVIEW_S = 4.0           # how long a colour test in the app shows
+HEX_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 LISTEN_PCT = 100
 THINK_PCT = 100
 SPEAK_MIN_PCT = 100  # the breathing is in the colour, the lamps stay at full strength
 SPEAK_MAX_PCT = 100
 LEVEL_FULL_RMS = 5000.0   # rms that counts as full loudness
-MIN_INTERVAL_S = 0.33     # the lamps cannot follow faster
+MIN_INTERVAL_S = 0.5      # at most two commands a second: Matter over Thread chokes on more (14 Nov 2026)
+LEVEL_STEPS = 4           # loudness in 5 steps, so small changes send nothing
+LEVEL_TAU_S = 0.25        # the loudness is smoothed over about a syllable
 TRANSITION_S = 0.35
 RESTORE_WAIT_S = 1.2      # a lamp that was off fades to its old strength before it is switched off
 SPEECH_HOLD_S = 0.7       # no audio for this long: Leyla stopped speaking, back to listening
@@ -47,19 +57,42 @@ def mix(a: tuple, b: tuple, t: float) -> tuple:
     return tuple(round(a[i] + (b[i] - a[i]) * t) for i in range(3))
 
 
-def speak_look(level: float) -> tuple[tuple, int]:
+def speak_look(level: float, colors: Optional[dict] = None) -> tuple[tuple, int]:
     """Colour and brightness percent for a loudness between 0 (quiet) and 1 (loud)."""
+    c = colors or DEFAULT_COLORS
     level = max(0.0, min(1.0, level))
-    return mix(BLUE, MAGENTA, level), round(SPEAK_MIN_PCT + (SPEAK_MAX_PCT - SPEAK_MIN_PCT) * level)
+    return (mix(c["speak_low"], c["speak_high"], level),
+            round(SPEAK_MIN_PCT + (SPEAK_MAX_PCT - SPEAK_MIN_PCT) * level))
+
+
+def to_hex(rgb: tuple) -> str:
+    return "#%02x%02x%02x" % tuple(rgb)
+
+
+def from_hex(text) -> Optional[tuple]:
+    if not isinstance(text, str) or not HEX_RE.match(text):
+        return None
+    return tuple(int(text[i:i + 2], 16) for i in (1, 3, 5))
+
+
+def _hue(rgb: tuple) -> tuple[float, float]:
+    h, s, _ = colorsys.rgb_to_hsv(*(x / 255 for x in rgb))
+    return h * 360, s * 100
+
+
+def _hue_gap(a: float, b: float) -> float:
+    d = abs(a - b) % 360
+    return min(d, 360 - d)
 
 
 def level_from_rms(rms: float) -> float:
     return max(0.0, min(1.0, rms / LEVEL_FULL_RMS))
 
 
-def is_show_look(state: dict) -> bool:
-    """True for a lamp that shows one of the show colours (blue to magenta or cyan at full strength):
-    such a state comes from a show that was not undone and is never taken as the normal setting."""
+def is_show_look(state: dict, colors: Optional[dict] = None) -> bool:
+    """True for a lamp that shows one of the show colours at full strength (the listen or think
+    colour, or anything between the two speaking colours): such a state comes from a show that was
+    not undone and is never taken as the normal setting."""
     hs = state.get("hs_color")
     if (state.get("brightness") or 0) < 250 or not hs or state.get("color_mode") == "color_temp":
         return False
@@ -67,7 +100,10 @@ def is_show_look(state: dict) -> bool:
         hue, sat = float(hs[0]), float(hs[1])
     except (TypeError, ValueError, IndexError):
         return False
-    return 180.0 <= hue <= 300.0 and sat >= 50.0
+    c = colors or DEFAULT_COLORS
+    looks = [_hue(c["listen"]), _hue(c["think"])]
+    looks += [_hue(mix(c["speak_low"], c["speak_high"], i / 8)) for i in range(9)]
+    return any(s >= 30 and sat >= 30 and _hue_gap(hue, h) <= 20 for h, s in looks)
 
 
 def restore_data(entity: str, before: dict) -> tuple[str, dict]:
@@ -93,6 +129,8 @@ class LampShow:
                  memory_path: str = "/data/lamp_show.json") -> None:
         self.entities = entities
         self.memory_path = memory_path
+        self.colors_path = os.path.join(os.path.dirname(memory_path) or ".", "lamp_colors.json")
+        self.colors: dict = self._load_colors()
         self._last_on: dict[str, dict] = {}  # strength and colour each lamp had when last on
         self._pending: dict[str, dict] = {}  # state before a show that is not restored yet
         self._load_memory()
@@ -102,6 +140,7 @@ class LampShow:
         self._active = 0
         self._mode = "off"          # listen, think, speak
         self._level = 0.0
+        self._level_at = 0.0
         self._last_audio = 0.0
         self._sent = None           # what the lamps last got
         self._worker: Optional[asyncio.Task] = None
@@ -124,7 +163,7 @@ class LampShow:
             data = {"last_on": data}  # older file: only the last on states
         last_on, pending = data.get("last_on"), data.get("pending")
         self._last_on = {e: v for e, v in (last_on if isinstance(last_on, dict) else {}).items()
-                         if isinstance(v, dict) and not is_show_look(v)}
+                         if isinstance(v, dict) and not is_show_look(v, self.colors)}
         self._pending = {e: v for e, v in (pending if isinstance(pending, dict) else {}).items()
                          if isinstance(v, dict)}
 
@@ -136,6 +175,95 @@ class LampShow:
             os.replace(tmp, self.memory_path)
         except Exception as e:
             logger.warning("Lamp show: could not save the lamp memory: %s", e)
+
+    # ---- Colours chosen in the app ----
+    def _load_colors(self) -> dict:
+        colors = dict(DEFAULT_COLORS)
+        try:
+            with open(self.colors_path) as f:
+                data = json.load(f)
+            for k in DEFAULT_COLORS:
+                rgb = from_hex(data.get(k)) if isinstance(data, dict) else None
+                if rgb:
+                    colors[k] = rgb
+        except Exception:
+            pass
+        return colors
+
+    def colors_hex(self) -> dict:
+        return {k: to_hex(v) for k, v in self.colors.items()}
+
+    def set_colors(self, data) -> bool:
+        """Take new colours ({"listen": "#22d3ee", ...}; missing keys stay, None = default).
+        False when a value is not a colour; then nothing changes."""
+        if not isinstance(data, dict):
+            return False
+        new = dict(self.colors)
+        for k, v in data.items():
+            if k not in DEFAULT_COLORS:
+                return False
+            rgb = DEFAULT_COLORS[k] if v is None else from_hex(v)
+            if rgb is None:
+                return False
+            new[k] = rgb
+        self.colors = new
+        self._sent = None  # a running show takes the new colours at once
+        try:
+            tmp = self.colors_path + ".tmp"
+            with open(tmp, "w") as f:
+                json.dump(self.colors_hex(), f)
+            os.replace(tmp, self.colors_path)
+        except Exception as e:
+            logger.warning("Lamp show: could not save the colours: %s", e)
+        return True
+
+    async def preview(self, mode: str) -> str:
+        """Show one colour on the lamps for a few seconds, then put them back. Not while Leyla
+        is in a conversation or another test runs."""
+        if not self.available:
+            return "off"
+        if mode not in ("listen", "think", "speak"):
+            return "bad"
+        if self._active:
+            return "busy"
+        await self.begin()
+        try:
+            if self._worker is None:
+                return "error"
+            if mode == "think":
+                self._mode = "think"
+            steps = int(PREVIEW_S / 0.6)
+            for i in range(steps):
+                if self._active > 1:
+                    break  # a real conversation started: it takes over
+                if mode == "speak":
+                    self._set_level(1.0 if i % 2 else 0.0)  # breathe between quiet and loud
+                await asyncio.sleep(0.6)
+        finally:
+            await self.end()
+        return "ok"
+
+    async def reset(self) -> str:
+        """The button in the app: lamps left in a show colour go back to normal (pending
+        restores first, then any lamp still showing a show colour is switched off)."""
+        if not self.available:
+            return "off"
+        if self._active:
+            return "busy"
+        if self._retry is not None:
+            self._retry.cancel()
+            self._retry = None
+        await self._restore_all(schedule=False)
+        fixed = []
+        async with self._get_lock():
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                states = {e: await self._read_state(client, e) for e in self.entities}
+            for entity, st in states.items():
+                if st.get("state") == "on" and is_show_look(st, self.colors):
+                    if await self._restore_one(entity, {"state": "off"}):
+                        fixed.append(entity)
+        logger.info("Lamp show: reset from the app (%s)", ", ".join(fixed) or "nothing stuck")
+        return "ok" if not self._pending else "failed"
 
     def _get_lock(self) -> asyncio.Lock:
         if self._lock is None:
@@ -177,7 +305,7 @@ class LampShow:
                     continue
                 now = await self._read_state(client, entity)
                 self._before[entity] = now
-                if now.get("state") == "on" and now.get("brightness") and not is_show_look(now):
+                if now.get("state") == "on" and now.get("brightness") and not is_show_look(now, self.colors):
                     self._last_on[entity] = dict(now)
         self._pending = {e: dict(b) for e, b in self._before.items()}
         self._save_memory()
@@ -224,9 +352,14 @@ class LampShow:
     def _set_level(self, level: float) -> None:
         if self._worker is None:
             return
+        now = time.monotonic()
+        if self._mode != "speak":
+            self._level = level  # a new reply starts from its own loudness
+        else:
+            k = 1.0 - math.exp(-max(0.0, now - self._level_at) / LEVEL_TAU_S)
+            self._level += (level - self._level) * k
         self._mode = "speak"
-        self._level = level
-        self._last_audio = time.monotonic()
+        self._level_at = self._last_audio = now
 
     async def end(self) -> None:
         if self._active == 0:
@@ -307,10 +440,10 @@ class LampShow:
         if self._mode == "speak" and time.monotonic() - self._last_audio > SPEECH_HOLD_S:
             self._mode = "listen"
         if self._mode == "speak":
-            return speak_look(self._level)
+            return speak_look(round(self._level * LEVEL_STEPS) / LEVEL_STEPS, self.colors)
         if self._mode == "think":
-            return VIOLET, THINK_PCT
-        return CYAN, LISTEN_PCT
+            return self.colors["think"], THINK_PCT
+        return self.colors["listen"], LISTEN_PCT
 
     async def _run(self) -> None:
         try:

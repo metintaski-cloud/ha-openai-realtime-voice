@@ -152,6 +152,12 @@ textarea{-webkit-user-select:text;user-select:text;width:100%;box-sizing:border-
 #bar{position:fixed;left:0;right:0;bottom:0;padding:12px 16px;background:#060b2ae6;border-top:1px solid #3b82f655;backdrop-filter:blur(6px)}
 button{width:100%;font-size:18px;padding:14px;border:0;border-radius:12px;background:linear-gradient(90deg,var(--vi),var(--mg));color:#fff;box-shadow:0 0 16px #a855f777}
 button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
+.card{margin:0 12px 8px;padding:12px 14px;background:#0d1750cc;border:1px solid #3b82f655;border-radius:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.card .n{flex:1;min-width:110px}.card small{display:block;color:#9fb4ff;font-size:13px}
+.card input[type=color]{width:52px;height:40px;border:1px solid #3b82f688;border-radius:10px;background:none;padding:2px}
+.card button,.lb button{width:auto;font-size:15px;padding:10px 14px;box-shadow:none;background:#1b2a6b;border:1px solid var(--cy)}
+.lb{display:flex;gap:10px;margin:4px 12px 8px}.lb button{flex:1}
+#lmsg{margin:0 16px 8px;min-height:20px;color:#9fb4ff;font-size:14px}
 #splash{position:fixed;inset:0;z-index:100;background:#08103a;display:flex;align-items:center;justify-content:center;transition:opacity .45s}
 #splash.out{opacity:0;pointer-events:none}
 .sp{position:relative;width:220px;height:220px}
@@ -164,7 +170,7 @@ button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 @media (prefers-reduced-motion:reduce){.rg{animation-duration:.1s}.sp img{animation:none}}
 </style></head><body>
 <div id="splash"><div class="sp"><img src="/icon.png?v=5" alt=""><svg viewBox="0 0 200 200"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#a855f7"/><stop offset="1" stop-color="#d946ef"/></linearGradient></defs><circle class="trk" cx="100" cy="100" r="90"/><circle class="rg" cx="100" cy="100" r="90" pathLength="100"/></svg></div></div>
-<header><button id="back">&#8249;</button><img src="/icon.png?v=5" alt=""><h1>Leyla Gedächtnis</h1><button id="snd"></button></header><div id="root"></div>
+<header><button id="back">&#8249;</button><img src="/icon.png?v=5" alt=""><h1>Leyla Gedächtnis</h1><button id="snd"></button></header><div id="root"></div><div id="lamps" style="display:none"></div>
 <div id="bar"><button id="del" disabled>Markierte löschen</button></div>
 <script>
 let view=null,sel=new Set(),last='',editing=false,dragging=false,justDragged=0,AC=null,soundOn=true;
@@ -229,7 +235,7 @@ function render(d){const root=document.getElementById('root');root.innerHTML='';
  const back=document.getElementById('back'),h1=document.querySelector('h1');
  let found=null;
  if(view){const l=d.lists.find(x=>x.kind===view.kind);const t=l&&l.items.find(x=>parts(x).head===view.head);if(t){found={l,t};}else view=null;}
- back.style.display=view?'block':'none';h1.textContent=view?title(view.head):'Leyla Gedächtnis';
+ back.style.display=view?'block':'none';document.getElementById('lamps').style.display=(view||!lampOn)?'none':'block';h1.textContent=view?title(view.head):'Leyla Gedächtnis';
  if(found){view.text=found.t;const fields=parts(found.t).fields;
   const box=document.createElement('div');box.className='list';box.dataset.kind=found.l.kind;
   const h=document.createElement('h2');h.textContent='Punkte ('+fields.length+')';box.appendChild(h);
@@ -285,7 +291,33 @@ document.getElementById('del').onclick=async()=>{if(!sel.size||!confirm(sel.size
  const items=[...sel].map(x=>{const i=x.indexOf('\\u0000');return {kind:x.slice(0,i),text:x.slice(i+1)}});
  await fetch('/api/delete',{method:'POST',body:JSON.stringify({items})});snd.del();sel=new Set();last='';load();};
 document.getElementById('snd').onclick=()=>{soundOn=!soundOn;try{localStorage.setItem('snd',soundOn?'1':'0')}catch(e){}sndLabel();if(soundOn)snd.on();};
-sndLabel();load();setInterval(load,4000);
+let lampOn=false;
+const LROWS=[['listen','Zuhören',['listen']],['think','Denken und Suchen',['think']],['speak','Reden',['speak_low','speak_high']]];
+function lmsg(t){document.getElementById('lmsg').textContent=t;}
+const LTXT={ok:'',busy:'Leyla spricht gerade, bitte danach testen.',off:'Lampenshow ist aus.',failed:'Eine Lampe antwortet nicht, Leyla versucht es weiter.',error:'Hat nicht geklappt.'};
+async function lampPost(path,body){try{const r=await fetch(path,{method:'POST',body:JSON.stringify(body||{})});return await r.json();}catch(e){return {result:'error'};}}
+async function loadLamps(){let d;try{d=await (await fetch('/api/lamp')).json();}catch(e){return;}
+ lampOn=!!d.available;const box=document.getElementById('lamps');box.innerHTML='';if(!lampOn){box.style.display='none';return;}
+ box.style.display=view?'none':'block';
+ const h=document.createElement('h2');h.textContent='Lampenfarben';box.appendChild(h);
+ for(const [mode,name,keys] of LROWS){const c=document.createElement('div');c.className='card';
+  const n=document.createElement('div');n.className='n';n.innerHTML=esc(name)+(keys.length>1?'<small>leise und laut, das Licht wechselt mit ihrer Stimme</small>':'');c.appendChild(n);
+  for(const k of keys){const i=document.createElement('input');i.type='color';i.value=d.colors[k];i.title=d.labels[k];
+   i.onchange=async()=>{const j=await lampPost('/api/lamp/colors',{colors:{[k]:i.value}});if(j.ok){snd.save();lmsg('Gespeichert.');}else lmsg(LTXT.error);};c.appendChild(i);}
+  const b=document.createElement('button');b.textContent='Testen';
+  b.onclick=async()=>{b.disabled=true;lmsg('Die Lampen zeigen die Farbe kurz und gehen dann zurück.');snd.on();
+   const j=await lampPost('/api/lamp/test',{mode});lmsg(LTXT[j.result]||'');b.disabled=false;};
+  c.appendChild(b);box.appendChild(c);}
+ const row=document.createElement('div');row.className='lb';
+ const df=document.createElement('button');df.textContent='Standardfarben';
+ df.onclick=async()=>{if(!confirm('Alle Farben auf die Leyla Farben zurückstellen?'))return;
+  const j=await lampPost('/api/lamp/colors',{colors:{listen:null,think:null,speak_low:null,speak_high:null}});if(j.ok){snd.save();loadLamps();}};
+ const rs=document.createElement('button');rs.textContent='Lampen zurücksetzen';
+ rs.onclick=async()=>{rs.disabled=true;lmsg('Lampen werden zurückgestellt …');const j=await lampPost('/api/lamp/reset');
+  lmsg(j.result==='ok'?'Lampen sind zurückgestellt.':(LTXT[j.result]||''));rs.disabled=false;};
+ row.append(df,rs);box.appendChild(row);
+ const m=document.createElement('div');m.id='lmsg';box.appendChild(m);}
+sndLabel();load();loadLamps();setInterval(load,4000);
 (function(){const sp=document.getElementById('splash');let gone=false;
  const hide=()=>{if(gone)return;gone=true;sp.classList.add('out');setTimeout(()=>sp.remove(),600);};
  sp.onclick=hide;setTimeout(hide,2100);})();
@@ -309,7 +341,29 @@ async def _respond(writer, status: str, ctype: str, body: str) -> None:
     await writer.drain()
 
 
-async def _handle(store, sync, reader, writer) -> None:
+async def _lamp_api(lamp, method: str, path: str, body: bytes):
+    """The lamp colour settings in the app. None when the path is not one of them."""
+    if method == "GET" and path == "/api/lamp":
+        if lamp is None or not lamp.available:
+            return {"available": False}
+        from app.lamp_show import COLOR_LABELS
+        return {"available": True, "colors": lamp.colors_hex(), "labels": COLOR_LABELS}
+    if method != "POST" or path not in ("/api/lamp/colors", "/api/lamp/test", "/api/lamp/reset"):
+        return None
+    if lamp is None or not lamp.available:
+        return {"ok": False, "result": "off"}
+    d = json.loads(body or b"{}") or {}
+    if path == "/api/lamp/colors":
+        ok = lamp.set_colors(d.get("colors"))
+        if ok:
+            logger.info("Memory page: lamp colours changed to %s", lamp.colors_hex())
+        return {"ok": ok}
+    if path == "/api/lamp/test":
+        return {"result": await lamp.preview(str(d.get("mode")))}
+    return {"result": await lamp.reset()}
+
+
+async def _handle(store, sync, reader, writer, lamp=None) -> None:
     try:
         head = await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), timeout=10)
         lines = head.decode("latin-1").split("\r\n")
@@ -320,7 +374,10 @@ async def _handle(store, sync, reader, writer) -> None:
             if ln.lower().startswith("content-length:"):
                 length = min(int(ln.split(":", 1)[1].strip() or 0), MAX_BODY)
         body = await asyncio.wait_for(reader.readexactly(length), timeout=10) if length else b""
-        if method == "GET" and path == "/":
+        lamp_reply = await _lamp_api(lamp, method, path, body) if path.startswith("/api/lamp") else None
+        if lamp_reply is not None:
+            await _respond(writer, "200 OK", "application/json", json.dumps(lamp_reply, ensure_ascii=False))
+        elif method == "GET" and path == "/":
             await _respond(writer, "200 OK", "text/html", PAGE)
         elif method == "GET" and path in ("/icon.png", "/icon-maskable.png"):
             with open(ICON_PATH if path == "/icon.png" else MASKABLE_PATH, "rb") as f:
@@ -371,7 +428,7 @@ async def _handle(store, sync, reader, writer) -> None:
 
 
 async def start_http(store: memory.MemoryStore, sync: Optional[object] = None,
-                     host: str = "0.0.0.0", port: int = 8082):
-    server = await asyncio.start_server(lambda r, w: _handle(store, sync, r, w), host, port)
+                     host: str = "0.0.0.0", port: int = 8082, lamp: Optional[object] = None):
+    server = await asyncio.start_server(lambda r, w: _handle(store, sync, r, w, lamp), host, port)
     logger.info("Memory page on port %d", port)
     return server
