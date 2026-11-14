@@ -267,6 +267,129 @@ def expired(fact: str, today: Optional[_dt.date] = None) -> bool:
     return until < (today or _dt.date.today())
 
 
+MOTHER_WORDS = {"anne", "annem", "annecim", "mama", "mutter"}
+TURKISH_WORDS = {"ben", "bir", "bu", "ve", "iyi", "evet", "hayir", "artik", "cok", "ne", "nasil",
+                 "var", "yok", "simdi", "bugun", "benim", "seni", "sana", "bana", "tamam"}
+FORGET_WORDS = {"vergiss", "vergessen", "losch", "losche", "unut", "unutur", "sil"}
+STOP_WORDS = {"nicht", "keine", "einen", "einer", "eines", "einem", "seine", "ihren", "seinen",
+              "wieder", "immer", "schon", "durch", "unter", "zwischen", "sich", "sind", "wird",
+              "wurde", "haben", "hatte", "dass", "aber", "oder", "auch", "noch", "nach", "beim",
+              "leyla", "person", "zugehorigkeit", "aktuell"}
+
+
+def _subject_words(fact: str) -> set[str]:
+    """Words that show a conversation was about this entry's person: the name, and for the
+    mother the ways she is called."""
+    prof = parse_profile(fact)
+    if prof:
+        name, fields = prof
+    else:
+        m = re.match(r"^\s*Aktuell bis [\d.]+:\s*(\S+)", fact)
+        if not m:
+            return set()
+        name, fields = m.group(1), {}
+    words = set(_words(name))
+    if "mutter" in _words(fields.get("Zugehörigkeit", "")) or name.startswith("Gülfikar"):
+        words |= MOTHER_WORDS
+    return words
+
+
+def _touched(words: set[str], heard: set[str]) -> bool:
+    """True when one of the words (or a close form of it) came up in the conversation."""
+    for w in words:
+        if len(w) < 4 and w not in heard:
+            continue
+        stem = w[:6]
+        if any(h == w or (len(h) >= 5 and (h.startswith(stem) or w.startswith(h[:6])))
+               for h in heard):
+            return True
+    return False
+
+
+def _change_allowed(old_fact: str, new_fact: Optional[str], heard: set[str],
+                    today: _dt.date) -> bool:
+    """May this entry be changed (new_fact) or dropped (None) after this conversation?"""
+    if new_fact is None and expired(old_fact, today):
+        return True
+    subject = _subject_words(old_fact)
+    if subject:
+        return _touched(subject, heard)
+    a, b = set(_words(old_fact)), set(_words(new_fact or ""))
+    changed = {w for w in (a ^ b if new_fact is not None else a)
+               if len(w) >= 5 and w not in STOP_WORDS}
+    return _touched(changed, heard)
+
+
+def keep_untouched(old: dict, new: dict, dialog: list, today: Optional[_dt.date] = None,
+                   kinds=KINDS, metin_known: bool = False) -> tuple[dict, int]:
+    """The memory model rewrites whole lists. An entry whose person or topic did not come up
+    in this conversation keeps its old wording, and is never dropped (except an expired
+    "Aktuell" entry). New entries always pass. Returns the lists and how many changes were
+    undone."""
+    today = today or _dt.date.today()
+    # What the people said counts; from Leyla only how she addresses the mother, because she
+    # mentions Metin in her playful hints without him being there. The code phrase means Metin.
+    heard = set(_words(" ".join(t for s, t in dialog if s == "user")))
+    heard |= set(_words(" ".join(t for s, t in dialog if s != "user"))) & MOTHER_WORDS
+    if metin_known:
+        heard.add("metin")
+    raw_user = " ".join(t for s, t in dialog if s == "user")
+    user_words = set(_words(raw_user))
+    if user_words & TURKISH_WORDS or re.search(r"[ğşıĞŞİ]", raw_user):
+        heard |= MOTHER_WORDS  # Mama speaks only Turkish; her entries are written in German
+    forget = bool(user_words & FORGET_WORDS)
+    out = {k: list(new.get(k, [])) for k in KINDS}
+    undone = 0
+    every_new = {f for k in kinds for f in out[k]}
+    for k in kinds:
+        if k == PRIVATE:
+            continue  # changes only with the code phrase, when Metin himself manages it
+        old_left = [f for f in old.get(k, []) if f not in every_new]
+        if not old_left:
+            continue
+        result = []
+        for f in out[k]:
+            if f in old.get(k, []) or any(f in old.get(j, []) for j in kinds):
+                result.append(f)
+                continue
+            match = _best_match(f, old_left)
+            if match is None:
+                result.append(f)  # really new
+            elif _change_allowed(match, f, heard, today):
+                result.append(f)
+                old_left.remove(match)
+            else:
+                result.append(match)
+                old_left.remove(match)
+                undone += 1
+        for f in old_left:  # dropped by the model
+            if not forget and not _change_allowed(f, None, heard, today):
+                result.append(f)
+                undone += 1
+        out[k] = result
+    return out, undone
+
+
+def _best_match(fact: str, candidates: list[str]) -> Optional[str]:
+    """The old entry this new one replaces: same person, else clearly similar text."""
+    import difflib
+    prof = parse_profile(fact)
+    if prof:
+        for c in candidates:
+            pc = parse_profile(c)
+            if pc and _words(pc[0]) == _words(prof[0]):
+                return c
+        return None
+    best, score = None, 0.0
+    for c in candidates:
+        if parse_profile(c):
+            continue
+        r = difflib.SequenceMatcher(None, fact.lower(), c.lower()).ratio()
+        if r > score:
+            best, score = c, r
+    return best if score >= 0.6 else None
+
+
 class MemoryStore:
     def __init__(self, path: str) -> None:
         self.path = path
@@ -422,6 +545,7 @@ async def summarize(
     unlocked: bool = False,
     url: str = RESPONSES_URL,
     today: Optional[_dt.date] = None,
+    unlocked_by_code: bool = False,
 ) -> Optional[dict]:
     """Ask a text model for the updated lists. Tries the given models in order. Without the
     code phrase the private list always comes back unchanged."""
@@ -485,5 +609,8 @@ async def summarize(
                                    "phrase; ignored", before - after)
                     lists[FAMILY] = list(old.get(FAMILY, []))
                     lists[FRIENDS] = list(old.get(FRIENDS, []))
+            lists, undone = keep_untouched(old, lists, dialog, today, metin_known=unlocked_by_code)
+            if undone:
+                logger.info("Memory update: %d changes to entries not talked about undone", undone)
             return lists
     return None

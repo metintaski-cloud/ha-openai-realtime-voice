@@ -391,3 +391,47 @@ def test_summary_prompt_creates_a_profile_after_leyla_asked_about_a_name():
     assert "Kette bei neuen Namen" in memory.SUMMARY_PROMPT
     assert "Person: Ali | Zugehörigkeit: Nachbar" in memory.SUMMARY_PROMPT
     assert "aus dem Fernsehen, dem Radio oder den Nachrichten" in memory.SUMMARY_PROMPT
+
+
+def test_entries_not_talked_about_keep_their_wording():
+    import datetime as dt
+    old = {"family": ["Person: Gülfikar | Zugehörigkeit: Metins Mutter, wohnt hier | Spricht: Nur Türkisch",
+                      "Die vier Stehlampen sind zugeordnet: 1 und 2 hinten (1 rechts, 2 links), 3 und 4 vorne.",
+                      "Person: Umut | Zugehörigkeit: Metins Bruder | Sonst: Mag schnelle Antworten"],
+           "friends": [], "private": [], "leyla": [], "confidential": []}
+    new = {"family": ["Person: Gülfikar | Zugehörigkeit: Metins Mutter, wohnt hier | Spricht: Türkisch",
+                      "Die Stehlampen 1 und 2 stehen hinten, 3 und 4 vorne."],
+           "friends": [], "private": [], "leyla": [], "confidential": []}
+    dialog = [["user", "Wie spät ist es? Wie wird das Wetter morgen? Erzähl mir einen Witz."],
+              ["bot", "Es ist 22 Uhr. Metin gelince ev bir başka oluyor."]]
+    out, undone = memory.keep_untouched(old, new, dialog, dt.date(2026, 11, 14))
+    assert out["family"] == old["family"] and undone == 3
+
+
+def test_entries_talked_about_may_change_and_new_ones_pass():
+    import datetime as dt
+    old = {"family": ["Person: Umut | Zugehörigkeit: Metins Bruder",
+                      "Person: Gülfikar | Zugehörigkeit: Metins Mutter | Stimmung: ruhig",
+                      "Aktuell bis 01.11.2026: Metin ist erkältet.",
+                      "Unser Saugroboter heißt Robbi."],
+           "friends": [], "private": [], "leyla": [], "confidential": []}
+    new = {"family": ["Person: Umut | Zugehörigkeit: Metins Bruder | Arbeit: Lehrer",
+                      "Person: Gülfikar | Zugehörigkeit: Metins Mutter | Stimmung: fröhlich"],
+           "friends": ["Person: Ali | Zugehörigkeit: Nachbar"],
+           "private": [], "leyla": [], "confidential": []}
+    dialog = [["user", "Ich bin Umut, ich arbeite als Lehrer. Vergiss das mit dem Saugroboter."],
+              ["bot", "Anne, ne güzel!"], ["user", "Ali ist unser Nachbar"]]
+    out, undone = memory.keep_untouched(old, new, dialog, dt.date(2026, 11, 14))
+    assert out["family"] == new["family"] and out["friends"] == new["friends"] and undone == 0
+
+
+def test_code_phrase_counts_as_metin_talking():
+    import datetime as dt
+    old = {k: [] for k in memory.KINDS}
+    old["family"] = ["Person: Metin | Zugehörigkeit: Sohn | Stimmung: müde"]
+    new = {k: [] for k in memory.KINDS}
+    new["family"] = ["Person: Metin | Zugehörigkeit: Sohn | Stimmung: gut gelaunt"]
+    dialog = [["user", "Mir geht es heute richtig gut"]]
+    assert memory.keep_untouched(old, new, dialog, dt.date(2026, 11, 14))[0]["family"] == old["family"]
+    assert memory.keep_untouched(old, new, dialog, dt.date(2026, 11, 14),
+                                 metin_known=True)[0]["family"] == new["family"]

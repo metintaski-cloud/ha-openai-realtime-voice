@@ -18,7 +18,7 @@ class AfterTalkMixin:
         old = self.memory.load_all()
         lists = await memory.summarize(
             self.openai_api_key, [self.memory_model, self.backend_model], old, dialog,
-            unlocked=unlocked,
+            unlocked=unlocked, unlocked_by_code=unlocked and bool(self.code_phrase),
             url=os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL),
         )
         if lists is None:
