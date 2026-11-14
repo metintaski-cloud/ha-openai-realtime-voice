@@ -478,3 +478,8 @@ def test_paced_sender_fades_the_end_only():
     a.frombytes(data)
     assert a[0] == 9000 and a[-1] == 0 and a[-pacing.FADE_OUT_BYTES // 2 - 1] == 9000
     assert mid >= 1
+
+
+def test_persona_asks_who_uses_a_pet_name():
+    from app import persona
+    assert "bitanem" in persona.CORE and "Kim bu bana bitanem diyen" in persona.CORE
