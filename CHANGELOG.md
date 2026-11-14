@@ -9,7 +9,7 @@
 - Add on 2.54.6: more server modules (phrases, tool link, session end, output link), main.py from 1475 to 1104 lines, behaviour unchanged.
 - Server refactor into modules (night, live link, after talk, announce voice, pacing, automation edit), `credit_balance_exhausted` counts as used up credit (add on 2.52.1 to 2.52.7).
 - Add on 2.54.0: option `backend_reasoning_effort` (minimal, low, medium, high) for the backend model of GPT Live delegation; unset keeps the model default. Lower effort should shorten the long wait after a web search.
-- Add on 2.54.7: memory block cap 15000 characters (was 9000). Add on 2.55.0 to 2.55.4 (3 and 4: own icon, the KI brain picture from Metin): memory page on port 8082 (`app/memory_web.py`): open lists with a tick box per entry, a delete button, tap to edit the text and long press then drag to reorder or move an entry to another list, refreshes itself, no login, private list never shown.
+- Add on 2.54.7: memory block cap 15000 characters (was 9000). Add on 2.55.0 to 2.55.5 (3 to 5: own icon, the KI app icon from Metin): memory page on port 8082 (`app/memory_web.py`): open lists with a tick box per entry, a delete button, tap to edit the text and long press then drag to reorder or move an entry to another list, refreshes itself, no login, private list never shown.
 - Project notes: STATUS.md (decisions, state, open items) and home-assistant-voice-pe/DEPLOYED.md (live config differences).
 
 ### Upstream changes before the fork (kept for reference)

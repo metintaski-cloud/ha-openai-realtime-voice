@@ -190,7 +190,7 @@ MANIFEST = json.dumps({"name": "Leyla Gedächtnis", "short_name": "Leyla", "star
                        "display": "standalone", "background_color": "#111111",
                        "theme_color": "#111111",
                        "icons": [{"src": "/icon.png", "sizes": "512x512", "type": "image/png",
-                                  "purpose": "any maskable"}]})
+                                  "purpose": "any"}]})
 
 
 async def _respond(writer, status: str, ctype: str, body: str) -> None:
