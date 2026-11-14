@@ -36,6 +36,22 @@ PROMISE_NUDGE = (
     "mach einfach weiter."
 )
 
+# GPT Live does not always ask who is talking, though the rules say so (14 Nov 2026).
+# When the person starts their second turn (or later) and nobody has said a name and Leyla
+# has not asked, the bridge reminds her once to ask in the coming answer.
+WHO_ASKED_RE = re.compile(
+    r"kiminle|kimle konuş|kimler var|kim var|sen kimsin|siz kimsiniz|wer spricht|mit wem|"
+    r"wer (?:ist|bist|seid) (?:da|du|ihr)|wer leistet|wer von euch|wer ist denn", re.IGNORECASE)
+NAME_SAID_RE = re.compile(
+    r"\b(?:ich bin|hier ist|hier spricht|mein name ist|ben|benim adım|adım|ismim)\s+[A-ZÄÖÜÇĞİŞ]\w+",
+    re.IGNORECASE)
+WHO_NUDGE = (
+    "Interne Notiz, nicht vorlesen: Du weißt noch nicht, wer mit dir spricht, und hast noch "
+    "nicht gefragt. Ist das, was die Person gerade sagt, kein kurzer Befehl, dann beantworte "
+    "es und frag danach in derselben Antwort nebenbei und mit Charme, wer da ist, in ihrer "
+    "Sprache. Sonst frag bei der nächsten passenden Antwort."
+)
+
 # Farewell phrases (German, Turkish, English). When the user says one of them, the
 # bridge ends the session after the assistant's goodbye was played. GPT Live itself
 # does not always delegate the end of a conversation to the backend tool.

@@ -570,3 +570,30 @@ async def test_no_promise_nudge_when_delegated_or_no_promise(monkeypatch):
     await asyncio.sleep(0.4)
     assert ws.sent == []
     assert m.PROMISE_RE.search("Klar, schalte ich gleich ein") and m.PROMISE_RE.search("Lambaları açıyorum")
+
+
+async def test_who_reminder_once_at_second_turn_without_name():
+    bridge = _bridge()
+    ws = FakeLiveWs()
+    q = asyncio.Queue()
+    state = {"last_audio_time": 0.0, "last_activity": 0.0}
+    await bridge._on_user_text(ws, q, state, "Wie geht es dir?")
+    bridge._on_bot_text(state, "Mir geht es gut!")
+    assert ws.sent == []
+    await bridge._on_user_text(ws, q, state, "Ich hatte einen schönen Tag")
+    bridge._on_bot_text(state, "Wie schön.")
+    await bridge._on_user_text(ws, q, state, "Ja")
+    assert [x["content"][:20] for x in ws.sent] == [m.WHO_NUDGE[:20]]
+
+
+async def test_no_who_reminder_after_name_or_question():
+    bridge = _bridge()
+    for first, reply in (("Hallo, ich bin Umut", "Hallo Umut!"),
+                         ("Hallo", "Hallo! Mit wem spreche ich gerade?"),
+                         ("Merhaba, ben Ayşe", "Merhaba!")):
+        ws = FakeLiveWs()
+        state = {"last_audio_time": 0.0, "last_activity": 0.0}
+        await bridge._on_user_text(ws, asyncio.Queue(), state, first)
+        bridge._on_bot_text(state, reply)
+        await bridge._on_user_text(ws, asyncio.Queue(), state, "Wie geht es dir?")
+        assert ws.sent == [], first

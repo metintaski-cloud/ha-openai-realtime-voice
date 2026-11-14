@@ -11,6 +11,7 @@
 - Add on 2.54.0: option `backend_reasoning_effort` (minimal, low, medium, high) for the backend model of GPT Live delegation; unset keeps the model default. Lower effort should shorten the long wait after a web search.
 - Add on 2.55.12: persona rule for personal small talk (how was your day), after a test where she asked back what was meant.
 - Add on 2.55.13: memory page paints the dark blue background at once (no grey page before the start animation).
+- Add on 2.63.2: when nobody said a name and Leyla has not asked who is there by the second turn, the server reminds her once to ask.
 - Add on 2.63.1: when Leyla promises an action ("ich mache das Licht an") and does not hand it over within 4 s, the server reminds her once to do it now.
 - Add on 2.63.0: the memory app shows new or changed entries green for two days, inside a person folder only the changed points; afterwards they turn blue again.
 - Add on 2.62.2: the who question rule now names its exceptions: a pet word asks at once, and when the second answer is a short command she asks at the next answer that is not one, always after answering the request.

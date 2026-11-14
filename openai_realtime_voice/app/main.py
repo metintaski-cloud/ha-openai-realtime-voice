@@ -38,7 +38,7 @@ from app import memory, memory_web
 from app import context
 from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, pcm_level
 from app.live_link import END_CONVERSATION_TOOL
-from app.phrases import (NAME_NUDGE, NAME_NUDGE_AFTER_S, NAME_NUDGE_COOLDOWN_S, NAME_RE, PROMISE_NUDGE, PROMISE_NUDGE_AFTER_S, PROMISE_RE, addressed_by_name, contains_goodbye, greeting_instruction, parse_greeting_words, pick_greeting)
+from app.phrases import (NAME_NUDGE, NAME_NUDGE_AFTER_S, NAME_NUDGE_COOLDOWN_S, NAME_RE, PROMISE_NUDGE, PROMISE_NUDGE_AFTER_S, PROMISE_RE, NAME_SAID_RE, WHO_ASKED_RE, WHO_NUDGE, addressed_by_name, contains_goodbye, greeting_instruction, parse_greeting_words, pick_greeting)
 from app import (lamp_show, metrics, output_link, session_end, tool_link, after_talk, announce_voice, live_link, night, cleanup, costs, fan, health, lights, messages, persona, purifier, rf, technik, todo_sync,
                  tv, vacuum)
 
@@ -391,6 +391,29 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             logger.warning("Name nudge failed: %s", e)
         finally:
             state["nudge_pending"] = False
+
+    async def _maybe_ask_who(self, live_ws, state: dict) -> None:
+        """A new turn of the person begins: remind Leyla once to ask who is there when it is
+        their second turn or later, no name was said, no code phrase and she has not asked."""
+        dialog = state.get("dialog", [])
+        turns = sum(1 for s, _ in dialog if s == "user")
+        if turns < 1 or state.get("who_nudged") or state.get("closing") or state.get("unlocked"):
+            return
+        said = " ".join(t for s, t in dialog if s == "user")
+        told = " ".join(t for s, t in dialog if s != "user")
+        if NAME_SAID_RE.search(said) or WHO_ASKED_RE.search(told):
+            return
+        state["who_nudged"] = True
+        logger.info("No name yet and Leyla did not ask, reminding her to ask who is there")
+        try:
+            await live_ws.send(json.dumps({
+                "type": "session.commentary.append",
+                "event_id": f"who_{uuid.uuid4().hex[:8]}",
+                "delegation_id": None,
+                "content": WHO_NUDGE,
+            }))
+        except Exception as e:
+            logger.warning("Who nudge failed: %s", e)
 
     def _note_promise(self, live_ws, state: dict, delta: str) -> None:
         """Watch Leyla's words for a promised action; see PROMISE_NUDGE_AFTER_S."""
@@ -754,6 +777,9 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             logger.info("Barge-in: user talks over the reply, playback stopped")
         if delta.strip():
             state["user_spoke"] = True
+            dialog = state.get("dialog", [])
+            if not dialog or dialog[-1][0] != "user":
+                await self._maybe_ask_who(live_ws, state)
         self._add_dialog(state, "user", delta)
         state["last_activity"] = time.monotonic()
         recent = (state.get("recent_user_text", "") + delta)[-80:]
