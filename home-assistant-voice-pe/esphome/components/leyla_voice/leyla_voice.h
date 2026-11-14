@@ -115,6 +115,7 @@ class LeylaVoice : public Component {
   std::atomic<bool> mic_active_{false};
   std::atomic<bool> bot_speaking_{false};
   std::atomic<uint32_t> drop_until_{0};      // reply frames before this time (millis) are dropped
+  uint32_t gap_since_{0}, gaps_{0}, longest_gap_ms_{0};  // speaker ran empty while the reply was still going
   std::atomic<uint32_t> last_rx_ms_{0};      // time of the last reply frame
   uint32_t seen_rx_ms_{0}, wait_since_{0};
   uint8_t carry_{0};

@@ -73,6 +73,7 @@ void LeylaVoice::start() {
   this->texts_.clear();
   this->started_ms_ = now;
   this->ready_ms_ = this->first_reply_ms_ = this->sent_frames_ = 0;
+  this->gap_since_ = this->gaps_ = this->longest_gap_ms_ = 0;
   this->apply_(this->machine_.start(now, heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)), now);
 }
 
@@ -145,9 +146,10 @@ void LeylaVoice::log_summary_() {
   uint64_t rx_drop = this->rx_.dropped(), tx_drop = this->tx_.dropped();
   xSemaphoreGive(this->lock_);
   ESP_LOGI(TAG, "Conversation over: ready after %u ms, first reply audio after %u ms, %u mic blocks sent, "
-                "mic bytes dropped %llu, reply bytes dropped %llu, free heap %u",
+                "mic bytes dropped %llu, reply bytes dropped %llu, speaker gaps %u (longest %u ms), free heap %u",
            (unsigned) this->ready_ms_, (unsigned) this->first_reply_ms_, (unsigned) this->sent_frames_,
-           (unsigned long long) tx_drop, (unsigned long long) rx_drop, (unsigned) heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
+           (unsigned long long) tx_drop, (unsigned long long) rx_drop, (unsigned) this->gaps_,
+           (unsigned) this->longest_gap_ms_, (unsigned) heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
 }
 
 // ---------- socket ----------
@@ -323,9 +325,12 @@ void LeylaVoice::pump_speaker_(uint32_t now) {
 
   if (queued == 0 && pending == 0) {
     this->wait_since_ = 0;
+    // The speaker has nothing left to play although the reply may go on: remember when the gap began
+    if (this->playing_ && this->gap_since_ == 0 && !this->speaker_->has_buffered_data()) this->gap_since_ = now;
     // Quiet for a moment and the speaker has played everything: the reply is over
     if (this->playing_ && now - this->last_rx_ms_.load() > kDrainGapMs && !this->speaker_->has_buffered_data()) {
       this->playing_ = false;
+      this->gap_since_ = 0;  // the reply is over, the quiet at the end is no gap
       this->speaker_->finish();
       this->apply_(this->machine_.speaker_drained(now), now);
     }
@@ -340,6 +345,12 @@ void LeylaVoice::pump_speaker_(uint32_t now) {
     this->speaker_->start();
     this->playing_ = true;
     if (this->first_reply_ms_ == 0) this->first_reply_ms_ = now - this->started_ms_;
+  }
+  if (this->gap_since_ != 0) {  // new reply audio after an empty speaker: that was an audible gap
+    uint32_t gap = now - this->gap_since_;
+    this->gaps_++;
+    if (gap > this->longest_gap_ms_) this->longest_gap_ms_ = gap;
+    this->gap_since_ = 0;
   }
   for (int i = 0; i < 4; i++) {
     if (this->play_off_ >= this->play_len_) {
