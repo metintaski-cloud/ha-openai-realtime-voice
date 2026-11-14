@@ -8,6 +8,7 @@
 - Announcements (for example "Mama, X calls you on WhatsApp") play pre-recorded clips from a cache in Leyla's own voice, the TV is turned down before and restored after (add on 2.51.0 to 2.52.0).
 - Server refactor into modules (night, live link, after talk, announce voice, pacing, automation edit), `credit_balance_exhausted` counts as used up credit (add on 2.52.1 to 2.52.7).
 - Add on 2.54.0: option `backend_reasoning_effort` (minimal, low, medium, high) for the backend model of GPT Live delegation; unset keeps the model default. Lower effort should shorten the long wait after a web search.
+- Add on 2.54.1: tool `tief_nachdenken` for hard questions (high reasoning effort for that one answer, everything else stays fast), logged and measured.
 - Project notes: STATUS.md (decisions, state, open items) and home-assistant-voice-pe/DEPLOYED.md (live config differences).
 
 ### Upstream changes before the fork (kept for reference)
