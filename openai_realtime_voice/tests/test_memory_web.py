@@ -85,3 +85,22 @@ def test_move_items(tmp_path):
     assert not memory_web.move_items(s, {"family": ["c", "a", "x"], "friends": ["f1", "b"], "leyla": ["l1"]})
     assert not memory_web.move_items(s, {"family": "c", "friends": [], "leyla": []})
     assert s.load("family") == ["c", "a"]
+
+
+def test_icon_and_manifest(tmp_path):
+    s = _store(tmp_path)
+
+    async def go():
+        server = await memory_web.start_http(s, None, host="127.0.0.1", port=0)
+        port = server.sockets[0].getsockname()[1]
+        r, w = await asyncio.open_connection("127.0.0.1", port)
+        w.write(b"GET /icon.png HTTP/1.1\r\n\r\n")
+        await w.drain()
+        data = await r.read()
+        w.close()
+        server.close()
+        return data
+
+    data = asyncio.run(go())
+    assert data.startswith(b"HTTP/1.1 200") and b"image/png" in data and b"\x89PNG" in data
+    assert "/icon.png" in memory_web.MANIFEST and "/icon.png" in memory_web.PAGE

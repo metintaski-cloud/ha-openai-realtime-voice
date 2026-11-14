@@ -13,6 +13,7 @@ MemoryStore, so tests need no network.
 import asyncio
 import json
 import logging
+import os
 from typing import Optional
 
 from app import memory
@@ -23,6 +24,7 @@ TITLES = ((memory.FAMILY, "Familie und Haushalt"),
           (memory.FRIENDS, "Freunde und Verwandte"),
           (memory.LEYLA, "Leylas eigene Geschichte"))
 MAX_BODY = 64 * 1024
+ICON_PATH = os.path.join(os.path.dirname(__file__), "memory_icon.png")
 
 
 def snapshot(store: memory.MemoryStore) -> dict:
@@ -91,6 +93,8 @@ PAGE = """<!doctype html>
 <meta name="theme-color" content="#111111">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/png" sizes="512x512" href="/icon.png">
+<link rel="apple-touch-icon" href="/icon.png">
 <title>Leyla Gedächtnis</title>
 <style>
 :root{color-scheme:dark}
@@ -184,7 +188,9 @@ load();setInterval(load,4000);
 
 MANIFEST = json.dumps({"name": "Leyla Gedächtnis", "short_name": "Leyla", "start_url": "/",
                        "display": "standalone", "background_color": "#111111",
-                       "theme_color": "#111111", "icons": []})
+                       "theme_color": "#111111",
+                       "icons": [{"src": "/icon.png", "sizes": "512x512", "type": "image/png",
+                                  "purpose": "any maskable"}]})
 
 
 async def _respond(writer, status: str, ctype: str, body: str) -> None:
@@ -208,6 +214,12 @@ async def _handle(store, sync, reader, writer) -> None:
         body = await asyncio.wait_for(reader.readexactly(length), timeout=10) if length else b""
         if method == "GET" and path == "/":
             await _respond(writer, "200 OK", "text/html", PAGE)
+        elif method == "GET" and path == "/icon.png":
+            with open(ICON_PATH, "rb") as f:
+                raw = f.read()
+            writer.write((f"HTTP/1.1 200 OK\r\nContent-Type: image/png\r\nContent-Length: {len(raw)}\r\n"
+                          "Cache-Control: max-age=86400\r\nConnection: close\r\n\r\n").encode() + raw)
+            await writer.drain()
         elif method == "GET" and path == "/manifest.json":
             await _respond(writer, "200 OK", "application/manifest+json", MANIFEST)
         elif method == "GET" and path == "/api/lists":
