@@ -8,6 +8,7 @@ Diese Datei ist das Gedaechtnis des Projekts. Wer eine Sitzung beginnt, liest si
 - Fernseher wird vor Ansagen leiser gestellt (before_play/after_play).
 - Antwortstil fuer Metin: kurz, hoechstens 3 Saetze, keine Gedankenstriche, Anleitungen Schritt fuer Schritt mit "weiter".
 - Code immer aufraeumen und Metin ueber Struktur und Dateigroesse informieren.
+- Ineffizientes wird nie liegen gelassen: Es kommt raus oder wird effizient gemacht (Fokus besser, effektiver, leistungsstaerker, stabiler). Beispiel: Werkzeug tief_nachdenken wurde entfernt, weil es nichts brachte (14 Nov 2026).
 
 ## Regel gegen veraltete Infos
 - Jede Aenderung an Server, Geraet oder Entscheidungen wird noch in derselben Sitzung in STATUS.md, DEPLOYED.md und der passenden AGENTS.md nachgezogen und committed.
