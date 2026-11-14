@@ -536,3 +536,13 @@ def test_curious_about_names_without_tv_detection():
     # Metin, 14 Nov 2026: she cannot tell the TV apart, so no rule that assumes she can
     assert "nicht aus Fernsehen oder Nachrichten" not in persona.CORE
     assert "aus dem Fernsehen kommt oder niemand von uns ist" in persona.CORE
+
+
+def test_persona_has_no_conflicting_who_and_trust_rules():
+    from app import persona
+    text = persona.build([], False, False, True, code_phrase="X")
+    assert "Sagt die Person schon Tschüss, fragst du nicht mehr" in text
+    assert "pro Gespräch nur einmal, wer da ist" in text
+    assert "ohne Paarwort davor" in text
+    assert "höchstens einmal im Gespräch und erst nach ihrem Anliegen" in text
+    assert "nutzt du offen" not in text and "nie an, wenn andere dabei sind" in text
