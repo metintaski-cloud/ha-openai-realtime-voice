@@ -11,6 +11,7 @@
 - Add on 2.54.0: option `backend_reasoning_effort` (minimal, low, medium, high) for the backend model of GPT Live delegation; unset keeps the model default. Lower effort should shorten the long wait after a web search.
 - Add on 2.55.12: persona rule for personal small talk (how was your day), after a test where she asked back what was meant.
 - Add on 2.55.13: memory page paints the dark blue background at once (no grey page before the start animation).
+- Add on 2.66.3: the memory app background is black instead of dark blue; the cards stay blue.
 - Add on 2.66.2: "das war's" no longer ends a conversation; it is also the answer to "soll ich ihm noch etwas sagen?" and hung up while Metin was still talking.
 - Add on 2.66.1: the laser line in the memory app no longer has a running light; only the heart beats and the stars twinkle.
 - Add on 2.66.0: a news line left of the heart in the memory app shows the last messages that went to Metin's phone (from Mama through Leyla, Leyla's reports), running right to left with the time.

@@ -169,16 +169,16 @@ def move_items(store: memory.MemoryStore, lists, titles=TITLES) -> bool:
 PAGE = """<!doctype html>
 <html lang="de"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#08103a">
+<meta name="theme-color" content="#000000">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" type="image/png" sizes="512x512" href="/icon.png?v=5">
 <link rel="apple-touch-icon" href="/icon.png?v=5">
 <title>Leyla Gedächtnis</title>
 <style>
-html{background:#08103a}
+html{background:#000}
 :root{color-scheme:dark;--cy:#22d3ee;--bl:#3b82f6;--vi:#a855f7;--mg:#d946ef}
-body{margin:0;background:radial-gradient(120% 60% at 50% 0,#14206b 0,#08103a 45%,#040822 100%) fixed;color:#e8ecff;font:17px/1.4 system-ui,sans-serif;padding-bottom:96px}
+body{margin:0;background:#000;color:#e8ecff;font:17px/1.4 system-ui,sans-serif;padding-bottom:96px}
 #pulse{position:relative;height:96px;margin:-6px 0 4px;overflow:hidden;pointer-events:none}
 #pulse .beam{position:absolute;left:0;right:0;top:50%;height:2px;margin-top:-1px;background:linear-gradient(90deg,transparent,#3b82f6aa 20%,#22d3ee 50%,#3b82f6aa 80%,transparent);box-shadow:0 0 8px #22d3ee}
 #pulse svg{position:absolute;left:50%;top:50%;width:84px;height:76px;margin:-38px 0 0 -42px;overflow:visible;animation:beat 1.6s ease-in-out infinite}
@@ -213,7 +213,7 @@ textarea{-webkit-user-select:text;user-select:text;width:100%;box-sizing:border-
 .add{margin:4px 12px;width:calc(100% - 24px);display:block;background:#1b2a6b;border:1px solid var(--cy);box-shadow:none;font-size:16px;padding:12px}
 .addbox{margin:0 12px 8px;padding:12px 14px;background:#0d1750cc;border:1px solid var(--cy);border-radius:12px}
 #snd{width:auto;margin-left:auto;font-size:14px;padding:8px 12px;box-shadow:none;background:#1b2a6b;border:1px solid #3b82f688}
-#bar{position:fixed;left:0;right:0;bottom:0;padding:12px 16px;background:#060b2ae6;border-top:1px solid #3b82f655;backdrop-filter:blur(6px)}
+#bar{position:fixed;left:0;right:0;bottom:0;padding:12px 16px;background:#000000e6;border-top:1px solid #3b82f655;backdrop-filter:blur(6px)}
 button{width:100%;font-size:18px;padding:14px;border:0;border-radius:12px;background:linear-gradient(90deg,var(--vi),var(--mg));color:#fff;box-shadow:0 0 16px #a855f777}
 button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 .card{margin:0 12px 8px;padding:12px 14px;background:#0d1750cc;border:1px solid #3b82f655;border-radius:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
@@ -222,13 +222,13 @@ button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 .card button,.lb button{width:auto;font-size:15px;padding:10px 14px;box-shadow:none;background:#1b2a6b;border:1px solid var(--cy)}
 .lb{display:flex;gap:10px;margin:4px 12px 8px}.lb button{flex:1}
 #lmsg{margin:0 16px 8px;min-height:20px;color:#9fb4ff;font-size:14px}
-#rules{position:fixed;inset:0;z-index:20;overflow-y:auto;background:radial-gradient(120% 60% at 50% 0,#14206b 0,#08103a 45%,#040822 100%);padding-bottom:40px;display:none}
-#rules .top{position:sticky;top:0;display:flex;align-items:center;gap:12px;padding:14px 16px;background:#08103aee;backdrop-filter:blur(6px)}
+#rules{position:fixed;inset:0;z-index:20;overflow-y:auto;background:#000;padding-bottom:40px;display:none}
+#rules .top{position:sticky;top:0;display:flex;align-items:center;gap:12px;padding:14px 16px;background:#000000ee;backdrop-filter:blur(6px)}
 #rules .top button{width:auto;font-size:26px;line-height:1;padding:6px 14px;box-shadow:none;background:#1b2a6b;border:1px solid #3b82f688}
 #rules p{margin:0 12px 8px;padding:12px 14px;background:#0d1750cc;border:1px solid #3b82f655;border-radius:12px;white-space:pre-wrap;word-break:break-word}
 #rules ul{margin:8px 0 0;padding-left:20px;white-space:normal}#rules li{margin:6px 0}
 #rules .lead{background:none;border:0;color:#9fb4ff;padding:4px 16px}
-#splash{position:fixed;inset:0;z-index:100;background:#08103a;display:flex;align-items:center;justify-content:center;transition:opacity .45s}
+#splash{position:fixed;inset:0;z-index:100;background:#000;display:flex;align-items:center;justify-content:center;transition:opacity .45s}
 #splash.out{opacity:0;pointer-events:none}
 .sp{position:relative;width:220px;height:220px}
 .sp img{position:absolute;left:50%;top:50%;width:128px;height:128px;margin:-64px 0 0 -64px;border-radius:28px;animation:pulse 1.6s ease-in-out infinite}
@@ -441,8 +441,8 @@ sndLabel();loadLamps();setInterval(load,4000);
 </script></body></html>"""
 
 MANIFEST = json.dumps({"name": "Leyla Gedächtnis", "short_name": "Leyla", "start_url": "/",
-                       "display": "standalone", "background_color": "#08103a",
-                       "theme_color": "#08103a",
+                       "display": "standalone", "background_color": "#000000",
+                       "theme_color": "#000000",
                        "id": "/", "scope": "/",
                        "icons": [{"src": "/icon.png?v=5", "sizes": sz, "type": "image/png",
                                   "purpose": "any"} for sz in ("192x192", "512x512")]
