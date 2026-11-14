@@ -118,7 +118,18 @@ textarea{-webkit-user-select:text;user-select:text;width:100%;box-sizing:border-
 #bar{position:fixed;left:0;right:0;bottom:0;padding:12px 16px;background:#060b2ae6;border-top:1px solid #3b82f655;backdrop-filter:blur(6px)}
 button{width:100%;font-size:18px;padding:14px;border:0;border-radius:12px;background:linear-gradient(90deg,var(--vi),var(--mg));color:#fff;box-shadow:0 0 16px #a855f777}
 button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
+#splash{position:fixed;inset:0;z-index:100;background:#08103a;display:flex;align-items:center;justify-content:center;transition:opacity .45s}
+#splash.out{opacity:0;pointer-events:none}
+.sp{position:relative;width:220px;height:220px}
+.sp img{position:absolute;left:50%;top:50%;width:128px;height:128px;margin:-64px 0 0 -64px;border-radius:28px;animation:pulse 1.6s ease-in-out infinite}
+.sp svg{position:absolute;inset:0;transform:rotate(-90deg);filter:drop-shadow(0 0 8px #a855f7aa)}
+.trk{fill:none;stroke:#ffffff14;stroke-width:6}
+.rg{fill:none;stroke:url(#rg);stroke-width:6;stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:100;animation:fill 1.9s cubic-bezier(.5,0,.2,1) forwards}
+@keyframes fill{to{stroke-dashoffset:0}}
+@keyframes pulse{50%{transform:scale(1.05)}}
+@media (prefers-reduced-motion:reduce){.rg{animation-duration:.1s}.sp img{animation:none}}
 </style></head><body>
+<div id="splash"><div class="sp"><img src="/icon.png?v=5" alt=""><svg viewBox="0 0 200 200"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#a855f7"/><stop offset="1" stop-color="#d946ef"/></linearGradient></defs><circle class="trk" cx="100" cy="100" r="90"/><circle class="rg" cx="100" cy="100" r="90" pathLength="100"/></svg></div></div>
 <header><img src="/icon.png?v=5" alt=""><h1>Leyla Gedächtnis</h1><button id="snd"></button></header><div id="root"></div>
 <div id="bar"><button id="del" disabled>Markierte löschen</button></div>
 <script>
@@ -206,6 +217,9 @@ document.getElementById('del').onclick=async()=>{if(!sel.size||!confirm(sel.size
  await fetch('/api/delete',{method:'POST',body:JSON.stringify({items})});snd.del();sel=new Set();last='';load();};
 document.getElementById('snd').onclick=()=>{soundOn=!soundOn;try{localStorage.setItem('snd',soundOn?'1':'0')}catch(e){}sndLabel();if(soundOn)snd.on();};
 sndLabel();load();setInterval(load,4000);
+(function(){const sp=document.getElementById('splash');let gone=false;
+ const hide=()=>{if(gone)return;gone=true;sp.classList.add('out');setTimeout(()=>sp.remove(),600);};
+ sp.onclick=hide;setTimeout(hide,2100);})();
 </script></body></html>"""
 
 MANIFEST = json.dumps({"name": "Leyla Gedächtnis", "short_name": "Leyla", "start_url": "/",
