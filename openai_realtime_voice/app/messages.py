@@ -250,15 +250,14 @@ class MessageCenter:
             logger.info("Could not store the announcement clip: %s", e)
 
     def _announce_prompt(self, text: str, bilingual: bool) -> str:
-        style = ("Sprich so, wie du es einem lieben Familienmitglied sagen würdest, das du sehr magst: "
-                 "warm, zugewandt, lebendig, mit einem Lächeln in der Stimme und natürlicher Betonung, "
-                 "nie monoton und nicht wie eine Durchsage oder ein Sprachassistent. Die Lautstärke "
-                 "bleibt normal, du rufst nicht und bist nicht aufgeregt. Sprich mit deinen eigenen "
-                 "Worten, aber inhaltlich genau wie der Inhalt unten, ohne Kosewörter wie „canım“. Alle "
-                 "Informationen wie Name, Uhrzeit, Minuten und was du tust müssen vollständig drin "
-                 "bleiben, jede Zahl genau so wie im Inhalt, nichts weglassen, nichts umrechnen "
-                 "und nichts dazuerfinden. "
-                 "Danach sagst du nichts mehr. ")
+        # Facts first, delivery last: with the facts rule at the end she read the text out flatly.
+        style = ("Alle Informationen wie Name, Uhrzeit, Minuten und was du tust bleiben vollständig drin, jede "
+                 "Zahl genau wie im Inhalt, nichts weglassen, nichts umrechnen, nichts dazuerfinden, keine "
+                 "Kosewörter wie „canım“. Danach sagst du nichts mehr. Am wichtigsten ist, wie du klingst: "
+                 "Man hört dein Lächeln. Sprich mit Wärme, Freude und Melodie, wie eine liebe Freundin der "
+                 "Familie, die gerade etwas Nettes ankündigt, lebendig und mit natürlicher Betonung, nie "
+                 "monoton, nie wie eine Durchsage, nie wie ein vorgelesener Text oder ein Sprachassistent. "
+                 "Die Lautstärke bleibt normal, du rufst nicht. ")
         if bilingual:
             # Two clean passes. Asking for "two short sentences" in two languages made her mix the
             # languages inside the sentences (16:31, 14 Nov 2026).
