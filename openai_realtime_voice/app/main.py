@@ -298,6 +298,14 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             }]
         return session
 
+    def _readable_rules(self) -> str:
+        """Leyla's rules for the app: no memory, the code word itself replaced."""
+        devices, has_fan, has_tv, has_messages = getattr(
+            self, "_devices", ([], False, False, False))
+        return persona.build(devices, fan=has_fan, tv=has_tv, messages=has_messages,
+                             code_phrase="(dein Codewort)" if self.code_phrase else "",
+                             extra=self.instructions)
+
     def _instructions_with_memory(self) -> str:
         devices, has_fan, has_tv, has_messages = getattr(
             self, "_devices", ([], False, False, False))
@@ -1069,7 +1077,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             try:
                 await memory_web.start_http(self.memory, self.todo_sync,
                                             port=int(os.environ.get("MEMORY_WEB_PORT", "8082")),
-                                            lamp=self.lamp, code_phrase=self.code_phrase)
+                                            lamp=self.lamp, code_phrase=self.code_phrase,
+                                            rules=self._readable_rules)
             except Exception as e:
                 logger.warning("Memory page could not start: %s", e)
         if self.messages.available:

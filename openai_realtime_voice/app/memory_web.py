@@ -197,6 +197,11 @@ button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 .card button,.lb button{width:auto;font-size:15px;padding:10px 14px;box-shadow:none;background:#1b2a6b;border:1px solid var(--cy)}
 .lb{display:flex;gap:10px;margin:4px 12px 8px}.lb button{flex:1}
 #lmsg{margin:0 16px 8px;min-height:20px;color:#9fb4ff;font-size:14px}
+#rules{position:fixed;inset:0;z-index:20;overflow-y:auto;background:radial-gradient(120% 60% at 50% 0,#14206b 0,#08103a 45%,#040822 100%);padding-bottom:40px;display:none}
+#rules .top{position:sticky;top:0;display:flex;align-items:center;gap:12px;padding:14px 16px;background:#08103aee;backdrop-filter:blur(6px)}
+#rules .top button{width:auto;font-size:26px;line-height:1;padding:6px 14px;box-shadow:none;background:#1b2a6b;border:1px solid #3b82f688}
+#rules p{margin:0 12px 8px;padding:12px 14px;background:#0d1750cc;border:1px solid #3b82f655;border-radius:12px;white-space:pre-wrap;word-break:break-word}
+#rules .lead{background:none;border:0;color:#9fb4ff;padding:4px 16px}
 #splash{position:fixed;inset:0;z-index:100;background:#08103a;display:flex;align-items:center;justify-content:center;transition:opacity .45s}
 #splash.out{opacity:0;pointer-events:none}
 .sp{position:relative;width:220px;height:220px}
@@ -209,7 +214,7 @@ button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 @media (prefers-reduced-motion:reduce){.rg{animation-duration:.1s}.sp img{animation:none}}
 </style></head><body>
 <div id="splash"><div class="sp"><img src="/icon.png?v=5" alt=""><svg viewBox="0 0 200 200"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#a855f7"/><stop offset="1" stop-color="#d946ef"/></linearGradient></defs><circle class="trk" cx="100" cy="100" r="90"/><circle class="rg" cx="100" cy="100" r="90" pathLength="100"/></svg></div></div>
-<header><button id="back">&#8249;</button><img src="/icon.png?v=5" alt=""><h1>Leyla Gedächtnis</h1><button id="snd"></button></header><div id="root"></div><div id="lamps" style="display:none"></div>
+<header><button id="back">&#8249;</button><img src="/icon.png?v=5" alt=""><h1>Leyla Gedächtnis</h1><button id="snd"></button></header><div id="rules"><div class="top"><button id="rback">&#8249;</button><h1>So ist Leyla</h1></div><div id="rtext"></div></div><div id="root"></div><div id="lamps" style="display:none"></div>
 <div id="bar"><button id="del" disabled>Markierte löschen</button></div>
 <script>
 let CODE=null;
@@ -301,7 +306,8 @@ function render(d){const root=document.getElementById('root');root.innerHTML='';
  root.appendChild(privBox());}
  sel=new Set([...sel].filter(x=>all.has(x)));upd();}
 function privBox(){const b=document.createElement('div');b.className='lb';
- if(CODE){const x=document.createElement('button');x.textContent='Private Liste schließen';x.onclick=()=>{CODE=null;try{localStorage.removeItem('lcode')}catch(e){}last='';snd.off();load();};b.appendChild(x);return b;}
+ if(CODE){const r=document.createElement('button');r.textContent='So ist Leyla';r.onclick=openRules;
+  const x=document.createElement('button');x.textContent='Private Liste schließen';x.onclick=()=>{CODE=null;try{localStorage.removeItem('lcode')}catch(e){}last='';snd.off();load();};b.append(r,x);return b;}
  const i=document.createElement('input');i.type='password';i.placeholder='Codewort';i.autocomplete='off';
  i.style.cssText='flex:2;font:inherit;color:#fff;background:#060c33;border:1px solid var(--bl);border-radius:10px;padding:10px;min-width:0';
  const o=document.createElement('button');o.textContent='Privat öffnen';
@@ -311,6 +317,20 @@ function privBox(){const b=document.createElement('div');b.className='lb';
  o.onclick=go;i.onkeydown=e=>{if(e.key==='Enter')go();};
  i.onfocus=()=>{editing=true;};i.onblur=()=>{setTimeout(()=>{editing=false;},300);};
  b.append(i,o);return b;}
+let rulesOpen=false;
+async function openRules(){let t='';try{const j=await (await post('/api/rules',{})).json();t=j.text||'';}catch(e){}
+ if(!t)return;const box=document.getElementById('rtext');box.innerHTML='';
+ const lead=document.createElement('p');lead.className='lead';lead.textContent='Leylas Regeln, so wie sie sie bekommt. Nur zum Lesen; Änderungen sagst du Claude.';box.appendChild(lead);
+ for(const block of t.split(/\\n\\s*\\n/)){const lines=block.split('\\n');let i=0;
+  if(lines[0]&&lines[0]===lines[0].toUpperCase()&&/[A-ZÄÖÜ]/.test(lines[0])&&!lines[0].startsWith('•')){
+   const h=document.createElement('h2');h.textContent=lines[0];box.appendChild(h);i=1;}
+  let cur=null;for(;i<lines.length;i++){const ln=lines[i];if(!ln.trim())continue;
+   if(ln.trim().startsWith('•')||!cur){cur=document.createElement('p');cur.textContent=ln.trim().replace(/^•\\s*/,'');box.appendChild(cur);}
+   else cur.textContent+='\\n'+ln.trim();}}
+ const el=document.getElementById('rules');el.style.display='block';el.scrollTop=0;rulesOpen=true;editing=true;history.pushState({r:1},'');snd.on();}
+function closeRules(){document.getElementById('rules').style.display='none';rulesOpen=false;editing=false;}
+document.getElementById('rback').onclick=()=>history.back();
+window.addEventListener('popstate',()=>{if(rulesOpen)closeRules();});
 function upd(){const b=document.getElementById('del');b.disabled=!sel.size;b.textContent=sel.size?sel.size+' markierte löschen':'Markierte löschen';}
 let clone=null,ph=null,dragLab=null,offY=0,lastY=0,raf=0;
 function attachDrag(lab){let timer=null,sx=0,sy=0;
@@ -425,7 +445,7 @@ async def _lamp_api(lamp, method: str, path: str, body: bytes):
     return {"result": await lamp.reset()}
 
 
-async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "") -> None:
+async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "", rules=None) -> None:
     try:
         head = await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), timeout=10)
         lines = head.decode("latin-1").split("\r\n")
@@ -462,6 +482,10 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "")
         elif method == "POST" and path == "/api/lists":
             await _respond(writer, "200 OK", "application/json",
                            json.dumps(snapshot(store, titles), ensure_ascii=False))
+        elif method == "POST" and path == "/api/rules":
+            text = rules() if (unlocked and rules) else ""
+            await _respond(writer, "200 OK", "application/json",
+                           json.dumps({"text": text}, ensure_ascii=False))
         elif method == "POST" and path == "/api/unlock":
             if unlocked:
                 logger.info("Memory page: private list opened")
@@ -510,8 +534,10 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "")
 
 async def start_http(store: memory.MemoryStore, sync: Optional[object] = None,
                      host: str = "0.0.0.0", port: int = 8082, lamp: Optional[object] = None,
-                     code_phrase: str = ""):
+                     code_phrase: str = "", rules=None):
+    """`rules`: a function that returns Leyla's instructions without memory and without the
+    code word; shown read only after the code word."""
     server = await asyncio.start_server(
-        lambda r, w: _handle(store, sync, r, w, lamp, code_phrase), host, port)
+        lambda r, w: _handle(store, sync, r, w, lamp, code_phrase, rules), host, port)
     logger.info("Memory page on port %d", port)
     return server

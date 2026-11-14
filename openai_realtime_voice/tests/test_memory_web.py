@@ -193,3 +193,17 @@ def test_private_list_only_with_code(tmp_path):
     assert memory_web.move_items(store, {"family": ["a", "geheim"], "friends": [], "leyla": [],
                                          "private": []}, titles)
     assert store.load("confidential") == ["Aktuell bis 1.1.2099: x"]
+
+
+def test_readable_rules_hide_the_code_word_and_the_memory(tmp_path):
+    import os
+    os.environ["OPENAI_API_KEY"] = os.environ.get("OPENAI_API_KEY", "test")
+    from app import memory
+    from app.main import LiveVoiceBridge
+    bridge = LiveVoiceBridge()
+    bridge.code_phrase = "Leyla Zitronenbaum"
+    bridge.memory = memory.MemoryStore(str(tmp_path / "m.json"))
+    bridge.memory.save_all({"family": ["Person: Metin | Alter: 45"], "private": ["Quittenkuchen"]})
+    text = bridge._readable_rules()
+    assert "Zitronenbaum" not in text and "(dein Codewort)" in text
+    assert "Quittenkuchen" not in text and "Alter: 45" not in text and "WER DU BIST" in text
