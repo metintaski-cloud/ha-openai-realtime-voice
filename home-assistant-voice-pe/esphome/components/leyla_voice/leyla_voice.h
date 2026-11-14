@@ -57,6 +57,12 @@ class LeylaVoice : public Component {
   void stop();
   void interrupt();
   bool is_running() const { return this->machine_.running(); }
+  // True once the server said ready and until the conversation ends (for status sensors)
+  bool is_connected() const {
+    auto st = this->machine_.state();
+    return st == leyla::State::Listening || st == leyla::State::Thinking || st == leyla::State::Replying ||
+           st == leyla::State::Searching;
+  }
   bool is_bot_speaking() const { return this->bot_speaking_.load(); }
 
  protected:
