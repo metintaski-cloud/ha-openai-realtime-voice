@@ -510,7 +510,7 @@ def test_persona_never_says_guess():
 def test_only_mama_confidences_stay_private_and_insults_are_always_reported():
     from app import persona, report
     core = persona.CORE
-    assert "Was dir Mama so anvertraut" in core and "Das gilt nur für Mama" in core
+    assert "Was Mama dir anvertraut" in core and "Das Geheimhalten gilt nur für Mama" in core
     assert "Was dir jemand so anvertraut" not in core  # was too broad (Metin, 14 Nov 2026)
     assert "Frechheiten und Beleidigungen sind nie etwas Anvertrautes" in core
     assert "lässt du ganz weg" in report.PROMPT  # the report tells only the rude part
@@ -528,7 +528,7 @@ def test_several_speakers_rule():
     # Metin, 14 Nov 2026: several people may talk; no "keep the name until the end"
     assert "behalte den Namen bis zum Ende" not in core
     assert "Die Sprache wechselt" in core and "„Wer spricht gerade?“" in core
-    assert "Persönliches beim Falschen nicht" in core
+    assert "Persönliches bei der falschen Person nicht" in core
 
 
 def test_curious_about_names_without_tv_detection():

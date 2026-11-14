@@ -11,6 +11,7 @@
 - Add on 2.54.0: option `backend_reasoning_effort` (minimal, low, medium, high) for the backend model of GPT Live delegation; unset keeps the model default. Lower effort should shorten the long wait after a web search.
 - Add on 2.55.12: persona rule for personal small talk (how was your day), after a test where she asked back what was meant.
 - Add on 2.55.13: memory page paints the dark blue background at once (no grey page before the start animation).
+- Add on 2.60.12: all of Leyla's rules rewritten for clarity, one thing per point and short sentences, same content: 57 to 81 points, average 206 to 148 characters, longest 467 to 366, total 12041 to 12344. Two clarifications: a pet name is replaced by the name only when she knows it for sure; "whether you love him" now says Metin.
 - Add on 2.60.11: five rules that mixed two topics split into two points each (personal questions, signs of another speaker, why she asks, private questions about Metin, rudeness report); wording unchanged, longest point 575 to 449 characters.
 - Add on 2.60.10: the rules view in the app shows the device list (what Leyla does through delegation) as one line per device; the text Leyla gets is unchanged.
 - Add on 2.60.9: two long rules in `app/persona.py` split into two shorter ones each (who is speaking, pet name for Metin); the exception after self started announcements removed since nobody talks then.
