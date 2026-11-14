@@ -17,6 +17,44 @@ PREBUFFER_MAX_WAIT_S = 0.25
 OUTPUT_LEAD_S = 0.2
 # GPT Live may stream quiet frames while it is not talking: frames below this peak are silence.
 OUTPUT_SILENCE_PEAK = 300
+# Soft edges: where the audio stops (end of a reply or a pause) the last 15 ms are faded to zero and the
+# next audio fades in over 5 ms, so the speaker never jumps from a level to silence (a click). Only
+# existing samples are changed, nothing is added, so the timing stays as it was.
+FADE_OUT_BYTES = SAMPLE_RATE * 15 // 1000 * 2  # 720 bytes
+FADE_IN_BYTES = SAMPLE_RATE * 5 // 1000 * 2    # 240 bytes
+
+
+def fade_out(buf: bytearray) -> None:
+    """Fade the last FADE_OUT_BYTES of 16-bit mono PCM to zero, in place."""
+    n = min(len(buf), FADE_OUT_BYTES) // 2
+    if n == 0:
+        return
+    tail = array.array("h")
+    tail.frombytes(bytes(buf[len(buf) // 2 * 2 - n * 2: len(buf) // 2 * 2]))
+    if sys.byteorder == "big":
+        tail.byteswap()
+    for i in range(n):
+        tail[i] = tail[i] * (n - 1 - i) // n
+    if sys.byteorder == "big":
+        tail.byteswap()
+    end = len(buf) // 2 * 2
+    buf[end - n * 2:end] = tail.tobytes()
+
+
+def fade_in(chunk: bytes) -> bytes:
+    """Fade in the first FADE_IN_BYTES of 16-bit mono PCM."""
+    n = min(len(chunk), FADE_IN_BYTES) // 2
+    if n == 0:
+        return chunk
+    head = array.array("h")
+    head.frombytes(chunk[: n * 2])
+    if sys.byteorder == "big":
+        head.byteswap()
+    for i in range(n):
+        head[i] = head[i] * (i + 1) // (n + 1)
+    if sys.byteorder == "big":
+        head.byteswap()
+    return head.tobytes() + chunk[n * 2:]
 
 
 def pcm_level(pcm: bytes) -> tuple[int, int]:
@@ -42,6 +80,7 @@ class PacedSender:
         self.bytes_sent = 0
         self.start_time: Optional[float] = None
         self.first_chunk_at: Optional[float] = None
+        self.faded = False  # the last audio sent was faded out: fade the next in
 
     def reset(self) -> None:
         """Forget the pacing clock; the next reply starts fresh."""
@@ -52,6 +91,9 @@ class PacedSender:
     def add(self, chunk: bytes) -> None:
         if self.start_time is None and not self.buffer:
             self.first_chunk_at = asyncio.get_event_loop().time()
+        if self.faded and chunk:
+            chunk = fade_in(chunk)
+            self.faded = False
         self.buffer.extend(chunk)
 
     async def pump(self, flush: bool = False, force: bool = False) -> None:
@@ -61,10 +103,16 @@ class PacedSender:
             return
         if self.start_time is None:
             waited = loop.time() - (self.first_chunk_at or loop.time())
-            if not force and len(self.buffer) < PREBUFFER_BYTES and waited < PREBUFFER_MAX_WAIT_S:
+            # the last 15 ms stay back for the fade, so the reserve that goes out is still PREBUFFER_S
+            if not force and len(self.buffer) < PREBUFFER_BYTES + FADE_OUT_BYTES and waited < PREBUFFER_MAX_WAIT_S:
                 return
             self.start_time = loop.time()
-        while len(self.buffer) >= SEND_CHUNK_SIZE or (flush and self.buffer):
+        if flush:  # the audio stops here: fade out its end
+            fade_out(self.buffer)
+            self.faded = True
+        # Keep the last 15 ms back until more audio comes or the flush, so there is something left to fade
+        hold = 0 if flush else FADE_OUT_BYTES
+        while len(self.buffer) - hold >= SEND_CHUNK_SIZE or (flush and self.buffer):
             n = min(SEND_CHUNK_SIZE, len(self.buffer))
             to_send = bytes(self.buffer[:n])
             del self.buffer[:n]

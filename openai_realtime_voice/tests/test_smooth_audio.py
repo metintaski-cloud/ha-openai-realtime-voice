@@ -431,3 +431,50 @@ def test_persona_blooms_for_metin_only():
     from app import persona
     text = persona.build([], False, False, False)
     assert "blühst du auf" in text and "die Freude ist für Metin" in text
+
+
+def test_soft_edges():
+    import array
+    loud = bytearray(array.array("h", [10000] * 1000).tobytes())
+    pacing.fade_out(loud)
+    s = array.array("h")
+    s.frombytes(bytes(loud))
+    n = pacing.FADE_OUT_BYTES // 2
+    assert s[0] == 10000 and s[-n - 1] == 10000  # only the last 15 ms change
+    assert s[-1] == 0 and all(s[-i] <= s[-i - 1] for i in range(1, n))
+    assert len(loud) == 2000  # nothing added, timing unchanged
+    quiet_in = pacing.fade_in(array.array("h", [8000] * 600).tobytes())
+    t = array.array("h")
+    t.frombytes(quiet_in)
+    assert t[0] < 200 and t[pacing.FADE_IN_BYTES // 2] == 8000 and len(quiet_in) == 1200
+    short = bytearray(array.array("h", [5000] * 10).tobytes())
+    pacing.fade_out(short)  # shorter than the fade
+    assert array.array("h", short)[-1] == 0
+    pacing.fade_out(bytearray())  # empty is fine
+    assert pacing.fade_in(b"") == b""
+
+
+def test_paced_sender_fades_the_end_only():
+    import array
+
+    async def go():
+        sent = []
+
+        class WS:
+            async def send(self, b):
+                sent.append(b)
+
+        s = pacing.PacedSender(WS())
+        s.add(array.array("h", [9000] * 6000).tobytes())  # 250 ms
+        await s.pump()
+        mid = len(sent)
+        await s.pump(flush=True)  # the reply stops: everything held back goes out, faded
+        return sent, mid
+
+    sent, mid = asyncio.run(go())
+    data = b"".join(sent)
+    assert len(data) == 12000
+    a = array.array("h")
+    a.frombytes(data)
+    assert a[0] == 9000 and a[-1] == 0 and a[-pacing.FADE_OUT_BYTES // 2 - 1] == 9000
+    assert mid >= 1
