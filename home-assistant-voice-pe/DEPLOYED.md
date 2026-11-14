@@ -21,3 +21,6 @@ The template was synced with the live file on the same day (wake word, component
 
 ## leyla_voice test wiring (14 Nov 2026)
 The live config has a `leyla_voice:` block (id leyla_voice_test) with the same LED, sound and ducking callbacks as the old component, plus the button "Leyla Test neu" (starts it only when nothing else runs and the device is not muted). Wake words still use the old component. on_stopped and on_error restart micro_wake_word. The component is also listed in external_components next to voice_assistant_websocket.
+
+## Wake word watchdog (14 Nov 2026)
+micro_wake_word stops itself after a detection and was not restarted after every kind of conversation end, so the device went deaf to "Hallo Leyla" (seen twice, 01:00 and 01:47). The live config has `interval: 5s` (id wake_word_watchdog): when micro_wake_word is not running, no pipeline is active (`active_pipeline == 0`), the device is not muted and neither component runs, it logs "Wake word detection was not running, restarting it" and calls `micro_wake_word.start`. Count these log lines to see how often it saves the day.
