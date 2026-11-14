@@ -93,8 +93,8 @@ PAGE = """<!doctype html>
 <meta name="theme-color" content="#111111">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="/manifest.json">
-<link rel="icon" type="image/png" sizes="512x512" href="/icon.png">
-<link rel="apple-touch-icon" href="/icon.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icon.png?v=5">
+<link rel="apple-touch-icon" href="/icon.png?v=5">
 <title>Leyla Gedächtnis</title>
 <style>
 :root{color-scheme:dark}
@@ -189,7 +189,7 @@ load();setInterval(load,4000);
 MANIFEST = json.dumps({"name": "Leyla Gedächtnis", "short_name": "Leyla", "start_url": "/",
                        "display": "standalone", "background_color": "#111111",
                        "theme_color": "#111111",
-                       "icons": [{"src": "/icon.png", "sizes": "512x512", "type": "image/png",
+                       "icons": [{"src": "/icon.png?v=5", "sizes": "512x512", "type": "image/png",
                                   "purpose": "any"}]})
 
 
@@ -214,11 +214,11 @@ async def _handle(store, sync, reader, writer) -> None:
         body = await asyncio.wait_for(reader.readexactly(length), timeout=10) if length else b""
         if method == "GET" and path == "/":
             await _respond(writer, "200 OK", "text/html", PAGE)
-        elif method == "GET" and path == "/icon.png":
+        elif method == "GET" and path == "/icon.png?v=5":
             with open(ICON_PATH, "rb") as f:
                 raw = f.read()
             writer.write((f"HTTP/1.1 200 OK\r\nContent-Type: image/png\r\nContent-Length: {len(raw)}\r\n"
-                          "Cache-Control: max-age=86400\r\nConnection: close\r\n\r\n").encode() + raw)
+                          "Cache-Control: no-cache\r\nConnection: close\r\n\r\n").encode() + raw)
             await writer.drain()
         elif method == "GET" and path == "/manifest.json":
             await _respond(writer, "200 OK", "application/manifest+json", MANIFEST)
