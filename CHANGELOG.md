@@ -11,6 +11,7 @@
 - Add on 2.54.0: option `backend_reasoning_effort` (minimal, low, medium, high) for the backend model of GPT Live delegation; unset keeps the model default. Lower effort should shorten the long wait after a web search.
 - Add on 2.55.12: persona rule for personal small talk (how was your day), after a test where she asked back what was meant.
 - Add on 2.55.13: memory page paints the dark blue background at once (no grey page before the start animation).
+- Add on 2.57.3 and firmware `leyla_voice` (14 Nov 2026): the device reports why it ended a conversation (`{"type":"stopped","reason":...,"ms":...}`, reasons external, auto_stop, server_disconnect, farewell_done, farewell_timeout, quota, socket_closed, connect_failed, low_heap) and logs it as a warning; the server logs `Device ended the conversation: <reason> after <ms> ms`. Added after Leyla switched off mid conversation at 15:54 and only the device knew why.
 - Firmware `leyla_voice` (14 Nov 2026): a 15 ms ramp to zero and 5 ms fade in when the speaker runs dry was tried against the click at the end of a sentence and reverted after 13 minutes because the speech stuttered.
 - Add on 2.57.2: fix, the announcement server (messages, "Mama, X calls you") moves to port 8084; since 2.55.0 the memory page took 8082 first and the announcements could not start.
 - Add on 2.57.1: maskable app icon (full square) so the launcher shows the Leyla icon as large as other shortcuts.

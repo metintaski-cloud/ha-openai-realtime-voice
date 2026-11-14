@@ -323,3 +323,14 @@ def test_greeting_words_and_language():
     assert "kein Kompliment" in m.greeting_instruction("Hallo")
     seen = {m.pick_greeting(["Hallo", "Merhaba"], 20) for _ in range(200)}
     assert {"Hallo", "Merhaba", "Guten Abend", "İyi akşamlar"} <= seen
+
+
+def test_device_stop_reason_is_logged(caplog):
+    """The device tells why it ended a conversation, so a surprising stop can be traced in the add-on log."""
+    import asyncio
+    import logging
+    from app.main import LiveVoiceBridge
+    bridge = LiveVoiceBridge.__new__(LiveVoiceBridge)
+    with caplog.at_level(logging.INFO):
+        bridge._on_client_control('{"type":"stopped","reason":"auto_stop","ms":242262}', asyncio.Queue())
+    assert "Device ended the conversation: auto_stop after 242262 ms" in caplog.text

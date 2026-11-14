@@ -94,6 +94,14 @@ void LeylaVoice::fire_(uint8_t index) {
 }
 
 void LeylaVoice::apply_(const leyla::Effects &e, uint32_t now) {
+  if (e.fire_stopped || e.fire_disconnected || e.fire_error) {
+    const char *why = leyla::stop_name(this->machine_.stop_reason());
+    ESP_LOGW(TAG, "Conversation ended: %s after %u ms", why, (unsigned) (now - this->started_ms_));
+    char msg[96];  // the server logs it; for a socket that is already gone it is only in the device log
+    snprintf(msg, sizeof(msg), "{\"type\":\"stopped\",\"reason\":\"%s\",\"ms\":%u}", why,
+             (unsigned) (now - this->started_ms_));
+    this->send_text_(msg);
+  }
   if (e.close_socket) this->close_socket_();
   if (e.open_socket) this->open_socket_();
   if (e.start_mic) {

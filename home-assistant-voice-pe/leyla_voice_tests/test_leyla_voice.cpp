@@ -2,6 +2,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <string>
 #include <vector>
 
 #include "../esphome/components/leyla_voice/gain.h"
@@ -178,6 +179,7 @@ static void test_machine() {
   CHECK(!m.tick(t + 30000).fire_stopped);
   e = m.tick(t + 35000);
   CHECK(e.fire_stopped && e.close_socket && e.stop_mic && !m.running());
+  CHECK(m.stop_reason() == Stop::AutoStop);
 }
 
 static void test_machine_edges() {
@@ -212,12 +214,14 @@ static void test_machine_edges() {
   CHECK(m.state() == State::Stopping && !e.fire_stopped);
   e = m.speaker_drained(t + 3500);
   CHECK(e.fire_stopped && e.close_socket && !m.running());
+  CHECK(m.stop_reason() == Stop::FarewellDone);
 
   // server disconnect while silent: stop at once
   m = Machine(); t = 0;
   m.start(t, 100000); m.socket_open(t); m.ready(t);
   e = m.server_disconnect(t + 100);
   CHECK(e.fire_stopped && !m.running());
+  CHECK(m.stop_reason() == Stop::ServerDisconnect);
 
   // quota error: show for 4 s, then stop
   m = Machine(); t = 0;
@@ -226,18 +230,22 @@ static void test_machine_edges() {
   CHECK(e.fire_quota && e.stop_mic && m.state() == State::Stopping);
   CHECK(!m.tick(t + 3000).fire_stopped);
   CHECK(m.tick(t + 4200).fire_stopped && !m.running());
+  CHECK(m.stop_reason() == Stop::Quota);
 
   // socket lost
   m = Machine(); t = 0;
   m.start(t, 100000); m.socket_open(t); m.ready(t);
   e = m.socket_closed(t + 500);
   CHECK(e.fire_disconnected && e.stop_mic && !m.running());
+  CHECK(m.stop_reason() == Stop::SocketClosed);
 
   // stop action clears the playback
   m = Machine(); t = 0;
   m.start(t, 100000); m.socket_open(t); m.ready(t); m.phase(Phase::Replying, t + 10);
   e = m.stop(t + 20);
   CHECK(e.fire_stopped && e.clear_playback && e.close_socket && !m.bot_speaking());
+  CHECK(m.stop_reason() == Stop::External);
+  CHECK(std::string(stop_name(m.stop_reason())) == "external");
   CHECK(!m.stop(t + 30).fire_stopped);  // second stop does nothing
 
   // events in the wrong state are ignored

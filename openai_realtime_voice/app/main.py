@@ -529,7 +529,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             self.recorder.record_input_audio(message)
 
     def _on_client_control(self, message, output_queue: asyncio.Queue) -> None:
-        """A JSON message from the Voice PE (only "interrupt" is known)."""
+        """A JSON message from the Voice PE ("interrupt" and "stopped" are known)."""
         try:
             data = json.loads(message) if isinstance(message, str) else message
             if data.get("type") == "interrupt":
@@ -538,6 +538,10 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 logger.info("Interrupt received from client")
                 metrics.record("interrupt")
                 self._clear_output_queue(output_queue)
+            elif data.get("type") == "stopped":
+                # The device ended the conversation itself; the reason makes a surprising stop traceable.
+                logger.info("Device ended the conversation: %s after %s ms",
+                            str(data.get("reason", "?"))[:30], str(data.get("ms", "?"))[:10])
         except (json.JSONDecodeError, TypeError, AttributeError):
             pass
 

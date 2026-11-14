@@ -27,6 +27,7 @@ ESP32 Voice PE                    Addon
 
 - **Audio:** 24 kHz, 16-bit, mono PCM. Device binary frames are base64-encoded and sent as `input_audio_buffer.append`; `response.output_audio.delta` (Realtime API GA) is base64-decoded and sent as binary to the device.
 - **Interrupt:** Device sends `{"type":"interrupt"}`; server sends `response.cancel` to OpenAI.
+- **Stopped:** when the device ends a conversation it sends `{"type":"stopped","reason":"auto_stop","ms":242262}` just before closing; the server logs `Device ended the conversation: <reason> after <ms> ms` (reasons are listed in `state_machine.h`, `Stop`). If the socket is already gone the reason is only in the device log.
 - **Disconnect:** When the user says goodbye, OpenAI calls `disconnect_client`; server sends `{"type":"disconnect"}` to the device, returns from the handler so the task ends, and the cancellation cascade closes both WebSockets.
 - **Web search:** The `search_web` tool calls the OpenAI Responses API (GA `web_search` tool, `gpt-4.1-mini` model) using `WEB_SEARCH_API_KEY` or `OPENAI_API_KEY`. Non-reasoning search is used for low latency (single lookup, typically 3–10s). The key must have **Responses (Write)** permission in the OpenAI dashboard.
 

@@ -9,6 +9,24 @@ namespace leyla {
 
 enum class State : uint8_t { Idle, Connecting, WaitingReady, Listening, Thinking, Replying, Searching, Stopping };
 enum class Phase : uint8_t { Thinking, Replying, Searching };
+// Why the last conversation ended; sent to the server so a surprising stop can be traced afterwards.
+enum class Stop : uint8_t {
+  None, External, AutoStop, ServerDisconnect, FarewellDone, FarewellTimeout, Quota, SocketClosed, ConnectFailed, LowHeap
+};
+inline const char *stop_name(Stop s) {
+  switch (s) {
+    case Stop::External: return "external";
+    case Stop::AutoStop: return "auto_stop";
+    case Stop::ServerDisconnect: return "server_disconnect";
+    case Stop::FarewellDone: return "farewell_done";
+    case Stop::FarewellTimeout: return "farewell_timeout";
+    case Stop::Quota: return "quota";
+    case Stop::SocketClosed: return "socket_closed";
+    case Stop::ConnectFailed: return "connect_failed";
+    case Stop::LowHeap: return "low_heap";
+    default: return "none";
+  }
+}
 
 struct Effects {
   bool open_socket = false, close_socket = false, start_mic = false, stop_mic = false;
@@ -34,6 +52,7 @@ class Machine {
 
   State state() const { return state_; }
   bool running() const { return state_ != State::Idle; }
+  Stop stop_reason() const { return stop_reason_; }
   bool bot_speaking() const { return bot_speaking_; }
   // True for a short time after an interrupt: reply audio from before it must be dropped.
   bool drop_audio(uint32_t now) const { return (int32_t) (guard_until_ - now) > 0; }
@@ -41,7 +60,7 @@ class Machine {
   Effects start(uint32_t now, uint32_t free_heap) {
     Effects e;
     if (state_ != State::Idle) return e;
-    if (free_heap < c_.min_free_heap) { e.fire_error = true; return e; }
+    if (free_heap < c_.min_free_heap) { stop_reason_ = Stop::LowHeap; e.fire_error = true; return e; }
     state_ = State::Connecting;
     retries_ = 0;
     since_ = last_activity_ = now;
@@ -95,7 +114,7 @@ class Machine {
       last_activity_ = now;
       e.fire_listening = true;
     } else if (state_ == State::Stopping && pending_disconnect_) {
-      finish(e);
+      finish(e, Stop::FarewellDone);
     }
     return e;
   }
@@ -109,7 +128,7 @@ class Machine {
       stop_at_ = now + c_.farewell_max_ms;
       e.stop_mic = true;
     } else {
-      finish(e);
+      finish(e, Stop::ServerDisconnect);
     }
     return e;
   }
@@ -130,6 +149,7 @@ class Machine {
     if (!running()) return e;
     state_ = State::Idle;
     bot_speaking_ = false;
+    stop_reason_ = Stop::SocketClosed;
     e.stop_mic = true;
     e.fire_disconnected = true;
     return e;
@@ -138,7 +158,7 @@ class Machine {
   Effects stop(uint32_t) {
     Effects e;
     if (!running()) return e;
-    finish(e);
+    finish(e, Stop::External);
     e.clear_playback = true;
     return e;
   }
@@ -172,6 +192,7 @@ class Machine {
             e.open_socket = true;
           } else {
             state_ = State::Idle;
+            stop_reason_ = Stop::ConnectFailed;
             e.close_socket = true;
             e.fire_error = true;
           }
@@ -182,11 +203,11 @@ class Machine {
       case State::Replying:
       case State::Searching: {
         uint32_t limit = state_ == State::Searching ? c_.searching_stop_ms : c_.auto_stop_ms;
-        if (now - last_activity_ >= limit) finish(e);
+        if (now - last_activity_ >= limit) finish(e, Stop::AutoStop);
         break;
       }
       case State::Stopping:
-        if ((int32_t) (now - stop_at_) >= 0) finish(e);
+        if ((int32_t) (now - stop_at_) >= 0) finish(e, pending_disconnect_ ? Stop::FarewellTimeout : Stop::Quota);
         break;
       case State::Idle:
         break;
@@ -195,7 +216,8 @@ class Machine {
   }
 
  private:
-  void finish(Effects &e) {
+  void finish(Effects &e, Stop why) {
+    stop_reason_ = why;
     state_ = State::Idle;
     bot_speaking_ = false;
     pending_disconnect_ = false;
@@ -206,6 +228,7 @@ class Machine {
 
   Config c_;
   State state_{State::Idle};
+  Stop stop_reason_{Stop::None};
   bool bot_speaking_{false}, pending_disconnect_{false};
   uint8_t retries_{0};
   uint32_t since_{0}, last_activity_{0}, stop_at_{0}, guard_until_{0};

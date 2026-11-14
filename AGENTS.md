@@ -55,6 +55,7 @@ Both sides must follow this. If one side changes, the other may need updates.
 | Direction        | Message              | Meaning                                      |
 |-----------------|----------------------|----------------------------------------------|
 | Client → Server | `{"type":"interrupt"}` | Stop current response and listen for input |
+| Client → Server | `{"type":"stopped","reason":"auto_stop","ms":242262}` | Device ended the conversation itself; reason for the log (see `Stop` in `state_machine.h`). |
 | Server → Client | `{"type":"ready"}` | OpenAI connected; client should start sending audio and show "listening" (e.g. green LEDs). |
 | Server → Client | `{"type":"phase","phase":"thinking"}` | User stopped speaking; OpenAI is processing. |
 | Server → Client | `{"type":"phase","phase":"replying"}` | Bot started speaking. |
