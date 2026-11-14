@@ -381,3 +381,10 @@ async def test_summarize_updates_confidential_and_keeps_it_when_left_out(monkeyp
     assert "Knie" in prompts[0] and '"confidential"' in prompts[0]
     out = await memory.summarize("k", ["m"], old, [["user", "hallo"]])
     assert out["confidential"] == [SECRET]
+
+
+def test_summary_prompt_creates_a_profile_after_leyla_asked_about_a_name():
+    # Metin, 14 Nov 2026: name falls, Leyla asks, someone says who it is, the profile is made
+    assert "Kette bei neuen Namen" in memory.SUMMARY_PROMPT
+    assert "Person: Ali | Zugehörigkeit: Nachbar" in memory.SUMMARY_PROMPT
+    assert "aus dem Fernsehen, dem Radio oder den Nachrichten" in memory.SUMMARY_PROMPT

@@ -136,6 +136,11 @@ Regeln:
 - Jede Person steht in genau einer Liste. Steht jemand in der falschen, verschieb den Eintrag.
   Eine Person, die nur erwähnt wird, trägst du ein, sobald man etwas Bleibendes über sie
   erfährt (wer sie ist, wie sie zu uns gehört).
+- Kette bei neuen Namen: Hat Leyla nach einem unbekannten Namen gefragt und jemand hat gesagt,
+  wer das ist, legst du sofort ein Profil an, auch wenn bisher nur Name und Zugehörigkeit
+  bekannt sind ("Person: Ali | Zugehörigkeit: Nachbar"), und ergänzt es in späteren
+  Gesprächen. Wurde gesagt, dass der Name aus dem Fernsehen, dem Radio oder den Nachrichten
+  kommt oder niemand von uns ist, trägst du nichts ein.
 - Reden mehrere Personen, trägst du nur ein, was eindeutig einer Person zuzuordnen ist (sie hat
   sich selbst genannt, wurde mit Namen angesprochen, oder Leyla hat es bestätigt).
 - Schreib Namen immer so, wie sie schon in der Liste stehen (zum Beispiel Gülfikar, nicht
