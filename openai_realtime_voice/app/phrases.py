@@ -82,7 +82,9 @@ GOODBYE_PHRASES = (
     "bai bai", "bey bey",
 )
 # Only the user may end the session with these softer phrases.
-USER_ONLY_GOODBYE_PHRASES = ("bis bald", "bis dann", "das war's", "das wars")
+# "das war's" is not one: it is also the answer to "soll ich ihm noch etwas sagen?" and ended
+# a talk that went on (15 Nov 2026); a real goodbye after it still ends through Leyla.
+USER_ONLY_GOODBYE_PHRASES = ("bis bald", "bis dann")
 
 
 def _normalize(text: str) -> str:

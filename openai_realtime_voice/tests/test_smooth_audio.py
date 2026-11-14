@@ -640,3 +640,8 @@ async def test_personal_part_is_handed_over_once_the_speaker_is_known(tmp_path):
     await bridge._on_user_text(ws, asyncio.Queue(), state, "Jetzt rede ich, ich bin Umut")
     await bridge._on_user_text(ws, asyncio.Queue(), state, " ja")
     assert sum("Jetzt ist sicher" in x["content"] for x in ws.sent) == 2
+
+
+def test_das_wars_is_no_goodbye():
+    assert not m.contains_goodbye("Nein, das war's, danke dir.")
+    assert m.contains_goodbye("Okay, bis bald!")
