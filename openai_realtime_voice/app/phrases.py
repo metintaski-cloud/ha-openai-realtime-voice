@@ -30,7 +30,8 @@ GOODBYE_PHRASES = (
     "hoşça kal", "hosca kal", "hoşçakal", "güle güle", "gule gule", "görüşürüz",
     "gorusuruz", "görüşmek üzere", "iyi geceler", "allahaısmarladık",
     "allaha ısmarladık", "kendine iyi bak",
-    "goodbye", "bye bye",
+    "goodbye", "bye bye", "bye-bye", "byebye", "bay bay", "bay-bay", "baybay",
+    "bai bai", "bey bey",
 )
 # Only the user may end the session with these softer phrases.
 USER_ONLY_GOODBYE_PHRASES = ("bis bald", "bis dann", "das war's", "das wars")

@@ -234,6 +234,7 @@ def test_contains_goodbye():
     assert m.contains_goodbye("Alles klar, mach\u2019s gut!")
     assert m.contains_goodbye("Tschu\u0308ss")  # decomposed umlaut
     assert m.contains_goodbye("Okay, bis dann")
+    assert m.contains_goodbye("Okay, Leyla. Bay bay. Ich muss was klären")  # transcription spelling
     assert not m.contains_goodbye("Es regnet bis dann wieder die Sonne kommt", from_user=False)
 
 
