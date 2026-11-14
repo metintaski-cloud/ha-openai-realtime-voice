@@ -114,14 +114,22 @@ textarea{-webkit-user-select:text;user-select:text;width:100%;box-sizing:border-
 .row{display:flex;gap:10px;margin-top:8px}.row button{padding:10px;font-size:16px;background:linear-gradient(90deg,var(--bl),var(--vi));box-shadow:none}.row .no{background:#2a3468}
 .ph{margin:0 12px 8px;border:2px dashed var(--cy);border-radius:12px;background:#22d3ee14}
 .float{position:fixed;left:8px;right:8px;z-index:10;pointer-events:none;background:#1a1f6e;border:1px solid var(--cy);border-radius:12px;box-shadow:0 8px 24px #000a,0 0 18px #22d3ee66;opacity:.97;margin:0}
+#snd{width:auto;margin-left:auto;font-size:14px;padding:8px 12px;box-shadow:none;background:#1b2a6b;border:1px solid #3b82f688}
 #bar{position:fixed;left:0;right:0;bottom:0;padding:12px 16px;background:#060b2ae6;border-top:1px solid #3b82f655;backdrop-filter:blur(6px)}
 button{width:100%;font-size:18px;padding:14px;border:0;border-radius:12px;background:linear-gradient(90deg,var(--vi),var(--mg));color:#fff;box-shadow:0 0 16px #a855f777}
 button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 </style></head><body>
-<header><img src="/icon.png?v=5" alt=""><h1>Leyla Gedächtnis</h1></header><div id="root"></div>
+<header><img src="/icon.png?v=5" alt=""><h1>Leyla Gedächtnis</h1><button id="snd"></button></header><div id="root"></div>
 <div id="bar"><button id="del" disabled>Markierte löschen</button></div>
 <script>
-let sel=new Set(),last='',editing=false,dragging=false,justDragged=0;
+let sel=new Set(),last='',editing=false,dragging=false,justDragged=0,AC=null,soundOn=true;
+try{soundOn=localStorage.getItem('snd')!=='0'}catch(e){}
+function beep(f1,f2,dur,vol){if(!soundOn)return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();
+ const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime;o.type='sine';o.frequency.setValueAtTime(f1,t);o.frequency.exponentialRampToValueAtTime(f2,t+dur);
+ g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+dur+0.02);}catch(e){}}
+const snd={on:()=>beep(520,880,.12,.18),off:()=>beep(560,330,.1,.12),pick:()=>beep(400,620,.08,.14),drop:()=>beep(720,480,.1,.14),
+ del:()=>{beep(620,260,.22,.2)},save:()=>{beep(660,1000,.16,.18)}};
+function sndLabel(){const b=document.getElementById('snd');b.textContent=soundOn?'Ton an':'Ton aus';}
 const key=(k,t)=>k+'\\u0000'+t;
 function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
 function fmt(t){const p=t.split(' | ');if(p.length<2||!p[0].startsWith('Person:'))return esc(t);
@@ -134,11 +142,11 @@ function startEdit(span,kind,text){editing=true;span.onclick=null;span.innerHTML
  no.onclick=()=>{editing=false;last='';load();};
  ok.onclick=async()=>{ok.disabled=true;const r=await fetch('/api/edit',{method:'POST',body:JSON.stringify({kind,old:text,new:ta.value})});
   const j=await r.json();if(!j.ok){alert('Nicht gespeichert: leer, zu lang oder schon vorhanden.');ok.disabled=false;return;}
-  editing=false;last='';load();};
+  snd.save();editing=false;last='';load();};
  row.append(ok,no);span.append(ta,row);ta.focus();}
 function makeRow(kind,t){const lab=document.createElement('label');lab._t=t;
  const cb=document.createElement('input');cb.type='checkbox';cb.checked=sel.has(key(kind,t));lab.className=cb.checked?'on':'';
- cb.onchange=()=>{const k=key(lab.parentNode.dataset.kind,t);cb.checked?sel.add(k):sel.delete(k);lab.className=cb.checked?'on':'';upd();};
+ cb.onchange=()=>{const k=key(lab.parentNode.dataset.kind,t);cb.checked?(sel.add(k),snd.on()):(sel.delete(k),snd.off());lab.className=cb.checked?'on':'';upd();};
  const s=document.createElement('span');s.className='t';s.innerHTML=fmt(t);
  s.onclick=e=>{e.preventDefault();if(Date.now()-justDragged<700)return;startEdit(s,lab.parentNode.dataset.kind,t);};
  lab.append(cb,s);attachDrag(lab);return lab;}
@@ -160,7 +168,7 @@ function attachDrag(lab){let timer=null,sx=0,sy=0;
  const end=()=>{clearTimeout(timer);if(dragging)endDrag();};
  lab.addEventListener('touchend',end);lab.addEventListener('touchcancel',end);
  lab.addEventListener('contextmenu',e=>e.preventDefault());}
-function beginDrag(lab,y){dragging=true;dragLab=lab;lastY=y;if(navigator.vibrate)navigator.vibrate(30);
+function beginDrag(lab,y){snd.pick();dragging=true;dragLab=lab;lastY=y;if(navigator.vibrate)navigator.vibrate(30);
  const r=lab.getBoundingClientRect();offY=y-r.top;
  clone=lab.cloneNode(true);clone.className='float';clone.style.top=r.top+'px';clone.style.width=r.width+'px';
  ph=document.createElement('div');ph.className='ph';ph.style.height=r.height+'px';
@@ -175,7 +183,7 @@ function moveDrag(){clone.style.top=(lastY-offY)+'px';
 function scrollLoop(){if(!dragging)return;
  if(lastY<120)window.scrollBy(0,-14);else if(lastY>window.innerHeight-150)window.scrollBy(0,14);
  moveDrag();raf=requestAnimationFrame(scrollLoop);}
-async function endDrag(){dragging=false;cancelAnimationFrame(raf);justDragged=Date.now();
+async function endDrag(){snd.drop();dragging=false;cancelAnimationFrame(raf);justDragged=Date.now();
  ph.parentNode.insertBefore(dragLab,ph);ph.remove();clone.remove();dragLab.style.display='';
  const lists={};document.querySelectorAll('.list').forEach(b=>{lists[b.dataset.kind]=[...b.querySelectorAll('label')].map(x=>x._t);});
  try{await fetch('/api/move',{method:'POST',body:JSON.stringify({lists})});}catch(e){}
@@ -183,8 +191,9 @@ async function endDrag(){dragging=false;cancelAnimationFrame(raf);justDragged=Da
 async function load(){if(editing||dragging)return;try{const r=await fetch('/api/lists');const s=await r.text();if(s!==last){last=s;render(JSON.parse(s));}}catch(e){}}
 document.getElementById('del').onclick=async()=>{if(!sel.size||!confirm(sel.size+' Einträge endgültig löschen?'))return;
  const items=[...sel].map(x=>{const i=x.indexOf('\\u0000');return {kind:x.slice(0,i),text:x.slice(i+1)}});
- await fetch('/api/delete',{method:'POST',body:JSON.stringify({items})});sel=new Set();last='';load();};
-load();setInterval(load,4000);
+ await fetch('/api/delete',{method:'POST',body:JSON.stringify({items})});snd.del();sel=new Set();last='';load();};
+document.getElementById('snd').onclick=()=>{soundOn=!soundOn;try{localStorage.setItem('snd',soundOn?'1':'0')}catch(e){}sndLabel();if(soundOn)snd.on();};
+sndLabel();load();setInterval(load,4000);
 </script></body></html>"""
 
 MANIFEST = json.dumps({"name": "Leyla Gedächtnis", "short_name": "Leyla", "start_url": "/",
