@@ -201,6 +201,7 @@ button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 #rules .top{position:sticky;top:0;display:flex;align-items:center;gap:12px;padding:14px 16px;background:#08103aee;backdrop-filter:blur(6px)}
 #rules .top button{width:auto;font-size:26px;line-height:1;padding:6px 14px;box-shadow:none;background:#1b2a6b;border:1px solid #3b82f688}
 #rules p{margin:0 12px 8px;padding:12px 14px;background:#0d1750cc;border:1px solid #3b82f655;border-radius:12px;white-space:pre-wrap;word-break:break-word}
+#rules ul{margin:8px 0 0;padding-left:20px;white-space:normal}#rules li{margin:6px 0}
 #rules .lead{background:none;border:0;color:#9fb4ff;padding:4px 16px}
 #splash{position:fixed;inset:0;z-index:100;background:#08103a;display:flex;align-items:center;justify-content:center;transition:opacity .45s}
 #splash.out{opacity:0;pointer-events:none}
@@ -327,6 +328,10 @@ async function openRules(){let t='';try{const j=await (await post('/api/rules',{
   let cur=null;for(;i<lines.length;i++){const ln=lines[i];if(!ln.trim())continue;
    if(ln.trim().startsWith('•')||!cur){cur=document.createElement('p');cur.textContent=ln.trim().replace(/^•\\s*/,'');box.appendChild(cur);}
    else cur.textContent+='\\n'+ln.trim();}}
+for(const q of box.querySelectorAll('p:not(.lead)')){const t=q.textContent,m='(Delegation): ',c=t.indexOf(m);if(c<0)continue;
+  const parts=t.slice(c+m.length).replace(/[.]$/,'').split('; ');
+  q.textContent=t.slice(0,c+m.length-1);const ul=document.createElement('ul');
+  for(const x of parts){const li=document.createElement('li');li.textContent=x.charAt(0).toUpperCase()+x.slice(1);ul.appendChild(li);}q.appendChild(ul);}
  const el=document.getElementById('rules');el.style.display='block';el.scrollTop=0;rulesOpen=true;editing=true;history.pushState({r:1},'');snd.on();}
 function closeRules(){document.getElementById('rules').style.display='none';rulesOpen=false;editing=false;}
 document.getElementById('rback').onclick=()=>history.back();
