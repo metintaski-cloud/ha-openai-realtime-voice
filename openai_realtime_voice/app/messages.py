@@ -263,11 +263,14 @@ class MessageCenter:
             return ("Mach jetzt eine kurze Ansage im Wohnzimmer in zwei getrennten Durchgängen: Zuerst die "
                     "ganze Ansage vollständig auf Deutsch, höchstens zwei kurze Sätze, kein türkisches "
                     "Wort. Danach dieselbe Ansage noch einmal vollständig auf Türkisch, höchstens zwei "
-                    "kurze Sätze, kein deutsches Wort. Die Sprachen werden nie in einem Satz gemischt, "
+                    "kurze Sätze, kein deutsches Wort, auch Zahlen und Uhrzeiten sprichst du im türkischen "
+                    "Teil türkisch aus (16:44 ist \"on altı kırk dört\", nicht \"sechzehn Uhr "
+                    "vierundvierzig\"). Die Sprachen werden nie in einem Satz gemischt, "
                     "egal in welcher Sprache der Inhalt unten geschrieben ist. " + style +
                     "Inhalt: \"" + text + "\"")
         return ("Mach jetzt eine kurze Ansage im Wohnzimmer, in genau der Sprache, in der der Inhalt unten "
-                "geschrieben ist; ist er Türkisch, dann komplett auf Türkisch, ohne ein deutsches Wort. "
+                "geschrieben ist; ist er Türkisch, dann komplett auf Türkisch, ohne ein deutsches Wort, "
+                "auch Zahlen und Uhrzeiten türkisch ausgesprochen (16:44 ist \"on altı kırk dört\"). "
                 "Höchstens zwei kurze Sätze. " + style + "Inhalt: \"" + text + "\"")
 
     async def say(self, text: str, bilingual: bool = False, remember: bool = False) -> None:
