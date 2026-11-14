@@ -301,13 +301,13 @@ function render(d){const root=document.getElementById('root');root.innerHTML='';
  root.appendChild(privBox());}
  sel=new Set([...sel].filter(x=>all.has(x)));upd();}
 function privBox(){const b=document.createElement('div');b.className='lb';
- if(CODE){const x=document.createElement('button');x.textContent='Private Liste schließen';x.onclick=()=>{CODE=null;last='';snd.off();load();};b.appendChild(x);return b;}
+ if(CODE){const x=document.createElement('button');x.textContent='Private Liste schließen';x.onclick=()=>{CODE=null;try{localStorage.removeItem('lcode')}catch(e){}last='';snd.off();load();};b.appendChild(x);return b;}
  const i=document.createElement('input');i.type='password';i.placeholder='Codewort';i.autocomplete='off';
  i.style.cssText='flex:2;font:inherit;color:#fff;background:#060c33;border:1px solid var(--bl);border-radius:10px;padding:10px;min-width:0';
  const o=document.createElement('button');o.textContent='Privat öffnen';
  const go=async()=>{if(!i.value.trim())return;o.disabled=true;let ok=false;
   try{ok=(await (await fetch('/api/unlock',{method:'POST',body:JSON.stringify({code:i.value})})).json()).ok;}catch(e){}
-  o.disabled=false;if(ok){CODE=i.value;snd.save();last='';load();}else{i.value='';i.placeholder='Falsch, nochmal';snd.del();}};
+  o.disabled=false;if(ok){CODE=i.value;try{localStorage.setItem('lcode',CODE)}catch(e){}snd.save();last='';load();}else{i.value='';i.placeholder='Falsch, nochmal';snd.del();}};
  o.onclick=go;i.onkeydown=e=>{if(e.key==='Enter')go();};
  i.onfocus=()=>{editing=true;};i.onblur=()=>{setTimeout(()=>{editing=false;},300);};
  b.append(i,o);return b;}
@@ -375,7 +375,11 @@ async function loadLamps(){let d;try{d=await (await fetch('/api/lamp')).json();}
   lmsg(j.result==='ok'?'Lampen sind zurückgestellt.':(LTXT[j.result]||''));rs.disabled=false;};
  row.append(df,rs);box.appendChild(row);
  const m=document.createElement('div');m.id='lmsg';box.appendChild(m);}
-sndLabel();load();loadLamps();setInterval(load,4000);
+(async()=>{let c=null;try{c=localStorage.getItem('lcode')}catch(e){}  // remembered on this phone only
+ if(c){try{if((await (await fetch('/api/unlock',{method:'POST',body:JSON.stringify({code:c})})).json()).ok)CODE=c;
+  else localStorage.removeItem('lcode');}catch(e){}}
+ last='';load();})();
+sndLabel();loadLamps();setInterval(load,4000);
 (function(){const sp=document.getElementById('splash');let gone=false;
  const hide=()=>{if(gone)return;gone=true;sp.classList.add('out');setTimeout(()=>sp.remove(),600);};
  sp.onclick=hide;setTimeout(hide,2100);})();
