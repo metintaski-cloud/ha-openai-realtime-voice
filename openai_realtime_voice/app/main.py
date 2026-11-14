@@ -78,7 +78,7 @@ SILENCE_FILL_MAX_S = 0.5
 # unless they are a short pause inside real speech.
 OUTPUT_HANGOVER_S = 0.4
 
-MEMORY_BLOCK_MAX_CHARS = 9000
+MEMORY_BLOCK_MAX_CHARS = 15000  # own safety cap, OpenAI allows 16384 tokens for all instructions
 BARGE_IN_GAP_S = 0.3  # no new reply audio for this long while the user talks = barge-in
 
 DEFAULT_BACKEND_INSTRUCTIONS = (
