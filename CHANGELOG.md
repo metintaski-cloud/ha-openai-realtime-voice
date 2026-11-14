@@ -11,6 +11,7 @@
 - Add on 2.54.0: option `backend_reasoning_effort` (minimal, low, medium, high) for the backend model of GPT Live delegation; unset keeps the model default. Lower effort should shorten the long wait after a web search.
 - Add on 2.55.12: persona rule for personal small talk (how was your day), after a test where she asked back what was meant.
 - Add on 2.55.13: memory page paints the dark blue background at once (no grey page before the start animation).
+- Add on 2.66.0: a news line left of the heart in the memory app shows the last messages that went to Metin's phone (from Mama through Leyla, Leyla's reports), running right to left with the time.
 - Add on 2.65.0: the memory app shows a neon heart with a laser running left to right under the header; it beats while Leyla is reachable and turns grey when she is not.
 - Add on 2.64.0: Leyla gets the personal part about a person (mood, last talk, open threads, current states, Mama's confidences) only once it is sure who talks, from "ich bin X", an answer to her who question or the code phrase; before that only the base facts.
 - Add on 2.63.3: two more reminders from the server: a pet word from someone unknown makes Leyla ask at once who says it, and a second Kosewort of her own in one conversation reminds her to use none more.

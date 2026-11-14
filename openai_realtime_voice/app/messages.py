@@ -27,6 +27,8 @@ from typing import Awaitable, Callable, Optional
 from urllib.parse import urlparse
 
 import httpx
+
+from app import ticker
 import websockets
 
 logger = logging.getLogger(__name__)
@@ -161,6 +163,7 @@ class MessageCenter:
         if reply:
             data["data"] = {"actions": [{"action": "REPLY", "title": "Antworten"}]}
         await self._service(domain, service, data)
+        ticker.add(title, message)
 
     # Mama -> Metin -------------------------------------------------------------
     async def to_metin(self, args: dict) -> dict:
