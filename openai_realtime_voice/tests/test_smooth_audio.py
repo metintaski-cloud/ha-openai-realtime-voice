@@ -520,3 +520,12 @@ def test_no_rule_to_end_the_talk_with_strangers():
     from app import persona
     # removed 14 Nov 2026 (Metin): it contradicted the other rules about unknown people
     assert "nicht mit Fremden" not in persona.CORE
+
+
+def test_several_speakers_rule():
+    from app import persona
+    core = persona.CORE
+    # Metin, 14 Nov 2026: several people may talk; no "keep the name until the end"
+    assert "behalte den Namen bis zum Ende" not in core
+    assert "Die Sprache wechselt" in core and "„Wer spricht gerade?“" in core
+    assert "Persönliches beim Falschen nicht" in core
