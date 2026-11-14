@@ -169,7 +169,28 @@ def test_past_states_stay_stored_but_are_hidden_from_leyla(tmp_path):
                 "Aktuell bis 30.11.2099: Umut hat bald eine Prüfung."])
     assert not hasattr(store, "expire") and len(store.load()) == 3
     block = store.instructions_block()
-    assert "Ayşe ist erkältet" not in block and "Umut hat bald" in block
+    assert "Ayşe ist erkältet" not in block and "Umut hat bald" not in block  # personal
+
+
+def test_personal_part_only_after_the_person_is_known(tmp_path):
+    store = memory.MemoryStore(str(tmp_path / "m.json"))
+    store.save_all({"family": [
+        "Person: Umut | Zugehörigkeit: Bruder | Stimmung: müde | Zuletzt: 14.11.: Prüfung",
+        "Person: Gülfikar | Zugehörigkeit: Metins Mutter | Offen: Arzttermin",
+        "Aktuell bis 30.11.2099: Umut hat bald eine Prüfung.",
+        "Aktuell bis 01.01.2020: Umut war erkältet."],
+        "confidential": ["Aktuell bis 30.11.2099: Gülfikar sorgt sich um ihr Knie"]})
+    block = store.instructions_block()
+    assert "Person: Umut | Zugehörigkeit: Bruder" in block
+    assert "müde" not in block and "Prüfung" not in block and "Arzttermin" not in block
+    assert "Knie" not in block
+    umut = store.personal_for("Umut")
+    assert "Stimmung: müde" in umut and "bald eine Prüfung" in umut and "erkältet" not in umut
+    assert "Knie" not in umut
+    mama = store.personal_for("Gülfikar")
+    assert "Offen: Arzttermin" in mama and "Knie" in mama and "allein" in mama
+    assert store.personal_for("Niemand") == ""
+    assert store.profile_words()["Gülfikar"] >= {"gulfikar", "anne", "annen"}
 
 
 async def test_summary_keeps_private_without_code(monkeypatch):
@@ -322,15 +343,16 @@ def test_confidential_list_is_hidden_but_given_to_leyla(tmp_path):
     store = memory.MemoryStore(str(tmp_path / "m.json"))
     store.save_all({"family": ["Person: Metin"], "confidential": [SECRET]})
     assert store.load(memory.CONFIDENTIAL) == [SECRET]
-    block = store.instructions_block()
-    assert SECRET in block and "allein" in block and "Metin nicht" in block
-    assert "nie geraten" in block and block.index("WAS MAMA") < block.index("FAMILIE")
+    assert SECRET not in store.instructions_block()  # only once Mama is known
+    store.save_all({"family": ["Person: Metin", "Person: Gülfikar | Zugehörigkeit: Metins Mutter"]})
+    part = store.personal_for("Gülfikar")
+    assert SECRET in part and "allein" in part and "Metin nicht" in part and "nie geraten" in part
     page = json.dumps(memory_web.snapshot(store), ensure_ascii=False)
     assert "Knie" not in page
     assert memory.CONFIDENTIAL not in todo_sync.DEFAULT_LISTS
     assert memory.CONFIDENTIAL not in memory.OPEN_KINDS
     # moving open entries on the page keeps the hidden list untouched
-    assert memory_web.move_items(store, {"family": ["Person: Metin"], "friends": [], "leyla": []})
+    assert memory_web.move_items(store, {"family": ["Person: Metin", "Person: Gülfikar | Zugehörigkeit: Metins Mutter"], "friends": [], "leyla": []})
     assert store.load(memory.CONFIDENTIAL) == [SECRET]
 
 

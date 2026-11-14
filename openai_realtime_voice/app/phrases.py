@@ -43,7 +43,7 @@ WHO_ASKED_RE = re.compile(
     r"kiminle|kimle konuş|kimler var|kim var|sen kimsin|siz kimsiniz|wer spricht|mit wem|"
     r"wer (?:ist|bist|seid) (?:da|du|ihr)|wer leistet|wer von euch|wer ist denn", re.IGNORECASE)
 NAME_SAID_RE = re.compile(
-    r"\b(?:ich bin|hier ist|hier spricht|mein name ist|ben|benim adım|adım|ismim)\s+[A-ZÄÖÜÇĞİŞ]\w+",
+    r"\b(?:ich bin|hier ist|hier spricht|mein name ist|ben|benim adım|adım|ismim)\s+([A-ZÄÖÜÇĞİŞ]\w+)",
     re.IGNORECASE)
 WHO_NUDGE = (
     "Interne Notiz, nicht vorlesen: Du weißt noch nicht, wer mit dir spricht, und hast noch "

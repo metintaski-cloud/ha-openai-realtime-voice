@@ -619,3 +619,24 @@ async def test_couple_word_after_a_name_is_left_to_leyla():
     state = {"last_audio_time": 0.0, "last_activity": 0.0}
     await bridge._on_user_text(ws, asyncio.Queue(), state, "Hier ist Metin, bitanem")
     assert ws.sent == []
+
+
+async def test_personal_part_is_handed_over_once_the_speaker_is_known(tmp_path):
+    from app import memory
+    bridge = _bridge()
+    bridge.enable_memory = True
+    bridge.memory = memory.MemoryStore(str(tmp_path / "m.json"))
+    bridge.memory.save_all({"family": [
+        "Person: Umut | Zugehörigkeit: Bruder | Stimmung: müde",
+        "Person: Gülfikar | Zugehörigkeit: Metins Mutter | Offen: Arzttermin"]})
+    ws = FakeLiveWs()
+    state = {"last_audio_time": 0.0, "last_activity": 0.0}
+    await bridge._on_user_text(ws, asyncio.Queue(), state, "Wie geht es dir?")
+    bridge._on_bot_text(state, "Gut! Kiminle konuşuyorum?")
+    await bridge._on_user_text(ws, asyncio.Queue(), state, "Annen")
+    known = [x["content"] for x in ws.sent if "Jetzt ist sicher" in x["content"]]
+    assert len(known) == 1 and "Arzttermin" in known[0] and "müde" not in known[0]
+    bridge._on_bot_text(state, "Ah Anne!")
+    await bridge._on_user_text(ws, asyncio.Queue(), state, "Jetzt rede ich, ich bin Umut")
+    await bridge._on_user_text(ws, asyncio.Queue(), state, " ja")
+    assert sum("Jetzt ist sicher" in x["content"] for x in ws.sent) == 2

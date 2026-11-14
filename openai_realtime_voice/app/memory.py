@@ -270,7 +270,9 @@ def expired(fact: str, today: Optional[_dt.date] = None) -> bool:
     return until < (today or _dt.date.today())
 
 
-MOTHER_WORDS = {"anne", "annem", "annecim", "mama", "mutter"}
+MOTHER_WORDS = {"anne", "annem", "annecim", "mama", "mutter", "annen", "anneniz", "annesi",
+                "annesiyim", "annenim"}
+PERSONAL_FIELDS = ("Stimmung", "Zuletzt", "Offen")  # only once it is sure who is talking
 TURKISH_WORDS = {"ben", "bir", "bu", "ve", "iyi", "evet", "hayir", "artik", "cok", "ne", "nasil",
                  "var", "yok", "simdi", "bugun", "benim", "seni", "sana", "bana", "tamam"}
 STOP_WORDS = {"nicht", "keine", "einen", "einer", "eines", "einem", "seine", "ihren", "seinen",
@@ -412,6 +414,20 @@ def _best_match(fact: str, candidates: list) -> Optional[tuple]:
     return best if score >= 0.6 else None
 
 
+def _is_state(fact: str) -> bool:
+    return bool(STATE_RE.match(fact))
+
+
+def _without_personal(fact: str) -> str:
+    """A profile without PERSONAL_FIELDS; other entries unchanged."""
+    prof = parse_profile(fact)
+    if not prof:
+        return fact
+    parts = fact.split(" | ")
+    return " | ".join([parts[0]] + [p for p in parts[1:]
+                                    if p.partition(":")[0].strip() not in PERSONAL_FIELDS])
+
+
 FRESH_S = 2 * 24 * 3600  # how long a new or changed entry shows green on the memory page
 SEEN_KINDS = (FAMILY, FRIENDS, LEYLA, PRIVATE)  # what the memory page can show
 
@@ -521,23 +537,22 @@ class MemoryStore:
         return added
 
     def instructions_block(self) -> str:
+        """What Leyla knows at the start of every conversation: the base facts. Personal
+        things (PERSONAL_FIELDS, "Aktuell" entries, Mama's confidences) are left out until it
+        is sure who talks; then personal_for hands over that one person's part."""
         data = self._read()
-        family = [f for f in data[FAMILY] if not expired(f)]
-        friends = [f for f in data[FRIENDS] if not expired(f)]
+        family = [_without_personal(f) for f in data[FAMILY] if not _is_state(f)]
+        friends = [_without_personal(f) for f in data[FRIENDS] if not _is_state(f)]
         own = [f for f in data.get(LEYLA, []) if not expired(f)]
-        secret = [f for f in data.get(CONFIDENTIAL, []) if not expired(f)]
-        if not family and not friends and not own and not secret:
+        if not family and not friends and not own:
             return ""
         open_ = []
-        for f in family + friends:
+        for f in data[FAMILY] + data[FRIENDS]:
             parsed = parse_profile(f)
             missing = missing_fields(f)
             if parsed and missing:
                 open_.append(f"• {parsed[0]}: {', '.join(missing)}")
         text = ""
-        if secret:  # first, so the length cap in main.py never cuts the rules away
-            text += ("\n\nWAS MAMA DIR ANVERTRAUT HAT (NUR FÜR DICH, STRENG VERTRAULICH)\n"
-                     + "\n".join(f"• {f}" for f in secret) + "\n" + CONFIDENTIAL_RULES)
         if family:
             text += "\n\nFAMILIE UND HAUSHALT\n" + "\n".join(f"• {f}" for f in family)
         if friends:
@@ -548,6 +563,40 @@ class MemoryStore:
         if open_:
             text += "\n\nNOCH OFFEN\n" + "\n".join(open_)
         return text
+
+    def profile_words(self) -> dict:
+        """{name: words that identify the person}: the name, for the mother also how she
+        is called."""
+        data = self._read()
+        out = {}
+        for f in data[FAMILY] + data[FRIENDS]:
+            prof = parse_profile(f)
+            if prof:
+                out[prof[0]] = _subject_words(f)
+        return out
+
+    def personal_for(self, name: str) -> str:
+        """The personal part about one person, handed over once it is sure they talk: the
+        personal profile points, their current "Aktuell" entries and, for the mother, what
+        she confided with its rules. Empty when there is nothing."""
+        data = self._read()
+        key = _words(name)
+        profile = next((f for f in data[FAMILY] + data[FRIENDS]
+                        if (p := parse_profile(f)) and _words(p[0]) == key), None)
+        if profile is None:
+            return ""
+        subject = _subject_words(profile)
+        fields = parse_profile(profile)[1]
+        lines = [f"{k}: {fields[k]}" for k in PERSONAL_FIELDS if k in fields]
+        lines += [f for f in data[FAMILY] + data[FRIENDS]
+                  if _is_state(f) and not expired(f) and _subject_words(f) & subject]
+        text = "\n".join(f"• {x}" for x in lines)
+        if subject & MOTHER_WORDS:
+            secret = [f for f in data.get(CONFIDENTIAL, []) if not expired(f)]
+            if secret:
+                text += ("\n\nWAS MAMA DIR ANVERTRAUT HAT (NUR FÜR DICH, STRENG VERTRAULICH)\n"
+                         + "\n".join(f"• {f}" for f in secret) + "\n" + CONFIDENTIAL_RULES)
+        return text.strip()
 
     def private_listing(self) -> str:
         facts = self.load(PRIVATE)

@@ -346,6 +346,10 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             }))
         except Exception as e:
             logger.warning("Could not unlock memory: %s", e)
+        if self.enable_memory:
+            metin = next((n for n in self.memory.profile_words() if n.split()[0] == "Metin"), None)
+            if metin:
+                await self._hand_over_personal(live_ws, state, metin)
 
     def _note_name_mention(self, live_ws, state: dict, delta: str) -> None:
         """Watch the user transcript for Leyla's name; see NAME_NUDGE_AFTER_S."""
@@ -391,6 +395,41 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             logger.warning("Name nudge failed: %s", e)
         finally:
             state["nudge_pending"] = False
+
+    async def _maybe_identify(self, live_ws, state: dict) -> None:
+        """Find out who talks, from what the people said: "ich bin X" / "ben X" anywhere, or
+        a short answer right after Leyla asked who is there that holds a known name (for
+        the mother also "Anne", "annen"). Then hand over that person's personal part."""
+        dialog = state.get("dialog", [])
+        if not dialog or dialog[-1][0] != "user":
+            return
+        words = self.memory.profile_words()
+        names = []
+        said = " ".join(t for s, t in dialog if s == "user")
+        for m in NAME_SAID_RE.finditer(said):
+            hit = set(memory._words(m.group(1)))
+            names += [n for n, w in words.items() if hit & set(memory._words(n))]
+        turn = dialog[-1][1]
+        asked = len(dialog) > 1 and WHO_ASKED_RE.search(dialog[-2][1])
+        turn_words = set(memory._words(turn))
+        if asked and 0 < len(turn_words) <= 8:
+            names += [n for n, w in words.items() if turn_words & w]
+        for name in dict.fromkeys(names):
+            await self._hand_over_personal(live_ws, state, name)
+
+    async def _hand_over_personal(self, live_ws, state: dict, name: str) -> None:
+        known = state.setdefault("identified", set())
+        if name in known:
+            return
+        known.add(name)
+        part = self.memory.personal_for(name)
+        logger.info("Speaker known: %s, personal part handed over (%d characters)",
+                    name.split()[0], len(part))
+        if part:
+            await self._send_note(live_ws, "known", (
+                f"Interne Notiz, nicht vorlesen und nicht erwähnen: Jetzt ist sicher, dass "
+                f"{name} mit dir spricht. Das Persönliche über {name}, das du nur bei dieser "
+                f"Person selbst und nie vor anderen ansprichst:\n{part}"))
 
     async def _send_note(self, live_ws, prefix: str, content: str) -> None:
         try:
@@ -808,6 +847,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self._add_dialog(state, "user", delta)
         state["last_activity"] = time.monotonic()
         await self._maybe_couple_word(live_ws, state)
+        if self.enable_memory:
+            await self._maybe_identify(live_ws, state)
         recent = (state.get("recent_user_text", "") + delta)[-80:]
         state["recent_user_text"] = recent
         if self._night is not None:
