@@ -61,3 +61,15 @@ def test_http_roundtrip(tmp_path):
     assert '"removed": 1' in post and kicked == [1]
     assert s.load("family") == ["b", "c"]
     assert "404" in bad
+
+
+def test_edit_item(tmp_path):
+    s = _store(tmp_path)
+    assert memory_web.edit_item(s, "family", "b", "  neuer   Text ")
+    assert s.load("family") == ["a", "neuer Text", "c"]
+    assert not memory_web.edit_item(s, "family", "a", "c")  # duplicate
+    assert not memory_web.edit_item(s, "family", "a", "   ")  # empty
+    assert not memory_web.edit_item(s, "family", "a", "x" * 701)  # too long
+    assert not memory_web.edit_item(s, "family", "gibts nicht", "y")
+    assert not memory_web.edit_item(s, "private", "geheim", "y")
+    assert s.load("private") == ["geheim"]
