@@ -597,3 +597,25 @@ async def test_no_who_reminder_after_name_or_question():
         bridge._on_bot_text(state, reply)
         await bridge._on_user_text(ws, asyncio.Queue(), state, "Wie geht es dir?")
         assert ws.sent == [], first
+
+
+async def test_couple_word_reminds_once_and_second_kosewort_too():
+    bridge = _bridge()
+    ws = FakeLiveWs()
+    state = {"last_audio_time": 0.0, "last_activity": 0.0}
+    await bridge._on_user_text(ws, asyncio.Queue(), state, "Hallo Leyla aşkım, mach das Licht an")
+    assert len(ws.sent) == 1 and "aşkım" in ws.sent[0]["content"]
+    bridge._on_bot_text(state, "Danke canım!", ws)
+    bridge._on_bot_text(state, " Gern, canım.", ws)
+    await asyncio.sleep(0.05)
+    assert len(ws.sent) == 2 and "Kosewort" in ws.sent[1]["content"]
+    await bridge._on_user_text(ws, asyncio.Queue(), state, " Ich hatte einen schönen Tag")
+    assert len(ws.sent) == 2  # no who reminder on top of the pet word one
+
+
+async def test_couple_word_after_a_name_is_left_to_leyla():
+    bridge = _bridge()
+    ws = FakeLiveWs()
+    state = {"last_audio_time": 0.0, "last_activity": 0.0}
+    await bridge._on_user_text(ws, asyncio.Queue(), state, "Hier ist Metin, bitanem")
+    assert ws.sent == []

@@ -52,6 +52,23 @@ WHO_NUDGE = (
     "Sprache. Sonst frag bei der nächsten passenden Antwort."
 )
 
+# Pet words someone says to Leyla: she must ask at once who says it (persona rule), which
+# GPT Live may skip. Kosewörter Leyla herself says: at most one per conversation.
+COUPLE_WORD_RE = re.compile(r"\b(?:bir ?tanem|aşkım|askim|sevgilim|mein schatz|schatzi)\b",
+                            re.IGNORECASE)
+COUPLE_NUDGE = (
+    "Interne Notiz, nicht vorlesen: Gerade hat jemand ein Paarwort zu dir gesagt („{word}“), "
+    "und du weißt nicht sicher, wer es ist. Frag jetzt sofort neugierig und spielerisch, wer "
+    "das sagt, noch vor dem Anliegen. Ist es nicht Metin, wehr charmant ab."
+)
+PET_WORD_RE = re.compile(r"\b(?:canım|canim|tatlım|tatlim|hayatım|hayatim|schatz)\b",
+                         re.IGNORECASE)
+PET_NUDGE = (
+    "Interne Notiz, nicht vorlesen und nicht darauf antworten: Du hast in diesem Gespräch "
+    "schon ein Kosewort benutzt. Ab jetzt keins mehr, nimm den Namen, wenn du ihn sicher "
+    "weißt, sonst gar keine Anrede."
+)
+
 # Farewell phrases (German, Turkish, English). When the user says one of them, the
 # bridge ends the session after the assistant's goodbye was played. GPT Live itself
 # does not always delegate the end of a conversation to the backend tool.

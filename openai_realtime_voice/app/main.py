@@ -38,7 +38,7 @@ from app import memory, memory_web
 from app import context
 from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, pcm_level
 from app.live_link import END_CONVERSATION_TOOL
-from app.phrases import (NAME_NUDGE, NAME_NUDGE_AFTER_S, NAME_NUDGE_COOLDOWN_S, NAME_RE, PROMISE_NUDGE, PROMISE_NUDGE_AFTER_S, PROMISE_RE, NAME_SAID_RE, WHO_ASKED_RE, WHO_NUDGE, addressed_by_name, contains_goodbye, greeting_instruction, parse_greeting_words, pick_greeting)
+from app.phrases import (NAME_NUDGE, NAME_NUDGE_AFTER_S, NAME_NUDGE_COOLDOWN_S, NAME_RE, PROMISE_NUDGE, PROMISE_NUDGE_AFTER_S, PROMISE_RE, NAME_SAID_RE, WHO_ASKED_RE, WHO_NUDGE, COUPLE_NUDGE, COUPLE_WORD_RE, PET_NUDGE, PET_WORD_RE, addressed_by_name, contains_goodbye, greeting_instruction, parse_greeting_words, pick_greeting)
 from app import (lamp_show, metrics, output_link, session_end, tool_link, after_talk, announce_voice, live_link, night, cleanup, costs, fan, health, lights, messages, persona, purifier, rf, technik, todo_sync,
                  tv, vacuum)
 
@@ -392,6 +392,39 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         finally:
             state["nudge_pending"] = False
 
+    async def _send_note(self, live_ws, prefix: str, content: str) -> None:
+        try:
+            await live_ws.send(json.dumps({
+                "type": "session.commentary.append",
+                "event_id": f"{prefix}_{uuid.uuid4().hex[:8]}",
+                "delegation_id": None,
+                "content": content,
+            }))
+        except Exception as e:
+            logger.warning("Note %s failed: %s", prefix, e)
+
+    async def _maybe_couple_word(self, live_ws, state: dict) -> None:
+        """Someone said a pet word to Leyla and no name is known: she must ask who says it."""
+        if state.get("couple_nudged") or state.get("unlocked") or state.get("closing"):
+            return
+        said = " ".join(t for s, t in state.get("dialog", []) if s == "user")
+        m = COUPLE_WORD_RE.search(said)
+        if not m or NAME_SAID_RE.search(said[:m.start()]):
+            return
+        state["couple_nudged"] = state["who_nudged"] = True
+        logger.info("Pet word heard without a known name, reminding Leyla to ask who says it")
+        await self._send_note(live_ws, "couple", COUPLE_NUDGE.format(word=m.group(0)))
+
+    def _note_pet_words(self, live_ws, state: dict) -> None:
+        """Leyla may use a Kosewort once per conversation; at the second one she is reminded."""
+        if state.get("pet_nudged"):
+            return
+        told = " ".join(t for s, t in state.get("dialog", []) if s != "user")
+        if len(PET_WORD_RE.findall(told)) >= 2:
+            state["pet_nudged"] = True
+            logger.info("Leyla used a second Kosewort, reminding her")
+            asyncio.create_task(self._send_note(live_ws, "pet", PET_NUDGE))
+
     async def _maybe_ask_who(self, live_ws, state: dict) -> None:
         """A new turn of the person begins: remind Leyla once to ask who is there when it is
         their second turn or later, no name was said, no code phrase and she has not asked."""
@@ -405,15 +438,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             return
         state["who_nudged"] = True
         logger.info("No name yet and Leyla did not ask, reminding her to ask who is there")
-        try:
-            await live_ws.send(json.dumps({
-                "type": "session.commentary.append",
-                "event_id": f"who_{uuid.uuid4().hex[:8]}",
-                "delegation_id": None,
-                "content": WHO_NUDGE,
-            }))
-        except Exception as e:
-            logger.warning("Who nudge failed: %s", e)
+        await self._send_note(live_ws, "who", WHO_NUDGE)
 
     def _note_promise(self, live_ws, state: dict, delta: str) -> None:
         """Watch Leyla's words for a promised action; see PROMISE_NUDGE_AFTER_S."""
@@ -782,6 +807,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 await self._maybe_ask_who(live_ws, state)
         self._add_dialog(state, "user", delta)
         state["last_activity"] = time.monotonic()
+        await self._maybe_couple_word(live_ws, state)
         recent = (state.get("recent_user_text", "") + delta)[-80:]
         state["recent_user_text"] = recent
         if self._night is not None:
@@ -809,6 +835,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self._add_dialog(state, "bot", delta)
         if live_ws is not None:
             self._note_promise(live_ws, state, delta)
+            self._note_pet_words(live_ws, state)
         recent = (state.get("recent_bot_text", "") + delta)[-80:]
         state["recent_bot_text"] = recent
         if not state.get("closing") and contains_goodbye(recent, from_user=False):
