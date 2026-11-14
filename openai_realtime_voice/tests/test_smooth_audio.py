@@ -505,3 +505,12 @@ def test_persona_never_says_guess():
     from app import persona
     # Metin: she never guesses (14 Nov 2026); "rätst nie" is allowed, an order to guess is not
     assert not re.search(r"\brate\b|wahrscheinlichste Bedeutung", persona.CORE)
+
+
+def test_only_mama_confidences_stay_private_and_insults_are_always_reported():
+    from app import persona, report
+    core = persona.CORE
+    assert "Was dir Mama so anvertraut" in core and "Das gilt nur für Mama" in core
+    assert "Was dir jemand so anvertraut" not in core  # was too broad (Metin, 14 Nov 2026)
+    assert "Frechheiten und Beleidigungen sind nie etwas Anvertrautes" in core
+    assert "lässt du ganz weg" in report.PROMPT  # the report tells only the rude part
