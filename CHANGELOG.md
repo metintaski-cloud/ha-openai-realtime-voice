@@ -11,6 +11,7 @@
 - Add on 2.54.0: option `backend_reasoning_effort` (minimal, low, medium, high) for the backend model of GPT Live delegation; unset keeps the model default. Lower effort should shorten the long wait after a web search.
 - Add on 2.55.12: persona rule for personal small talk (how was your day), after a test where she asked back what was meant.
 - Add on 2.55.13: memory page paints the dark blue background at once (no grey page before the start animation).
+- Add on 2.57.11: `froh: true` starts with a soft audible breath in, as if preparing to speak (Metin).
 - Add on 2.57.10: `froh: true` now laughs once in between instead of at the start (Metin did not like the laugh at the start).
 - Add on 2.57.9: optional event data `froh: true` for `leyla_announce`: she starts with a short happy laugh and sounds glad. Used by the evening lights automation, whose text now also wishes a nice evening.
 - Add on 2.57.8: announcement prompt puts the facts rule first and the delivery (warmth, smile, melody) last. With 2.57.7 the numbers were right but the voice was flat, because the strict facts rule came after the style.

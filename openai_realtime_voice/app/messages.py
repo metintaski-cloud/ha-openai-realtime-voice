@@ -259,7 +259,8 @@ class MessageCenter:
                  "monoton, nie wie eine Durchsage, nie wie ein vorgelesener Text oder ein Sprachassistent. "
                  "Die Lautstärke bleibt normal, du rufst nicht. ")
         if happy:  # event data froh: true, for friendly announcements such as the evening lights
-            style += ("Klinge richtig glücklich, als würdest du dich freuen, das zu sagen, und lache einmal "
+            style += ("Fang mit einem leisen, hörbaren Einatmen an, als würdest du dich aufs Sprechen vorbereiten. "
+                      "Klinge richtig glücklich, als würdest du dich freuen, das zu sagen, und lache einmal "
                       "kurz und herzlich zwischendurch (nicht am Anfang), zum Beispiel nach dem ersten "
                       "Satz oder bei einem Wunsch. ")
         if bilingual:
