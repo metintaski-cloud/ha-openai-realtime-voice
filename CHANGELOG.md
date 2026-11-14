@@ -12,6 +12,7 @@
 - Add on 2.55.12: persona rule for personal small talk (how was your day), after a test where she asked back what was meant.
 - Add on 2.55.13: memory page paints the dark blue background at once (no grey page before the start animation).
 - Firmware `leyla_voice` (14 Nov 2026): a 15 ms ramp to zero and 5 ms fade in when the speaker runs dry was tried against the click at the end of a sentence and reverted after 13 minutes because the speech stuttered.
+- Add on 2.56.1: lamp show always at 100 percent (the breathing is in the colour); a lamp that was off is set back to its last known strength before it is switched off.
 - Add on 2.56.0: lamp show, the rear lamps (Lamba 1 and 2, also from off) follow the conversation in the icon colours (cyan, violet, breathing blue to magenta with her voice) and return to their old state afterwards; options `lamp_show` and `lamp_show_lights`.
 - Add on 2.55.15: soft edges on the server (last 15 ms of a reply faded out, next audio faded in over 5 ms) against the click at the end of a sentence; start of a reply waits 15 ms more for the held back tail.
 - Add on 2.55.14: farewell detection knows the spellings "bay bay", "bai bai", "bye-bye" (the speech to text wrote "Bay bay", so she did not hang up until the idle timeout, 180 s session).

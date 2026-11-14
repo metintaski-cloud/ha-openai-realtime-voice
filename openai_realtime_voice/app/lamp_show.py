@@ -5,6 +5,7 @@ her loudness. Afterwards every lamp goes back to what it was before (off stays o
 Matter lamps take about three changes per second, so this is a soft breathing, not an exact copy.
 """
 import asyncio
+import json
 import logging
 import os
 import time
@@ -18,13 +19,14 @@ CYAN = (34, 211, 238)
 BLUE = (59, 130, 246)
 VIOLET = (168, 85, 247)
 MAGENTA = (217, 70, 239)
-LISTEN_PCT = 40
-THINK_PCT = 55
-SPEAK_MIN_PCT = 30
-SPEAK_MAX_PCT = 95
+LISTEN_PCT = 100
+THINK_PCT = 100
+SPEAK_MIN_PCT = 100  # the breathing is in the colour, the lamps stay at full strength
+SPEAK_MAX_PCT = 100
 LEVEL_FULL_RMS = 5000.0   # rms that counts as full loudness
 MIN_INTERVAL_S = 0.33     # the lamps cannot follow faster
 TRANSITION_S = 0.35
+RESTORE_WAIT_S = 1.2      # a lamp that was off fades to its old strength before it is switched off
 SPEECH_HOLD_S = 0.7       # no audio for this long: Leyla stopped speaking, back to listening
 AUDIO_LEAD_S = 0.2        # the audio is sent this far ahead of playback, so the light waits as long
 
@@ -48,6 +50,10 @@ def restore_data(entity: str, before: dict) -> tuple[str, dict]:
     """Service and data that bring one lamp back to its state before the show."""
     if before.get("state") != "on":
         return "turn_off", {"entity_id": entity, "transition": 1}
+    return "turn_on", _on_data(entity, before)
+
+
+def _on_data(entity: str, before: dict) -> dict:
     data: dict = {"entity_id": entity, "transition": 1}
     if before.get("brightness"):
         data["brightness"] = before["brightness"]
@@ -55,12 +61,15 @@ def restore_data(entity: str, before: dict) -> tuple[str, dict]:
         data["color_temp_kelvin"] = before["color_temp_kelvin"]
     elif before.get("hs_color"):
         data["hs_color"] = before["hs_color"]
-    return "turn_on", data
+    return data
 
 
 class LampShow:
-    def __init__(self, entities: list[str], api_url: Optional[str] = None, token: Optional[str] = None) -> None:
+    def __init__(self, entities: list[str], api_url: Optional[str] = None, token: Optional[str] = None,
+                 memory_path: str = "/data/lamp_show.json") -> None:
         self.entities = entities
+        self.memory_path = memory_path
+        self._last_on: dict[str, dict] = self._load_memory()  # strength and colour each lamp had when last on
         self.api_url = api_url or os.environ.get("HA_API_URL") or "http://supervisor/core/api"
         self.token = token if token is not None else os.environ.get("SUPERVISOR_TOKEN", "")
         self._before: dict[str, dict] = {}
@@ -74,6 +83,21 @@ class LampShow:
     @property
     def available(self) -> bool:
         return bool(self.entities and self.token)
+
+    def _load_memory(self) -> dict:
+        try:
+            with open(self.memory_path) as f:
+                data = json.load(f)
+            return data if isinstance(data, dict) else {}
+        except Exception:
+            return {}
+
+    def _save_memory(self) -> None:
+        try:
+            with open(self.memory_path, "w") as f:
+                json.dump(self._last_on, f)
+        except Exception as e:
+            logger.warning("Lamp show: could not save the lamp memory: %s", e)
 
     # ---- Home Assistant ----
     async def _service(self, service: str, data: dict) -> None:
@@ -99,6 +123,9 @@ class LampShow:
                     "color_mode": a.get("color_mode"), "color_temp_kelvin": a.get("color_temp_kelvin"),
                     "hs_color": a.get("hs_color"),
                 }
+                if self._before[entity]["state"] == "on" and self._before[entity]["brightness"]:
+                    self._last_on[entity] = dict(self._before[entity])
+        self._save_memory()
 
     # ---- Conversation hooks (never raise, never block) ----
     async def begin(self) -> None:
@@ -152,8 +179,12 @@ class LampShow:
             worker.cancel()
             await asyncio.gather(worker, return_exceptions=True)
         for entity, before in self._before.items():
-            service, data = restore_data(entity, before)
             try:
+                if before.get("state") != "on" and self._last_on.get(entity):
+                    # A lamp that was off keeps its strength for the next normal switch on: set it back first
+                    await self._service("turn_on", _on_data(entity, self._last_on[entity]))
+                    await asyncio.sleep(RESTORE_WAIT_S)
+                service, data = restore_data(entity, before)
                 await self._service(service, data)
             except Exception as e:
                 logger.warning("Lamp show: could not restore %s: %s", entity, e)
