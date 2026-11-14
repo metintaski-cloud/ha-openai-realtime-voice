@@ -20,7 +20,7 @@ Diese Datei ist das Gedaechtnis des Projekts. Wer eine Sitzung beginnt, liest si
 - Geraete Config aendern: siehe home-assistant-voice-pe/AGENTS.md (Abschnitt Browser Route).
 
 ## Version und Zustand
-- Server 2.57.1 (14 Nov 2026, 15:20), 211 Tests gruen. Firmware leyla_voice ohne Aenderung seit 14 Nov 14:05 (Ausblenden wieder entfernt).
+- Server 2.57.2 (14 Nov 2026, 15:22), 212 Tests gruen. Fehler behoben: Ansage Server (Nachrichten, Ansagen) lief seit 2.55.0 nicht, weil die Gedaechtnis Seite Port 8082 zuerst belegte; er nutzt jetzt 8084 (Log: "Messages: ... via http://192.168.2.240:8084"). Ansagen und Nachrichten von Metin an Mama noch einmal gezielt testen. Firmware leyla_voice ohne Aenderung seit 14 Nov 14:05 (Ausblenden wieder entfernt).
 - Lampen: 1 und 2 sind hinten, 3 und 4 vorne (Metin, 14 Nov 2026). Lampenshow (lamp_show.py) laeuft auf 1 und 2, immer 100 Prozent, auch aus dem Aus, danach wie vorher.
 - Gedaechtnis App (Port 8082): Ordneransicht fuer Eintraege mit Punkten, Maskable Icon (Metin muss die App einmal neu installieren, Link http://192.168.2.240:8082/). Metin: Ordneransicht perfekt.
 - Knacken am Satzende: weicher Rand im Server (pacing.py, 2.55.15), von Metin als sauber bestaetigt.
