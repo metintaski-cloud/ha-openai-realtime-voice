@@ -73,7 +73,7 @@ void LeylaVoice::start() {
   this->texts_.clear();
   this->started_ms_ = now;
   this->ready_ms_ = this->first_reply_ms_ = this->sent_frames_ = 0;
-  this->apply_(this->machine_.start(now, esp_get_free_heap_size()), now);
+  this->apply_(this->machine_.start(now, heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)), now);
 }
 
 void LeylaVoice::stop() {
@@ -147,7 +147,7 @@ void LeylaVoice::log_summary_() {
   ESP_LOGI(TAG, "Conversation over: ready after %u ms, first reply audio after %u ms, %u mic blocks sent, "
                 "mic bytes dropped %llu, reply bytes dropped %llu, free heap %u",
            (unsigned) this->ready_ms_, (unsigned) this->first_reply_ms_, (unsigned) this->sent_frames_,
-           (unsigned long long) tx_drop, (unsigned long long) rx_drop, (unsigned) esp_get_free_heap_size());
+           (unsigned long long) tx_drop, (unsigned long long) rx_drop, (unsigned) heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
 }
 
 // ---------- socket ----------
