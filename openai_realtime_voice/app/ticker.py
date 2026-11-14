@@ -44,7 +44,8 @@ def plain(text: str) -> str:
     return line if len(line) <= MAX_TEXT else line[:MAX_TEXT - 1].rstrip() + "…"
 
 
-def add(title: str, text: str, path: str = PATH, now: float = None) -> None:
+def add(title: str, text: str, path: str = None, now: float = None) -> None:
+    path = path or PATH
     items = _load(path)
     items.append({"ts": int(now or time.time()), "who": who(title), "text": plain(text)})
     items = items[-KEEP:]
@@ -58,8 +59,9 @@ def add(title: str, text: str, path: str = PATH, now: float = None) -> None:
         logger.warning("Could not write the news line: %s", e)
 
 
-def recent(path: str = PATH, now: float = None) -> list[str]:
+def recent(path: str = None, now: float = None) -> list[str]:
     """Newest first: 'HH:MM Mama: text' (with the day when not today)."""
+    path = path or PATH
     now = now or time.time()
     out = []
     today = time.localtime(now)[:3]

@@ -31,6 +31,7 @@ CODE_LOCK_S = 300
 _code_fails = {"n": 0, "until": 0.0}
 ICON_PATH = os.path.join(os.path.dirname(__file__), "memory_icon.png")
 MASKABLE_PATH = os.path.join(os.path.dirname(__file__), "memory_icon_maskable.png")  # full square, no transparent corners
+AVATAR_PATH = os.path.join(os.path.dirname(__file__), "leyla_avatar.jpg")  # her picture in the chat
 
 
 def check_code(typed, phrase: str, now: Optional[float] = None) -> bool:
@@ -179,19 +180,34 @@ PAGE = """<!doctype html>
 html{background:#000}
 :root{color-scheme:dark;--cy:#22d3ee;--bl:#3b82f6;--vi:#a855f7;--mg:#d946ef}
 body{margin:0;background:#000;color:#e8ecff;font:17px/1.4 system-ui,sans-serif;padding-bottom:96px}
-#pulse{position:relative;height:96px;margin:-6px 0 4px;overflow:hidden;pointer-events:none}
-#pulse .beam{position:absolute;left:0;right:0;top:50%;height:2px;margin-top:-1px;background:linear-gradient(90deg,transparent,#3b82f6aa 20%,#22d3ee 50%,#3b82f6aa 80%,transparent);box-shadow:0 0 8px #22d3ee}
-#pulse svg{position:absolute;left:50%;top:50%;width:84px;height:76px;margin:-38px 0 0 -42px;overflow:visible;animation:beat 1.6s ease-in-out infinite}
+#pulse{position:relative;height:150px;margin:-6px 0 4px;overflow:hidden;pointer-events:none}
+#pulse .beam{position:absolute;left:0;right:0;top:64px;height:2px;margin-top:-1px;background:linear-gradient(90deg,transparent,#3b82f6aa 20%,#22d3ee 50%,#3b82f6aa 80%,transparent);box-shadow:0 0 8px #22d3ee}
+#pulse svg{position:absolute;left:50%;top:64px;width:84px;height:76px;margin:-38px 0 0 -42px;overflow:visible;animation:beat 1.6s ease-in-out infinite}
 #pulse svg path{filter:drop-shadow(0 0 5px #22d3ee) drop-shadow(0 0 10px #d946ef77)}
 #pulse .spark{position:absolute;width:3px;height:3px;border-radius:50%;background:#bae6fd;box-shadow:0 0 6px #7dd3fc;animation:tw 2.4s ease-in-out infinite}
 #pulse.bad .beam{background:#64748b55;box-shadow:none}#pulse.bad .spark{display:none}
 #pulse.bad svg{animation:none;filter:grayscale(1) opacity(.45)}
-#pulse .tick{position:absolute;left:0;right:calc(50% + 46px);top:14px;height:22px;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 88%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 88%,transparent)}
+#pulse .tick{position:absolute;left:0;right:0;top:118px;height:22px;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 88%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 88%,transparent)}
 #pulse .tick span{position:absolute;left:100%;white-space:nowrap;font-size:14px;line-height:22px;color:#e0f2fe;text-shadow:0 0 8px #22d3ee;animation:crawl linear infinite}
 #pulse.bad .tick{display:none}
-@keyframes crawl{from{transform:translateX(0)}to{transform:translateX(calc(-100% - 60vw))}}
+@keyframes crawl{from{transform:translateX(0)}to{transform:translateX(calc(-100% - 100vw))}}
 @keyframes beat{0%,100%{transform:scale(1)}12%{transform:scale(1.12)}24%{transform:scale(.98)}36%{transform:scale(1.07)}50%{transform:scale(1)}}
 @keyframes tw{0%,100%{opacity:.1;transform:scale(.6)}50%{opacity:1;transform:scale(1.2)}}
+#chat{margin:0 12px 14px;padding:10px;border:1px solid #3b82f655;border-radius:14px;background:#050a24;display:none}
+#chat h2{margin:2px 4px 8px}
+#chat .chead{display:flex;align-items:center;gap:10px;margin:2px 4px 10px}#chat .chead h2{margin:0}
+#chat .chead img{width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid #22d3ee;box-shadow:0 0 12px #22d3ee88,0 0 18px #d946ef55}
+#clog .lr{display:flex;gap:8px;align-items:flex-end;align-self:flex-start;max-width:92%}#clog .lr img{width:28px;height:28px;border-radius:50%;object-fit:cover;flex:none;border:1px solid #22d3ee88}
+#clog .lr .m{max-width:none}
+#clog{max-height:38vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:2px}
+#clog .m{max-width:85%;padding:9px 12px;border-radius:14px;white-space:pre-wrap;word-break:break-word;font-size:16px}
+#clog .u{align-self:flex-end;background:#3a1457;border:1px solid #d946ef66}
+#clog .l{align-self:flex-start;background:#0d1750;border:1px solid #22d3ee55}
+#clog .p{align-self:flex-start;max-width:90%;padding:9px 12px;border-radius:12px;background:#0a2a22;border:1px dashed #22c55e;font-size:15px}
+#clog .p b{color:#86efac}#clog .p .row{display:flex;gap:8px;margin-top:8px}#clog .p button{flex:1;padding:8px}
+#clog .wait{align-self:flex-start;color:#9fb4ff;font-size:14px;padding:2px 6px}
+#cin{display:flex;gap:8px;margin-top:10px}#cin textarea{flex:1;min-height:44px;max-height:120px;font:inherit;color:#fff;background:#000;border:1px solid var(--bl);border-radius:10px;padding:9px;resize:vertical}
+#cin button{width:auto;padding:0 16px}
 header{display:flex;align-items:center;gap:12px;padding:16px}
 header img{width:44px;height:44px;border-radius:11px;box-shadow:0 0 14px #3b82f688}
 h1{font-size:21px;margin:0;background:linear-gradient(90deg,var(--cy),var(--vi),var(--mg));-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -240,7 +256,7 @@ button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 @media (prefers-reduced-motion:reduce){.rg{animation-duration:.1s}.sp img{animation:none}}
 </style></head><body>
 <div id="splash"><div class="sp"><img src="/icon.png?v=5" alt=""><svg viewBox="0 0 200 200"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#a855f7"/><stop offset="1" stop-color="#d946ef"/></linearGradient></defs><circle class="trk" cx="100" cy="100" r="90"/><circle class="rg" cx="100" cy="100" r="90" pathLength="100"/></svg></div></div>
-<header><button id="back">&#8249;</button><img src="/icon.png?v=5" alt=""><h1>Leyla Gedächtnis</h1><button id="snd"></button></header><div id="pulse" class="ok" title="Alles in Ordnung"><div class="tick" id="tick" style="display:none"><span></span></div><i class="spark" style="left:12%;top:30%;animation-delay:0s"></i><i class="spark" style="left:22%;top:68%;animation-delay:0.6s"></i><i class="spark" style="left:31%;top:22%;animation-delay:1.2s"></i><i class="spark" style="left:68%;top:74%;animation-delay:0.3s"></i><i class="spark" style="left:77%;top:28%;animation-delay:0.9s"></i><i class="spark" style="left:88%;top:60%;animation-delay:1.5s"></i><i class="spark" style="left:40%;top:80%;animation-delay:1.8s"></i><i class="spark" style="left:60%;top:18%;animation-delay:2.1s"></i><div class="beam"></div><svg viewBox="0 0 100 90"><defs><linearGradient id="hg" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#f43f5e"/></linearGradient><radialGradient id="hc"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#7dd3fc"/><stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/></radialGradient></defs><path d="M50 84C20 62 4 46 4 28C4 14 15 4 28 4C38 4 46 10 50 18C54 10 62 4 72 4C85 4 96 14 96 28C96 46 80 62 50 84Z" fill="#0b1650cc" stroke="url(#hg)" stroke-width="3.2" stroke-linejoin="round"/><path d="M14 40H34L40 28L47 54L53 34L58 44H86" fill="none" stroke="#e0f2fe" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/><circle cx="54" cy="38" r="9" fill="url(#hc)"/></svg></div><div id="rules"><div class="top"><button id="rback">&#8249;</button><h1>So ist Leyla</h1></div><div id="rtext"></div></div><div id="root"></div><div id="lamps" style="display:none"></div>
+<header><button id="back">&#8249;</button><img src="/icon.png?v=5" alt=""><h1>Leyla Gedächtnis</h1><button id="snd"></button></header><div id="pulse" class="ok" title="Alles in Ordnung"><div class="tick" id="tick" style="display:none"><span></span></div><i class="spark" style="left:12%;top:30%;animation-delay:0s"></i><i class="spark" style="left:22%;top:68%;animation-delay:0.6s"></i><i class="spark" style="left:31%;top:22%;animation-delay:1.2s"></i><i class="spark" style="left:68%;top:74%;animation-delay:0.3s"></i><i class="spark" style="left:77%;top:28%;animation-delay:0.9s"></i><i class="spark" style="left:88%;top:60%;animation-delay:1.5s"></i><i class="spark" style="left:40%;top:80%;animation-delay:1.8s"></i><i class="spark" style="left:60%;top:18%;animation-delay:2.1s"></i><div class="beam"></div><svg viewBox="0 0 100 90"><defs><linearGradient id="hg" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#f43f5e"/></linearGradient><radialGradient id="hc"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#7dd3fc"/><stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/></radialGradient></defs><path d="M50 84C20 62 4 46 4 28C4 14 15 4 28 4C38 4 46 10 50 18C54 10 62 4 72 4C85 4 96 14 96 28C96 46 80 62 50 84Z" fill="#0b1650cc" stroke="url(#hg)" stroke-width="3.2" stroke-linejoin="round"/><path d="M14 40H34L40 28L47 54L53 34L58 44H86" fill="none" stroke="#e0f2fe" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/><circle cx="54" cy="38" r="9" fill="url(#hc)"/></svg></div><div id="chat"><div class="chead"><img src="/leyla.jpg" alt=""><h2>Chat mit Leyla</h2></div><div id="clog"></div><div id="cin"><textarea id="ctext" placeholder="Schreib Leyla ..."></textarea><button id="csend">Senden</button></div></div><div id="rules"><div class="top"><button id="rback">&#8249;</button><h1>So ist Leyla</h1></div><div id="rtext"></div></div><div id="root"></div><div id="lamps" style="display:none"></div>
 <div id="bar"><button id="del" disabled>Markierte löschen</button></div>
 <script>
 let CODE=null;
@@ -304,6 +320,38 @@ function makeRow(kind,t){const lab=document.createElement('label');lab._t=t;
    return startEdit(s,kd,t,v=>{fl[i]=v;return saveFields(fl);});}
   startEdit(s,kd,t);};
  lab.append(cb,s);attachDrag(lab);return lab;}
+let CHAT=[];try{CHAT=JSON.parse(localStorage.getItem('lchat')||'[]')}catch(e){CHAT=[]}
+const KNAME={family:'Familie',friends:'Freunde',leyla:'Leylas Geschichte',private:'Privat'};
+function chatSave(){CHAT=CHAT.slice(-40);try{localStorage.setItem('lchat',JSON.stringify(CHAT))}catch(e){}}
+function chatDraw(wait){const log=document.getElementById('clog');log.innerHTML='';
+ CHAT.forEach((m,i)=>{if(m.role==='prop')return log.appendChild(propCard(m,i));
+  const d=document.createElement('div');d.className='m '+(m.role==='user'?'u':'l');d.textContent=m.text;
+  if(m.role==='user')return log.appendChild(d);const r=document.createElement('div');r.className='lr';const im=document.createElement('img');im.src='/leyla.jpg';im.alt='';r.append(im,d);log.appendChild(r);});
+ if(wait){const w=document.createElement('div');w.className='wait';w.textContent='Leyla schreibt ...';log.appendChild(w);}
+ log.scrollTop=log.scrollHeight;}
+function diffText(o,n){if(o.indexOf(' | ')<0&&n.indexOf(' | ')<0)return o+'  \u2192  '+n;const a=o.split(' | '),b=n.split(' | ');
+ const add=b.filter(x=>!a.includes(x)),gone=a.filter(x=>!b.includes(x));return title(b[0])+': '+[...add.map(x=>'neu: '+x),...gone.map(x=>'weg: '+x)].join('; ');}
+function propCard(m,i){const c=document.createElement('div');c.className='p';const p=m.p;
+ const what=p.action==='add'?'Merken':p.action==='edit'?'Ändern':'Streichen';
+ const h=document.createElement('b');h.textContent=what+' ('+(KNAME[p.kind]||p.kind)+')';c.appendChild(h);
+ const t=document.createElement('div');t.textContent=p.action==='add'?p.new:p.action==='edit'?diffText(p.old,p.new):p.old;c.appendChild(t);
+ if(m.done){const s=document.createElement('div');s.textContent=m.done;s.style.marginTop='6px';s.style.color='#9fb4ff';c.appendChild(s);return c;}
+ const row=document.createElement('div');row.className='row';const y=document.createElement('button');y.textContent='Ja';const n=document.createElement('button');n.textContent='Nein';n.className='no';
+ y.onclick=async()=>{y.disabled=n.disabled=true;let ok=false;
+  try{if(p.action==='add')ok=(await (await post('/api/add',{kind:p.kind,text:p.new})).json()).ok;
+   else if(p.action==='edit')ok=(await (await post('/api/edit',{kind:p.kind,old:p.old,new:p.new})).json()).ok;
+   else ok=(await (await post('/api/delete',{items:[{kind:p.kind,text:p.old}]})).json()).removed>0;}catch(e){}
+  CHAT[i].done=ok?'Gespeichert':'Ging nicht, der Eintrag hat sich inzwischen geändert';if(ok)snd.save();chatSave();chatDraw();last='';load();};
+ n.onclick=()=>{CHAT[i].done='Verworfen';snd.off();chatSave();chatDraw();};
+ row.append(y,n);c.appendChild(row);return c;}
+async function chatSend(){const ta=document.getElementById('ctext'),msg=ta.value.trim();if(!msg)return;
+ const history=CHAT.filter(m=>m.role!=='prop').map(m=>({role:m.role,text:m.text}));
+ CHAT.push({role:'user',text:msg});ta.value='';chatSave();chatDraw(true);snd.on();
+ let j=null;try{j=await (await post('/api/chat',{history,message:msg})).json();}catch(e){}
+ if(!j||j.error||!j.reply){CHAT.push({role:'leyla',text:'Hmm, gerade komme ich nicht durch. Versuch es gleich nochmal.'});}
+ else{CHAT.push({role:'leyla',text:j.reply});(j.proposals||[]).forEach(p=>CHAT.push({role:'prop',p}));}
+ chatSave();chatDraw();snd.drop();}
+document.getElementById('csend').onclick=chatSend;
 let FRESH=new Set(),TICK='';
 function ticker(list){const t=(list||[]).join('   \u2726   ');if(t===TICK)return;TICK=t;const box=document.getElementById('tick'),sp=box.firstChild;
  box.style.display=t?'block':'none';sp.textContent=t;sp.style.animationDuration=Math.max(10,t.length*0.16)+'s';}
@@ -311,7 +359,7 @@ function render(d){FRESH=new Set(d.fresh||[]);ticker(d.ticker);const root=docume
  const back=document.getElementById('back'),h1=document.querySelector('h1');
  let found=null;
  if(view){const l=d.lists.find(x=>x.kind===view.kind);const t=l&&l.items.find(x=>parts(x).head===view.head);if(t){found={l,t};}else view=null;}
- back.style.display=view?'block':'none';document.getElementById('pulse').style.display=view?'none':'block';document.getElementById('lamps').style.display=(view||!lampOn)?'none':'block';h1.textContent=view?title(view.head):'Leyla Gedächtnis';
+ back.style.display=view?'block':'none';document.getElementById('pulse').style.display=view?'none':'block';const ch=document.getElementById('chat'),showChat=!!CODE&&!view;if(showChat&&ch.style.display!=='block'){ch.style.display='block';chatDraw();}else if(!showChat)ch.style.display='none';document.getElementById('lamps').style.display=(view||!lampOn)?'none':'block';h1.textContent=view?title(view.head):'Leyla Gedächtnis';
  if(found){view.text=found.t;const fields=parts(found.t).fields;
   const box=document.createElement('div');box.className='list';box.dataset.kind=found.l.kind;
   const h=document.createElement('h2');h.textContent='Punkte ('+fields.length+')';box.appendChild(h);
@@ -480,7 +528,7 @@ async def _lamp_api(lamp, method: str, path: str, body: bytes):
     return {"result": await lamp.reset()}
 
 
-async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "", rules=None) -> None:
+async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "", rules=None, chat=None) -> None:
     try:
         head = await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), timeout=10)
         lines = head.decode("latin-1").split("\r\n")
@@ -509,6 +557,12 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
             writer.write((f"HTTP/1.1 200 OK\r\nContent-Type: image/png\r\nContent-Length: {len(raw)}\r\n"
                           "Cache-Control: no-cache\r\nConnection: close\r\n\r\n").encode() + raw)
             await writer.drain()
+        elif method == "GET" and path == "/leyla.jpg":
+            with open(AVATAR_PATH, "rb") as f:
+                raw = f.read()
+            writer.write((f"HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\nContent-Length: {len(raw)}\r\n"
+                          "Cache-Control: max-age=86400\r\nConnection: close\r\n\r\n").encode() + raw)
+            await writer.drain()
         elif method == "GET" and path == "/manifest.json":
             await _respond(writer, "200 OK", "application/manifest+json", MANIFEST)
         elif method == "GET" and path == "/api/lists":
@@ -521,6 +575,15 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
             text = rules() if (unlocked and rules) else ""
             await _respond(writer, "200 OK", "application/json",
                            json.dumps({"text": text}, ensure_ascii=False))
+        elif method == "POST" and path == "/api/chat":
+            out = None
+            if unlocked and chat:
+                try:
+                    out = await chat(d.get("history"), d.get("message"))
+                except Exception as e:
+                    logger.warning("Chat failed: %s", e)
+            await _respond(writer, "200 OK", "application/json",
+                           json.dumps(out or {"error": True}, ensure_ascii=False))
         elif method == "POST" and path == "/api/unlock":
             if unlocked:
                 logger.info("Memory page: private list opened")
@@ -569,10 +632,10 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
 
 async def start_http(store: memory.MemoryStore, sync: Optional[object] = None,
                      host: str = "0.0.0.0", port: int = 8082, lamp: Optional[object] = None,
-                     code_phrase: str = "", rules=None):
+                     code_phrase: str = "", rules=None, chat=None):
     """`rules`: a function that returns Leyla's instructions without memory and without the
     code word; shown read only after the code word."""
     server = await asyncio.start_server(
-        lambda r, w: _handle(store, sync, r, w, lamp, code_phrase, rules), host, port)
+        lambda r, w: _handle(store, sync, r, w, lamp, code_phrase, rules, chat), host, port)
     logger.info("Memory page on port %d", port)
     return server

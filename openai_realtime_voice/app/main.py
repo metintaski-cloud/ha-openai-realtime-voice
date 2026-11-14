@@ -39,7 +39,7 @@ from app import context
 from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, pcm_level
 from app.live_link import END_CONVERSATION_TOOL
 from app.phrases import (NAME_NUDGE, NAME_NUDGE_AFTER_S, NAME_NUDGE_COOLDOWN_S, NAME_RE, PROMISE_NUDGE, PROMISE_NUDGE_AFTER_S, PROMISE_RE, NAME_SAID_RE, WHO_ASKED_RE, WHO_NUDGE, COUPLE_NUDGE, COUPLE_WORD_RE, PET_NUDGE, PET_WORD_RE, addressed_by_name, contains_goodbye, greeting_instruction, parse_greeting_words, pick_greeting)
-from app import (lamp_show, metrics, output_link, session_end, tool_link, after_talk, announce_voice, live_link, night, cleanup, costs, fan, health, lights, messages, persona, purifier, rf, technik, todo_sync,
+from app import (chat, lamp_show, metrics, output_link, session_end, tool_link, after_talk, announce_voice, live_link, night, cleanup, costs, fan, health, lights, messages, persona, purifier, rf, technik, todo_sync,
                  tv, vacuum)
 
 logging.basicConfig(
@@ -305,6 +305,19 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         return persona.build(devices, fan=has_fan, tv=has_tv, messages=has_messages,
                              code_phrase="(dein Codewort)" if self.code_phrase else "",
                              extra=self.instructions)
+
+    async def _chat(self, history, message) -> Optional[dict]:
+        """A text message from Metin in the memory app (code word checked by the page)."""
+        devices, has_fan, has_tv, has_messages = getattr(
+            self, "_devices", ([], False, False, False))
+        rules = persona.build(devices, fan=has_fan, tv=has_tv, messages=has_messages,
+                              extra=self.instructions)
+        out = await chat.answer(self.openai_api_key, [self.memory_model, self.backend_model],
+                                rules, self.memory, history, message,
+                                url=os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL))
+        if out:
+            logger.info("Chat with Metin in the app: answered, %d proposals", len(out["proposals"]))
+        return out
 
     def _instructions_with_memory(self) -> str:
         devices, has_fan, has_tv, has_messages = getattr(
@@ -1204,7 +1217,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 await memory_web.start_http(self.memory, self.todo_sync,
                                             port=int(os.environ.get("MEMORY_WEB_PORT", "8082")),
                                             lamp=self.lamp, code_phrase=self.code_phrase,
-                                            rules=self._readable_rules)
+                                            rules=self._readable_rules, chat=self._chat)
             except Exception as e:
                 logger.warning("Memory page could not start: %s", e)
         if self.messages.available:
