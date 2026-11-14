@@ -97,6 +97,7 @@ PAGE = """<!doctype html>
 <link rel="apple-touch-icon" href="/icon.png?v=5">
 <title>Leyla Gedächtnis</title>
 <style>
+html{background:#08103a}
 :root{color-scheme:dark;--cy:#22d3ee;--bl:#3b82f6;--vi:#a855f7;--mg:#d946ef}
 body{margin:0;background:radial-gradient(120% 60% at 50% 0,#14206b 0,#08103a 45%,#040822 100%) fixed;color:#e8ecff;font:17px/1.4 system-ui,sans-serif;padding-bottom:96px}
 header{display:flex;align-items:center;gap:12px;padding:16px}
