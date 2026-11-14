@@ -167,7 +167,7 @@ def test_bilingual_announcement_asks_for_two_clean_passes():
     from app.messages import MessageCenter
     svc = MessageCenter.__new__(MessageCenter)
     prompt = svc._announce_prompt("Saat 16:31.", True)
-    assert prompt.index("Deutsch") < prompt.index("Türkisch") and "nie in einem Satz gemischt" in prompt
+    assert "Lächeln in der Stimme" in prompt and prompt.index("Deutsch") < prompt.index("Türkisch") and "nie in einem Satz gemischt" in prompt
     assert "Saat 16:31." in prompt
     mono = svc._announce_prompt("Saat 16:31.", False)
     assert "ohne ein deutsches Wort" in mono and "zwei getrennten" not in mono
