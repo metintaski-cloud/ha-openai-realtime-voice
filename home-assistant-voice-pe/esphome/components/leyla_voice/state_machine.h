@@ -203,7 +203,9 @@ class Machine {
       case State::Replying:
       case State::Searching: {
         uint32_t limit = state_ == State::Searching ? c_.searching_stop_ms : c_.auto_stop_ms;
-        if (now - last_activity_ >= limit) finish(e, Stop::AutoStop);
+        // Signed: the glue may pass the arrival time of a frame that came in after `now` was read. An
+        // unsigned difference then wraps to about 4 billion and ended the conversation by mistake (14 Nov 2026).
+        if ((int32_t) (now - last_activity_) >= (int32_t) limit) finish(e, Stop::AutoStop);
         break;
       }
       case State::Stopping:

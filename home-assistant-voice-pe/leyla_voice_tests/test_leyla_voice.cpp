@@ -180,6 +180,14 @@ static void test_machine() {
   e = m.tick(t + 35000);
   CHECK(e.fire_stopped && e.close_socket && e.stop_mic && !m.running());
   CHECK(m.stop_reason() == Stop::AutoStop);
+
+  // A frame that arrived after `now` was read (activity slightly in the future) must not end the conversation
+  m = Machine(); t = 0;
+  m.start(t, 100000); m.socket_open(t); m.ready(t);
+  m.audio_from_server(t + 5000);
+  CHECK(!m.tick(t + 4990).fire_stopped && m.running());
+  CHECK(!m.tick(t + 24990).fire_stopped && m.running());
+  CHECK(m.tick(t + 25000).fire_stopped);
 }
 
 static void test_machine_edges() {
