@@ -164,7 +164,7 @@ class Cleaner:
         lists = self.store.load_all()
         kept = set(state["kept"])
         entries = [(k, f) for k in memory.KINDS for f in lists.get(k, [])
-                   if k != memory.LEYLA and f not in kept and not f.startswith("Person:")]
+                   if k not in (memory.LEYLA, memory.CONFIDENTIAL) and f not in kept and not f.startswith("Person:")]
         if not entries:
             state["last_run"] = (today or _dt.date.today()).isoformat()
             self._save(state)

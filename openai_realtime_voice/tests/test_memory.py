@@ -309,3 +309,74 @@ async def test_summarize_keeps_leyla_list_when_model_wipes_it(monkeypatch):
            "leyla": ["a", "b", "c", "d", "e"]}
     out = await memory.summarize("k", ["m"], old, [["user", "hi"]], unlocked=True)
     assert out["leyla"] == old["leyla"]
+
+
+SECRET = "Aktuell bis 20.11.2026: Gülfikar macht sich Sorgen um ihre Knie"
+
+
+def test_confidential_list_is_hidden_but_given_to_leyla(tmp_path):
+    from app import memory_web, todo_sync
+    store = memory.MemoryStore(str(tmp_path / "m.json"))
+    store.save_all({"family": ["Person: Metin"], "confidential": [SECRET]})
+    assert store.load(memory.CONFIDENTIAL) == [SECRET]
+    block = store.instructions_block()
+    assert SECRET in block and "allein" in block and "Metin nicht" in block
+    page = json.dumps(memory_web.snapshot(store), ensure_ascii=False)
+    assert "Knie" not in page
+    assert memory.CONFIDENTIAL not in todo_sync.DEFAULT_LISTS
+    assert memory.CONFIDENTIAL not in memory.OPEN_KINDS
+    # moving open entries on the page keeps the hidden list untouched
+    assert memory_web.move_items(store, {"family": ["Person: Metin"], "friends": [], "leyla": []})
+    assert store.load(memory.CONFIDENTIAL) == [SECRET]
+
+
+def test_confidential_entry_expires_without_its_text_in_the_result(tmp_path):
+    import datetime as dt
+    store = memory.MemoryStore(str(tmp_path / "m.json"))
+    store.save_all({"confidential": [SECRET, "Aktuell bis 30.12.2026: Gülfikar ist traurig"]})
+    gone = store.expire(dt.date(2026, 11, 21))
+    assert gone == ["(vertraulicher Eintrag)"]
+    assert store.load(memory.CONFIDENTIAL) == ["Aktuell bis 30.12.2026: Gülfikar ist traurig"]
+
+
+def test_forget_never_touches_confidential(tmp_path):
+    store = memory.MemoryStore(str(tmp_path / "m.json"))
+    store.save_all({"family": ["Gülfikar mag Knie Übungen"], "confidential": [SECRET]})
+    assert store.forget("Knie") == ["Gülfikar mag Knie Übungen"]
+    assert store.load(memory.CONFIDENTIAL) == [SECRET]
+
+
+async def test_summarize_updates_confidential_and_keeps_it_when_left_out(monkeypatch):
+    replies = ['{"family": [], "confidential": []}', '{"family": []}']
+    prompts = []
+
+    class Resp:
+        status_code = 200
+
+        def __init__(self, text):
+            self.text_ = text
+
+        def json(self):
+            return {"output_text": self.text_}
+
+    class Client:
+        def __init__(self, *a, **k):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        async def post(self, *a, json=None, **k):
+            prompts.append(json["input"])
+            return Resp(replies.pop(0))
+
+    monkeypatch.setattr(memory.httpx, "AsyncClient", Client)
+    old = {"family": [], "friends": [], "private": [], "leyla": [], "confidential": [SECRET]}
+    out = await memory.summarize("k", ["m"], old, [["user", "dizim artık iyi"]])
+    assert out["confidential"] == []  # resolved: the model removed it
+    assert "Knie" in prompts[0] and '"confidential"' in prompts[0]
+    out = await memory.summarize("k", ["m"], old, [["user", "hallo"]])
+    assert out["confidential"] == [SECRET]

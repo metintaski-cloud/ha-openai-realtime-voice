@@ -496,4 +496,5 @@ def test_persona_keeps_confidences_private():
     from app import persona, memory
     assert "bleibt unter euch beiden" in persona.CORE and "auch nicht Metin" in persona.CORE
     import inspect
-    assert "schreibst du nie ins Gedächtnis" in inspect.getsource(memory)
+    assert "schreibst du nie in diese Liste" in inspect.getsource(memory)
+    assert "dass sie allein ist" in persona.CORE

@@ -8,6 +8,10 @@ Long term memory for the voice assistant, in three parts:
   friends  the same for everybody else: relatives, friends, neighbours, acquaintances.
   private  Metin's very private things. Only after the code phrase may Leyla talk about
            them, add to them or delete from them.
+  confidential  what Gülfikar ("Anne") confides to Leyla (sorrow, worry, health). Hidden:
+           never shown on the memory page, never mirrored to a to-do list, never logged,
+           never proposed by the nightly cleanup. Entries are "Aktuell bis <date>: ..." and
+           expire like the open states; the summarizer removes them once they are resolved.
 
 After each conversation a small text model reads the transcript together with both
 lists and returns the updated lists. Without the code phrase the private list is never
@@ -30,8 +34,11 @@ RESPONSES_URL = "https://api.openai.com/v1/responses"
 MAX_FACTS = 250
 MAX_FACT_CHARS = 700
 FAMILY, FRIENDS, PRIVATE, LEYLA = "family", "friends", "private", "leyla"
-KINDS = (FAMILY, FRIENDS, PRIVATE, LEYLA)
+CONFIDENTIAL = "confidential"
+KINDS = (FAMILY, FRIENDS, PRIVATE, LEYLA, CONFIDENTIAL)
 OPEN_KINDS = (FAMILY, FRIENDS, LEYLA)
+EXPIRING_KINDS = OPEN_KINDS + (CONFIDENTIAL,)
+MAX_CONFIDENTIAL = 20
 MAX_LEYLA = 30
 # One entry per person: "Person: Ayşe | Zugehörigkeit: Metins Schwester | Geburtstag: ..."
 PROFILE_FIELDS = ("Zugehörigkeit", "Geburtstag", "Alter", "Kinder", "Arbeit", "Interessen",
@@ -57,7 +64,7 @@ SUMMARY_PROMPT = """Du pflegst das Gedächtnis von Leyla, der Sprachassistentin 
 Familie. Dort wohnen Metin und seine Mutter Gülfikar; gesprochen wird Deutsch oder Türkisch.
 Heute ist der {today}.
 
-Es gibt vier Listen:
+Es gibt fünf Listen:
 1. "family" (offen): nur die engste Familie, also Metin, seine Mutter Gülfikar und Metins
    Geschwister, dazu Allgemeines über den Haushalt.
    Für jede Person genau EIN Eintrag in genau dieser Form, Felder mit " | " getrennt, leere
@@ -81,9 +88,10 @@ Es gibt vier Listen:
    "Aktuell bis TT.MM.JJJJ: <Name> ..." mit einem Datum etwa zwei Wochen nach heute. Ist es
    erledigt oder besser, entferne den Eintrag.
    Was Gülfikar (Metins Mutter, "Anne") Leyla traurig, besorgt, gesundheitlich oder sonst
-   persönlich anvertraut, schreibst du nie ins Gedächtnis, weder bei "Stimmung", "Zuletzt" und
-   "Offen" noch als "Aktuell bis"-Eintrag. Das bleibt zwischen ihr und Leyla, Metin liest diese
-   Liste in seiner App. Ihr Eintrag enthält nur Harmloses (Zugehörigkeit, Sprache, Interessen).
+   persönlich anvertraut, schreibst du nie in diese Liste, weder bei "Stimmung", "Zuletzt" und
+   "Offen" noch als "Aktuell bis"-Eintrag, denn Metin liest sie in seiner App. Das gehört nur in
+   die versteckte Liste "confidential" (5.). Ihr Eintrag hier enthält nur Harmloses
+   (Zugehörigkeit, Sprache, Interessen).
    Allgemeines über den Haushalt als kurze Sätze.
 2. "friends" (offen): Freunde und Verwandte, also alle anderen Personen, zum Beispiel Onkel,
    Tanten, Cousins, Schwager, Nichten und Neffen, Freunde, Nachbarn und Bekannte. Gleiches
@@ -98,6 +106,14 @@ Es gibt vier Listen:
    vorsichtig, erfinde nichts, was nicht wirklich passiert ist, und schreib nie Privates aus der
    gesperrten Liste hinein. Metin prüft diese Liste regelmäßig und korrigiert sie; was er
    gestrichen oder geändert hat, nimmst du so hin. Ist nichts Neues entstanden, lass sie so.
+5. "confidential" (versteckt, nur für Leyla): was Gülfikar Leyla traurig, besorgt,
+   gesundheitlich oder sonst persönlich anvertraut hat, damit Leyla später behutsam nachfragen
+   kann. Niemand sonst sieht diese Liste, auch Metin nicht. Jeder Eintrag in der Form
+   "Aktuell bis TT.MM.JJJJ: Gülfikar ..." mit einem Datum etwa zwei Wochen nach heute, ein
+   kurzer Satz, nur das Nötige. Sagt sie, dass es vorbei, besser oder erledigt ist, oder bittet
+   sie, es zu vergessen, entferne den Eintrag. Erzählt sie mehr dazu, aktualisiere ihn statt
+   einen neuen anzulegen. Nur, was eindeutig Gülfikar selbst gesagt hat, nichts von anderen.
+   Höchstens {max_confidential} Einträge.
 
 Bisherige Listen (JSON):
 {lists}
@@ -135,7 +151,17 @@ Regeln:
 - Kurze deutsche Sätze, höchstens {max_facts} Einträge je Liste.
 - Gibt es nichts Neues, gib alle Listen unverändert zurück.
 Antworte nur mit JSON in der Form {{"family": ["..."], "friends": ["..."], "private": ["..."],
-"leyla": ["..."]}} und sonst nichts."""
+"leyla": ["..."], "confidential": ["..."]}} und sonst nichts."""
+
+
+CONFIDENTIAL_RULES = (
+    "• Das weiß außer dir niemand, auch Metin nicht, und so bleibt es: Du erwähnst es nie, "
+    "wenn jemand anderes spricht oder dabei sein könnte, und deutest es auch nicht an.\n"
+    "• Nachfragen („Wie geht es dir inzwischen damit?“) nur bei Mama, höchstens einmal im "
+    "Gespräch und erst nach ihrem Anliegen. Vorher fragst du immer erst unauffällig, ob sie "
+    "allein ist („Anne, yalnız mısın şu an?“). Nur wenn sie klar Ja sagt, sprichst du es "
+    "behutsam an; sonst lässt du es ganz, ohne zu sagen warum.\n"
+    "• Sagt sie, es ist vorbei oder sie will nicht darüber reden, lässt du es sofort.")
 
 
 def wants_to_remember(text: str) -> bool:
@@ -242,7 +268,7 @@ class MemoryStore:
             return {k: [] for k in KINDS}
         if FAMILY not in data and PRIVATE not in data:
             # Old single list: everything stays private until Metin moves it
-            return {FAMILY: [], FRIENDS: [], LEYLA: [],
+            return {FAMILY: [], FRIENDS: [], LEYLA: [], CONFIDENTIAL: [],
                     PRIVATE: _clean_facts(data.get("facts", []))}
         return {k: _clean_facts(data.get(k, [])) for k in KINDS}
 
@@ -268,7 +294,9 @@ class MemoryStore:
         self.save_all({kind: facts})
 
     def forget(self, raw_patterns: str) -> list[str]:
-        """Remove every fact (both lists) that contains one of the ;-separated pieces."""
+        """Remove every fact that contains one of the ;-separated pieces. Mama's confidential
+        list is left alone: only the summarizer changes it, so nothing about it is ever
+        reported back."""
         patterns = [p.strip().lower() for p in (raw_patterns or "").split(";")
                     if p.strip() and p.strip().lower() != "null"]
         if not patterns:
@@ -276,6 +304,8 @@ class MemoryStore:
         data = self._read()
         removed = []
         for k in KINDS:
+            if k == CONFIDENTIAL:
+                continue
             keep = [f for f in data[k] if not any(p in f.lower() for p in patterns)]
             removed += [f for f in data[k] if f not in keep]
             data[k] = keep
@@ -294,14 +324,15 @@ class MemoryStore:
         return added
 
     def expire(self, today: Optional[_dt.date] = None) -> list[str]:
-        """Drop "Aktuell bis <date>" entries whose date has passed."""
+        """Drop "Aktuell bis <date>" entries whose date has passed. Confidential ones are
+        returned as a placeholder so their text never reaches the log."""
         gone = []
-        for kind in OPEN_KINDS:
+        for kind in EXPIRING_KINDS:
             facts = self.load(kind)
             old = [f for f in facts if expired(f, today)]
             if old:
                 self.save([f for f in facts if f not in old], kind)
-                gone += old
+                gone += old if kind != CONFIDENTIAL else ["(vertraulicher Eintrag)"] * len(old)
         return gone
 
     def instructions_block(self) -> str:
@@ -309,7 +340,8 @@ class MemoryStore:
         family = [f for f in data[FAMILY] if not expired(f)]
         friends = [f for f in data[FRIENDS] if not expired(f)]
         own = [f for f in data.get(LEYLA, []) if not expired(f)]
-        if not family and not friends and not own:
+        secret = [f for f in data.get(CONFIDENTIAL, []) if not expired(f)]
+        if not family and not friends and not own and not secret:
             return ""
         open_ = []
         for f in family + friends:
@@ -318,6 +350,9 @@ class MemoryStore:
             if parsed and missing:
                 open_.append(f"• {parsed[0]}: {', '.join(missing)}")
         text = ""
+        if secret:  # first, so the length cap in main.py never cuts the rules away
+            text += ("\n\nWAS MAMA DIR ANVERTRAUT HAT (NUR FÜR DICH, STRENG VERTRAULICH)\n"
+                     + "\n".join(f"• {f}" for f in secret) + "\n" + CONFIDENTIAL_RULES)
         if family:
             text += "\n\nFAMILIE UND HAUSHALT\n" + "\n".join(f"• {f}" for f in family)
         if friends:
@@ -382,12 +417,14 @@ async def summarize(
         lists=json.dumps({FAMILY: old.get(FAMILY, []), FRIENDS: old.get(FRIENDS, []),
                           PRIVATE: old.get(PRIVATE, [])
                           if unlocked else ["(gesperrt, unverändert lassen)"],
-                          LEYLA: old.get(LEYLA, [])},
+                          LEYLA: old.get(LEYLA, []),
+                          CONFIDENTIAL: old.get(CONFIDENTIAL, [])},
                          ensure_ascii=False),
         unlocked="ja" if unlocked else "nein",
         dialog=format_dialog(dialog)[-12000:],
         max_facts=MAX_FACTS,
         max_leyla=MAX_LEYLA,
+        max_confidential=MAX_CONFIDENTIAL,
     )
     async with httpx.AsyncClient(timeout=90.0) as client:
         for model in [m for m in models if m]:
@@ -421,6 +458,7 @@ async def summarize(
                 if k not in lists or (k == PRIVATE and not unlocked):
                     lists[k] = list(old.get(k, []))
             lists[LEYLA] = lists[LEYLA][:MAX_LEYLA]
+            lists[CONFIDENTIAL] = lists[CONFIDENTIAL][:MAX_CONFIDENTIAL]
             if len(lists[LEYLA]) < len(old.get(LEYLA, [])) - 3:
                 logger.warning("Memory update would drop %d of Leyla's own entries; ignored",
                                len(old.get(LEYLA, [])) - len(lists[LEYLA]))

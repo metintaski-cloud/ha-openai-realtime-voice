@@ -30,11 +30,11 @@ class AfterTalkMixin:
                 for f in lists[kind]:
                     if f not in old[kind]:
                         logger.info("Memory %s: + %s", kind, f if kind in memory.OPEN_KINDS
-                                    else "(private entry)")
+                                    else "(hidden entry)")
                 for f in old[kind]:
                     if f not in lists[kind]:
                         logger.info("Memory %s: - %s", kind, f if kind in memory.OPEN_KINDS
-                                    else "(private entry)")
+                                    else "(hidden entry)")
             if self.todo_sync:
                 self.todo_sync.kick()
         else:
