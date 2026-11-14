@@ -144,3 +144,5 @@ Option `backend_reasoning_effort` (config.yaml, run.sh env `BACKEND_REASONING_EF
 ## Deep thinking (tief_nachdenken)
 
 GPT Live sets the backend reasoning effort per session only, so depth cannot follow the question. `app/deep_think.py` therefore adds a backend tool `tief_nachdenken`: the session runs with a low effort (fast), and for hard questions (weighing, advice, health, money, why or how, multi step maths, planning, or "think harder") the backend calls the tool, which asks the same model once with `reasoning.effort = high` and returns a short spoken answer. Every call is logged (`Deep think question=... -> N s`) and recorded as metrics event `deep_think`, so the choice can be reviewed and the tool description sharpened. Switch off with env `ENABLE_DEEP_THINKING=false`.
+
+Finding (14 Nov 2026): the live voice answered a hard question itself and never delegated, so the tool was not used. `persona.DEEP_RULE` (add on 2.54.2) tells Leyla to hand hard questions to her backend; easy ones she answers herself. Check the log for `Deep think` lines to see whether she follows it.

@@ -411,6 +411,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 block = block[:MEMORY_BLOCK_MAX_CHARS].rsplit("\n", 1)[0]
             listing = self.memory.private_listing()
         return persona.build(devices, fan=has_fan, tv=has_tv, messages=has_messages,
+                             deep=self.deep_thinking,
                              family_block=block, code_phrase=self.code_phrase,
                              private_listing=listing, extra=self.instructions)
 

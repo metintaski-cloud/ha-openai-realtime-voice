@@ -31,3 +31,9 @@ def test_errors_are_reported_not_raised():
     assert "error" in _run(deep_think.think("k", "m", {"frage": " "}))
     empty = httpx.MockTransport(lambda r: httpx.Response(200, json={"output": []}))
     assert "error" in _run(deep_think.think("k", "m", {"frage": "x"}, transport=empty))
+
+
+def test_leyla_is_told_to_hand_hard_questions_to_the_backend():
+    from app import persona
+    assert "Schwierige Fragen" in persona.build(["x"], deep=True)
+    assert "Schwierige Fragen" not in persona.build(["x"])

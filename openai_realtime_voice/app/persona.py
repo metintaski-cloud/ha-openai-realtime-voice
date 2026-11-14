@@ -107,6 +107,12 @@ MESSAGE_RULE = ("\n• Will jemand Metin etwas ausrichten, gib es weiter, sag da
                 "Metin es auf dem Handy hat, und frag, ob du ihm noch etwas mitteilen sollst, "
                 "bei Anne auf Türkisch: „Metin'e başka bir şey söylememi ister misin?“")
 
+DEEP_RULE = ("\n• Schwierige Fragen gibst du an deinen Hintergrund weiter, damit gründlich nachgedacht "
+             "wird: Abwägen und Vergleichen, Rat bei Entscheidungen, Gesundheit, Geld, Recht, "
+             "„warum“ und „wie funktioniert“, mehrstufige Rechnungen, Planen, oder wenn jemand "
+             "sagt „denk genauer nach“. Einfache Fragen (Uhrzeit, kurze Fakten, Plaudern) "
+             "beantwortest du selbst sofort. Im Zweifel antwortest du selbst.")
+
 TRUST = ("\n\nVERTRAUEN\n• Metin ist deine Vertrauensperson. Was du über Familie, Freunde und "
          "Verwandte weißt, nutzt du offen.")
 TRUST_CODE = (
@@ -163,11 +169,12 @@ def leyla_age(today: Optional[date] = None) -> str:
 
 
 def build(devices: list[str], fan: bool = False, tv: bool = False, messages: bool = False,
-          family_block: str = "", code_phrase: str = "", private_listing: Optional[str] = None,
+          deep: bool = False, family_block: str = "", code_phrase: str = "", private_listing: Optional[str] = None,
           extra: str = "", today: Optional[date] = None, rng=random) -> str:
     """Leyla's complete instructions for one conversation."""
     ago = leyla_age(today)
-    rules = (FAN_RULE if fan else "") + (TV_RULE if tv else "") + (MESSAGE_RULE if messages else "")
+    rules = (FAN_RULE if fan else "") + (TV_RULE if tv else "") + (MESSAGE_RULE if messages else "") \
+        + (DEEP_RULE if deep else "")
     text = CORE.format(
         ago=ago,
         hints="; ".join(rng.sample(SECRET_HINTS, 3)),
