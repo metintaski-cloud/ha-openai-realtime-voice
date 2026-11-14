@@ -148,3 +148,4 @@ Option `backend_reasoning_effort` (config.yaml, run.sh env `BACKEND_REASONING_EF
 ## Deep thinking was tried and removed (14 Nov 2026)
 
 A backend tool `tief_nachdenken` (high reasoning effort for one answer) plus a persona rule was built and removed again: GPT Live's live voice answers hard questions itself and does not reliably delegate, even when asked to "think harder", and OpenAI offers no reasoning depth for the live voice. Its own answers were good and personal (they know the household). Only the session wide `backend_reasoning_effort` stays (web search replies 16 s to 1.6 s).
+- Reading the add on log from outside: the Supervisor `/addons/<slug>/logs` call returns only about 100 lines by default (the 2 s mic level and `first_audio` lines push the start of a conversation out). Send the header `Range: entries=:-1000:` to get 1000 lines, enough for the `ready` metric of a short test.

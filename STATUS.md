@@ -30,7 +30,7 @@ Diese Datei ist das Gedaechtnis des Projekts. Wer eine Sitzung beginnt, liest si
 - Pruefen, ob Fehlaktivierungen seltener werden und Mamas "Hallo Leyla" noch erkannt wird.
 - Mikrofonpegel von Mamas echter Sitzung ansehen (Log "Mic level (2 s)").
 - Weiteres Aufraeumen: lange Funktionen in main.py, technik.py.
-- Dreame Sperrzone Anleitung (wartet auf "weiter").
+- Dreame Sperrzone Anleitung: Metin lehnt sie ab (14 Nov 2026), gestrichen.
 - Fehlaktivierungen: Modell mit gesammelten Samples nachtrainieren.
 - Externes Backup einrichten.
 - Stilles Abreissen der Verbindung (14 Nov 2026): neue Komponente gibt bei echtem WLAN Verlust ohne Abschluss erst nach Sendetimeout 5 s oder Auto Stopp 60 s auf, kein eigener Ping. Vorschlag: Ping 3 s und Abbruch nach 6 s (esp_websocket_client ping_interval_sec, pingpong_timeout_sec), nicht eingebaut, weil der Nutzen ohne echten Ausfall nicht messbar ist. Erst umsetzen, wenn ein echter Ausfall im Log auftaucht. Quota Meldung auf dem Geraet nur ueber Unit Tests geprueft (Fake Server noetig).
