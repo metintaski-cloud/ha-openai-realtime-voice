@@ -263,7 +263,8 @@ class MessageCenter:
                       "Sprechen vorbereiten. Klinge richtig glücklich, als würdest du dich freuen, das zu "
                       "sagen. Pflicht: Nach dem ersten " + ("deutschen " if bilingual else "") +
                       "Satz lachst du genau einmal hörbar kurz und herzlich auf (ein echtes „Haha“ oder "
-                      "„Hihi“, nicht gesprochen, sondern gelacht) und sprichst dann weiter. ")
+                      "„Hihi“, nicht gesprochen, sondern gelacht) und sprichst dann weiter. Am Ende der "
+                      "Ansage lachst du nicht, die letzten Worte sprichst du warm lächelnd und ruhig. ")
             if bilingual:
                 style += ("Im türkischen Teil lachst du nicht noch einmal, sondern lächelst nur hörbar. Der "
                           "türkische Teil klingt nicht wie eine Kopie des deutschen, sondern frisch und mit "
