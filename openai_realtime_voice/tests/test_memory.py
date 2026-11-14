@@ -321,6 +321,7 @@ def test_confidential_list_is_hidden_but_given_to_leyla(tmp_path):
     assert store.load(memory.CONFIDENTIAL) == [SECRET]
     block = store.instructions_block()
     assert SECRET in block and "allein" in block and "Metin nicht" in block
+    assert "nie geraten" in block and block.index("WAS MAMA") < block.index("FAMILIE")
     page = json.dumps(memory_web.snapshot(store), ensure_ascii=False)
     assert "Knie" not in page
     assert memory.CONFIDENTIAL not in todo_sync.DEFAULT_LISTS

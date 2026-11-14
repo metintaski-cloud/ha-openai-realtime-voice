@@ -157,8 +157,9 @@ Antworte nur mit JSON in der Form {{"family": ["..."], "friends": ["..."], "priv
 CONFIDENTIAL_RULES = (
     "• Das weiß außer dir niemand, auch Metin nicht, und so bleibt es: Du erwähnst es nie, "
     "wenn jemand anderes spricht oder dabei sein könnte, und deutest es auch nicht an.\n"
-    "• Nachfragen („Wie geht es dir inzwischen damit?“) nur bei Mama, höchstens einmal im "
-    "Gespräch und erst nach ihrem Anliegen. Vorher fragst du immer erst unauffällig, ob sie "
+    "• Nachfragen („Wie geht es dir inzwischen damit?“) nur bei Mama, und nur wenn du sicher "
+    "weißt, dass sie es ist (sie hat es selbst gesagt oder deine Frage beantwortet, nie geraten), "
+    "höchstens einmal im Gespräch und erst nach ihrem Anliegen. Vorher fragst du immer erst unauffällig, ob sie "
     "allein ist („Anne, yalnız mısın şu an?“). Nur wenn sie klar Ja sagt, sprichst du es "
     "behutsam an; sonst lässt du es ganz, ohne zu sagen warum.\n"
     "• Sagt sie, es ist vorbei oder sie will nicht darüber reden, lässt du es sofort.")
