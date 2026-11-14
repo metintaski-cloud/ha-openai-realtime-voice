@@ -54,7 +54,18 @@ def check_code(typed, phrase: str, now: Optional[float] = None) -> bool:
 
 def snapshot(store: memory.MemoryStore, titles=TITLES) -> dict:
     data = store.load_all()
-    return {"lists": [{"kind": k, "title": t, "items": data.get(k, [])} for k, t in titles]}
+    shown = {k: data.get(k, []) for k, _ in titles}
+    new = store.fresh()
+    fresh = set()
+    for facts in shown.values():
+        for f in facts:
+            head = f.split(" | ")[0]
+            mine = {p for p in new if p.startswith(head + "||")}
+            if f in new or mine:
+                fresh.add(f)
+            fresh |= mine
+    return {"lists": [{"kind": k, "title": t, "items": shown[k]} for k, t in titles],
+            "fresh": sorted(fresh)}
 
 
 def add_item(store: memory.MemoryStore, kind, text, titles=TITLES) -> bool:
@@ -173,6 +184,7 @@ header img{width:44px;height:44px;border-radius:11px;box-shadow:0 0 14px #3b82f6
 h1{font-size:21px;margin:0;background:linear-gradient(90deg,var(--cy),var(--vi),var(--mg));-webkit-background-clip:text;background-clip:text;color:transparent}
 h2{font-size:14px;margin:22px 16px 6px;color:var(--cy);text-transform:uppercase;letter-spacing:.08em;text-shadow:0 0 10px #22d3ee66}
 label{display:flex;gap:14px;align-items:flex-start;margin:0 12px 8px;padding:12px 14px;background:#0d1750cc;border:1px solid #3b82f655;border-radius:12px;box-shadow:0 0 12px #3b82f622 inset}
+label.new{background:#0c3b2ecc;border-color:#22c55e;box-shadow:0 0 14px #22c55e55}
 label.on{background:#3a1457cc;border-color:var(--mg);box-shadow:0 0 14px #d946ef55}
 input[type=checkbox]{width:24px;height:24px;flex:none;margin-top:2px;accent-color:var(--vi)}
 .t{flex:1;word-break:break-word}.t b{color:#fff}.t small{display:block;color:#9fb4ff}
@@ -272,13 +284,15 @@ function makeRow(kind,t){const lab=document.createElement('label');lab._t=t;
  cb.onchange=()=>{const k=key(lab.parentNode.dataset.kind,t);cb.checked?(sel.add(k),snd.on()):(sel.delete(k),snd.off());lab.classList.toggle('on',cb.checked);upd();};
  const s=document.createElement('span');s.className='t';s.innerHTML=fmt(t);
  const pt=parts(t),isFolder=!view&&pt.folder;if(isFolder)lab.classList.add('fold');
+ if(FRESH.has(view?view.head+'||'+t:t))lab.classList.add('new');
  s.onclick=e=>{e.preventDefault();if(Date.now()-justDragged<700)return;const kd=lab.parentNode.dataset.kind;
   if(isFolder)return openFolder(kd,pt.head);
   if(view){const fl=[...document.querySelectorAll('.list label')].map(x=>x._t),i=fl.indexOf(t);
    return startEdit(s,kd,t,v=>{fl[i]=v;return saveFields(fl);});}
   startEdit(s,kd,t);};
  lab.append(cb,s);attachDrag(lab);return lab;}
-function render(d){const root=document.getElementById('root');root.innerHTML='';const all=new Set();
+let FRESH=new Set();
+function render(d){FRESH=new Set(d.fresh||[]);const root=document.getElementById('root');root.innerHTML='';const all=new Set();
  const back=document.getElementById('back'),h1=document.querySelector('h1');
  let found=null;
  if(view){const l=d.lists.find(x=>x.kind===view.kind);const t=l&&l.items.find(x=>parts(x).head===view.head);if(t){found={l,t};}else view=null;}

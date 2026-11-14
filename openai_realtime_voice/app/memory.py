@@ -412,6 +412,23 @@ def _best_match(fact: str, candidates: list) -> Optional[tuple]:
     return best if score >= 0.6 else None
 
 
+FRESH_S = 2 * 24 * 3600  # how long a new or changed entry shows green on the memory page
+SEEN_KINDS = (FAMILY, FRIENDS, LEYLA, PRIVATE)  # what the memory page can show
+
+
+def pieces(data: dict) -> set[str]:
+    """Every entry, and for an entry with points (a profile) also every point as
+    "<first part>||<point>", the way the memory page shows them."""
+    out = set()
+    for k in SEEN_KINDS:
+        for f in data.get(k, []):
+            out.add(f)
+            parts = f.split(" | ")
+            if f.startswith("Person:") or len(parts) > 1:
+                out.update(f"{parts[0]}||{p}" for p in parts[1:])
+    return out
+
+
 class MemoryStore:
     def __init__(self, path: str) -> None:
         self.path = path
@@ -431,6 +448,23 @@ class MemoryStore:
                     PRIVATE: _clean_facts(data.get("facts", []))}
         return {k: _clean_facts(data.get(k, [])) for k in KINDS}
 
+    def _read_seen(self) -> Optional[dict]:
+        """When each entry and each point of a profile was first seen (unix time), or None
+        for a file written before this was kept."""
+        try:
+            with open(self.path, encoding="utf-8") as f:
+                seen = json.load(f).get("seen")
+        except Exception:
+            return None
+        return seen if isinstance(seen, dict) else None
+
+    def fresh(self, now: Optional[float] = None) -> set[str]:
+        """Entries and profile points (see pieces) that are new or changed in the last two
+        days, for the green marks on the memory page."""
+        now = now or time.time()
+        return {p for p, t in (self._read_seen() or {}).items()
+                if isinstance(t, (int, float)) and t > now - FRESH_S}
+
     def load(self, kind: str = FAMILY) -> list[str]:
         return self._read()[kind]
 
@@ -442,11 +476,15 @@ class MemoryStore:
         for k in KINDS:
             if k in lists:
                 data[k] = _clean_facts(lists[k])
+        old_seen = self._read_seen()
+        now = int(time.time())
+        first = 0 if old_seen is None else now  # the first time, nothing counts as new
+        seen = {p: (old_seen or {}).get(p, first) for p in pieces(data)}
         os.makedirs(os.path.dirname(self.path) or ".", exist_ok=True)
         tmp = self.path + ".tmp"
         with open(tmp, "w", encoding="utf-8") as f:
-            json.dump({"version": 3, **{k: data[k] for k in KINDS},
-                       "updated": int(time.time())}, f, ensure_ascii=False, indent=2)
+            json.dump({"version": 3, **{k: data[k] for k in KINDS}, "seen": seen,
+                       "updated": now}, f, ensure_ascii=False, indent=2)
         os.replace(tmp, self.path)
 
     def save(self, facts: list[str], kind: str = FAMILY) -> None:

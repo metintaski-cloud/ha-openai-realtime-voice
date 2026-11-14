@@ -207,3 +207,20 @@ def test_readable_rules_hide_the_code_word_and_the_memory(tmp_path):
     text = bridge._readable_rules()
     assert "Zitronenbaum" not in text and "(dein Codewort)" in text
     assert "Quittenkuchen" not in text and "Alter: 45" not in text and "WER DU BIST" in text
+
+
+def test_new_and_changed_entries_are_marked_fresh_for_two_days(tmp_path):
+    import json, time
+    s = memory.MemoryStore(str(tmp_path / "m.json"))
+    p = tmp_path / "m.json"
+    p.write_text(json.dumps({"family": ["Alt", "Person: Metin | Arbeit: Elektriker"],
+                             "friends": [], "private": [], "leyla": []}), encoding="utf-8")
+    s.save_all({"family": ["Alt", "Person: Metin | Arbeit: Elektriker"]})
+    assert memory_web.snapshot(s)["fresh"] == []  # first time: nothing counts as new
+    s.save_all({"family": ["Alt", "Person: Metin | Arbeit: Elektriker | Interessen: Pizza", "Neu"]})
+    fresh = memory_web.snapshot(s)["fresh"]
+    assert "Neu" in fresh and "Alt" not in fresh
+    assert "Person: Metin | Arbeit: Elektriker | Interessen: Pizza" in fresh
+    assert "Person: Metin||Interessen: Pizza" in fresh
+    assert "Person: Metin||Arbeit: Elektriker" not in fresh
+    assert s.fresh(now=time.time() + 3 * 24 * 3600) == set()

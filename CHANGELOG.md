@@ -11,6 +11,7 @@
 - Add on 2.54.0: option `backend_reasoning_effort` (minimal, low, medium, high) for the backend model of GPT Live delegation; unset keeps the model default. Lower effort should shorten the long wait after a web search.
 - Add on 2.55.12: persona rule for personal small talk (how was your day), after a test where she asked back what was meant.
 - Add on 2.55.13: memory page paints the dark blue background at once (no grey page before the start animation).
+- Add on 2.63.0: the memory app shows new or changed entries green for two days, inside a person folder only the changed points; afterwards they turn blue again.
 - Add on 2.62.2: the who question rule now names its exceptions: a pet word asks at once, and when the second answer is a short command she asks at the next answer that is not one, always after answering the request.
 - Add on 2.62.1: Leyla asks who is there in her second answer (before: after one or two exchanges), Metin wanted it sharper.
 - Add on 2.62.0: Leyla never deletes or overwrites memory any more, only Metin (with Claude) deletes. A dropped entry comes back, a changed profile keeps the old values behind "davor:" (Zuletzt and Stimmung grow), past "Aktuell" entries stay stored and are only hidden from Leyla, Mama's confidential list included. Entry limit 700 to 1500 characters.
