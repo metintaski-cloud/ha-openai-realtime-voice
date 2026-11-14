@@ -498,3 +498,10 @@ def test_persona_keeps_confidences_private():
     import inspect
     assert "schreibst du nie in diese Liste" in inspect.getsource(memory)
     assert "dass sie allein ist" in persona.CORE
+
+
+def test_persona_never_says_guess():
+    import re
+    from app import persona
+    # Metin: she never guesses (14 Nov 2026); "rätst nie" is allowed, an order to guess is not
+    assert not re.search(r"\brate\b|wahrscheinlichste Bedeutung", persona.CORE)
