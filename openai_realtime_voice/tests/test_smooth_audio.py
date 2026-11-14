@@ -478,3 +478,9 @@ def test_paced_sender_fades_the_end_only():
     a.frombytes(data)
     assert a[0] == 9000 and a[-1] == 0 and a[-pacing.FADE_OUT_BYTES // 2 - 1] == 9000
     assert mid >= 1
+
+
+def test_persona_reacts_to_couple_words_from_unknown_people():
+    from app import persona
+    assert "Kim bu bana bitanem diyen" in persona.CORE and "Mein Herz ist schon vergeben" in persona.CORE
+    assert "rätst du nie" in persona.CORE
