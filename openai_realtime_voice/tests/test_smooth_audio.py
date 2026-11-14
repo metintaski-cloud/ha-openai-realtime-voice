@@ -487,4 +487,4 @@ def test_persona_asks_who_uses_a_pet_name():
 
 def test_persona_defends_herself_when_it_gets_too_private():
     from app import persona
-    assert "setz dich klug zur Wehr" in persona.CORE and "nicht sicher als Metin erkannt" in persona.CORE
+    assert "setz dich klug zur Wehr" in persona.CORE and "du rätst das nie" in persona.CORE

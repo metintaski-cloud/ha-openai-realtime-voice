@@ -11,6 +11,7 @@
 - Add on 2.54.0: option `backend_reasoning_effort` (minimal, low, medium, high) for the backend model of GPT Live delegation; unset keeps the model default. Lower effort should shorten the long wait after a web search.
 - Add on 2.55.12: persona rule for personal small talk (how was your day), after a test where she asked back what was meant.
 - Add on 2.55.13: memory page paints the dark blue background at once (no grey page before the start animation).
+- Add on 2.57.21: the exception for Metin in the defence rule only counts when she learned it from him (he says it himself or names the code word), never by guessing.
 - Add on 2.57.20: persona: when someone gets too private or too familiar (love words, flirting, pushy personal questions) she defends herself cleverly and with humor, and says clearly that she does not want it if it continues, unless she is sure it is Metin (Metin's request, 14 Nov 2026).
 - Add on 2.57.19: the rule only applies to words that only couples use in the family (bitanem, aşkım, sevgilim, mein Schatz); canım and tatlım are normal (Metin).
 - Add on 2.57.18: persona rule: when someone she does not know yet calls her by a pet name (bitanem ...), she asks once, charmingly and playfully indignant, who is talking to her, before she answers. Before, she accepted it and only asked later on her own (Metin tested it with bitanem, 14 Nov 2026).
