@@ -34,7 +34,7 @@ import dotenv
 import websockets
 
 from app.audio_recorder import AudioRecorder
-from app import memory
+from app import memory, memory_web
 from app import context
 from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, pcm_level
 from app.live_link import END_CONVERSATION_TOOL
@@ -1057,6 +1057,12 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             self._in_background(self.todo_sync.run())
         if self.enable_memory and self.openai_api_key:
             self._in_background(self._cleanup_loop())
+        if self.enable_memory:
+            try:
+                await memory_web.start_http(self.memory, self.todo_sync,
+                                            port=int(os.environ.get("MEMORY_WEB_PORT", "8082")))
+            except Exception as e:
+                logger.warning("Memory page could not start: %s", e)
         if self.messages.available:
             try:
                 self._message_tasks = await self.messages.start()
