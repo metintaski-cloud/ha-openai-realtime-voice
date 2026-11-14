@@ -177,5 +177,5 @@ def test_happy_announcement_laughs_in_between():
     from app.messages import MessageCenter
     svc = MessageCenter.__new__(MessageCenter)
     happy = svc._announce_prompt("x", True, happy=True)
-    assert "nur ein einziges Mal" in happy and "deutlich hörbar ein" in happy
-    assert "einziges Mal" not in svc._announce_prompt("x", True)
+    assert "genau einmal hörbar" in happy and "deutlich hörbar ein" in happy
+    assert "genau einmal hörbar" not in svc._announce_prompt("x", True)

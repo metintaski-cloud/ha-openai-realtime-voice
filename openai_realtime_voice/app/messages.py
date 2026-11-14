@@ -261,9 +261,10 @@ class MessageCenter:
         if happy:  # event data froh: true, for friendly announcements such as the evening lights
             style += ("Atme vor dem ersten Wort deutlich hörbar ein, durch den Mund, als würdest du dich aufs "
                       "Sprechen vorbereiten. Klinge richtig glücklich, als würdest du dich freuen, das zu "
-                      "sagen. Lache insgesamt nur ein einziges Mal, kurz und herzlich, mitten im ersten Teil "
-                      "(zum Beispiel nach dem ersten Satz); im zweiten Teil lachst du nicht noch einmal, "
-                      "sondern lächelst nur hörbar. Der zweite Teil klingt nicht wie eine Kopie des ersten, "
+                      "sagen. Pflicht: Nach dem ersten deutschen Satz lachst du genau einmal hörbar kurz "
+                      "und herzlich auf (ein echtes „Haha“ oder „Hihi“, nicht gesprochen, sondern gelacht) "
+                      "und sprichst dann weiter. Im türkischen Teil lachst du nicht noch einmal, sondern "
+                      "lächelst nur hörbar. Der türkische Teil klingt nicht wie eine Kopie des deutschen, "
                       "sondern frisch und mit eigener Betonung. ")
         if bilingual:
             # Two clean passes. Asking for "two short sentences" in two languages made her mix the
