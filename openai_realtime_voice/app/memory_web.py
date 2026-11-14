@@ -64,6 +64,34 @@ def edit_item(store: memory.MemoryStore, kind, old, new) -> bool:
     return True
 
 
+SEP = " | "
+
+
+def edit_folder(store: memory.MemoryStore, kind, old, fields) -> Optional[str]:
+    """Replace the points of one entry ("Person: Metin | Zugehörigkeit: ... | Alter: 45"): the first part
+    (the name) stays, `fields` become the rest in the given order. Returns the new text, or None when the entry
+    is unknown or changed meanwhile (`old` must be what is stored now), too long or a duplicate."""
+    if kind not in dict(TITLES) or not isinstance(old, str) or not isinstance(fields, list):
+        return None
+    clean = []
+    for f in fields:
+        if not isinstance(f, str):
+            return None
+        f = " ".join(f.replace(SEP, " / ").split())
+        if f:
+            clean.append(f)
+    new = SEP.join([old.split(SEP)[0]] + clean)
+    if len(new) > memory.MAX_FACT_CHARS:
+        return None
+    facts = store.load(kind)
+    if old not in facts or (new != old and new in facts):
+        return None
+    if new != old:
+        facts[facts.index(old)] = new
+        store.save(facts, kind)
+    return new
+
+
 def move_items(store: memory.MemoryStore, lists) -> bool:
     """Apply a new order and distribution of the open lists. Only accepted when it holds
     exactly the entries that are stored now (nothing lost, nothing new), so a page that is
@@ -115,6 +143,10 @@ textarea{-webkit-user-select:text;user-select:text;width:100%;box-sizing:border-
 .row{display:flex;gap:10px;margin-top:8px}.row button{padding:10px;font-size:16px;background:linear-gradient(90deg,var(--bl),var(--vi));box-shadow:none}.row .no{background:#2a3468}
 .ph{margin:0 12px 8px;border:2px dashed var(--cy);border-radius:12px;background:#22d3ee14}
 .float{position:fixed;left:8px;right:8px;z-index:10;pointer-events:none;background:#1a1f6e;border:1px solid var(--cy);border-radius:12px;box-shadow:0 8px 24px #000a,0 0 18px #22d3ee66;opacity:.97;margin:0}
+#back{display:none;width:auto;font-size:26px;line-height:1;padding:6px 14px;box-shadow:none;background:#1b2a6b;border:1px solid #3b82f688}
+.fold .t{position:relative;padding-right:26px}.fold .t::after{content:'\\203A';position:absolute;right:2px;top:50%;margin-top:-18px;font-size:34px;color:var(--cy)}
+.add{margin:4px 12px;width:calc(100% - 24px);display:block;background:#1b2a6b;border:1px solid var(--cy);box-shadow:none;font-size:16px;padding:12px}
+.addbox{margin:0 12px 8px;padding:12px 14px;background:#0d1750cc;border:1px solid var(--cy);border-radius:12px}
 #snd{width:auto;margin-left:auto;font-size:14px;padding:8px 12px;box-shadow:none;background:#1b2a6b;border:1px solid #3b82f688}
 #bar{position:fixed;left:0;right:0;bottom:0;padding:12px 16px;background:#060b2ae6;border-top:1px solid #3b82f655;backdrop-filter:blur(6px)}
 button{width:100%;font-size:18px;padding:14px;border:0;border-radius:12px;background:linear-gradient(90deg,var(--vi),var(--mg));color:#fff;box-shadow:0 0 16px #a855f777}
@@ -131,10 +163,10 @@ button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 @media (prefers-reduced-motion:reduce){.rg{animation-duration:.1s}.sp img{animation:none}}
 </style></head><body>
 <div id="splash"><div class="sp"><img src="/icon.png?v=5" alt=""><svg viewBox="0 0 200 200"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#a855f7"/><stop offset="1" stop-color="#d946ef"/></linearGradient></defs><circle class="trk" cx="100" cy="100" r="90"/><circle class="rg" cx="100" cy="100" r="90" pathLength="100"/></svg></div></div>
-<header><img src="/icon.png?v=5" alt=""><h1>Leyla Gedächtnis</h1><button id="snd"></button></header><div id="root"></div>
+<header><button id="back">&#8249;</button><img src="/icon.png?v=5" alt=""><h1>Leyla Gedächtnis</h1><button id="snd"></button></header><div id="root"></div>
 <div id="bar"><button id="del" disabled>Markierte löschen</button></div>
 <script>
-let sel=new Set(),last='',editing=false,dragging=false,justDragged=0,AC=null,soundOn=true;
+let view=null,sel=new Set(),last='',editing=false,dragging=false,justDragged=0,AC=null,soundOn=true;
 try{soundOn=localStorage.getItem('snd')!=='0'}catch(e){}
 function bus(){if(!AC){AC=new(window.AudioContext||window.webkitAudioContext)();const m=AC.createGain();m.gain.value=.9;
  const d=AC.createDelay();d.delayTime.value=.11;const fb=AC.createGain();fb.gain.value=.32;const wet=AC.createGain();wet.gain.value=.4;
@@ -156,30 +188,63 @@ const snd={
 function sndLabel(){const b=document.getElementById('snd');b.textContent=soundOn?'Ton an':'Ton aus';}
 const key=(k,t)=>k+'\\u0000'+t;
 function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
-function fmt(t){const p=t.split(' | ');if(p.length<2||!p[0].startsWith('Person:'))return esc(t);
- return '<b>'+esc(p[0].slice(7).trim())+'</b>'+p.slice(1).map(x=>'<small>'+esc(x)+'</small>').join('');}
-function startEdit(span,kind,text){editing=true;span.onclick=null;span.innerHTML='';
+const SEP=' | ';
+function parts(t){const p=t.split(SEP);return {head:p[0],fields:p.slice(1),folder:p[0].startsWith('Person:')||p.length>1};}
+function title(h){return h.startsWith('Person:')?h.slice(7).trim():h;}
+function fmt(t){if(view)return esc(t);const p=parts(t);if(!p.folder)return esc(t);
+ const keys=p.fields.map(x=>{const i=x.indexOf(':');return i>0?x.slice(0,i):x.slice(0,18)}).slice(0,4).join(', ');
+ return '<b>'+esc(title(p.head))+'</b><small>'+p.fields.length+(p.fields.length==1?' Punkt':' Punkte')+(keys?': '+esc(keys):'')+'</small>';}
+async function saveFields(fields){if(!view)return false;
+ const r=await fetch('/api/folder',{method:'POST',body:JSON.stringify({kind:view.kind,old:view.text,fields})});
+ const j=await r.json();if(j.ok)view.text=j.text;return j.ok;}
+function openFolder(kind,head){view={kind,head,text:''};sel=new Set();last='';history.pushState({f:1},'');window.scrollTo(0,0);snd.on();load();}
+function closeFolder(){view=null;sel=new Set();last='';load();}
+window.addEventListener('popstate',()=>{if(view)closeFolder();});
+document.getElementById('back').onclick=()=>history.back();
+function startEdit(span,kind,text,saver){editing=true;span.onclick=null;span.innerHTML='';
  const ta=document.createElement('textarea');ta.value=text;
  const row=document.createElement('div');row.className='row';
  const ok=document.createElement('button');ok.textContent='Speichern';
  const no=document.createElement('button');no.textContent='Abbrechen';no.className='no';
  no.onclick=()=>{editing=false;last='';load();};
- ok.onclick=async()=>{ok.disabled=true;const r=await fetch('/api/edit',{method:'POST',body:JSON.stringify({kind,old:text,new:ta.value})});
-  const j=await r.json();if(!j.ok){alert('Nicht gespeichert: leer, zu lang oder schon vorhanden.');ok.disabled=false;return;}
+ ok.onclick=async()=>{ok.disabled=true;let good;
+  if(saver)good=ta.value.trim()?await saver(ta.value):false;
+  else{const r=await fetch('/api/edit',{method:'POST',body:JSON.stringify({kind,old:text,new:ta.value})});good=(await r.json()).ok;}
+  if(!good){alert('Nicht gespeichert: leer, zu lang oder schon vorhanden.');ok.disabled=false;return;}
   snd.save();editing=false;last='';load();};
  row.append(ok,no);span.append(ta,row);ta.focus();}
 function makeRow(kind,t){const lab=document.createElement('label');lab._t=t;
  const cb=document.createElement('input');cb.type='checkbox';cb.checked=sel.has(key(kind,t));lab.className=cb.checked?'on':'';
- cb.onchange=()=>{const k=key(lab.parentNode.dataset.kind,t);cb.checked?(sel.add(k),snd.on()):(sel.delete(k),snd.off());lab.className=cb.checked?'on':'';upd();};
+ cb.onchange=()=>{const k=key(lab.parentNode.dataset.kind,t);cb.checked?(sel.add(k),snd.on()):(sel.delete(k),snd.off());lab.classList.toggle('on',cb.checked);upd();};
  const s=document.createElement('span');s.className='t';s.innerHTML=fmt(t);
- s.onclick=e=>{e.preventDefault();if(Date.now()-justDragged<700)return;startEdit(s,lab.parentNode.dataset.kind,t);};
+ const pt=parts(t),isFolder=!view&&pt.folder;if(isFolder)lab.classList.add('fold');
+ s.onclick=e=>{e.preventDefault();if(Date.now()-justDragged<700)return;const kd=lab.parentNode.dataset.kind;
+  if(isFolder)return openFolder(kd,pt.head);
+  if(view){const fl=[...document.querySelectorAll('.list label')].map(x=>x._t),i=fl.indexOf(t);
+   return startEdit(s,kd,t,v=>{fl[i]=v;return saveFields(fl);});}
+  startEdit(s,kd,t);};
  lab.append(cb,s);attachDrag(lab);return lab;}
 function render(d){const root=document.getElementById('root');root.innerHTML='';const all=new Set();
+ const back=document.getElementById('back'),h1=document.querySelector('h1');
+ let found=null;
+ if(view){const l=d.lists.find(x=>x.kind===view.kind);const t=l&&l.items.find(x=>parts(x).head===view.head);if(t){found={l,t};}else view=null;}
+ back.style.display=view?'block':'none';h1.textContent=view?title(view.head):'Leyla Gedächtnis';
+ if(found){view.text=found.t;const fields=parts(found.t).fields;
+  const box=document.createElement('div');box.className='list';box.dataset.kind=found.l.kind;
+  const h=document.createElement('h2');h.textContent='Punkte ('+fields.length+')';box.appendChild(h);
+  const e=document.createElement('div');e.className='empty';e.textContent='leer';box.appendChild(e);
+  for(const f of fields){all.add(key(found.l.kind,f));box.appendChild(makeRow(found.l.kind,f));}
+  root.appendChild(box);
+  const add=document.createElement('button');add.className='add';add.textContent='+ Punkt hinzufügen';
+  add.onclick=()=>{if(editing)return;const bx=document.createElement('div');bx.className='addbox';const sp=document.createElement('span');bx.appendChild(sp);
+   root.insertBefore(bx,add);add.style.display='none';startEdit(sp,found.l.kind,'',v=>saveFields([...fields,v]));};
+  root.appendChild(add);
+ }else{
  for(const l of d.lists){const box=document.createElement('div');box.className='list';box.dataset.kind=l.kind;
   const h=document.createElement('h2');h.textContent=l.title+' ('+l.items.length+')';box.appendChild(h);
   const e=document.createElement('div');e.className='empty';e.textContent='leer';box.appendChild(e);
   for(const t of l.items){all.add(key(l.kind,t));box.appendChild(makeRow(l.kind,t));}
-  root.appendChild(box);}
+  root.appendChild(box);}}
  sel=new Set([...sel].filter(x=>all.has(x)));upd();}
 function upd(){const b=document.getElementById('del');b.disabled=!sel.size;b.textContent=sel.size?sel.size+' markierte löschen':'Markierte löschen';}
 let clone=null,ph=null,dragLab=null,offY=0,lastY=0,raf=0;
@@ -210,10 +275,12 @@ function scrollLoop(){if(!dragging)return;
 async function endDrag(){snd.drop();dragging=false;cancelAnimationFrame(raf);justDragged=Date.now();
  ph.parentNode.insertBefore(dragLab,ph);ph.remove();clone.remove();dragLab.style.display='';
  const lists={};document.querySelectorAll('.list').forEach(b=>{lists[b.dataset.kind]=[...b.querySelectorAll('label')].map(x=>x._t);});
- try{await fetch('/api/move',{method:'POST',body:JSON.stringify({lists})});}catch(e){}
+ try{if(view)await saveFields(lists[view.kind]);else await fetch('/api/move',{method:'POST',body:JSON.stringify({lists})});}catch(e){}
  last='';load();}
 async function load(){if(editing||dragging)return;try{const r=await fetch('/api/lists');const s=await r.text();if(s!==last){last=s;render(JSON.parse(s));}}catch(e){}}
-document.getElementById('del').onclick=async()=>{if(!sel.size||!confirm(sel.size+' Einträge endgültig löschen?'))return;
+document.getElementById('del').onclick=async()=>{if(!sel.size||!confirm(sel.size+(view?' Punkte':' Einträge')+' endgültig löschen?'))return;
+ if(view){const rest=[...document.querySelectorAll('.list label')].map(x=>x._t).filter(t=>!sel.has(key(view.kind,t)));
+  await saveFields(rest);snd.del();sel=new Set();last='';load();return;}
  const items=[...sel].map(x=>{const i=x.indexOf('\\u0000');return {kind:x.slice(0,i),text:x.slice(i+1)}});
  await fetch('/api/delete',{method:'POST',body:JSON.stringify({items})});snd.del();sel=new Set();last='';load();};
 document.getElementById('snd').onclick=()=>{soundOn=!soundOn;try{localStorage.setItem('snd',soundOn?'1':'0')}catch(e){}sndLabel();if(soundOn)snd.on();};
@@ -269,6 +336,13 @@ async def _handle(store, sync, reader, writer) -> None:
             if ok and sync:
                 sync.kick()
             await _respond(writer, "200 OK", "application/json", json.dumps({"ok": ok}))
+        elif method == "POST" and path == "/api/folder":
+            d = json.loads(body or b"{}") or {}
+            new = edit_folder(store, d.get("kind"), d.get("old"), d.get("fields"))
+            if new is not None and sync:
+                sync.kick()
+            await _respond(writer, "200 OK", "application/json",
+                           json.dumps({"ok": new is not None, "text": new}, ensure_ascii=False))
         elif method == "POST" and path == "/api/move":
             ok = move_items(store, (json.loads(body or b"{}") or {}).get("lists"))
             if ok and sync:

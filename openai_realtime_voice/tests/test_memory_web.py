@@ -112,3 +112,22 @@ def test_page_has_sounds():
 
 def test_page_has_splash():
     assert 'id="splash"' in memory_web.PAGE and "stroke-dashoffset" in memory_web.PAGE
+
+
+def test_edit_folder(tmp_path):
+    s = memory.MemoryStore(str(tmp_path / "memory.json"))
+    old = "Person: Metin | Zugehörigkeit: Sohn | Alter: 45"
+    s.save_all({"family": [old, "Person: Anna", "Einkauf"], "friends": [], "leyla": [], "private": ["geheim"]})
+    new = memory_web.edit_folder(s, "family", old, ["Alter: 45", " Zugehörigkeit:  Sohn ", "", "Hobby: a | b"])
+    assert new == "Person: Metin | Alter: 45 | Zugehörigkeit: Sohn | Hobby: a / b"  # new order, empty dropped, bar escaped
+    assert s.load("family") == [new, "Person: Anna", "Einkauf"]
+    assert memory_web.edit_folder(s, "family", old, ["x"]) is None  # outdated page: Leyla changed it meanwhile
+    assert memory_web.edit_folder(s, "family", new, ["x" * 700]) is None  # too long
+    assert memory_web.edit_folder(s, "private", "geheim", ["x"]) is None
+    assert memory_web.edit_folder(s, "family", "Person: Anna", ["Alter: 3"]) == "Person: Anna | Alter: 3"
+    assert memory_web.edit_folder(s, "family", "Person: Anna | Alter: 3", []) == "Person: Anna"  # all points removed
+    assert memory_web.edit_folder(s, "family", "Person: Anna", "nope") is None
+
+
+def test_page_has_folders():
+    assert "/api/folder" in memory_web.PAGE and "Punkt hinzufügen" in memory_web.PAGE and 'id="back"' in memory_web.PAGE
