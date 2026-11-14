@@ -261,11 +261,13 @@ class MessageCenter:
         if happy:  # event data froh: true, for friendly announcements such as the evening lights
             style += ("Atme vor dem ersten Wort deutlich hörbar ein, durch den Mund, als würdest du dich aufs "
                       "Sprechen vorbereiten. Klinge richtig glücklich, als würdest du dich freuen, das zu "
-                      "sagen. Pflicht: Nach dem ersten deutschen Satz lachst du genau einmal hörbar kurz "
-                      "und herzlich auf (ein echtes „Haha“ oder „Hihi“, nicht gesprochen, sondern gelacht) "
-                      "und sprichst dann weiter. Im türkischen Teil lachst du nicht noch einmal, sondern "
-                      "lächelst nur hörbar. Der türkische Teil klingt nicht wie eine Kopie des deutschen, "
-                      "sondern frisch und mit eigener Betonung. ")
+                      "sagen. Pflicht: Nach dem ersten " + ("deutschen " if bilingual else "") +
+                      "Satz lachst du genau einmal hörbar kurz und herzlich auf (ein echtes „Haha“ oder "
+                      "„Hihi“, nicht gesprochen, sondern gelacht) und sprichst dann weiter. ")
+            if bilingual:
+                style += ("Im türkischen Teil lachst du nicht noch einmal, sondern lächelst nur hörbar. Der "
+                          "türkische Teil klingt nicht wie eine Kopie des deutschen, sondern frisch und mit "
+                          "eigener Betonung. ")
         if bilingual:
             # Two clean passes. Asking for "two short sentences" in two languages made her mix the
             # languages inside the sentences (16:31, 14 Nov 2026).
@@ -280,7 +282,7 @@ class MessageCenter:
         return ("Mach jetzt eine kurze Ansage im Wohnzimmer, in genau der Sprache, in der der Inhalt unten "
                 "geschrieben ist; ist er Türkisch, dann komplett auf Türkisch, ohne ein deutsches Wort, "
                 "auch Zahlen und Uhrzeiten türkisch ausgesprochen (16:44 ist \"on altı kırk dört\"). "
-                "Höchstens zwei kurze Sätze. " + style + "Inhalt: \"" + text + "\"")
+                "Höchstens drei kurze Sätze. " + style + "Inhalt: \"" + text + "\"")
 
     async def say(self, text: str, bilingual: bool = False, remember: bool = False, happy: bool = False) -> None:
         """One announcement from an automation (HA event leyla_announce), no repeats.
