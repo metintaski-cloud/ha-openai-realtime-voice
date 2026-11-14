@@ -173,6 +173,13 @@ def test_bilingual_announcement_asks_for_two_clean_passes():
     assert "ohne ein deutsches Wort" in mono and "on altı kırk dört" in mono and "zwei getrennten" not in mono
 
 
+def test_announcement_adds_no_greeting():
+    from app.messages import MessageCenter
+    svc = MessageCenter.__new__(MessageCenter)
+    for bilingual in (False, True):
+        assert "kein „Hallo“, kein „ihr Lieben“" in svc._announce_prompt("x", bilingual, happy=True)
+
+
 def test_happy_announcement_breathes_and_does_not_laugh():
     from app.messages import MessageCenter
     svc = MessageCenter.__new__(MessageCenter)

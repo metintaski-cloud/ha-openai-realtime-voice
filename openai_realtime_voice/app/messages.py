@@ -253,7 +253,9 @@ class MessageCenter:
         # Facts first, delivery last: with the facts rule at the end she read the text out flatly.
         style = ("Alle Informationen wie Name, Uhrzeit, Minuten und was du tust bleiben vollständig drin, jede "
                  "Zahl genau wie im Inhalt, nichts weglassen, nichts umrechnen, nichts dazuerfinden, keine "
-                 "Kosewörter wie „canım“. Danach sagst du nichts mehr. Am wichtigsten ist, wie du klingst: "
+                 "Kosewörter wie „canım“. Keine Begrüßung und keine Anrede, die nicht im Inhalt steht (kein "
+                 "„Hallo“, kein „ihr Lieben“), du beginnst mit dem ersten Wort des Inhalts und sprichst nur "
+                 "in der Sprache des Inhalts. Danach sagst du nichts mehr. Am wichtigsten ist, wie du klingst: "
                  "Man hört dein Lächeln. Sprich mit Wärme, Freude und Melodie, wie eine liebe Freundin der "
                  "Familie, die gerade etwas Nettes ankündigt, lebendig und mit natürlicher Betonung, nie "
                  "monoton, nie wie eine Durchsage, nie wie ein vorgelesener Text oder ein Sprachassistent. "
@@ -261,7 +263,7 @@ class MessageCenter:
         if happy:  # event data froh: true, for friendly announcements such as the evening lights
             # A laugh was tried (start, in between, after the first sentence): it always sounded staged.
             style += ("Atme vor dem ersten Wort deutlich hörbar ein, durch den Mund, als würdest du dich aufs "
-                      "Sprechen vorbereiten. Klinge richtig glücklich, als würdest du dich freuen, das zu "
+                      "Sprechen vorbereiten, ohne dabei ein Wort zu sagen. Klinge richtig glücklich, als würdest du dich freuen, das zu "
                       "sagen, und lächle hörbar beim Sprechen. Lache nicht. ")
             if bilingual:
                 style += ("Der türkische Teil klingt nicht wie eine Kopie des deutschen, sondern frisch und "
