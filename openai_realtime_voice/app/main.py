@@ -1058,6 +1058,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         """Start WebSocket server and run forever."""
         self._memory_maintenance()
         self._in_background(self._heartbeat_loop())
+        self._in_background(self.lamp.recover())  # a lamp restore that failed before the stop
         if self.warm_connection and self.openai_api_key:
             self._in_background(self._warm_loop())
         if self.todo_sync:
