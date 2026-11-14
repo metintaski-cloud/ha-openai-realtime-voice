@@ -4,7 +4,6 @@
 #include <cstdlib>
 #include <vector>
 
-#include "../esphome/components/leyla_voice/edge.h"
 #include "../esphome/components/leyla_voice/gain.h"
 #include "../esphome/components/leyla_voice/message.h"
 #include "../esphome/components/leyla_voice/resample.h"
@@ -255,37 +254,8 @@ static void test_machine_edges() {
   CHECK(m.drop_audio(big + 100) && !m.drop_audio(big + 400));
 }
 
-static void test_edge() {
-  EdgeSmoother e;
-  e.start();
-  std::vector<int16_t> a(480, 10000);
-  e.on_play(a.data(), a.size());
-  CHECK(a[0] < 100 && a[EdgeSmoother::kFadeIn - 1] > 9500 && a[EdgeSmoother::kFadeIn] == 10000);  // faded in once
-  std::vector<int16_t> b(480, 10000);
-  e.on_play(b.data(), b.size());
-  CHECK(b[0] == 10000);  // no second fade in
-  int16_t tail[EdgeSmoother::kFadeOut];
-  size_t n = e.make_tail(tail);
-  CHECK(n == EdgeSmoother::kFadeOut && tail[0] > 9900 && tail[n - 1] == 0);
-  bool falling = true;
-  for (size_t i = 1; i < n; i++) falling = falling && tail[i] <= tail[i - 1];
-  CHECK(falling);
-  CHECK(e.make_tail(tail) == 0);  // only once per gap
-  std::vector<int16_t> c(480, -8000);
-  e.on_play(c.data(), c.size());
-  CHECK(c[0] > -100 && c[EdgeSmoother::kFadeIn] == -8000);  // next audio fades in again
-  n = e.make_tail(tail);
-  CHECK(n > 0 && tail[0] < -7900 && tail[n - 1] == 0);  // negative level ramps up to zero
-  e.start();
-  CHECK(e.make_tail(tail) == 0);  // silence needs no ramp
-  std::vector<int16_t> d(10, 5000);  // shorter than the fade in
-  e.on_play(d.data(), d.size());
-  CHECK(d[9] < 5000 && d[9] > d[0]);
-}
-
 int main() {
   test_gain();
-  test_edge();
   test_resample();
   test_ring();
   test_messages();

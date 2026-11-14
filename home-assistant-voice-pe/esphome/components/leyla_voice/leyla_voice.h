@@ -19,7 +19,6 @@
 #include "esphome/components/microphone/microphone.h"
 #include "esphome/components/speaker/speaker.h"
 
-#include "edge.h"
 #include "gain.h"
 #include "message.h"
 #include "resample.h"
@@ -101,7 +100,6 @@ class LeylaVoice : public Component {
   // Logic
   leyla::Machine machine_;
   leyla::GainStage gain_;
-  leyla::EdgeSmoother edge_;  // ramp down when the speaker runs dry, fade in after it
   leyla::Resampler mic_resampler_{kMicRate, kWireRate};
   leyla::RingBuffer rx_{0};  // reply audio from the socket thread to the loop
   leyla::RingBuffer tx_{0};  // microphone audio from the microphone thread to the loop
@@ -124,7 +122,7 @@ class LeylaVoice : public Component {
   bool carry_has_{false};
   std::vector<int16_t> mono_;
   std::vector<int16_t> wire_;
-  alignas(int16_t) uint8_t play_buf_[kPlayChunk];
+  uint8_t play_buf_[kPlayChunk];
   size_t play_len_{0}, play_off_{0};
   bool playing_{false};
 

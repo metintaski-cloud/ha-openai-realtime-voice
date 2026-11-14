@@ -323,17 +323,7 @@ void LeylaVoice::pump_speaker_(uint32_t now) {
   xSemaphoreGive(this->lock_);
   size_t pending = this->play_len_ - this->play_off_;
 
-  bool tail = false;
-  if (queued == 0 && pending == 0 && this->playing_) {
-    // The speaker runs dry: a ramp to zero instead of a jump (the click at the end of a sentence)
-    size_t n = this->edge_.make_tail(reinterpret_cast<int16_t *>(this->play_buf_));
-    if (n > 0) {
-      this->play_len_ = n * 2;
-      this->play_off_ = 0;
-      tail = true;
-    }
-  }
-  if (!tail && queued == 0 && pending == 0) {
+  if (queued == 0 && pending == 0) {
     this->wait_since_ = 0;
     // The speaker has nothing left to play although the reply may go on: remember when the gap began
     if (this->playing_ && this->gap_since_ == 0 && !this->speaker_->has_buffered_data()) this->gap_since_ = now;
@@ -354,7 +344,6 @@ void LeylaVoice::pump_speaker_(uint32_t now) {
     this->speaker_->set_audio_stream_info(audio::AudioStreamInfo(16, 1, kWireRate));
     this->speaker_->start();
     this->playing_ = true;
-    this->edge_.start();
     if (this->first_reply_ms_ == 0) this->first_reply_ms_ = now - this->started_ms_;
   }
   if (this->gap_since_ != 0) {  // new reply audio after an empty speaker: that was an audible gap
@@ -370,7 +359,6 @@ void LeylaVoice::pump_speaker_(uint32_t now) {
       xSemaphoreGive(this->lock_);
       this->play_off_ = 0;
       if (this->play_len_ == 0) break;
-      this->edge_.on_play(reinterpret_cast<int16_t *>(this->play_buf_), this->play_len_ / 2);
     }
     size_t written = this->speaker_->play(this->play_buf_ + this->play_off_, this->play_len_ - this->play_off_, 0);
     this->play_off_ += written;
