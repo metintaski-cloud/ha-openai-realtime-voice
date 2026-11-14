@@ -18,3 +18,6 @@ The template was synced with the live file on the same day (wake word, component
 - Whenever the live config is changed (by Claude or by hand), update the list above in the same session and commit it.
 - Before relying on any value, re-check the live file instead of trusting this list. Quick check in the browser pane on the ESPHome editor page: find the element `ESPHOME-YAML-EDITOR` through the shadow roots and iframe, its `.value` holds the whole YAML. Compare line by line with the raw template from GitHub; the lines that exist only on one side are the differences.
 - Change the `Checked` date at the top after every check.
+
+## leyla_voice test wiring (14 Nov 2026)
+The live config has a `leyla_voice:` block (id leyla_voice_test) with the same LED, sound and ducking callbacks as the old component, plus the button "Leyla Test neu" (starts it only when nothing else runs and the device is not muted). Wake words still use the old component. on_stopped and on_error restart micro_wake_word. The component is also listed in external_components next to voice_assistant_websocket.
