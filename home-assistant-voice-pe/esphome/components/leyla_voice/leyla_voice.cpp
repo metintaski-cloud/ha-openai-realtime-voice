@@ -38,8 +38,8 @@ void LeylaVoice::setup() {
   auto info = this->mic_->get_audio_stream_info();
   if (info.get_sample_rate() > 0 && info.get_sample_rate() <= kWireRate)
     this->mic_resampler_ = leyla::Resampler(info.get_sample_rate(), kWireRate);
-  this->mono_.reserve(2048);
-  this->wire_.reserve(4096);
+  this->mono_.reserve(512);   // a microphone block is about 256 frames, growth stays safe through resize
+  this->wire_.reserve(768);
   this->mic_->add_data_callback([this](const std::vector<uint8_t> &data) { this->on_mic_data_(data); });
 }
 
