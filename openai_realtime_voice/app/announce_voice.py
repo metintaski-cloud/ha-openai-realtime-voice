@@ -20,6 +20,9 @@ SPEAK_INSTRUCTIONS = (
     "Du sprichst mit viel Gefühl, natürlicher Betonung und einem Lächeln in der Stimme, nie "
     "monoton, aber ohne Kosewörter wie „canım“. Du machst nur die verlangte kurze Ansage "
     "und redest danach nicht weiter.")
+# A soft breath in before the first word is far quieter than speech (below OUTPUT_SILENCE_PEAK), but the
+# idle frames GPT Live streams are exactly 0, so a low threshold keeps the breath and drops nothing else.
+ANNOUNCE_START_PEAK = 30
 SPEECH_END_GAP_S = 1.2  # GPT Live keeps sending silence after the speech: stop after this
 
 
@@ -82,7 +85,7 @@ class AnnounceVoiceMixin:
                 elif t == "session.output_audio.delta" and ev.get("delta"):
                     chunk_pcm = base64.standard_b64decode(ev["delta"])
                     _, peak = pcm_level(chunk_pcm)
-                    if peak >= OUTPUT_SILENCE_PEAK:
+                    if peak >= (OUTPUT_SILENCE_PEAK if last_audio else ANNOUNCE_START_PEAK):
                         last_audio = loop.time()
                         pcm += chunk_pcm
                         loud_end = len(pcm)

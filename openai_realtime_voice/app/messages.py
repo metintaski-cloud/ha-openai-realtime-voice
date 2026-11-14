@@ -259,10 +259,12 @@ class MessageCenter:
                  "monoton, nie wie eine Durchsage, nie wie ein vorgelesener Text oder ein Sprachassistent. "
                  "Die Lautstärke bleibt normal, du rufst nicht. ")
         if happy:  # event data froh: true, for friendly announcements such as the evening lights
-            style += ("Fang mit einem leisen, hörbaren Einatmen an, als würdest du dich aufs Sprechen vorbereiten. "
-                      "Klinge richtig glücklich, als würdest du dich freuen, das zu sagen, und lache einmal "
-                      "kurz und herzlich zwischendurch (nicht am Anfang), zum Beispiel nach dem ersten "
-                      "Satz oder bei einem Wunsch. ")
+            style += ("Atme vor dem ersten Wort deutlich hörbar ein, durch den Mund, als würdest du dich aufs "
+                      "Sprechen vorbereiten. Klinge richtig glücklich, als würdest du dich freuen, das zu "
+                      "sagen. Lache insgesamt nur ein einziges Mal, kurz und herzlich, mitten im ersten Teil "
+                      "(zum Beispiel nach dem ersten Satz); im zweiten Teil lachst du nicht noch einmal, "
+                      "sondern lächelst nur hörbar. Der zweite Teil klingt nicht wie eine Kopie des ersten, "
+                      "sondern frisch und mit eigener Betonung. ")
         if bilingual:
             # Two clean passes. Asking for "two short sentences" in two languages made her mix the
             # languages inside the sentences (16:31, 14 Nov 2026).
