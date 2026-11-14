@@ -173,8 +173,9 @@ def test_bilingual_announcement_asks_for_two_clean_passes():
     assert "ohne ein deutsches Wort" in mono and "on altı kırk dört" in mono and "zwei getrennten" not in mono
 
 
-def test_happy_announcement_starts_with_a_laugh():
+def test_happy_announcement_laughs_in_between():
     from app.messages import MessageCenter
     svc = MessageCenter.__new__(MessageCenter)
-    assert "Lachen" in svc._announce_prompt("x", True, happy=True)
-    assert "Lachen" not in svc._announce_prompt("x", True)
+    happy = svc._announce_prompt("x", True, happy=True)
+    assert "zwischendurch (nicht am Anfang)" in happy
+    assert "zwischendurch" not in svc._announce_prompt("x", True)
