@@ -6,7 +6,7 @@ import logging
 
 import websockets
 
-from app.pacing import PacedSender
+from app.pacing import PacedSender, pcm_level
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +46,7 @@ class OutputMixin:
 
                 if isinstance(chunk, tuple) and chunk[0] == "phase":
                     await sender.pump(flush=True, force=True)
+                    self.lamp.phase(chunk[1])
                     await self._send_phase(client_ws, chunk[1])
                     continue
 
@@ -72,6 +73,7 @@ class OutputMixin:
                     first_audio_to_client[0] = True
                     logger.info("First audio to client (%d bytes)", len(chunk))
 
+                self.lamp.audio(pcm_level(chunk)[0])
                 sender.add(chunk)
                 await sender.pump()
         except asyncio.CancelledError:

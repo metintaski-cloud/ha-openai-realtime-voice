@@ -25,6 +25,8 @@ RF_FREQUENCY=$(bashio::config 'rf_frequency')
 TV_CHANNELS=$(bashio::config 'tv_channels')
 TV_REMOTE=$(bashio::config 'tv_remote')
 TV_DUCK=$(bashio::config 'tv_duck')
+LAMP_SHOW=$(bashio::config 'lamp_show')
+LAMP_SHOW_LIGHTS=$(bashio::config 'lamp_show_lights')
 STROMPREIS_CT=$(bashio::config 'strompreis_ct')
 CODE_PHRASE=$(bashio::config 'code_phrase')
 NOTIFY_SERVICE=$(bashio::config 'notify_service')
@@ -60,6 +62,7 @@ export RF_FREQUENCY
 export TV_CHANNELS
 export TV_REMOTE
 export TV_DUCK
+export LAMP_SHOW LAMP_SHOW_LIGHTS
 export STROMPREIS_CT
 export CODE_PHRASE
 export NOTIFY_SERVICE

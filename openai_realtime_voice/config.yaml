@@ -1,5 +1,5 @@
 name: GPT Live Voice
-version: "2.55.15"
+version: "2.56.0"
 slug: openai_realtime_voice
 description: WebSocket bridge from Voice PE to OpenAI GPT Live (natural voice conversation with web search)
 url: https://github.com/metintaski-cloud/ha-openai-realtime-voice
@@ -25,6 +25,8 @@ options:
   memory_model: "gpt-6-luna"
   openai_admin_key: ""
   monthly_budget_usd: 20
+  lamp_show: true
+  lamp_show_lights: "light.wohnzimmer_lamba_1, light.wohnzimmer_lamba_2"
   light_entities: "light.wohnzimmer_lamba_1, light.wohnzimmer_lamba_2, light.wohnzimmer_lamba_3, light.wohnzimmer_lamba_4"
   rf_host: "192.168.2.77"
   rf_frequency: 433.87
@@ -54,6 +56,8 @@ schema:
   tv_channels: str?
   tv_remote: str?
   tv_duck: bool?
+  lamp_show: bool?
+  lamp_show_lights: str?
   strompreis_ct: float?
   code_phrase: str?
   notify_service: str?

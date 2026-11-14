@@ -39,7 +39,7 @@ from app import context
 from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, pcm_level
 from app.live_link import END_CONVERSATION_TOOL
 from app.phrases import (NAME_NUDGE, NAME_NUDGE_AFTER_S, NAME_NUDGE_COOLDOWN_S, NAME_RE, addressed_by_name, contains_goodbye, greeting_instruction, parse_greeting_words, pick_greeting)
-from app import (metrics, output_link, session_end, tool_link, after_talk, announce_voice, live_link, night, cleanup, costs, fan, health, lights, messages, persona, purifier, rf, technik, todo_sync,
+from app import (lamp_show, metrics, output_link, session_end, tool_link, after_talk, announce_voice, live_link, night, cleanup, costs, fan, health, lights, messages, persona, purifier, rf, technik, todo_sync,
                  tv, vacuum)
 
 logging.basicConfig(
@@ -150,6 +150,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             os.path.dirname(os.environ.get("MEMORY_PATH", "/data/memory.json")) or "/data",
             "fan_state.json") if os.path.isdir("/data") else None)
         self.tv = tv.from_env(self.rf)
+        self.lamp = lamp_show.from_env()  # rear lamps follow the conversation in the icon colours
         self.vacuum = vacuum.VacuumController()
         self.purifier = purifier.PurifierController()
         self.messages = messages.from_env(self._speak_once)
@@ -906,6 +907,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             rec_path = self.recorder.input_path
         if self.tv.available:
             self._in_background(self.tv.unduck())
+        self._in_background(self.lamp.end())
         duration = time.monotonic() - start_time
         reason = end_reason.get("reason", "unknown")
         self._finish_recording(rec_path, reason, state)
@@ -931,6 +933,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         start_time = time.monotonic()
         if self.tv.available:
             self._in_background(self.tv.duck())  # so Leyla hears the family, not the TV
+        self._in_background(self.lamp.begin())
 
         old_ws = self._active_sessions.get(client_id)
         if old_ws is not None:
