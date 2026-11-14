@@ -484,3 +484,9 @@ def test_persona_reacts_to_couple_words_from_unknown_people():
     from app import persona
     assert "Kim bu bana bitanem diyen" in persona.CORE and "Mein Herz ist schon vergeben" in persona.CORE
     assert "rätst du nie" in persona.CORE
+
+
+def test_persona_is_skeptical_when_someone_claims_to_be_metin():
+    from app import persona
+    text = persona.TRUST_CODE.format(code="Abrakadabra")
+    assert "Soso, das könnte jeder sagen" in text and "verrate aber nie" in text
