@@ -141,8 +141,6 @@ Update when:
 
 Option `backend_reasoning_effort` (config.yaml, run.sh env `BACKEND_REASONING_EFFORT`) is passed as `session.delegation.responses.reasoning.effort` in `session.start`. Unset or `null` leaves the model default. Reason: after a finished web search the backend needed about 16 s until the reply started (14 Nov 2026), see STATUS.md. Source: OpenAI guide "Delegation and tools in GPT-Live".
 
-## Deep thinking (tief_nachdenken)
+## Deep thinking was tried and removed (14 Nov 2026)
 
-GPT Live sets the backend reasoning effort per session only, so depth cannot follow the question. `app/deep_think.py` therefore adds a backend tool `tief_nachdenken`: the session runs with a low effort (fast), and for hard questions (weighing, advice, health, money, why or how, multi step maths, planning, or "think harder") the backend calls the tool, which asks the same model once with `reasoning.effort = high` and returns a short spoken answer. Every call is logged (`Deep think question=... -> N s`) and recorded as metrics event `deep_think`, so the choice can be reviewed and the tool description sharpened. Switch off with env `ENABLE_DEEP_THINKING=false`.
-
-Finding (14 Nov 2026): the live voice answered a hard question itself and never delegated, so the tool was not used. `persona.DEEP_RULE` (add on 2.54.2) tells Leyla to hand hard questions to her backend; easy ones she answers herself. Check the log for `Deep think` lines to see whether she follows it.
+A backend tool `tief_nachdenken` (high reasoning effort for one answer) plus a persona rule was built and removed again: GPT Live's live voice answers hard questions itself and does not reliably delegate, even when asked to "think harder", and OpenAI offers no reasoning depth for the live voice. Its own answers were good and personal (they know the household). Only the session wide `backend_reasoning_effort` stays (web search replies 16 s to 1.6 s).

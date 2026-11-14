@@ -40,7 +40,7 @@ from app import memory
 from app import context
 from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, PacedSender, pcm_level
 from app.live_link import END_CONVERSATION_TOOL
-from app import (metrics, after_talk, announce_voice, deep_think, live_link, night, cleanup, costs, fan, health, lights, messages, persona, purifier, rf, technik, todo_sync,
+from app import (metrics, after_talk, announce_voice, live_link, night, cleanup, costs, fan, health, lights, messages, persona, purifier, rf, technik, todo_sync,
                  tv, vacuum)
 
 logging.basicConfig(
@@ -226,8 +226,6 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self.greeting = ""  # chosen fresh for every session
         self.live_model = os.environ.get("LIVE_MODEL", "gpt-live-1")
         self.backend_model = os.environ.get("BACKEND_MODEL", "gpt-5.6-luna")
-        # Hard questions go through a tool that asks with high effort; needs the low default below
-        self.deep_thinking = os.environ.get("ENABLE_DEEP_THINKING", "true").lower() == "true"
         effort = (os.environ.get("BACKEND_REASONING_EFFORT") or "").strip().lower()
         # Unset keeps the model default; a lower effort answers faster (web search replies)
         self.backend_effort = "" if effort in ("", "null") else effort
@@ -324,8 +322,6 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         return [
             (self.enable_web_search, {"type": "web_search"}, "",
              "Fragen, die aktuelle Infos aus dem Internet brauchen"),
-            (self.deep_thinking, deep_think.DEEP_TOOL, deep_think.DEEP_BACKEND_HINT,
-             "schwierige Fragen besonders gründlich durchdenken"),
             (bool(self.admin_key), costs.COSTS_TOOL, costs.COSTS_BACKEND_HINT,
              "die OpenAI Kosten"),
             (self.lights.available, lights.LIGHTS_TOOL,
@@ -411,7 +407,6 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 block = block[:MEMORY_BLOCK_MAX_CHARS].rsplit("\n", 1)[0]
             listing = self.memory.private_listing()
         return persona.build(devices, fan=has_fan, tv=has_tv, messages=has_messages,
-                             deep=self.deep_thinking,
                              family_block=block, code_phrase=self.code_phrase,
                              private_listing=listing, extra=self.instructions)
 
@@ -750,12 +745,6 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 self.todo_sync.kick()
 
         return {
-            deep_think.DEEP_TOOL["name"]: {
-                "label": "Deep think", "phase": "thinking", "timeout": 70.0,
-                "run": lambda a: self._deep_think(a),
-                "error": "Das gründliche Nachdenken hat gerade nicht geklappt.",
-                "log": lambda a, r: (f"question={str(a.get('frage'))[:90]!r} -> "
-                                     f"{'error' if 'error' in r else str(r.get('dauer_s')) + ' s'}")},
             costs.COSTS_TOOL["name"]: {
                 "label": "Costs", "phase": "thinking", "timeout": 15.0,
                 "run": lambda a: costs.cost_report(self.admin_key, self.monthly_budget),
@@ -792,11 +781,6 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 "error": "Die Nachricht konnte gerade nicht gesendet werden.",
                 "log": lambda a, r: "done"},
         }
-
-    async def _deep_think(self, args: dict) -> dict:
-        result = await deep_think.think(self.openai_api_key, self.backend_model, args)
-        metrics.record("deep_think", ok="error" not in result, seconds=result.get("dauer_s"))
-        return result
 
     async def _run_tool(self, spec: dict, live_ws, call_id: str, raw_args, state: dict) -> None:
         """Run one backend function without blocking the audio loop and return its result."""

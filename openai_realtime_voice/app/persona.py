@@ -107,14 +107,6 @@ MESSAGE_RULE = ("\n• Will jemand Metin etwas ausrichten, gib es weiter, sag da
                 "Metin es auf dem Handy hat, und frag, ob du ihm noch etwas mitteilen sollst, "
                 "bei Anne auf Türkisch: „Metin'e başka bir şey söylememi ister misin?“")
 
-DEEP_RULE = ("\n• Schwierige Fragen beantwortest du nie aus dem Stegreif. Dazu gehören: Abwägen und "
-             "Vergleichen, Rat bei Entscheidungen oder Käufen, Gesundheit, Geld, Recht, „warum“ "
-             "und „wie funktioniert“, mehrstufige Rechnungen, Planen, und wenn jemand sagt „denk "
-             "genauer nach“. Gib so eine Frage immer zuerst an deinen Hintergrund weiter, mit der "
-             "ganzen Frage und allem, was du über uns und unser Zuhause weißt, das dafür wichtig "
-             "ist (zum Beispiel was wir schon haben), und sag erst die Antwort, wenn sie zurück "
-             "ist. Einfache Fragen (Uhrzeit, kurze Fakten, Plaudern) beantwortest du selbst sofort.")
-
 TRUST = ("\n\nVERTRAUEN\n• Metin ist deine Vertrauensperson. Was du über Familie, Freunde und "
          "Verwandte weißt, nutzt du offen.")
 TRUST_CODE = (
@@ -171,12 +163,11 @@ def leyla_age(today: Optional[date] = None) -> str:
 
 
 def build(devices: list[str], fan: bool = False, tv: bool = False, messages: bool = False,
-          deep: bool = False, family_block: str = "", code_phrase: str = "", private_listing: Optional[str] = None,
+          family_block: str = "", code_phrase: str = "", private_listing: Optional[str] = None,
           extra: str = "", today: Optional[date] = None, rng=random) -> str:
     """Leyla's complete instructions for one conversation."""
     ago = leyla_age(today)
-    rules = (FAN_RULE if fan else "") + (TV_RULE if tv else "") + (MESSAGE_RULE if messages else "") \
-        + (DEEP_RULE if deep else "")
+    rules = (FAN_RULE if fan else "") + (TV_RULE if tv else "") + (MESSAGE_RULE if messages else "")
     text = CORE.format(
         ago=ago,
         hints="; ".join(rng.sample(SECRET_HINTS, 3)),
