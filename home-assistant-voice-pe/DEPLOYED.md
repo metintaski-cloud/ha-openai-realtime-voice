@@ -19,8 +19,8 @@ The template was synced with the live file on the same day (wake word, component
 - Before relying on any value, re-check the live file instead of trusting this list. Quick check in the browser pane on the ESPHome editor page: find the element `ESPHOME-YAML-EDITOR` through the shadow roots and iframe, its `.value` holds the whole YAML. Compare line by line with the raw template from GitHub; the lines that exist only on one side are the differences.
 - Change the `Checked` date at the top after every check.
 
-## leyla_voice test wiring (14 Nov 2026)
-The live config has a `leyla_voice:` block (id leyla_voice_test) with the same LED, sound and ducking callbacks as the old component, plus the button "Leyla Test neu" (starts it only when nothing else runs and the device is not muted). Wake words still use the old component. on_stopped and on_error restart micro_wake_word. The component is also listed in external_components next to voice_assistant_websocket.
+## leyla_voice is the live OpenAI pipeline (14 Nov 2026, about 03:10)
+The live config uses `leyla_voice:` (id leyla_voice_ws) for the OpenAI pipeline: wake word, single click, interrupt, status sensors and mute all call `leyla_voice.*` (start, stop, interrupt, is_running, is_bot_speaking, is_connected). The old component `voice_assistant_websocket` and the test button "Leyla Test neu" are gone from the config; the old code stays in the repo as fallback (rollback: put the old block and the old calls back, list it in external_components). on_stopped and on_error restart micro_wake_word. Check the first days: memory trend, false wakes, Mama's use.
 
 ## Wake word watchdog was removed (14 Nov 2026)
 A 5 s watchdog that restarted micro_wake_word when `micro_wake_word.is_running` was false was tried and removed again: in both deaf phases (01:00 and 01:47) the log showed the detection was running, so the watchdog could never trigger. The deafness itself (fixed each time by switching Mute on and off) is still open, see STATUS.md.
