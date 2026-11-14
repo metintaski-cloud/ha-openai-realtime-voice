@@ -190,8 +190,9 @@ load();setInterval(load,4000);
 MANIFEST = json.dumps({"name": "Leyla Gedächtnis", "short_name": "Leyla", "start_url": "/",
                        "display": "standalone", "background_color": "#08103a",
                        "theme_color": "#08103a",
-                       "icons": [{"src": "/icon.png?v=5", "sizes": "512x512", "type": "image/png",
-                                  "purpose": "any"}]})
+                       "id": "/", "scope": "/",
+                       "icons": [{"src": "/icon.png?v=5", "sizes": sz, "type": "image/png",
+                                  "purpose": "any"} for sz in ("192x192", "512x512")]})
 
 
 async def _respond(writer, status: str, ctype: str, body: str) -> None:
