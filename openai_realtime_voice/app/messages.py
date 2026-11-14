@@ -250,17 +250,23 @@ class MessageCenter:
             logger.info("Could not store the announcement clip: %s", e)
 
     def _announce_prompt(self, text: str, bilingual: bool) -> str:
-        language = ("zweisprachig: erst auf Deutsch, dann dasselbe noch einmal auf Türkisch, "
-                    "egal in welcher Sprache der Inhalt unten geschrieben ist" if bilingual else
-                    "in genau der Sprache, in der der Inhalt unten geschrieben ist; ist er "
-                    "Türkisch, dann komplett auf Türkisch, ohne ein deutsches Wort")
-        return ("Mach jetzt eine kurze Ansage im Wohnzimmer, " + language + ". Sprich ganz "
-                "normal, ruhig und weich in normaler Lautstärke, auf deine liebe Art, wie du "
-                "mit einem Familienmitglied sprichst, das du sehr magst: nicht laut, nicht "
-                "aufgeregt, nicht wie eine Durchsage und nicht vorgelesen, mit deinen "
-                "eigenen Worten. Höchstens zwei kurze Sätze, ohne Kosewörter wie „canım“. "
-                "Alle wichtigen Informationen wie Name, Uhrzeit und was du tust müssen drin "
-                "bleiben. Danach sagst du nichts mehr. Inhalt: \"" + text + "\"")
+        style = ("Sprich ganz normal, ruhig und weich in normaler Lautstärke, auf deine liebe Art, wie du "
+                 "mit einem Familienmitglied sprichst, das du sehr magst: nicht laut, nicht "
+                 "aufgeregt, nicht wie eine Durchsage und nicht vorgelesen, mit deinen "
+                 "eigenen Worten, ohne Kosewörter wie „canım“. Alle wichtigen Informationen wie "
+                 "Name, Uhrzeit und was du tust müssen drin bleiben. Danach sagst du nichts mehr. ")
+        if bilingual:
+            # Two clean passes. Asking for "two short sentences" in two languages made her mix the
+            # languages inside the sentences (16:31, 14 Nov 2026).
+            return ("Mach jetzt eine kurze Ansage im Wohnzimmer in zwei getrennten Durchgängen: Zuerst die "
+                    "ganze Ansage vollständig auf Deutsch, höchstens zwei kurze Sätze, kein türkisches "
+                    "Wort. Danach dieselbe Ansage noch einmal vollständig auf Türkisch, höchstens zwei "
+                    "kurze Sätze, kein deutsches Wort. Die Sprachen werden nie in einem Satz gemischt, "
+                    "egal in welcher Sprache der Inhalt unten geschrieben ist. " + style +
+                    "Inhalt: \"" + text + "\"")
+        return ("Mach jetzt eine kurze Ansage im Wohnzimmer, in genau der Sprache, in der der Inhalt unten "
+                "geschrieben ist; ist er Türkisch, dann komplett auf Türkisch, ohne ein deutsches Wort. "
+                "Höchstens zwei kurze Sätze. " + style + "Inhalt: \"" + text + "\"")
 
     async def say(self, text: str, bilingual: bool = False, remember: bool = False) -> None:
         """One announcement from an automation (HA event leyla_announce), no repeats.

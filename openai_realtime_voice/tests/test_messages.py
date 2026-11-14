@@ -161,3 +161,13 @@ def test_ports_do_not_clash(monkeypatch):
     import inspect
     from app import memory_web
     assert inspect.signature(memory_web.start_http).parameters["port"].default == 8082
+
+
+def test_bilingual_announcement_asks_for_two_clean_passes():
+    from app.messages import MessageCenter
+    svc = MessageCenter.__new__(MessageCenter)
+    prompt = svc._announce_prompt("Saat 16:31.", True)
+    assert prompt.index("Deutsch") < prompt.index("Türkisch") and "nie in einem Satz gemischt" in prompt
+    assert "Saat 16:31." in prompt
+    mono = svc._announce_prompt("Saat 16:31.", False)
+    assert "ohne ein deutsches Wort" in mono and "zwei getrennten" not in mono
