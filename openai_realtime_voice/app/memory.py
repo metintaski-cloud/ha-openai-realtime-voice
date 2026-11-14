@@ -4,14 +4,17 @@ Long term memory for the voice assistant, in three parts:
   family   open knowledge about the closest family (Metin, his mother, his siblings) and
            the household. Leyla gets to know the people by herself (one profile per
            person: name, relation, character, interests, how they talk) plus short lived
-           states ("Aktuell bis <date>: ...") that expire on their own.
+           states ("Aktuell bis <date>: ..."); past ones are hidden from Leyla, not deleted.
   friends  the same for everybody else: relatives, friends, neighbours, acquaintances.
   private  Metin's very private things. Only after the code phrase may Leyla talk about
            them, add to them or delete from them.
   confidential  what Gülfikar ("Anne") confides to Leyla (sorrow, worry, health). Hidden:
            never shown on the memory page, never mirrored to a to-do list, never logged,
-           never proposed by the nightly cleanup. Entries are "Aktuell bis <date>: ..." and
-           expire like the open states; the summarizer removes them once they are resolved.
+           never proposed by the nightly cleanup. Entries are "Aktuell bis <date>: ..."; past
+           ones are hidden from Leyla like the open states.
+
+Leyla never deletes or overwrites anything (keep_untouched); only Metin deletes, in the app,
+with the nightly cleanup or together with Claude, who also checks the confidential list.
 
 After each conversation a small text model reads the transcript together with both
 lists and returns the updated lists. Without the code phrase the private list is never
@@ -32,12 +35,11 @@ logger = logging.getLogger(__name__)
 
 RESPONSES_URL = "https://api.openai.com/v1/responses"
 MAX_FACTS = 250
-MAX_FACT_CHARS = 700
+MAX_FACT_CHARS = 1500
 FAMILY, FRIENDS, PRIVATE, LEYLA = "family", "friends", "private", "leyla"
 CONFIDENTIAL = "confidential"
 KINDS = (FAMILY, FRIENDS, PRIVATE, LEYLA, CONFIDENTIAL)
 OPEN_KINDS = (FAMILY, FRIENDS, LEYLA)
-EXPIRING_KINDS = OPEN_KINDS + (CONFIDENTIAL,)
 MAX_CONFIDENTIAL = 20
 MAX_LEYLA = 30
 # One entry per person: "Person: Ayşe | Zugehörigkeit: Metins Schwester | Geburtstag: ..."
@@ -79,15 +81,16 @@ Es gibt fünf Listen:
    Satz> | Sonst: ..."
    Ergänze und verbessere den Eintrag mit jedem Gespräch, statt neue Einträge für dieselbe
    Person anzulegen. Einträge in einem älteren Format bringst du in diese Form.
-   Das Gedächtnis soll sich wie das einer guten Freundin anfühlen: "Zuletzt" und "Stimmung" ersetzt
-   du bei jedem echten Gespräch mit dieser Person (nicht anhäufen), aber nur wenn es um etwas
-   Persönliches oder Bleibendes ging, nicht bei Befehlen, Smalltalk oder einmaligen Wissensfragen.
+   Das Gedächtnis soll sich wie das einer guten Freundin anfühlen: Bei "Zuletzt" und "Stimmung"
+   schreibst du nach einem echten Gespräch mit dieser Person das Neue vorn hin und lässt das Alte
+   mit "davor:" dahinter stehen, aber nur wenn es um etwas Persönliches oder Bleibendes ging,
+   nicht bei Befehlen, Smalltalk oder einmaligen Wissensfragen.
    "Offen" sind echte Fäden: ein Termin, eine Prüfung, eine Sorge, ein Vorhaben oder etwas, das
-   Leyla zugesagt hat; ist es erledigt, entferne es. "Humor" nur, wenn wirklich ein Spruch oder
+   Leyla zugesagt hat; ist es erledigt, schreib "(erledigt)" dahinter. "Humor" nur, wenn wirklich ein Spruch oder
    Witz entstanden ist, der euch verbindet. Jedes Feld höchstens ein kurzer Satz.
    Vorübergehendes (Krankheit, Prüfung, Reise, Sorge, Freude mit Anlass) als eigener Eintrag:
    "Aktuell bis TT.MM.JJJJ: <Name> ..." mit einem Datum etwa zwei Wochen nach heute. Ist es
-   erledigt oder besser, entferne den Eintrag.
+   erledigt oder besser, schreib "(vorbei seit TT.MM.)" dahinter.
    Was Gülfikar (Metins Mutter, "Anne") Leyla traurig, besorgt, gesundheitlich oder sonst
    persönlich anvertraut, schreibst du nie in diese Liste, weder bei "Stimmung", "Zuletzt" und
    "Offen" noch als "Aktuell bis"-Eintrag, denn Metin liest sie in seiner App. Das gehört nur in
@@ -112,7 +115,7 @@ Es gibt fünf Listen:
    kann. Niemand sonst sieht diese Liste, auch Metin nicht. Jeder Eintrag in der Form
    "Aktuell bis TT.MM.JJJJ: Gülfikar ..." mit einem Datum etwa zwei Wochen nach heute, ein
    kurzer Satz, nur das Nötige. Sagt sie, dass es vorbei, besser oder erledigt ist, oder bittet
-   sie, es zu vergessen, entferne den Eintrag. Erzählt sie mehr dazu, aktualisiere ihn statt
+   sie, es zu vergessen, schreib "(vorbei seit TT.MM.)" dahinter. Erzählt sie mehr dazu, aktualisiere ihn statt
    einen neuen anzulegen. Nur, was eindeutig Gülfikar selbst gesagt hat, nichts von anderen.
    Höchstens {max_confidential} Einträge.
 
@@ -150,9 +153,9 @@ Regeln:
 - "private" änderst du nur, wenn das Codewort gesagt wurde: Dann kommen Dinge hierher, die Metin
   sich ausdrücklich privat merken lassen will. Sagt er "für alle" oder ist es Familienwissen,
   gehört es nach "family". Wurde das Codewort nicht gesagt, gib "private" unverändert zurück.
-- Vergessen: Bittet jemand, etwas zu vergessen, entferne es. Ohne Codewort nur aus "family"
-  oder "friends" und nur, was die Person selbst betrifft. Sonst löschst du ohne Codewort nichts außer
-  abgelaufenen oder erledigten "Aktuell" Einträgen.
+- Du löschst, kürzt und überschreibst nie etwas, auch nicht, wenn jemand bittet, etwas zu
+  vergessen: Löschen macht nur Metin. Neues ergänzt du, Altes bleibt mit "davor:" stehen.
+  Ausnahme: "private" mit Codewort, dort entscheidet Metin selbst.
 - Keine Passwörter, PINs, Konto oder Kartennummern.
 - Kurze deutsche Sätze, höchstens {max_facts} Einträge je Liste.
 - Gibt es nichts Neues, gib alle Listen unverändert zurück.
@@ -270,7 +273,6 @@ def expired(fact: str, today: Optional[_dt.date] = None) -> bool:
 MOTHER_WORDS = {"anne", "annem", "annecim", "mama", "mutter"}
 TURKISH_WORDS = {"ben", "bir", "bu", "ve", "iyi", "evet", "hayir", "artik", "cok", "ne", "nasil",
                  "var", "yok", "simdi", "bugun", "benim", "seni", "sana", "bana", "tamam"}
-FORGET_WORDS = {"vergiss", "vergessen", "losch", "losche", "unut", "unutur", "sil"}
 STOP_WORDS = {"nicht", "keine", "einen", "einer", "eines", "einem", "seine", "ihren", "seinen",
               "wieder", "immer", "schon", "durch", "unter", "zwischen", "sich", "sind", "wird",
               "wurde", "haben", "hatte", "dass", "aber", "oder", "auch", "noch", "nach", "beim",
@@ -306,27 +308,44 @@ def _touched(words: set[str], heard: set[str]) -> bool:
     return False
 
 
-def _change_allowed(old_fact: str, new_fact: Optional[str], heard: set[str],
-                    today: _dt.date) -> bool:
-    """May this entry be changed (new_fact) or dropped (None) after this conversation?"""
-    if new_fact is None and expired(old_fact, today):
-        return True
+def _change_allowed(old_fact: str, new_fact: str, heard: set[str]) -> bool:
+    """May this entry take new content after this conversation?"""
     subject = _subject_words(old_fact)
     if subject:
         return _touched(subject, heard)
-    a, b = set(_words(old_fact)), set(_words(new_fact or ""))
-    changed = {w for w in (a ^ b if new_fact is not None else a)
+    changed = {w for w in set(_words(old_fact)) ^ set(_words(new_fact))
                if len(w) >= 5 and w not in STOP_WORDS}
     return _touched(changed, heard)
 
 
+def _keeps_all(old_text: str, new_text: str) -> bool:
+    """True when the new text still holds every word of the old one."""
+    return set(_words(old_text)) <= set(_words(new_text))
+
+
+def _merge_profile(old_fact: str, new_fact: str) -> str:
+    """The new profile with nothing of the old one lost: a missing field comes back, a field
+    whose old value is no longer in it keeps that value after "davor:"."""
+    name, old_f = parse_profile(old_fact)
+    new_name, new_f = parse_profile(new_fact)
+    merged = dict(new_f)
+    for key, value in old_f.items():
+        if key not in merged:
+            merged[key] = value
+        elif not _keeps_all(value, merged[key]):
+            merged[key] = f"{merged[key]}; davor: {value}"
+    order = list(old_f) + [k for k in new_f if k not in old_f]
+    return " | ".join([f"Person: {new_name or name}"] + [f"{k}: {merged[k]}" for k in order])
+
+
 def keep_untouched(old: dict, new: dict, dialog: list, today: Optional[_dt.date] = None,
                    kinds=KINDS, metin_known: bool = False) -> tuple[dict, int]:
-    """The memory model rewrites whole lists. An entry whose person or topic did not come up
-    in this conversation keeps its old wording, and is never dropped (except an expired
-    "Aktuell" entry). New entries always pass. Returns the lists and how many changes were
-    undone."""
-    today = today or _dt.date.today()
+    """Leyla never deletes or overwrites; only Metin (with Claude) deletes. The memory model
+    rewrites whole lists, so after it: an entry that was dropped comes back; an entry whose
+    person or topic did not come up in this conversation keeps its old text; a changed
+    profile keeps every old value (old values after "davor:"); a changed plain entry replaces
+    the old one only when it still holds all its words, else both stay. New entries pass.
+    Returns the lists and how many changes were undone or merged."""
     # What the people said counts; from Leyla only how she addresses the mother, because she
     # mentions Metin in her playful hints without him being there. The code phrase means Metin.
     heard = set(_words(" ".join(t for s, t in dialog if s == "user")))
@@ -334,57 +353,60 @@ def keep_untouched(old: dict, new: dict, dialog: list, today: Optional[_dt.date]
     if metin_known:
         heard.add("metin")
     raw_user = " ".join(t for s, t in dialog if s == "user")
-    user_words = set(_words(raw_user))
-    if user_words & TURKISH_WORDS or re.search(r"[ğşıĞŞİ]", raw_user):
+    if set(_words(raw_user)) & TURKISH_WORDS or re.search(r"[ğşıĞŞİ]", raw_user):
         heard |= MOTHER_WORDS  # Mama speaks only Turkish; her entries are written in German
-    forget = bool(user_words & FORGET_WORDS)
+    guarded = [k for k in kinds if k != PRIVATE]  # private: only with the code phrase, by Metin
     out = {k: list(new.get(k, [])) for k in KINDS}
-    undone = 0
-    every_new = {f for k in kinds for f in out[k]}
-    for k in kinds:
-        if k == PRIVATE:
-            continue  # changes only with the code phrase, when Metin himself manages it
-        old_left = [f for f in old.get(k, []) if f not in every_new]
-        if not old_left:
-            continue
+    every_new = {f for k in guarded for f in out[k]}
+    old_left = [(k, f) for k in guarded for f in old.get(k, []) if f not in every_new]
+    fixed = 0
+    for k in guarded:
         result = []
         for f in out[k]:
-            if f in old.get(k, []) or any(f in old.get(j, []) for j in kinds):
+            if any(f in old.get(j, []) for j in guarded):
                 result.append(f)
                 continue
-            match = _best_match(f, old_left)
-            if match is None:
+            hit = _best_match(f, old_left)
+            if hit is None:
                 result.append(f)  # really new
-            elif _change_allowed(match, f, heard, today):
+                continue
+            old_left.remove(hit)
+            old_kind, old_fact = hit
+            if not _change_allowed(old_fact, f, heard):
+                result.append(old_fact)
+                fixed += 1
+            elif parse_profile(old_fact):
+                merged = _merge_profile(old_fact, f)
+                fixed += merged != f
+                result.append(merged)
+            elif _keeps_all(old_fact, f):
                 result.append(f)
-                old_left.remove(match)
             else:
-                result.append(match)
-                old_left.remove(match)
-                undone += 1
-        for f in old_left:  # dropped by the model
-            if not forget and not _change_allowed(f, None, heard, today):
-                result.append(f)
-                undone += 1
+                result += [old_fact, f]
+                fixed += 1
         out[k] = result
-    return out, undone
+    for k, f in old_left:  # dropped by the model: Leyla does not delete
+        out[k].append(f)
+        fixed += 1
+    return out, fixed
 
 
-def _best_match(fact: str, candidates: list[str]) -> Optional[str]:
-    """The old entry this new one replaces: same person, else clearly similar text."""
+def _best_match(fact: str, candidates: list) -> Optional[tuple]:
+    """The old (kind, entry) this new one replaces: same person in any list, else clearly
+    similar text."""
     import difflib
     prof = parse_profile(fact)
     if prof:
         for c in candidates:
-            pc = parse_profile(c)
+            pc = parse_profile(c[1])
             if pc and _words(pc[0]) == _words(prof[0]):
                 return c
         return None
     best, score = None, 0.0
     for c in candidates:
-        if parse_profile(c):
+        if parse_profile(c[1]):
             continue
-        r = difflib.SequenceMatcher(None, fact.lower(), c.lower()).ratio()
+        r = difflib.SequenceMatcher(None, fact.lower(), c[1].lower()).ratio()
         if r > score:
             best, score = c, r
     return best if score >= 0.6 else None
@@ -459,18 +481,6 @@ class MemoryStore:
         if added:
             self.save(facts + added, kind)
         return added
-
-    def expire(self, today: Optional[_dt.date] = None) -> list[str]:
-        """Drop "Aktuell bis <date>" entries whose date has passed. Confidential ones are
-        returned as a placeholder so their text never reaches the log."""
-        gone = []
-        for kind in EXPIRING_KINDS:
-            facts = self.load(kind)
-            old = [f for f in facts if expired(f, today)]
-            if old:
-                self.save([f for f in facts if f not in old], kind)
-                gone += old if kind != CONFIDENTIAL else ["(vertraulicher Eintrag)"] * len(old)
-        return gone
 
     def instructions_block(self) -> str:
         data = self._read()

@@ -69,7 +69,7 @@ def test_edit_item(tmp_path):
     assert s.load("family") == ["a", "neuer Text", "c"]
     assert not memory_web.edit_item(s, "family", "a", "c")  # duplicate
     assert not memory_web.edit_item(s, "family", "a", "   ")  # empty
-    assert not memory_web.edit_item(s, "family", "a", "x" * 701)  # too long
+    assert not memory_web.edit_item(s, "family", "a", "x" * 1501)  # too long
     assert not memory_web.edit_item(s, "family", "gibts nicht", "y")
     assert not memory_web.edit_item(s, "private", "geheim", "y")
     assert s.load("private") == ["geheim"]
@@ -122,7 +122,7 @@ def test_edit_folder(tmp_path):
     assert new == "Person: Metin | Alter: 45 | Zugehörigkeit: Sohn | Hobby: a / b"  # new order, empty dropped, bar escaped
     assert s.load("family") == [new, "Person: Anna", "Einkauf"]
     assert memory_web.edit_folder(s, "family", old, ["x"]) is None  # outdated page: Leyla changed it meanwhile
-    assert memory_web.edit_folder(s, "family", new, ["x" * 700]) is None  # too long
+    assert memory_web.edit_folder(s, "family", new, ["x" * 1500]) is None  # too long
     assert memory_web.edit_folder(s, "private", "geheim", ["x"]) is None
     assert memory_web.edit_folder(s, "family", "Person: Anna", ["Alter: 3"]) == "Person: Anna | Alter: 3"
     assert memory_web.edit_folder(s, "family", "Person: Anna | Alter: 3", []) == "Person: Anna"  # all points removed

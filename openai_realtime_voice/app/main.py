@@ -1039,8 +1039,6 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             logger.info("Memory: forgot an entry")
         for fact in self.memory.add(os.environ.get("ADD_FACTS", "")):
             logger.info("Memory: added a private entry")
-        for fact in self.memory.expire():
-            logger.info("Memory: expired: %s", fact)
         lists = self.memory.load_all()
         logger.info("Memory: %d family, %d friends, %d private, %d Leyla entries (private ones are "
                     "not logged; see the Home Assistant to-do lists)",

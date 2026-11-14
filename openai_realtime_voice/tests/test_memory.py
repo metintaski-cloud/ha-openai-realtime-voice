@@ -162,14 +162,14 @@ def test_old_file_becomes_private(tmp_path):
     assert data["version"] == 3 and len(data["private"]) == 1
 
 
-def test_states_expire(tmp_path):
-    import datetime as dt
+def test_past_states_stay_stored_but_are_hidden_from_leyla(tmp_path):
     store = memory.MemoryStore(str(tmp_path / "m.json"))
     store.save(["Person: Ayşe (Metins Schwester).",
-                "Aktuell bis 10.11.2026: Ayşe ist erkältet.",
-                "Aktuell bis 30.11.2026: Umut hat bald eine Prüfung."])
-    assert store.expire(dt.date(2026, 11, 15)) == ["Aktuell bis 10.11.2026: Ayşe ist erkältet."]
-    assert len(store.load()) == 2
+                "Aktuell bis 10.11.2020: Ayşe ist erkältet.",
+                "Aktuell bis 30.11.2099: Umut hat bald eine Prüfung."])
+    assert not hasattr(store, "expire") and len(store.load()) == 3
+    block = store.instructions_block()
+    assert "Ayşe ist erkältet" not in block and "Umut hat bald" in block
 
 
 async def test_summary_keeps_private_without_code(monkeypatch):
@@ -334,13 +334,11 @@ def test_confidential_list_is_hidden_but_given_to_leyla(tmp_path):
     assert store.load(memory.CONFIDENTIAL) == [SECRET]
 
 
-def test_confidential_entry_expires_without_its_text_in_the_result(tmp_path):
-    import datetime as dt
+def test_past_confidential_entry_stays_stored_and_hidden(tmp_path):
     store = memory.MemoryStore(str(tmp_path / "m.json"))
-    store.save_all({"confidential": [SECRET, "Aktuell bis 30.12.2026: Gülfikar ist traurig"]})
-    gone = store.expire(dt.date(2026, 11, 21))
-    assert gone == ["(vertraulicher Eintrag)"]
-    assert store.load(memory.CONFIDENTIAL) == ["Aktuell bis 30.12.2026: Gülfikar ist traurig"]
+    store.save_all({"confidential": ["Aktuell bis 01.01.2020: Gülfikar war traurig", SECRET]})
+    assert len(store.load(memory.CONFIDENTIAL)) == 2
+    assert "war traurig" not in store.instructions_block()
 
 
 def test_forget_never_touches_confidential(tmp_path):
@@ -380,7 +378,7 @@ async def test_summarize_updates_confidential_and_keeps_it_when_left_out(monkeyp
     monkeypatch.setattr(memory.httpx, "AsyncClient", Client)
     old = {"family": [], "friends": [], "private": [], "leyla": [], "confidential": [SECRET]}
     out = await memory.summarize("k", ["m"], old, [["user", "dizim artık iyi"]])
-    assert out["confidential"] == []  # resolved: the model removed it
+    assert out["confidential"] == [SECRET]  # Leyla never deletes, not even when resolved
     assert "Knie" in prompts[0] and '"confidential"' in prompts[0]
     out = await memory.summarize("k", ["m"], old, [["user", "hallo"]])
     assert out["confidential"] == [SECRET]
@@ -408,7 +406,7 @@ def test_entries_not_talked_about_keep_their_wording():
     assert out["family"] == old["family"] and undone == 3
 
 
-def test_entries_talked_about_may_change_and_new_ones_pass():
+def test_nothing_is_deleted_or_overwritten_and_new_entries_pass():
     import datetime as dt
     old = {"family": ["Person: Umut | Zugehörigkeit: Metins Bruder",
                       "Person: Gülfikar | Zugehörigkeit: Metins Mutter | Stimmung: ruhig",
@@ -421,8 +419,34 @@ def test_entries_talked_about_may_change_and_new_ones_pass():
            "private": [], "leyla": [], "confidential": []}
     dialog = [["user", "Ich bin Umut, ich arbeite als Lehrer. Vergiss das mit dem Saugroboter."],
               ["bot", "Anne, ne güzel!"], ["user", "Ali ist unser Nachbar"]]
-    out, undone = memory.keep_untouched(old, new, dialog, dt.date(2026, 11, 14))
-    assert out["family"] == new["family"] and out["friends"] == new["friends"] and undone == 0
+    out, fixed = memory.keep_untouched(old, new, dialog, dt.date(2026, 11, 14))
+    assert out["family"] == ["Person: Umut | Zugehörigkeit: Metins Bruder | Arbeit: Lehrer",
+                             "Person: Gülfikar | Zugehörigkeit: Metins Mutter | "
+                             "Stimmung: fröhlich; davor: ruhig",
+                             "Aktuell bis 01.11.2026: Metin ist erkältet.",
+                             "Unser Saugroboter heißt Robbi."]
+    assert out["friends"] == new["friends"]
+
+
+def test_last_talk_is_added_not_replaced_and_moves_keep_everything():
+    old = {k: [] for k in memory.KINDS}
+    old["family"] = ["Person: Metin | Arbeit: Elektriker | Zuletzt: 14.11.: über seine Schwestern",
+                     "Die Stehlampen 1 und 2 stehen hinten (1 rechts, 2 links)."]
+    old["friends"] = ["Person: Ali | Zugehörigkeit: unklar"]
+    new = {k: [] for k in memory.KINDS}
+    new["family"] = ["Person: Metin | Arbeit: Elektriker | Interessen: Pizza | "
+                     "Zuletzt: 14.11.: über Pizza",
+                     "Die Stehlampen 1 und 2 stehen hinten, 3 und 4 vorne.",
+                     "Person: Ali | Zugehörigkeit: Cousin"]
+    dialog = [["user", "Hier ist Metin. Mein Lieblingsessen ist Pizza. Ali ist mein Cousin, "
+                       "die Stehlampen 3 und 4 stehen vorne."]]
+    out, _ = memory.keep_untouched(old, new, dialog)
+    assert out["family"][0] == ("Person: Metin | Arbeit: Elektriker | Zuletzt: 14.11.: über Pizza; "
+                                "davor: 14.11.: über seine Schwestern | Interessen: Pizza")
+    assert "Die Stehlampen 1 und 2 stehen hinten (1 rechts, 2 links)." in out["family"]
+    assert "Die Stehlampen 1 und 2 stehen hinten, 3 und 4 vorne." in out["family"]
+    assert "Person: Ali | Zugehörigkeit: Cousin; davor: unklar" in out["family"]
+    assert out["friends"] == []
 
 
 def test_code_phrase_counts_as_metin_talking():
@@ -433,5 +457,5 @@ def test_code_phrase_counts_as_metin_talking():
     new["family"] = ["Person: Metin | Zugehörigkeit: Sohn | Stimmung: gut gelaunt"]
     dialog = [["user", "Mir geht es heute richtig gut"]]
     assert memory.keep_untouched(old, new, dialog, dt.date(2026, 11, 14))[0]["family"] == old["family"]
-    assert memory.keep_untouched(old, new, dialog, dt.date(2026, 11, 14),
-                                 metin_known=True)[0]["family"] == new["family"]
+    assert memory.keep_untouched(old, new, dialog, dt.date(2026, 11, 14), metin_known=True)[0][
+        "family"] == ["Person: Metin | Zugehörigkeit: Sohn | Stimmung: gut gelaunt; davor: müde"]
