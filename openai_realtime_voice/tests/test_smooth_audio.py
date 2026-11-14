@@ -486,7 +486,7 @@ def test_persona_reacts_to_couple_words_from_unknown_people():
     assert "rätst du nie" in persona.CORE
 
 
-def test_persona_is_skeptical_when_someone_claims_to_be_metin():
+def test_persona_skepticism_about_metin_is_limited_to_couple_words():
     from app import persona
-    text = persona.TRUST_CODE.format(code="Abrakadabra")
-    assert "Soso, das könnte jeder sagen" in text and "verrate aber nie" in text
+    assert "Soso, das könnte jeder sagen" in persona.CORE and "ohne Paarwörter" in persona.CORE
+    assert "Soso" not in persona.TRUST_CODE.format(code="Abrakadabra")
