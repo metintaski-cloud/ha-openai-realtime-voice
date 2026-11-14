@@ -424,7 +424,7 @@ def test_persona_never_guesses_the_speaker():
 def test_persona_asks_who_is_there_late_and_gently():
     from app import persona
     text = persona.build([], False, False, False)
-    assert "Frag nie gleich zu Beginn" in text and "nach einer Ansage, die von selbst kam" in text
+    assert "Frag nie gleich zu Beginn" in text and "bei einem kurzen Befehl" in text
 
 
 def test_persona_blooms_for_metin_only():
@@ -488,7 +488,7 @@ def test_persona_reacts_to_couple_words_from_unknown_people():
 
 def test_persona_skepticism_about_metin_is_limited_to_couple_words():
     from app import persona
-    assert "Soso, das könnte jeder sagen" in persona.CORE and "ohne Paarwörter" in persona.CORE
+    assert "Soso, das könnte jeder sagen" in persona.CORE and "Ohne Paarwörter" in persona.CORE
     assert "Soso" not in persona.TRUST_CODE.format(code="Abrakadabra")
 
 
