@@ -73,3 +73,15 @@ def test_edit_item(tmp_path):
     assert not memory_web.edit_item(s, "family", "gibts nicht", "y")
     assert not memory_web.edit_item(s, "private", "geheim", "y")
     assert s.load("private") == ["geheim"]
+
+
+def test_move_items(tmp_path):
+    s = _store(tmp_path)
+    ok = memory_web.move_items(s, {"family": ["c", "a"], "friends": ["f1", "b"], "leyla": ["l1"]})
+    assert ok and s.load("family") == ["c", "a"] and s.load("friends") == ["f1", "b"]
+    assert s.load("private") == ["geheim"]
+    # something lost, something new, wrong shape: refused, nothing changes
+    assert not memory_web.move_items(s, {"family": ["c"], "friends": ["f1", "b"], "leyla": ["l1"]})
+    assert not memory_web.move_items(s, {"family": ["c", "a", "x"], "friends": ["f1", "b"], "leyla": ["l1"]})
+    assert not memory_web.move_items(s, {"family": "c", "friends": [], "leyla": []})
+    assert s.load("family") == ["c", "a"]

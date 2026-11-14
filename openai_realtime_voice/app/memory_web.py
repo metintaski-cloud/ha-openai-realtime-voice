@@ -62,6 +62,29 @@ def edit_item(store: memory.MemoryStore, kind, old, new) -> bool:
     return True
 
 
+def move_items(store: memory.MemoryStore, lists) -> bool:
+    """Apply a new order and distribution of the open lists. Only accepted when it holds
+    exactly the entries that are stored now (nothing lost, nothing new), so a page that is
+    out of date cannot overwrite what Leyla learned meanwhile."""
+    if not isinstance(lists, dict):
+        return False
+    new = {}
+    for kind, _ in TITLES:
+        v = lists.get(kind)
+        if not isinstance(v, list) or not all(isinstance(x, str) for x in v):
+            return False
+        new[kind] = v
+    cur = store.load_all()
+    if sorted(x for k, _ in TITLES for x in cur.get(k, [])) != sorted(
+            x for v in new.values() for x in v):
+        return False
+    if len(new[memory.LEYLA]) > memory.MAX_LEYLA:
+        return False
+    if any(new[k] != cur.get(k, []) for k, _ in TITLES):
+        store.save_all(new)
+    return True
+
+
 PAGE = """<!doctype html>
 <html lang="de"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -79,6 +102,11 @@ label.on{background:#2a1a1a}
 input{width:24px;height:24px;flex:none;margin-top:2px}
 .t{flex:1;word-break:break-word}.t small{display:block;color:#9ab}
 .empty{padding:12px 16px;color:#777}
+.list:has(label) .empty{display:none}
+label{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+textarea{-webkit-user-select:text;user-select:text}
+.ph{margin:4px 16px;border:2px dashed #567;border-radius:8px}
+.float{position:fixed;left:8px;right:8px;z-index:10;pointer-events:none;background:#1f2a33;border:1px solid #567;border-radius:10px;box-shadow:0 6px 18px #000a;opacity:.96}
 textarea{width:100%;box-sizing:border-box;min-height:140px;font:inherit;color:#eee;background:#1d1d1d;border:1px solid #567;border-radius:8px;padding:8px}
 .row{display:flex;gap:10px;margin-top:8px}.row button{padding:10px;font-size:16px;background:#2d6a4f}.row .no{background:#444}
 #bar{position:fixed;left:0;right:0;bottom:0;padding:12px 16px;background:#1b1b1b;border-top:1px solid #333}
@@ -88,7 +116,11 @@ button:disabled{background:#3a3a3a;color:#888}
 <h1>Leyla Gedächtnis</h1><div id="root"></div>
 <div id="bar"><button id="del" disabled>Markierte löschen</button></div>
 <script>
-let sel=new Set(),last='',editing=false;
+let sel=new Set(),last='',editing=false,dragging=false,justDragged=0;
+const key=(k,t)=>k+'\\u0000'+t;
+function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+function fmt(t){const p=t.split(' | ');if(p.length<2||!p[0].startsWith('Person:'))return esc(t);
+ return '<b>'+esc(p[0].slice(7).trim())+'</b>'+p.slice(1).map(x=>'<small>'+esc(x)+'</small>').join('');}
 function startEdit(span,kind,text){editing=true;span.onclick=null;span.innerHTML='';
  const ta=document.createElement('textarea');ta.value=text;
  const row=document.createElement('div');row.className='row';
@@ -99,23 +131,51 @@ function startEdit(span,kind,text){editing=true;span.onclick=null;span.innerHTML
   const j=await r.json();if(!j.ok){alert('Nicht gespeichert: leer, zu lang oder schon vorhanden.');ok.disabled=false;return;}
   editing=false;last='';load();};
  row.append(ok,no);span.append(ta,row);ta.focus();}
-const key=(k,t)=>k+'\\u0000'+t;
-function fmt(t){const p=t.split(' | ');if(p.length<2||!p[0].startsWith('Person:'))return esc(t);
- return '<b>'+esc(p[0].slice(7).trim())+'</b>'+p.slice(1).map(x=>'<small>'+esc(x)+'</small>').join('');}
-function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
-function render(d){const root=document.getElementById('root');root.innerHTML='';
- const all=new Set();
- for(const l of d.lists){const h=document.createElement('h2');h.textContent=l.title+' ('+l.items.length+')';root.appendChild(h);
-  if(!l.items.length){const e=document.createElement('div');e.className='empty';e.textContent='leer';root.appendChild(e);}
-  for(const t of l.items){const k=key(l.kind,t);all.add(k);
-   const lab=document.createElement('label');const cb=document.createElement('input');cb.type='checkbox';cb.checked=sel.has(k);
-   lab.className=cb.checked?'on':'';
-   cb.onchange=()=>{cb.checked?sel.add(k):sel.delete(k);lab.className=cb.checked?'on':'';upd();};
-   const s=document.createElement('span');s.className='t';s.innerHTML=fmt(t);
-   s.onclick=e=>{e.preventDefault();startEdit(s,l.kind,t);};lab.append(cb,s);root.appendChild(lab);}}
+function makeRow(kind,t){const lab=document.createElement('label');lab._t=t;
+ const cb=document.createElement('input');cb.type='checkbox';cb.checked=sel.has(key(kind,t));lab.className=cb.checked?'on':'';
+ cb.onchange=()=>{const k=key(lab.parentNode.dataset.kind,t);cb.checked?sel.add(k):sel.delete(k);lab.className=cb.checked?'on':'';upd();};
+ const s=document.createElement('span');s.className='t';s.innerHTML=fmt(t);
+ s.onclick=e=>{e.preventDefault();if(Date.now()-justDragged<700)return;startEdit(s,lab.parentNode.dataset.kind,t);};
+ lab.append(cb,s);attachDrag(lab);return lab;}
+function render(d){const root=document.getElementById('root');root.innerHTML='';const all=new Set();
+ for(const l of d.lists){const box=document.createElement('div');box.className='list';box.dataset.kind=l.kind;
+  const h=document.createElement('h2');h.textContent=l.title+' ('+l.items.length+')';box.appendChild(h);
+  const e=document.createElement('div');e.className='empty';e.textContent='leer';box.appendChild(e);
+  for(const t of l.items){all.add(key(l.kind,t));box.appendChild(makeRow(l.kind,t));}
+  root.appendChild(box);}
  sel=new Set([...sel].filter(x=>all.has(x)));upd();}
 function upd(){const b=document.getElementById('del');b.disabled=!sel.size;b.textContent=sel.size?sel.size+' markierte löschen':'Markierte löschen';}
-async function load(){if(editing)return;try{const r=await fetch('/api/lists');const s=await r.text();if(s!==last){last=s;render(JSON.parse(s));}}catch(e){}}
+let clone=null,ph=null,dragLab=null,offY=0,lastY=0,raf=0;
+function attachDrag(lab){let timer=null,sx=0,sy=0;
+ lab.addEventListener('touchstart',e=>{const n=e.target.tagName;if(editing||n==='INPUT'||n==='TEXTAREA'||n==='BUTTON')return;
+  const t=e.touches[0];sx=t.clientX;sy=t.clientY;clearTimeout(timer);timer=setTimeout(()=>beginDrag(lab,sy),450);},{passive:true});
+ lab.addEventListener('touchmove',e=>{const t=e.touches[0];
+  if(!dragging){if(Math.abs(t.clientX-sx)+Math.abs(t.clientY-sy)>10)clearTimeout(timer);return;}
+  e.preventDefault();lastY=t.clientY;moveDrag();},{passive:false});
+ const end=()=>{clearTimeout(timer);if(dragging)endDrag();};
+ lab.addEventListener('touchend',end);lab.addEventListener('touchcancel',end);
+ lab.addEventListener('contextmenu',e=>e.preventDefault());}
+function beginDrag(lab,y){dragging=true;dragLab=lab;lastY=y;if(navigator.vibrate)navigator.vibrate(30);
+ const r=lab.getBoundingClientRect();offY=y-r.top;
+ clone=lab.cloneNode(true);clone.className='float';clone.style.top=r.top+'px';clone.style.width=r.width+'px';
+ ph=document.createElement('div');ph.className='ph';ph.style.height=r.height+'px';
+ document.body.appendChild(clone);lab.parentNode.insertBefore(ph,lab);lab.style.display='none';scrollLoop();}
+function moveDrag(){clone.style.top=(lastY-offY)+'px';
+ const el=document.elementFromPoint(window.innerWidth/2,lastY);if(!el)return;
+ const row=el.closest('label');
+ if(row&&row!==dragLab&&row.parentNode.classList.contains('list')){const r=row.getBoundingClientRect();
+  row.parentNode.insertBefore(ph,lastY<r.top+r.height/2?row:row.nextSibling);return;}
+ const box=el.closest('.list');if(!box)return;
+ if(el.tagName==='H2')box.insertBefore(ph,el.nextSibling.nextSibling);else if(el===box||el.classList.contains('empty'))box.appendChild(ph);}
+function scrollLoop(){if(!dragging)return;
+ if(lastY<120)window.scrollBy(0,-14);else if(lastY>window.innerHeight-150)window.scrollBy(0,14);
+ moveDrag();raf=requestAnimationFrame(scrollLoop);}
+async function endDrag(){dragging=false;cancelAnimationFrame(raf);justDragged=Date.now();
+ ph.parentNode.insertBefore(dragLab,ph);ph.remove();clone.remove();dragLab.style.display='';
+ const lists={};document.querySelectorAll('.list').forEach(b=>{lists[b.dataset.kind]=[...b.querySelectorAll('label')].map(x=>x._t);});
+ try{await fetch('/api/move',{method:'POST',body:JSON.stringify({lists})});}catch(e){}
+ last='';load();}
+async function load(){if(editing||dragging)return;try{const r=await fetch('/api/lists');const s=await r.text();if(s!==last){last=s;render(JSON.parse(s));}}catch(e){}}
 document.getElementById('del').onclick=async()=>{if(!sel.size||!confirm(sel.size+' Einträge endgültig löschen?'))return;
  const items=[...sel].map(x=>{const i=x.indexOf('\\u0000');return {kind:x.slice(0,i),text:x.slice(i+1)}});
  await fetch('/api/delete',{method:'POST',body:JSON.stringify({items})});sel=new Set();last='';load();};
@@ -156,6 +216,11 @@ async def _handle(store, sync, reader, writer) -> None:
         elif method == "POST" and path == "/api/edit":
             d = json.loads(body or b"{}") or {}
             ok = edit_item(store, d.get("kind"), d.get("old"), d.get("new"))
+            if ok and sync:
+                sync.kick()
+            await _respond(writer, "200 OK", "application/json", json.dumps({"ok": ok}))
+        elif method == "POST" and path == "/api/move":
+            ok = move_items(store, (json.loads(body or b"{}") or {}).get("lists"))
             if ok and sync:
                 sync.kick()
             await _respond(writer, "200 OK", "application/json", json.dumps({"ok": ok}))
