@@ -181,17 +181,15 @@ html{background:#08103a}
 body{margin:0;background:radial-gradient(120% 60% at 50% 0,#14206b 0,#08103a 45%,#040822 100%) fixed;color:#e8ecff;font:17px/1.4 system-ui,sans-serif;padding-bottom:96px}
 #pulse{position:relative;height:96px;margin:-6px 0 4px;overflow:hidden;pointer-events:none}
 #pulse .beam{position:absolute;left:0;right:0;top:50%;height:2px;margin-top:-1px;background:linear-gradient(90deg,transparent,#3b82f6aa 20%,#22d3ee 50%,#3b82f6aa 80%,transparent);box-shadow:0 0 8px #22d3ee}
-#pulse .beam::after{content:"";position:absolute;top:-3px;left:0;width:28%;height:8px;border-radius:8px;background:radial-gradient(ellipse at center,#fff 0,#7dd3fc 30%,transparent 70%);filter:blur(1px);animation:sweep 1.6s linear infinite}
 #pulse svg{position:absolute;left:50%;top:50%;width:84px;height:76px;margin:-38px 0 0 -42px;overflow:visible;animation:beat 1.6s ease-in-out infinite}
 #pulse svg path{filter:drop-shadow(0 0 5px #22d3ee) drop-shadow(0 0 10px #d946ef77)}
 #pulse .spark{position:absolute;width:3px;height:3px;border-radius:50%;background:#bae6fd;box-shadow:0 0 6px #7dd3fc;animation:tw 2.4s ease-in-out infinite}
-#pulse.bad .beam{background:#64748b55;box-shadow:none}#pulse.bad .beam::after,#pulse.bad .spark{display:none}
+#pulse.bad .beam{background:#64748b55;box-shadow:none}#pulse.bad .spark{display:none}
 #pulse.bad svg{animation:none;filter:grayscale(1) opacity(.45)}
 #pulse .tick{position:absolute;left:0;right:calc(50% + 46px);top:14px;height:22px;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 88%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 88%,transparent)}
 #pulse .tick span{position:absolute;left:100%;white-space:nowrap;font-size:14px;line-height:22px;color:#e0f2fe;text-shadow:0 0 8px #22d3ee;animation:crawl linear infinite}
 #pulse.bad .tick{display:none}
 @keyframes crawl{from{transform:translateX(0)}to{transform:translateX(calc(-100% - 60vw))}}
-@keyframes sweep{from{transform:translateX(-30vw)}to{transform:translateX(110vw)}}
 @keyframes beat{0%,100%{transform:scale(1)}12%{transform:scale(1.12)}24%{transform:scale(.98)}36%{transform:scale(1.07)}50%{transform:scale(1)}}
 @keyframes tw{0%,100%{opacity:.1;transform:scale(.6)}50%{opacity:1;transform:scale(1.2)}}
 header{display:flex;align-items:center;gap:12px;padding:16px}
