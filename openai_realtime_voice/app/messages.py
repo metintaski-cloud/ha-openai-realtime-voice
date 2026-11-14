@@ -254,8 +254,10 @@ class MessageCenter:
                  "warm, zugewandt, lebendig, mit einem Lächeln in der Stimme und natürlicher Betonung, "
                  "nie monoton und nicht wie eine Durchsage oder ein Sprachassistent. Die Lautstärke "
                  "bleibt normal, du rufst nicht und bist nicht aufgeregt. Sprich mit deinen eigenen "
-                 "Worten und nur dem Sinn des Inhalts, ohne Kosewörter wie „canım“. Alle wichtigen "
-                 "Informationen wie Name, Uhrzeit und was du tust müssen drin bleiben. "
+                 "Worten, aber inhaltlich genau wie der Inhalt unten, ohne Kosewörter wie „canım“. Alle "
+                 "Informationen wie Name, Uhrzeit, Minuten und was du tust müssen vollständig drin "
+                 "bleiben, jede Zahl genau so wie im Inhalt, nichts weglassen, nichts umrechnen "
+                 "und nichts dazuerfinden. "
                  "Danach sagst du nichts mehr. ")
         if bilingual:
             # Two clean passes. Asking for "two short sentences" in two languages made her mix the

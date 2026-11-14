@@ -11,6 +11,7 @@
 - Add on 2.54.0: option `backend_reasoning_effort` (minimal, low, medium, high) for the backend model of GPT Live delegation; unset keeps the model default. Lower effort should shorten the long wait after a web search.
 - Add on 2.55.12: persona rule for personal small talk (how was your day), after a test where she asked back what was meant.
 - Add on 2.55.13: memory page paints the dark blue background at once (no grey page before the start animation).
+- Add on 2.57.7: announcements must keep every number and the time exactly as written (nothing left out, converted or added). In a test on 14 Nov 2026 she left out the time and said the sun sets in one minute instead of 15 ("in her own words" let her change facts).
 - Add on 2.57.6: in Turkish announcements (and the Turkish pass of bilingual ones) numbers and times are spoken in Turkish; she had said the time in German (16:44 test, 14 Nov 2026).
 - Add on 2.57.5: announcements are warm again (smile in the voice, lively, normal volume). The calm wording from 13 Nov 2026 (9529ad6, meant for `direkt` announcements) made the voice sound like a standard assistant instead of Leyla.
 - Add on 2.57.4: bilingual announcements (`zweisprachig: true`) ask for two separate passes, all German, then all Turkish. Before, the prompt also demanded at most two short sentences, so at 16:31 on 14 Nov 2026 the sunset announcement came out half Turkish, half German.
