@@ -33,3 +33,4 @@ Diese Datei ist das Gedaechtnis des Projekts. Wer eine Sitzung beginnt, liest si
 - Dreame Sperrzone Anleitung (wartet auf "weiter").
 - Fehlaktivierungen: Modell mit gesammelten Samples nachtrainieren.
 - Externes Backup einrichten.
+- Stilles Abreissen der Verbindung (14 Nov 2026): neue Komponente gibt bei echtem WLAN Verlust ohne Abschluss erst nach Sendetimeout 5 s oder Auto Stopp 60 s auf, kein eigener Ping. Vorschlag: Ping 3 s und Abbruch nach 6 s (esp_websocket_client ping_interval_sec, pingpong_timeout_sec), nicht eingebaut, weil der Nutzen ohne echten Ausfall nicht messbar ist. Erst umsetzen, wenn ein echter Ausfall im Log auftaucht. Quota Meldung auf dem Geraet nur ueber Unit Tests geprueft (Fake Server noetig).
