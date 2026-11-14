@@ -171,3 +171,10 @@ def test_bilingual_announcement_asks_for_two_clean_passes():
     assert "Saat 16:31." in prompt
     mono = svc._announce_prompt("Saat 16:31.", False)
     assert "ohne ein deutsches Wort" in mono and "on altı kırk dört" in mono and "zwei getrennten" not in mono
+
+
+def test_happy_announcement_starts_with_a_laugh():
+    from app.messages import MessageCenter
+    svc = MessageCenter.__new__(MessageCenter)
+    assert "Lachen" in svc._announce_prompt("x", True, happy=True)
+    assert "Lachen" not in svc._announce_prompt("x", True)

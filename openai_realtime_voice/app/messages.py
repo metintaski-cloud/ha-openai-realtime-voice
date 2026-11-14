@@ -249,7 +249,7 @@ class MessageCenter:
         except OSError as e:
             logger.info("Could not store the announcement clip: %s", e)
 
-    def _announce_prompt(self, text: str, bilingual: bool) -> str:
+    def _announce_prompt(self, text: str, bilingual: bool, happy: bool = False) -> str:
         # Facts first, delivery last: with the facts rule at the end she read the text out flatly.
         style = ("Alle Informationen wie Name, Uhrzeit, Minuten und was du tust bleiben vollständig drin, jede "
                  "Zahl genau wie im Inhalt, nichts weglassen, nichts umrechnen, nichts dazuerfinden, keine "
@@ -258,6 +258,9 @@ class MessageCenter:
                  "Familie, die gerade etwas Nettes ankündigt, lebendig und mit natürlicher Betonung, nie "
                  "monoton, nie wie eine Durchsage, nie wie ein vorgelesener Text oder ein Sprachassistent. "
                  "Die Lautstärke bleibt normal, du rufst nicht. ")
+        if happy:  # event data froh: true, for friendly announcements such as the evening lights
+            style += ("Fang mit einem kurzen, herzlichen, fröhlichen Lachen an und klinge richtig glücklich, "
+                      "als würdest du dich freuen, das zu sagen. ")
         if bilingual:
             # Two clean passes. Asking for "two short sentences" in two languages made her mix the
             # languages inside the sentences (16:31, 14 Nov 2026).
@@ -274,7 +277,7 @@ class MessageCenter:
                 "auch Zahlen und Uhrzeiten türkisch ausgesprochen (16:44 ist \"on altı kırk dört\"). "
                 "Höchstens zwei kurze Sätze. " + style + "Inhalt: \"" + text + "\"")
 
-    async def say(self, text: str, bilingual: bool = False, remember: bool = False) -> None:
+    async def say(self, text: str, bilingual: bool = False, remember: bool = False, happy: bool = False) -> None:
         """One announcement from an automation (HA event leyla_announce), no repeats.
         With remember the finished clip is kept: the same text later plays at once."""
         text = (text or "").strip()
@@ -285,7 +288,7 @@ class MessageCenter:
             await self._play(pcm)
             logger.info("Announced from stored clip: %r", text)
             return
-        pcm = await self.speak(self._announce_prompt(text, bilingual))
+        pcm = await self.speak(self._announce_prompt(text, bilingual, happy))
         if remember and not bilingual and pcm:
             self._cache_put(text, pcm)
         await self._play(pcm)
@@ -468,7 +471,8 @@ class MessageCenter:
                         elif ev.get("event_type") == "leyla_announce":
                             task = asyncio.create_task(self.say(data.get("text", ""),
                                                              bool(data.get("zweisprachig")),
-                                                                bool(data.get("merken"))))
+                                                                bool(data.get("merken")),
+                                                                bool(data.get("froh"))))
                             task.add_done_callback(
                                 lambda t: t.exception() and logger.warning(
                                     "Announcement failed: %s", t.exception()))
