@@ -529,3 +529,10 @@ def test_several_speakers_rule():
     assert "behalte den Namen bis zum Ende" not in core
     assert "Die Sprache wechselt" in core and "„Wer spricht gerade?“" in core
     assert "Persönliches beim Falschen nicht" in core
+
+
+def test_curious_about_names_without_tv_detection():
+    from app import persona
+    # Metin, 14 Nov 2026: she cannot tell the TV apart, so no rule that assumes she can
+    assert "nicht aus Fernsehen oder Nachrichten" not in persona.CORE
+    assert "aus dem Fernsehen kommt oder niemand von uns ist" in persona.CORE
