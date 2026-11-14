@@ -226,6 +226,10 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self.greeting = ""  # chosen fresh for every session
         self.live_model = os.environ.get("LIVE_MODEL", "gpt-live-1")
         self.backend_model = os.environ.get("BACKEND_MODEL", "gpt-5.6-luna")
+        effort = (os.environ.get("BACKEND_REASONING_EFFORT") or "").strip().lower()
+        # Unset keeps the model default; a lower effort answers faster (web search replies)
+        self.backend_effort = "" if effort in ("", "null") else effort
+        logger.info("Backend reasoning effort: %s", self.backend_effort or "model default")
         self.enable_web_search = os.environ.get("ENABLE_WEB_SEARCH", "true").lower() == "true"
         self.enable_recording = os.environ.get("ENABLE_RECORDING", "false").lower() == "true"
         self.enable_memory = os.environ.get("ENABLE_MEMORY", "true").lower() == "true"
@@ -381,6 +385,9 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 },
             },
         }
+        if self.backend_effort:
+            session["session"]["delegation"]["responses"]["reasoning"] = {
+                "effort": self.backend_effort}
         if self.greeting:
             # Developer message so the greeting instruction is known from the start; the
             # commentary.append after session.started makes GPT Live actually speak first.

@@ -8,6 +8,7 @@ VOICE=$(bashio::config 'voice')
 GREETING_WORDS=$(bashio::config 'greeting_words')
 LIVE_MODEL=$(bashio::config 'live_model')
 BACKEND_MODEL=$(bashio::config 'backend_model')
+BACKEND_REASONING_EFFORT=$(bashio::config 'backend_reasoning_effort')
 ENABLE_WEB_SEARCH=$(bashio::config 'enable_web_search')
 ENABLE_RECORDING=$(bashio::config 'enable_recording')
 RECORD_FALSE_WAKES=$(bashio::config 'record_false_wakes')
@@ -42,6 +43,7 @@ export VOICE
 export GREETING_WORDS
 export LIVE_MODEL
 export BACKEND_MODEL
+export BACKEND_REASONING_EFFORT
 export ENABLE_WEB_SEARCH
 export ENABLE_RECORDING
 export RECORD_FALSE_WAKES
