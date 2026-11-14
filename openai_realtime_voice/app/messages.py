@@ -259,13 +259,14 @@ class MessageCenter:
                  "monoton, nie wie eine Durchsage, nie wie ein vorgelesener Text oder ein Sprachassistent. "
                  "Die Lautstärke bleibt normal, du rufst nicht. ")
         if happy:  # event data froh: true, for friendly announcements such as the evening lights
+            # A laugh was tried (start, in between, after the first sentence): it always sounded staged.
             style += ("Atme vor dem ersten Wort deutlich hörbar ein, durch den Mund, als würdest du dich aufs "
                       "Sprechen vorbereiten. Klinge richtig glücklich, als würdest du dich freuen, das zu "
-                      "sagen. Pflicht: Nach dem ersten " + ("deutschen " if bilingual else "") +
-                      "Satz lachst du genau einmal hörbar kurz und herzlich auf (ein echtes „Haha“ oder "
-                      "„Hihi“, nicht gesprochen, sondern gelacht) und sprichst dann weiter. Am Ende der "
-                      "Ansage lachst du nicht, die letzten Worte sprichst du warm lächelnd und ruhig. ")
+                      "sagen, und lächle hörbar beim Sprechen. Lache nicht. ")
             if bilingual:
+                style += ("Der türkische Teil klingt nicht wie eine Kopie des deutschen, sondern frisch und "
+                          "mit eigener Betonung. ")
+        if bilingual:
                 style += ("Im türkischen Teil lachst du nicht noch einmal, sondern lächelst nur hörbar. Der "
                           "türkische Teil klingt nicht wie eine Kopie des deutschen, sondern frisch und mit "
                           "eigener Betonung. ")

@@ -173,16 +173,16 @@ def test_bilingual_announcement_asks_for_two_clean_passes():
     assert "ohne ein deutsches Wort" in mono and "on altı kırk dört" in mono and "zwei getrennten" not in mono
 
 
-def test_happy_announcement_laughs_in_between():
+def test_happy_announcement_breathes_and_does_not_laugh():
     from app.messages import MessageCenter
     svc = MessageCenter.__new__(MessageCenter)
     happy = svc._announce_prompt("x", True, happy=True)
-    assert "genau einmal hörbar" in happy and "deutlich hörbar ein" in happy
-    assert "genau einmal hörbar" not in svc._announce_prompt("x", True)
+    assert "deutlich hörbar ein" in happy and "Lache nicht" in happy
+    assert "Lache nicht" not in svc._announce_prompt("x", True)
 
 
 def test_happy_turkish_only_announcement_has_no_german_part():
     from app.messages import MessageCenter
     svc = MessageCenter.__new__(MessageCenter)
     prompt = svc._announce_prompt("Saat 17:05.", False, happy=True)
-    assert "genau einmal hörbar" in prompt and "Am Ende der Ansage lachst du nicht" in prompt and "deutschen Satz" not in prompt and "türkischen Teil" not in prompt
+    assert "Lache nicht" in prompt and "deutschen Teil" not in prompt and "türkische Teil" not in prompt

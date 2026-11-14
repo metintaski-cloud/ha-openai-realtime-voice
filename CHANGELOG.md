@@ -11,6 +11,7 @@
 - Add on 2.54.0: option `backend_reasoning_effort` (minimal, low, medium, high) for the backend model of GPT Live delegation; unset keeps the model default. Lower effort should shorten the long wait after a web search.
 - Add on 2.55.12: persona rule for personal small talk (how was your day), after a test where she asked back what was meant.
 - Add on 2.55.13: memory page paints the dark blue background at once (no grey page before the start animation).
+- Add on 2.57.16: `froh: true` no longer laughs (every placement sounded staged, Metin); it keeps the audible breath in, a happy voice and a hearable smile.
 - Add on 2.57.15: `froh: true` says explicitly that she does not laugh at the end of the announcement (in 2.57.14 she laughed at the end, which sounded unnatural to Metin).
 - Add on 2.57.14: the evening lights announcement is Turkish only (Metin: drop the German part; Mama speaks only Turkish). `froh: true` without `zweisprachig` laughs after the first sentence; single language announcements may have three short sentences instead of two (the evening text has three facts).
 - Add on 2.57.13: the laugh of `froh: true` is a required step (a real "Haha" or "Hihi" after the first German sentence); in 2.57.12 she skipped it. The breath in before the first word works (Metin).
