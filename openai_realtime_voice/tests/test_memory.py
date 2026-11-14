@@ -209,23 +209,26 @@ async def test_summary_keeps_private_without_code(monkeypatch):
 
 def test_profiles_and_open_questions(tmp_path):
     store = memory.MemoryStore(str(tmp_path / "m.json"))
-    store.save(["Person: Ayşe | Zugehörigkeit: Metins Schwester | Interessen: Kochen",
+    store.save(["Person: Ayşe | Zugehörigkeit: Metins Schwester | Spricht: Türkisch | Interessen: Kochen",
+                "Person: Ali | Zugehörigkeit: Nachbar",
                 "Person: Metin | Zugehörigkeit: wohnt hier | Geburtstag: 16.07.1981 | Kinder: keine"
                 " | Arbeit: Elektroniker | Interessen: Technik",
                 "Im Wohnzimmer stehen vier SwitchBot Stehlampen."])
     assert memory.parse_profile(store.load()[0]) == (
-        "Ayşe", {"Zugehörigkeit": "Metins Schwester", "Interessen": "Kochen"})
+        "Ayşe", {"Zugehörigkeit": "Metins Schwester", "Spricht": "Türkisch", "Interessen": "Kochen"})
     assert memory.missing_fields(store.load()[0]) == ["Geburtstag", "Kinder", "Arbeit"]
     block = store.instructions_block()
     assert "NOCH OFFEN" in block and "• Ayşe: Geburtstag, Kinder, Arbeit" in block
     assert "• Metin:" not in block.split("NOCH OFFEN")[1]
+    # Ali was only mentioned and never talked with Leyla: nothing to ask yet (Metin, 14 Nov 2026)
+    assert memory.missing_fields(store.load()[1]) == [] and "• Ali:" not in block
 
 
 def test_friends_and_relatives_list(tmp_path):
     store = memory.MemoryStore(str(tmp_path / "m.json"))
     store.save_all({"family": ["Person: Ayşe | Zugehörigkeit: Metins Schwester"],
-                    "friends": ["Person: Ali | Zugehörigkeit: Freund von Umut"]})
-    assert store.load(memory.FRIENDS) == ["Person: Ali | Zugehörigkeit: Freund von Umut"]
+                    "friends": ["Person: Ali | Zugehörigkeit: Freund von Umut | Spricht: Deutsch"]})
+    assert store.load(memory.FRIENDS) == ["Person: Ali | Zugehörigkeit: Freund von Umut | Spricht: Deutsch"]
     block = store.instructions_block()
     assert "FAMILIE UND HAUSHALT\n• Person: Ayşe" in block
     assert "FREUNDE UND VERWANDTE\n• Person: Ali" in block

@@ -71,7 +71,8 @@ Es gibt fünf Listen:
    Felder weglassen, Reihenfolge beibehalten:
    "Person: <Name> | Zugehörigkeit: <zum Beispiel Metins Schwester> | Geburtstag: <TT.MM.JJJJ oder
    TT.MM.> | Alter: ... | Kinder: ... | Arbeit: ... | Interessen: ... | Charakter: ... |
-   Spricht: <Sprache, Art zu reden, wie sie angesprochen werden möchte> | Stimmung: <wie die
+   Spricht: <Sprache, Art zu reden, wie sie angesprochen werden möchte; nur, wenn die Person
+   selbst mit Leyla gesprochen hat> | Stimmung: <wie die
    Person beim letzten Mal drauf war> | Humor: <worüber sie lacht, eure Insider und Sprüche> |
    Zuletzt: <TT.MM.: worüber ihr zuletzt wirklich geredet habt, ein Satz> | Offen: <was Leyla
    nachfragen wollte oder zugesagt hat> | Eindruck: <Leylas eigener Eindruck von der Person, ein
@@ -237,9 +238,16 @@ def parse_profile(fact: str) -> Optional[tuple[str, dict]]:
     return (name, fields) if name else None
 
 
+def talked_with_leyla(fields: dict) -> bool:
+    """Only people who talked with Leyla themselves have "Spricht" or "Zuletzt" in their profile."""
+    return "Spricht" in fields or "Zuletzt" in fields
+
+
 def missing_fields(fact: str) -> list[str]:
+    """What Leyla may still ask the person herself. Empty for someone who was only mentioned:
+    she asks only the person, so a name that never talked with her stays off NOCH OFFEN."""
     parsed = parse_profile(fact)
-    if not parsed:
+    if not parsed or not talked_with_leyla(parsed[1]):
         return []
     fields = parsed[1]
     out = [f for f in ASK_FIELDS if f not in fields]
