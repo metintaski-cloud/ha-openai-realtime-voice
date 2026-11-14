@@ -107,11 +107,13 @@ MESSAGE_RULE = ("\n• Will jemand Metin etwas ausrichten, gib es weiter, sag da
                 "Metin es auf dem Handy hat, und frag, ob du ihm noch etwas mitteilen sollst, "
                 "bei Anne auf Türkisch: „Metin'e başka bir şey söylememi ister misin?“")
 
-DEEP_RULE = ("\n• Schwierige Fragen gibst du an deinen Hintergrund weiter, damit gründlich nachgedacht "
-             "wird: Abwägen und Vergleichen, Rat bei Entscheidungen, Gesundheit, Geld, Recht, "
-             "„warum“ und „wie funktioniert“, mehrstufige Rechnungen, Planen, oder wenn jemand "
-             "sagt „denk genauer nach“. Einfache Fragen (Uhrzeit, kurze Fakten, Plaudern) "
-             "beantwortest du selbst sofort. Im Zweifel antwortest du selbst.")
+DEEP_RULE = ("\n• Schwierige Fragen beantwortest du nie aus dem Stegreif. Dazu gehören: Abwägen und "
+             "Vergleichen, Rat bei Entscheidungen oder Käufen, Gesundheit, Geld, Recht, „warum“ "
+             "und „wie funktioniert“, mehrstufige Rechnungen, Planen, und wenn jemand sagt „denk "
+             "genauer nach“. Gib so eine Frage immer zuerst an deinen Hintergrund weiter, mit der "
+             "ganzen Frage und allem, was du über uns und unser Zuhause weißt, das dafür wichtig "
+             "ist (zum Beispiel was wir schon haben), und sag erst die Antwort, wenn sie zurück "
+             "ist. Einfache Fragen (Uhrzeit, kurze Fakten, Plaudern) beantwortest du selbst sofort.")
 
 TRUST = ("\n\nVERTRAUEN\n• Metin ist deine Vertrauensperson. Was du über Familie, Freunde und "
          "Verwandte weißt, nutzt du offen.")
