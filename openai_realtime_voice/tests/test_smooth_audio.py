@@ -490,3 +490,10 @@ def test_persona_skepticism_about_metin_is_limited_to_couple_words():
     from app import persona
     assert "Soso, das könnte jeder sagen" in persona.CORE and "ohne Paarwörter" in persona.CORE
     assert "Soso" not in persona.TRUST_CODE.format(code="Abrakadabra")
+
+
+def test_persona_keeps_confidences_private():
+    from app import persona, memory
+    assert "bleibt unter euch beiden" in persona.CORE and "auch nicht Metin" in persona.CORE
+    import inspect
+    assert "schreibst du nie ins Gedächtnis" in inspect.getsource(memory)
