@@ -103,4 +103,4 @@ def test_icon_and_manifest(tmp_path):
 
     data = asyncio.run(go())
     assert data.startswith(b"HTTP/1.1 200") and b"image/png" in data and b"\x89PNG" in data
-    assert "/icon.png" in memory_web.MANIFEST and "/icon.png" in memory_web.PAGE
+    assert "/icon.png?v=" in memory_web.MANIFEST and "/icon.png?v=" in memory_web.PAGE

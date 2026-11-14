@@ -214,7 +214,7 @@ async def _handle(store, sync, reader, writer) -> None:
         body = await asyncio.wait_for(reader.readexactly(length), timeout=10) if length else b""
         if method == "GET" and path == "/":
             await _respond(writer, "200 OK", "text/html", PAGE)
-        elif method == "GET" and path == "/icon.png?v=5":
+        elif method == "GET" and path == "/icon.png":
             with open(ICON_PATH, "rb") as f:
                 raw = f.read()
             writer.write((f"HTTP/1.1 200 OK\r\nContent-Type: image/png\r\nContent-Length: {len(raw)}\r\n"
