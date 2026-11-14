@@ -45,11 +45,13 @@ DEEP_TOOL = {
 }
 
 DEEP_BACKEND_HINT = (
-    " For hard questions that need real reasoning (weighing options, advice, health, money, "
-    "legal, why or how explanations, multi step calculations, planning, or when asked to think "
-    "harder) call tief_nachdenken with the full question and answer from its result, briefly "
-    "and spoken. For everything simple (weather, time, devices, facts, small talk) do not use "
-    "it and answer right away."
+    " MANDATORY: for hard questions (weighing or comparing options, advice on purchases or "
+    "decisions, health, money, legal, why or how explanations, multi step calculations, "
+    "planning, or when asked to think harder) you must ALWAYS call tief_nachdenken first, with "
+    "the full question and every relevant fact from the conversation (for example what the "
+    "household already owns), and answer only from its result, briefly and spoken. Never answer "
+    "such a question from your own quick reasoning. For everything simple (weather, time, "
+    "devices, facts, small talk) do not use it and answer right away."
 )
 
 DEEP_INSTRUCTIONS = (
