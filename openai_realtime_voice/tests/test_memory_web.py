@@ -151,3 +151,45 @@ def test_maskable_icon(tmp_path):
     assert data.startswith(b"HTTP/1.1 200") and b"\x89PNG" in data
     m = json.loads(memory_web.MANIFEST)
     assert {i["purpose"] for i in m["icons"]} == {"any", "maskable"}
+
+
+def test_add_item(tmp_path):
+    from app import memory, memory_web
+    store = memory.MemoryStore(str(tmp_path / "m.json"))
+    assert memory_web.add_item(store, "friends", "  Person: Ali |  Zugehörigkeit: Nachbar ")
+    assert store.load("friends") == ["Person: Ali | Zugehörigkeit: Nachbar"]
+    assert not memory_web.add_item(store, "friends", "Person: Ali | Zugehörigkeit: Nachbar")  # duplicate
+    assert not memory_web.add_item(store, "friends", "   ")
+    assert not memory_web.add_item(store, "private", "geheim")  # locked without the code word
+    assert not memory_web.add_item(store, "confidential", "x", memory_web.TITLES + (memory_web.PRIVATE_TITLE,))
+    assert memory_web.add_item(store, "private", "geheim", memory_web.TITLES + (memory_web.PRIVATE_TITLE,))
+
+
+def test_code_word_and_lock(monkeypatch):
+    from app import memory_web
+    monkeypatch.setitem(memory_web._code_fails, "n", 0)
+    monkeypatch.setitem(memory_web._code_fails, "until", 0.0)
+    assert memory_web.check_code("Sonne Mond", "Leyla Sonne Mond", now=100)
+    assert memory_web.check_code("leyla, sonne mond", "Leyla Sonne Mond", now=100)
+    assert not memory_web.check_code("Sonne Mond Sterne", "Leyla Sonne Mond", now=100)  # exact words only
+    assert not memory_web.check_code("Sonne", "", now=100)  # no code configured: never open
+    for _ in range(memory_web.CODE_MAX_FAILS - 1):
+        memory_web.check_code("falsch", "Leyla Sonne Mond", now=100)
+    assert not memory_web.check_code("Sonne Mond", "Leyla Sonne Mond", now=100)  # locked now
+    assert memory_web.check_code("Sonne Mond", "Leyla Sonne Mond", now=100 + memory_web.CODE_LOCK_S + 1)
+
+
+def test_private_list_only_with_code(tmp_path):
+    from app import memory, memory_web
+    store = memory.MemoryStore(str(tmp_path / "m.json"))
+    store.save_all({"family": ["a"], "private": ["geheim"], "confidential": ["Aktuell bis 1.1.2099: x"]})
+    open_kinds = [l["kind"] for l in memory_web.snapshot(store)["lists"]]
+    assert "private" not in open_kinds and "confidential" not in open_kinds
+    titles = memory_web.TITLES + (memory_web.PRIVATE_TITLE,)
+    lists = {l["kind"]: l["items"] for l in memory_web.snapshot(store, titles)["lists"]}
+    assert lists["private"] == ["geheim"] and "confidential" not in lists
+    # moving a private entry needs the private list in the request; Mama's list stays untouched
+    assert not memory_web.move_items(store, {"family": ["a"], "friends": [], "leyla": []}, titles)
+    assert memory_web.move_items(store, {"family": ["a", "geheim"], "friends": [], "leyla": [],
+                                         "private": []}, titles)
+    assert store.load("confidential") == ["Aktuell bis 1.1.2099: x"]

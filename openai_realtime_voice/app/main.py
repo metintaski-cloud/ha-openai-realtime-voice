@@ -1069,7 +1069,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             try:
                 await memory_web.start_http(self.memory, self.todo_sync,
                                             port=int(os.environ.get("MEMORY_WEB_PORT", "8082")),
-                                            lamp=self.lamp)
+                                            lamp=self.lamp, code_phrase=self.code_phrase)
             except Exception as e:
                 logger.warning("Memory page could not start: %s", e)
         if self.messages.available:

@@ -13,6 +13,7 @@ MemoryStore, so tests need no network.
 import asyncio
 import json
 import logging
+import time
 import os
 from typing import Optional
 
@@ -23,21 +24,59 @@ logger = logging.getLogger(__name__)
 TITLES = ((memory.FAMILY, "Familie und Haushalt"),
           (memory.FRIENDS, "Freunde und Verwandte"),
           (memory.LEYLA, "Leylas eigene Geschichte"))
+PRIVATE_TITLE = (memory.PRIVATE, "Privat, nur für dich")
 MAX_BODY = 64 * 1024
+CODE_MAX_FAILS = 5        # wrong code words in a row, then the private list is locked for a while
+CODE_LOCK_S = 300
+_code_fails = {"n": 0, "until": 0.0}
 ICON_PATH = os.path.join(os.path.dirname(__file__), "memory_icon.png")
 MASKABLE_PATH = os.path.join(os.path.dirname(__file__), "memory_icon_maskable.png")  # full square, no transparent corners
 
 
-def snapshot(store: memory.MemoryStore) -> dict:
+def check_code(typed, phrase: str, now: Optional[float] = None) -> bool:
+    """True when the typed words are exactly the code phrase (the name Leyla may be left out).
+    After CODE_MAX_FAILS wrong tries every try is refused for CODE_LOCK_S."""
+    now = time.time() if now is None else now
+    if not phrase or not isinstance(typed, str) or not typed.strip():
+        return False
+    if now < _code_fails["until"]:
+        return False
+    if memory.code_words(typed) == memory.code_words(phrase):
+        _code_fails["n"] = 0
+        return True
+    _code_fails["n"] += 1
+    if _code_fails["n"] >= CODE_MAX_FAILS:
+        _code_fails.update(n=0, until=now + CODE_LOCK_S)
+        logger.warning("Memory page: wrong code word %d times, private list locked for %d s",
+                       CODE_MAX_FAILS, CODE_LOCK_S)
+    return False
+
+
+def snapshot(store: memory.MemoryStore, titles=TITLES) -> dict:
     data = store.load_all()
-    return {"lists": [{"kind": k, "title": t, "items": data.get(k, [])} for k, t in TITLES]}
+    return {"lists": [{"kind": k, "title": t, "items": data.get(k, [])} for k, t in titles]}
 
 
-def delete_items(store: memory.MemoryStore, items) -> int:
+def add_item(store: memory.MemoryStore, kind, text, titles=TITLES) -> bool:
+    """Add one new entry at the end of a list. False when empty, too long, a duplicate or full."""
+    if kind not in dict(titles) or not isinstance(text, str):
+        return False
+    text = " ".join(text.split())
+    if not text or len(text) > memory.MAX_FACT_CHARS:
+        return False
+    facts = store.load(kind)
+    if text in facts or len(facts) >= memory.MAX_FACTS or (
+            kind == memory.LEYLA and len(facts) >= memory.MAX_LEYLA):
+        return False
+    store.save(facts + [text], kind)
+    return True
+
+
+def delete_items(store: memory.MemoryStore, items, titles=TITLES) -> int:
     """Delete (kind, text) pairs from the open lists, return how many were removed."""
     wanted: dict = {}
     for it in items if isinstance(items, list) else []:
-        if isinstance(it, dict) and it.get("kind") in dict(TITLES) and isinstance(it.get("text"), str):
+        if isinstance(it, dict) and it.get("kind") in dict(titles) and isinstance(it.get("text"), str):
             wanted.setdefault(it["kind"], set()).add(it["text"])
     removed = 0
     for kind, texts in wanted.items():
@@ -49,9 +88,9 @@ def delete_items(store: memory.MemoryStore, items) -> int:
     return removed
 
 
-def edit_item(store: memory.MemoryStore, kind, old, new) -> bool:
+def edit_item(store: memory.MemoryStore, kind, old, new, titles=TITLES) -> bool:
     """Replace one entry in place. False when it is unknown, empty, too long or a duplicate."""
-    if kind not in dict(TITLES) or not isinstance(old, str) or not isinstance(new, str):
+    if kind not in dict(titles) or not isinstance(old, str) or not isinstance(new, str):
         return False
     new = " ".join(new.split())
     if not new or len(new) > memory.MAX_FACT_CHARS:
@@ -68,11 +107,11 @@ def edit_item(store: memory.MemoryStore, kind, old, new) -> bool:
 SEP = " | "
 
 
-def edit_folder(store: memory.MemoryStore, kind, old, fields) -> Optional[str]:
+def edit_folder(store: memory.MemoryStore, kind, old, fields, titles=TITLES) -> Optional[str]:
     """Replace the points of one entry ("Person: Metin | Zugehörigkeit: ... | Alter: 45"): the first part
     (the name) stays, `fields` become the rest in the given order. Returns the new text, or None when the entry
     is unknown or changed meanwhile (`old` must be what is stored now), too long or a duplicate."""
-    if kind not in dict(TITLES) or not isinstance(old, str) or not isinstance(fields, list):
+    if kind not in dict(titles) or not isinstance(old, str) or not isinstance(fields, list):
         return None
     clean = []
     for f in fields:
@@ -93,25 +132,25 @@ def edit_folder(store: memory.MemoryStore, kind, old, fields) -> Optional[str]:
     return new
 
 
-def move_items(store: memory.MemoryStore, lists) -> bool:
+def move_items(store: memory.MemoryStore, lists, titles=TITLES) -> bool:
     """Apply a new order and distribution of the open lists. Only accepted when it holds
     exactly the entries that are stored now (nothing lost, nothing new), so a page that is
     out of date cannot overwrite what Leyla learned meanwhile."""
     if not isinstance(lists, dict):
         return False
     new = {}
-    for kind, _ in TITLES:
+    for kind, _ in titles:
         v = lists.get(kind)
         if not isinstance(v, list) or not all(isinstance(x, str) for x in v):
             return False
         new[kind] = v
     cur = store.load_all()
-    if sorted(x for k, _ in TITLES for x in cur.get(k, [])) != sorted(
+    if sorted(x for k, _ in titles for x in cur.get(k, [])) != sorted(
             x for v in new.values() for x in v):
         return False
     if len(new[memory.LEYLA]) > memory.MAX_LEYLA:
         return False
-    if any(new[k] != cur.get(k, []) for k, _ in TITLES):
+    if any(new[k] != cur.get(k, []) for k, _ in titles):
         store.save_all(new)
     return True
 
@@ -173,6 +212,8 @@ button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 <header><button id="back">&#8249;</button><img src="/icon.png?v=5" alt=""><h1>Leyla Gedächtnis</h1><button id="snd"></button></header><div id="root"></div><div id="lamps" style="display:none"></div>
 <div id="bar"><button id="del" disabled>Markierte löschen</button></div>
 <script>
+let CODE=null;
+function post(path,obj){if(CODE)obj.code=CODE;return fetch(path,{method:'POST',body:JSON.stringify(obj)});}
 let view=null,sel=new Set(),last='',editing=false,dragging=false,justDragged=0,AC=null,soundOn=true;
 try{soundOn=localStorage.getItem('snd')!=='0'}catch(e){}
 function bus(){if(!AC){AC=new(window.AudioContext||window.webkitAudioContext)();const m=AC.createGain();m.gain.value=.9;
@@ -202,7 +243,7 @@ function fmt(t){if(view)return esc(t);const p=parts(t);if(!p.folder)return esc(t
  const keys=p.fields.map(x=>{const i=x.indexOf(':');return i>0?x.slice(0,i):x.slice(0,18)}).slice(0,4).join(', ');
  return '<b>'+esc(title(p.head))+'</b><small>'+p.fields.length+(p.fields.length==1?' Punkt':' Punkte')+(keys?': '+esc(keys):'')+'</small>';}
 async function saveFields(fields){if(!view)return false;
- const r=await fetch('/api/folder',{method:'POST',body:JSON.stringify({kind:view.kind,old:view.text,fields})});
+ const r=await post('/api/folder',{kind:view.kind,old:view.text,fields});
  const j=await r.json();if(j.ok)view.text=j.text;return j.ok;}
 function openFolder(kind,head){view={kind,head,text:''};sel=new Set();last='';history.pushState({f:1},'');window.scrollTo(0,0);snd.on();load();}
 function closeFolder(){view=null;sel=new Set();last='';load();}
@@ -216,7 +257,7 @@ function startEdit(span,kind,text,saver){editing=true;span.onclick=null;span.inn
  no.onclick=()=>{editing=false;last='';load();};
  ok.onclick=async()=>{ok.disabled=true;let good;
   if(saver)good=ta.value.trim()?await saver(ta.value):false;
-  else{const r=await fetch('/api/edit',{method:'POST',body:JSON.stringify({kind,old:text,new:ta.value})});good=(await r.json()).ok;}
+  else{const r=await post('/api/edit',{kind,old:text,new:ta.value});good=(await r.json()).ok;}
   if(!good){alert('Nicht gespeichert: leer, zu lang oder schon vorhanden.');ok.disabled=false;return;}
   snd.save();editing=false;last='';load();};
  row.append(ok,no);span.append(ta,row);ta.focus();}
@@ -251,8 +292,25 @@ function render(d){const root=document.getElementById('root');root.innerHTML='';
   const h=document.createElement('h2');h.textContent=l.title+' ('+l.items.length+')';box.appendChild(h);
   const e=document.createElement('div');e.className='empty';e.textContent='leer';box.appendChild(e);
   for(const t of l.items){all.add(key(l.kind,t));box.appendChild(makeRow(l.kind,t));}
-  root.appendChild(box);}}
+  root.appendChild(box);
+  const add=document.createElement('button');add.className='add';add.textContent='+ Neuer Eintrag';
+  add.onclick=()=>{if(editing)return;const bx=document.createElement('div');bx.className='addbox';const sp=document.createElement('span');bx.appendChild(sp);
+   root.insertBefore(bx,add);add.style.display='none';
+   startEdit(sp,l.kind,'',async v=>{const r=await post('/api/add',{kind:l.kind,text:v});return (await r.json()).ok;});};
+  root.appendChild(add);}
+ root.appendChild(privBox());}
  sel=new Set([...sel].filter(x=>all.has(x)));upd();}
+function privBox(){const b=document.createElement('div');b.className='lb';
+ if(CODE){const x=document.createElement('button');x.textContent='Private Liste schließen';x.onclick=()=>{CODE=null;last='';snd.off();load();};b.appendChild(x);return b;}
+ const i=document.createElement('input');i.type='password';i.placeholder='Codewort';i.autocomplete='off';
+ i.style.cssText='flex:2;font:inherit;color:#fff;background:#060c33;border:1px solid var(--bl);border-radius:10px;padding:10px;min-width:0';
+ const o=document.createElement('button');o.textContent='Privat öffnen';
+ const go=async()=>{if(!i.value.trim())return;o.disabled=true;let ok=false;
+  try{ok=(await (await fetch('/api/unlock',{method:'POST',body:JSON.stringify({code:i.value})})).json()).ok;}catch(e){}
+  o.disabled=false;if(ok){CODE=i.value;snd.save();last='';load();}else{i.value='';i.placeholder='Falsch, nochmal';snd.del();}};
+ o.onclick=go;i.onkeydown=e=>{if(e.key==='Enter')go();};
+ i.onfocus=()=>{editing=true;};i.onblur=()=>{setTimeout(()=>{editing=false;},300);};
+ b.append(i,o);return b;}
 function upd(){const b=document.getElementById('del');b.disabled=!sel.size;b.textContent=sel.size?sel.size+' markierte löschen':'Markierte löschen';}
 let clone=null,ph=null,dragLab=null,offY=0,lastY=0,raf=0;
 function attachDrag(lab){let timer=null,sx=0,sy=0;
@@ -282,14 +340,14 @@ function scrollLoop(){if(!dragging)return;
 async function endDrag(){snd.drop();dragging=false;cancelAnimationFrame(raf);justDragged=Date.now();
  ph.parentNode.insertBefore(dragLab,ph);ph.remove();clone.remove();dragLab.style.display='';
  const lists={};document.querySelectorAll('.list').forEach(b=>{lists[b.dataset.kind]=[...b.querySelectorAll('label')].map(x=>x._t);});
- try{if(view)await saveFields(lists[view.kind]);else await fetch('/api/move',{method:'POST',body:JSON.stringify({lists})});}catch(e){}
+ try{if(view)await saveFields(lists[view.kind]);else await post('/api/move',{lists});}catch(e){}
  last='';load();}
-async function load(){if(editing||dragging)return;try{const r=await fetch('/api/lists');const s=await r.text();if(s!==last){last=s;render(JSON.parse(s));}}catch(e){}}
+async function load(){if(editing||dragging)return;try{const r=CODE?await post('/api/lists',{}):await fetch('/api/lists');const s=await r.text();if(s!==last){last=s;render(JSON.parse(s));}}catch(e){}}
 document.getElementById('del').onclick=async()=>{if(!sel.size||!confirm(sel.size+(view?' Punkte':' Einträge')+' endgültig löschen?'))return;
  if(view){const rest=[...document.querySelectorAll('.list label')].map(x=>x._t).filter(t=>!sel.has(key(view.kind,t)));
   await saveFields(rest);snd.del();sel=new Set();last='';load();return;}
  const items=[...sel].map(x=>{const i=x.indexOf('\\u0000');return {kind:x.slice(0,i),text:x.slice(i+1)}});
- await fetch('/api/delete',{method:'POST',body:JSON.stringify({items})});snd.del();sel=new Set();last='';load();};
+ await post('/api/delete',{items});snd.del();sel=new Set();last='';load();};
 document.getElementById('snd').onclick=()=>{soundOn=!soundOn;try{localStorage.setItem('snd',soundOn?'1':'0')}catch(e){}sndLabel();if(soundOn)snd.on();};
 let lampOn=false;
 const LROWS=[['listen','Zuhören',['listen']],['think','Denken und Suchen',['think']],['speak','Reden',['speak_low','speak_high']]];
@@ -363,7 +421,7 @@ async def _lamp_api(lamp, method: str, path: str, body: bytes):
     return {"result": await lamp.reset()}
 
 
-async def _handle(store, sync, reader, writer, lamp=None) -> None:
+async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "") -> None:
     try:
         head = await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), timeout=10)
         lines = head.decode("latin-1").split("\r\n")
@@ -375,6 +433,13 @@ async def _handle(store, sync, reader, writer, lamp=None) -> None:
                 length = min(int(ln.split(":", 1)[1].strip() or 0), MAX_BODY)
         body = await asyncio.wait_for(reader.readexactly(length), timeout=10) if length else b""
         lamp_reply = await _lamp_api(lamp, method, path, body) if path.startswith("/api/lamp") else None
+        d = {}
+        if method == "POST" and not path.startswith("/api/lamp"):
+            d = json.loads(body or b"{}") or {}
+            if not isinstance(d, dict):
+                d = {}
+        unlocked = bool(d.get("code")) and check_code(d.get("code"), code_phrase)
+        titles = TITLES + (PRIVATE_TITLE,) if unlocked else TITLES
         if lamp_reply is not None:
             await _respond(writer, "200 OK", "application/json", json.dumps(lamp_reply, ensure_ascii=False))
         elif method == "GET" and path == "/":
@@ -390,26 +455,38 @@ async def _handle(store, sync, reader, writer, lamp=None) -> None:
         elif method == "GET" and path == "/api/lists":
             await _respond(writer, "200 OK", "application/json",
                            json.dumps(snapshot(store), ensure_ascii=False))
+        elif method == "POST" and path == "/api/lists":
+            await _respond(writer, "200 OK", "application/json",
+                           json.dumps(snapshot(store, titles), ensure_ascii=False))
+        elif method == "POST" and path == "/api/unlock":
+            if unlocked:
+                logger.info("Memory page: private list opened")
+            await _respond(writer, "200 OK", "application/json", json.dumps({"ok": unlocked}))
+        elif method == "POST" and path == "/api/add":
+            ok = add_item(store, d.get("kind"), d.get("text"), titles)
+            if ok:
+                logger.info("Memory page: new entry in %s", d.get("kind"))
+                if sync:
+                    sync.kick()
+            await _respond(writer, "200 OK", "application/json", json.dumps({"ok": ok}))
         elif method == "POST" and path == "/api/edit":
-            d = json.loads(body or b"{}") or {}
-            ok = edit_item(store, d.get("kind"), d.get("old"), d.get("new"))
+            ok = edit_item(store, d.get("kind"), d.get("old"), d.get("new"), titles)
             if ok and sync:
                 sync.kick()
             await _respond(writer, "200 OK", "application/json", json.dumps({"ok": ok}))
         elif method == "POST" and path == "/api/folder":
-            d = json.loads(body or b"{}") or {}
-            new = edit_folder(store, d.get("kind"), d.get("old"), d.get("fields"))
+            new = edit_folder(store, d.get("kind"), d.get("old"), d.get("fields"), titles)
             if new is not None and sync:
                 sync.kick()
             await _respond(writer, "200 OK", "application/json",
                            json.dumps({"ok": new is not None, "text": new}, ensure_ascii=False))
         elif method == "POST" and path == "/api/move":
-            ok = move_items(store, (json.loads(body or b"{}") or {}).get("lists"))
+            ok = move_items(store, d.get("lists"), titles)
             if ok and sync:
                 sync.kick()
             await _respond(writer, "200 OK", "application/json", json.dumps({"ok": ok}))
         elif method == "POST" and path == "/api/delete":
-            n = delete_items(store, (json.loads(body or b"{}") or {}).get("items"))
+            n = delete_items(store, d.get("items"), titles)
             if n:
                 logger.info("Memory page: %d entries deleted", n)
                 if sync:
@@ -428,7 +505,9 @@ async def _handle(store, sync, reader, writer, lamp=None) -> None:
 
 
 async def start_http(store: memory.MemoryStore, sync: Optional[object] = None,
-                     host: str = "0.0.0.0", port: int = 8082, lamp: Optional[object] = None):
-    server = await asyncio.start_server(lambda r, w: _handle(store, sync, r, w, lamp), host, port)
+                     host: str = "0.0.0.0", port: int = 8082, lamp: Optional[object] = None,
+                     code_phrase: str = ""):
+    server = await asyncio.start_server(
+        lambda r, w: _handle(store, sync, r, w, lamp, code_phrase), host, port)
     logger.info("Memory page on port %d", port)
     return server
