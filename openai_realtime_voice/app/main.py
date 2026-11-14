@@ -38,7 +38,7 @@ from app import memory, memory_web
 from app import context
 from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, pcm_level
 from app.live_link import END_CONVERSATION_TOOL
-from app.phrases import (NAME_NUDGE, NAME_NUDGE_AFTER_S, NAME_NUDGE_COOLDOWN_S, NAME_RE, addressed_by_name, contains_goodbye, greeting_instruction, parse_greeting_words, pick_greeting)
+from app.phrases import (NAME_NUDGE, NAME_NUDGE_AFTER_S, NAME_NUDGE_COOLDOWN_S, NAME_RE, PROMISE_NUDGE, PROMISE_NUDGE_AFTER_S, PROMISE_RE, addressed_by_name, contains_goodbye, greeting_instruction, parse_greeting_words, pick_greeting)
 from app import (lamp_show, metrics, output_link, session_end, tool_link, after_talk, announce_voice, live_link, night, cleanup, costs, fan, health, lights, messages, persona, purifier, rf, technik, todo_sync,
                  tv, vacuum)
 
@@ -391,6 +391,38 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             logger.warning("Name nudge failed: %s", e)
         finally:
             state["nudge_pending"] = False
+
+    def _note_promise(self, live_ws, state: dict, delta: str) -> None:
+        """Watch Leyla's words for a promised action; see PROMISE_NUDGE_AFTER_S."""
+        text = state.get("bot_all", "") + delta
+        state["bot_all"] = text
+        scan = state.get("promise_scan_pos", 0)
+        for m in PROMISE_RE.finditer(text, scan):
+            state["promise_scan_pos"] = m.end()
+            if state.get("promise_pending") or state.get("closing"):
+                continue
+            state["promise_pending"] = True
+            asyncio.create_task(self._nudge_if_not_done(live_ws, state, time.monotonic(), m.start()))
+
+    async def _nudge_if_not_done(self, live_ws, state: dict, t0: float, pos: int) -> None:
+        try:
+            await asyncio.sleep(PROMISE_NUDGE_AFTER_S)
+            if state.get("closing") or state.get("fatal"):
+                return
+            if state.get("last_delegation_at", -100.0) > t0 - 8.0:
+                return  # handed over just before or after the words
+            text = " ".join(state.get("bot_all", "")[pos:pos + 100].split())
+            logger.info("Leyla promised without handing over, nudging her: %r", text)
+            await live_ws.send(json.dumps({
+                "type": "session.commentary.append",
+                "event_id": f"promise_{uuid.uuid4().hex[:8]}",
+                "delegation_id": None,
+                "content": PROMISE_NUDGE.format(text=text),
+            }))
+        except Exception as e:
+            logger.warning("Promise nudge failed: %s", e)
+        finally:
+            state["promise_pending"] = False
 
     def _add_dialog(self, state: dict, speaker: str, delta: str) -> None:
         dialog = state.setdefault("dialog", [])
@@ -746,9 +778,11 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             state["closing"] = True
         logger.info("User said: %r", delta)
 
-    def _on_bot_text(self, state: dict, delta: str) -> None:
-        """A piece of what Leyla said: keep the dialog and notice her goodbye."""
+    def _on_bot_text(self, state: dict, delta: str, live_ws=None) -> None:
+        """A piece of what Leyla said: keep the dialog, notice her goodbye and a promise."""
         self._add_dialog(state, "bot", delta)
+        if live_ws is not None:
+            self._note_promise(live_ws, state, delta)
         recent = (state.get("recent_bot_text", "") + delta)[-80:]
         state["recent_bot_text"] = recent
         if not state.get("closing") and contains_goodbye(recent, from_user=False):
@@ -813,7 +847,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 elif ev_type == "session.output_transcript.delta":
                     delta = event.get("delta", "")
                     bot_text.append(delta)
-                    self._on_bot_text(state, delta)
+                    self._on_bot_text(state, delta, live_ws)
 
                 elif ev_type == "session.usage.updated":
                     logger.debug("Usage: %s", event.get("usage"))

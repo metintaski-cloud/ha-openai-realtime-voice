@@ -21,6 +21,21 @@ NAME_NUDGE = (
 )
 
 
+# GPT Live sometimes says it will do something ("ich mache das Licht an") without handing it
+# to its backend (14 Nov 2026). When her words promise an action and no delegation follows
+# within PROMISE_NUDGE_AFTER_S, the bridge reminds her once.
+PROMISE_RE = re.compile(
+    r"\b(?:ich (?:mache|mach|schalte|stelle|starte|kümmere mich)|(?:mache|mach|schalte|stelle) ich"
+    r"|wird gemacht|hemen (?:açıyorum|kapatıyorum|yapıyorum|hallediyorum|ayarlıyorum)"
+    r"|(?:açıyorum|kapatıyorum|ayarlıyorum)\b)", re.IGNORECASE)
+PROMISE_NUDGE_AFTER_S = 4.0
+PROMISE_NUDGE = (
+    "Interne Notiz, nicht vorlesen: Du hast gerade gesagt „{text}“, es aber nicht an deinen "
+    "Hintergrund weitergegeben. Wenn das eine Zusage war, etwas zu bedienen oder "
+    "nachzusehen, gib es jetzt sofort weiter, ohne es noch einmal anzukündigen. Sonst "
+    "mach einfach weiter."
+)
+
 # Farewell phrases (German, Turkish, English). When the user says one of them, the
 # bridge ends the session after the assistant's goodbye was played. GPT Live itself
 # does not always delegate the end of a conversation to the backend tool.

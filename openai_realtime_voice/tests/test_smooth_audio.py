@@ -546,3 +546,27 @@ def test_persona_has_no_conflicting_who_and_trust_rules():
     assert "ohne Paarwort davor" in text
     assert "höchstens einmal im Gespräch und erst nach ihrem Anliegen" in text
     assert "nutzt du offen" not in text and "nie an, wenn andere dabei sind" in text
+
+
+async def test_promise_without_delegation_gets_one_nudge(monkeypatch):
+    monkeypatch.setattr(m, "PROMISE_NUDGE_AFTER_S", 0.2)
+    bridge = _bridge()
+    ws = FakeLiveWs()
+    state = {"last_audio_time": 0.0}
+    for piece in ["Ah, du bist es! Sofort, ich ", "mache das Licht an. Und ähm"]:
+        bridge._on_bot_text(state, piece, ws)
+    await asyncio.sleep(0.4)
+    assert len(ws.sent) == 1 and "ich mache das Licht an" in ws.sent[0]["content"]
+
+
+async def test_no_promise_nudge_when_delegated_or_no_promise(monkeypatch):
+    import time
+    monkeypatch.setattr(m, "PROMISE_NUDGE_AFTER_S", 0.2)
+    bridge = _bridge()
+    ws = FakeLiveWs()
+    state = {"last_audio_time": 0.0, "last_delegation_at": time.monotonic()}
+    bridge._on_bot_text(state, "Bir saniye, hemen hallediyorum.", ws)
+    bridge._on_bot_text({"last_audio_time": 0.0}, "Mir geht es gut, danke!", ws)
+    await asyncio.sleep(0.4)
+    assert ws.sent == []
+    assert m.PROMISE_RE.search("Klar, schalte ich gleich ein") and m.PROMISE_RE.search("Lambaları açıyorum")
