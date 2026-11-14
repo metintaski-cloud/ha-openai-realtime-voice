@@ -5,6 +5,5 @@ Both buttons use the Home Assistant Companion app widget "Button" (German: Schal
 ## Mini PC AUS
 Script `script.mini_pc_herunterfahren` (shuts down the HAOS host, asks for confirmation). Widget: Button, pick the script, pick the icon.
 
-## Leyla memory page
-Script `script.leyla_gedaechtnis` (alias "Leyla Gedächtnis öffnen", icon mdi:brain) sends `notify.mobile_app_metins_handy` with `message: command_activity`, `title: android.intent.action.VIEW`, `data.intent_uri: http://192.168.2.240:8082/` and `intent_package_name: com.android.chrome`. This opens the page in Chrome. Widget: long press the home screen, Widgets, Home Assistant, Button, pick the script.
-Created 14 Nov 2026 through the HA config API. Whether the page opens full screen (installed web app) or as a browser tab is still to be tested.
+## Leyla memory page: dropped
+Tried a script button (notify command_activity opening http://192.168.2.240:8082/). The widget only offers Home Assistant (mdi) symbols, not our own icon, so Metin decided on 14 Nov 2026 to leave it out. The script was deleted again. The memory page stays a Chrome installed app.
