@@ -56,6 +56,8 @@ and the user says a wake word mapped to OpenAI, the client sends
 bot is NOT speaking and a wake word is detected, the client disconnects
 instead (session is over, user wants a fresh start).
 
+**Soft speaker edges.** `edge.h` (`EdgeSmoother`, pure code, tested with g++ in `leyla_voice_tests`): when the speaker runs dry (end of a reply or a pause inside it) `pump_speaker_` writes a 15 ms ramp from the last sample down to zero and fades the next audio in over 5 ms, so the signal never jumps to zero (a click, mostly heard at the end of a sentence, reported by Metin on 14 Nov 2026). Costs one pass over at most 360 samples per gap. Check by ear and with the `speaker gaps` line at the end of a conversation; revert it if it changes nothing (rule: nothing inefficient stays).
+
 **Wake word routing.** `on_wake_word_detected` receives a `wake_word` string: the `wake_word` phrase from the model manifest, not the model id (source: `micro_wake_word.cpp`, `WakeWordModel::get_wake_word()`). Only the custom model `hallo_leyla` is active (`probability_cutoff: 99%`, `sliding_window_size: 6`, `gain_factor: 4` on the microphone); every detected word routes to OpenAI. The routing lambda still compares with "Hey Mycroft" for HA Assist but no such model is loaded. The routing calls `start_ha_assist_pipeline` or `start_openai_pipeline` scripts which handle mutual exclusion (stopping
 the other pipeline if active) and mute/connection checks.
 
