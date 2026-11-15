@@ -133,7 +133,9 @@ def _parse(text: str, lists: dict) -> Optional[dict]:
     return {"reply": reply,
             "proposals": valid_proposals(parsed.get("proposals"), lists),
             "lights_raw": parsed.get("lights"), "email_raw": parsed.get("email"),
-            "mail_raw": parsed.get("mail"), "mama_raw": parsed.get("mama")}
+            "mail_raw": parsed.get("mail"), "mama_raw": parsed.get("mama"),
+            "mood_resolved": parsed.get("mood_resolved") is True,
+            "mood_pause": parsed.get("mood_pause") is True}
 
 
 def describe_lamps(result: dict) -> str:
@@ -261,7 +263,7 @@ def speak_prompt(reply: str) -> str:
 async def answer(api_key: str, models: list[str], rules: str, store: memory.MemoryStore,
                  history, message: str, url: str = memory.RESPONSES_URL,
                  lights=None, room=None, mailer=None, inbox=None,
-                 mama=None) -> Optional[dict]:
+                 mama=None, mood=None) -> Optional[dict]:
     """`lights`: (count, run) of the light controller, so Leyla can switch the lamps.
     `room`: async function giving the room values, asked only when Metin asks about them.
     `mailer`: `mail.Mailer`; an "email" in her answer becomes a draft card, never a sent mail.
@@ -287,6 +289,8 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
     if mama:
         rules = rules + MAMA_NOTE
         abilities.append("Anne etwas von Metin ausrichten")
+    if mood:
+        rules = rules + mood.note()
     rules = rules + CHAT_ABILITIES_NOTE.format(abilities="\n".join("• " + a for a in abilities))
     out = await _answer(api_key, models, rules, store, history, message, url, lights)
     trash = None
@@ -308,6 +312,13 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
         out.pop("lights_raw", None)
         out.pop("mail_raw", None)
         out.setdefault("lights", [])
+        resolved, paused = out.pop("mood_resolved", False), out.pop("mood_pause", False)
+        if mood:
+            if paused:
+                mood.pause()
+            elif resolved:
+                mood.resolve()
+            out["mood"] = mood.status()
         m = out.pop("mama_raw", None)
         if mama and isinstance(m, str) and m.strip():
             try:

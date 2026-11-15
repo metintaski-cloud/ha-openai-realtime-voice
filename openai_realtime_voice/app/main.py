@@ -35,7 +35,7 @@ import dotenv
 import websockets
 
 from app.audio_recorder import AudioRecorder
-from app import gcontacts, inbox, mail, memory, memory_web
+from app import gcontacts, inbox, mail, memory, memory_web, mood
 from app import context
 from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, pcm_level
 from app.live_link import END_CONVERSATION_TOOL
@@ -158,6 +158,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self.google = gcontacts.GoogleContacts()
         self.mailer = mail.Mailer(google=self.google)
         self.inbox = inbox.Inbox(google=self.google)
+        self.mood = mood.Mood()  # Leyla's ups and downs, only in the app chat
         self.technik = technik.TechnikChecker(
             notify=self.messages.push if self.messages.available else None)
         self.technik.lamp_count = len(self.lights.entities)
@@ -334,7 +335,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                                                                self.lights.token))
                                 if self.lights.token else None,
                                 mailer=self.mailer, inbox=self.inbox,
-                                mama=self.messages.from_metin if self.messages.available else None)
+                                mama=self.messages.from_metin if self.messages.available else None,
+                                mood=self.mood)
         if out:
             logger.info("Chat with Metin in the app: answered, %d proposals, %d light commands",
                         len(out["proposals"]), len(out["lights"]))
@@ -1297,7 +1299,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                                             lamp=self.lamp, code_phrase=self.code_phrase,
                                             rules=self._readable_rules, chat=self._chat,
                                             voice=self._chat_voice, mailer=self.mailer,
-                                            google=self.google, inbox=self.inbox)
+                                            google=self.google, inbox=self.inbox,
+                                            mood=self.mood)
             except Exception as e:
                 logger.warning("Memory page could not start: %s", e)
         if self.messages.available:
