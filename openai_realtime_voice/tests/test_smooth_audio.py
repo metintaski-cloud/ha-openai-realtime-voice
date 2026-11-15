@@ -403,7 +403,8 @@ async def test_no_report_when_nobody_was_rude(monkeypatch):
         async def post(self, *a, **k):
             return Resp()
 
-    monkeypatch.setattr(report.httpx, "AsyncClient", Client)
+    from app import textmodel
+    monkeypatch.setattr(textmodel.httpx, "AsyncClient", Client)
     assert await report.write_report("k", ["m"], [["bot", "Tamam, Metin'e söylerim."]]) is None
 
 

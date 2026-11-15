@@ -11,9 +11,7 @@ import logging
 import os
 from typing import Optional
 
-import httpx
-
-from app import memory
+from app import memory, textmodel
 
 logger = logging.getLogger(__name__)
 
@@ -128,35 +126,12 @@ class Cleaner:
     async def _ask(self, entries: list) -> Optional[list]:
         numbered = "\n".join(f"{i}. [{k}] {f}" for i, (k, f) in enumerate(entries, 1))
         prompt = CLEANUP_PROMPT.format(entries=numbered)
-        async with httpx.AsyncClient(timeout=90.0) as client:
-            for model in [m for m in self.models if m]:
-                try:
-                    resp = await client.post(
-                        self.url,
-                        headers={"Authorization": f"Bearer {self.api_key}",
-                                 "Content-Type": "application/json"},
-                        json={"model": model, "input": prompt})
-                except Exception as e:
-                    logger.warning("Cleanup review request failed (%s): %s", model, e)
-                    continue
-                if resp.status_code != 200:
-                    logger.warning("Cleanup review with %s failed: HTTP %s", model,
-                                   resp.status_code)
-                    continue
-                data = resp.json()
-                text = data.get("output_text") or ""
-                if not text:
-                    for item in data.get("output", []):
-                        if item.get("type") == "message":
-                            for part in item.get("content", []):
-                                if part.get("type") == "output_text":
-                                    text += part.get("text", "")
-                obj = memory._json_object(text)
-                if obj is None or not isinstance(obj.get("streichen"), list):
-                    logger.warning("Cleanup review: could not parse %r", text[:200])
-                    continue
-                return obj["streichen"]
-        return None
+        def usable(text: str) -> bool:
+            obj = memory._json_object(text)
+            return obj is not None and isinstance(obj.get("streichen"), list)
+        text = await textmodel.ask(prompt, self.api_key, self.models, self.url, "Cleanup review",
+                                   check=usable)
+        return memory._json_object(text)["streichen"] if text else None
 
     async def review(self, today: Optional[_dt.date] = None) -> dict:
         """Ask the model for candidates and store them as proposals. Deletes nothing."""

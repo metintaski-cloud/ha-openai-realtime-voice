@@ -35,7 +35,7 @@ import dotenv
 import websockets
 
 from app.audio_recorder import AudioRecorder
-from app import memory, memory_web
+from app import memory, memory_web, textmodel
 from app import context
 from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, pcm_level
 from app.live_link import END_CONVERSATION_TOOL
@@ -309,13 +309,9 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
 
     @staticmethod
     def _chat_provider() -> Optional[dict]:
-        """chat_api_url, chat_api_key, chat_model: another OpenAI compatible provider for the
-        app chat only (for example Venice), OpenAI stays the fallback."""
-        def opt(name: str) -> str:
-            v = (os.environ.get(name) or "").strip()
-            return "" if v.lower() == "null" else v
-        url, model = opt("CHAT_API_URL"), opt("CHAT_MODEL")
-        return {"url": url, "key": opt("CHAT_API_KEY"), "model": model} if url and model else None
+        """HomeAI (chat_api_url, chat_api_key, chat_model): the app chat and the background
+        jobs ask it first, OpenAI stays the fallback (`textmodel`)."""
+        return textmodel.local_provider()
 
     def _chat_info(self) -> dict:
         """For the switch in the app chat: is another provider set, and its short name."""

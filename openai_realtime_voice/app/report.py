@@ -10,9 +10,7 @@ import logging
 import re
 from typing import Optional
 
-import httpx
-
-from app import memory
+from app import memory, textmodel
 
 logger = logging.getLogger(__name__)
 
@@ -39,37 +37,13 @@ def needs_report(dialog: list) -> bool:
     return any(s == "bot" and TRIGGER_RE.search(t or "") for s, t in dialog)
 
 
-def _output_text(data: dict) -> str:
-    text = data.get("output_text") or ""
-    if not text:
-        for item in data.get("output", []):
-            if item.get("type") == "message":
-                for part in item.get("content", []):
-                    if part.get("type") == "output_text":
-                        text += part.get("text", "")
-    return text.strip()
-
-
 async def write_report(api_key: str, models: list[str], dialog: list,
-                       url: str = memory.RESPONSES_URL) -> Optional[str]:
+                       url: str = memory.RESPONSES_URL,
+                       local: Optional[dict] = None) -> Optional[str]:
     """Leyla's message to Metin, or None when nobody was rude (or no model answered)."""
     prompt = PROMPT.format(dialog=memory.format_dialog(dialog)[-12000:])
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        for model in [m for m in models if m]:
-            try:
-                resp = await client.post(
-                    url, headers={"Authorization": f"Bearer {api_key}",
-                                  "Content-Type": "application/json"},
-                    json={"model": model, "input": prompt})
-            except Exception as e:
-                logger.warning("Rudeness report request failed (%s): %s", model, e)
-                continue
-            if resp.status_code != 200:
-                logger.warning("Rudeness report with model %s failed: HTTP %s",
-                               model, resp.status_code)
-                continue
-            text = _output_text(resp.json())
-            if not text or text.strip(" .").upper() == NOTHING:
-                return None
-            return text
-    return None
+    text = await textmodel.ask(prompt, api_key, models, url, "Rudeness report",
+                               check=lambda t: bool(t.strip()), local=local, timeout=60.0)
+    if not text or text.strip(" .").upper() == NOTHING:
+        return None
+    return text.strip()

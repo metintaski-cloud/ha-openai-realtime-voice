@@ -8,7 +8,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from app import memory  # noqa: E402
+from app import memory, textmodel  # noqa: E402
 from tests.test_live_bridge import FakeLive, CHUNK, _run, _collect  # noqa: E402
 
 
@@ -218,7 +218,7 @@ async def test_summary_keeps_private_without_code(monkeypatch):
             return Resp('{"family": ["Person: Ayşe (Metins Schwester). Charakter: lustig."],'
                         ' "private": []}')
 
-    monkeypatch.setattr(memory.httpx, "AsyncClient", Client)
+    monkeypatch.setattr(textmodel.httpx, "AsyncClient", Client)
     old = {"family": [], "private": ["Geheimnis"]}
     r = await memory.summarize("k", ["m"], old, [["user", "Ben Ayşe, Metin'in ablası"]])
     assert r["private"] == ["Geheimnis"] and "Geheimnis" not in Client.prompt
@@ -279,7 +279,7 @@ async def test_summary_keeps_friends_the_model_left_out(monkeypatch):
         async def post(self, *a, **k):
             return Resp()
 
-    monkeypatch.setattr(memory.httpx, "AsyncClient", Client)
+    monkeypatch.setattr(textmodel.httpx, "AsyncClient", Client)
     old = {"family": ["Person: Metin"], "friends": ["Person: Ali | Zugehörigkeit: Nachbar"],
            "private": ["geheim"]}
     lists = await memory.summarize("k", ["m"], old, [["user", "hallo"]])
@@ -397,7 +397,7 @@ async def test_summarize_updates_confidential_and_keeps_it_when_left_out(monkeyp
             prompts.append(json["input"])
             return Resp(replies.pop(0))
 
-    monkeypatch.setattr(memory.httpx, "AsyncClient", Client)
+    monkeypatch.setattr(textmodel.httpx, "AsyncClient", Client)
     old = {"family": [], "friends": [], "private": [], "leyla": [], "confidential": [SECRET]}
     out = await memory.summarize("k", ["m"], old, [["user", "dizim artık iyi"]])
     assert out["confidential"] == [SECRET]  # Leyla never deletes, not even when resolved

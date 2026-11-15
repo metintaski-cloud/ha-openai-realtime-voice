@@ -29,7 +29,7 @@ import re
 import time
 from typing import Optional
 
-import httpx
+from app import textmodel
 
 logger = logging.getLogger(__name__)
 
@@ -645,6 +645,7 @@ async def summarize(
     url: str = RESPONSES_URL,
     today: Optional[_dt.date] = None,
     unlocked_by_code: bool = False,
+    local: Optional[dict] = None,
 ) -> Optional[dict]:
     """Ask a text model for the updated lists. Tries the given models in order. Without the
     code phrase the private list always comes back unchanged."""
@@ -663,53 +664,29 @@ async def summarize(
         max_leyla=MAX_LEYLA,
         max_confidential=MAX_CONFIDENTIAL,
     )
-    async with httpx.AsyncClient(timeout=90.0) as client:
-        for model in [m for m in models if m]:
-            try:
-                resp = await client.post(
-                    url,
-                    headers={"Authorization": f"Bearer {api_key}",
-                             "Content-Type": "application/json"},
-                    json={"model": model, "input": prompt},
-                )
-            except Exception as e:
-                logger.warning("Memory update request failed (%s): %s", model, e)
-                continue
-            if resp.status_code != 200:
-                logger.warning("Memory update with model %s failed: HTTP %s %s",
-                               model, resp.status_code, resp.text[:300])
-                continue
-            data = resp.json()
-            text = data.get("output_text") or ""
-            if not text:
-                for item in data.get("output", []):
-                    if item.get("type") == "message":
-                        for part in item.get("content", []):
-                            if part.get("type") == "output_text":
-                                text += part.get("text", "")
-            lists = parse_lists_json(text)
-            if lists is None:
-                logger.warning("Memory update: could not parse model output: %r", text[:300])
-                continue
-            for k in KINDS:
-                if k not in lists or (k == PRIVATE and not unlocked):
-                    lists[k] = list(old.get(k, []))
-            lists[LEYLA] = lists[LEYLA][:MAX_LEYLA]
-            lists[CONFIDENTIAL] = lists[CONFIDENTIAL][:MAX_CONFIDENTIAL]
-            if len(lists[LEYLA]) < len(old.get(LEYLA, [])) - 3:
-                logger.warning("Memory update would drop %d of Leyla's own entries; ignored",
-                               len(old.get(LEYLA, [])) - len(lists[LEYLA]))
-                lists[LEYLA] = list(old.get(LEYLA, []))
-            if not unlocked:
-                before = len(old.get(FAMILY, [])) + len(old.get(FRIENDS, []))
-                after = len(lists[FAMILY]) + len(lists[FRIENDS])
-                if after < before - 3:
-                    logger.warning("Memory update would drop %d open entries without the code "
-                                   "phrase; ignored", before - after)
-                    lists[FAMILY] = list(old.get(FAMILY, []))
-                    lists[FRIENDS] = list(old.get(FRIENDS, []))
-            lists, undone = keep_untouched(old, lists, dialog, today, metin_known=unlocked_by_code)
-            if undone:
-                logger.info("Memory update: %d changes to entries not talked about undone", undone)
-            return lists
-    return None
+    text = await textmodel.ask(prompt, api_key, models, url, "Memory update",
+                               check=lambda t: parse_lists_json(t) is not None, local=local)
+    if text is None:
+        return None
+    lists = parse_lists_json(text)
+    for k in KINDS:
+        if k not in lists or (k == PRIVATE and not unlocked):
+            lists[k] = list(old.get(k, []))
+    lists[LEYLA] = lists[LEYLA][:MAX_LEYLA]
+    lists[CONFIDENTIAL] = lists[CONFIDENTIAL][:MAX_CONFIDENTIAL]
+    if len(lists[LEYLA]) < len(old.get(LEYLA, [])) - 3:
+        logger.warning("Memory update would drop %d of Leyla's own entries; ignored",
+                       len(old.get(LEYLA, [])) - len(lists[LEYLA]))
+        lists[LEYLA] = list(old.get(LEYLA, []))
+    if not unlocked:
+        before = len(old.get(FAMILY, [])) + len(old.get(FRIENDS, []))
+        after = len(lists[FAMILY]) + len(lists[FRIENDS])
+        if after < before - 3:
+            logger.warning("Memory update would drop %d open entries without the code "
+                           "phrase; ignored", before - after)
+            lists[FAMILY] = list(old.get(FAMILY, []))
+            lists[FRIENDS] = list(old.get(FRIENDS, []))
+    lists, undone = keep_untouched(old, lists, dialog, today, metin_known=unlocked_by_code)
+    if undone:
+        logger.info("Memory update: %d changes to entries not talked about undone", undone)
+    return lists
