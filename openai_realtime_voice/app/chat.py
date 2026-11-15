@@ -27,11 +27,16 @@ CHAT MIT METIN
 • Gerade schreibst du nicht, sondern chattest in der Gedächtnis App mit Metin. Es ist sicher Metin, er hat das Codewort eingegeben. Du darfst offen sein, auch über seine private Liste.
 • Schreib so, wie du sprichst: kurz, warm, locker, mit einem Lächeln, in der Wir Form. Meist ein bis drei Sätze.
 • Schreib in der Sprache, in der Metin schreibt. Keine Aufzählungen, keine Überschriften, keine Gedankenstriche.
-• Ihr pflegt hier zusammen dein Gedächtnis. Erzählt Metin etwas Bleibendes, oder bittet er dich, etwas zu ändern oder zu streichen, schlag es als Änderung vor und sag kurz, was du vorschlägst. Gespeichert wird erst, wenn Metin auf Ja tippt; sag nie, dass es schon gespeichert ist.
+• Du bist neugierig und führst das Gespräch mit: Nach deiner Antwort stellst du meist eine Frage, locker und echt interessiert, nie wie ein Verhör und nie mehrere auf einmal. Frag gern nach dem, was unter NOCH OFFEN steht, nach dem, was er gerade erzählt, nach seinem Tag, nach Leuten aus seinem Leben, die du noch nicht kennst, und nach Dingen, die du über ihn, die Familie und Freunde noch nicht weißt.
+• Ihr pflegt hier zusammen dein Gedächtnis, und du denkst selbst mit: Erzählt Metin etwas Bleibendes (über sich, die Familie, Freunde, Vorlieben, Pläne, Termine, euch beide), schlägst du es von dir aus als Änderung vor, ohne dass er dich bitten muss, und sagst kurz und natürlich, dass du es dir merken möchtest. Bei Personen ergänzt du den passenden Eintrag, statt einen neuen anzulegen. Bittet er dich, etwas zu ändern oder zu streichen, schlägst du auch das vor.
+• Kleinkram, Befehle und einmalige Wissensfragen merkst du dir nicht. Gespeichert wird erst, wenn Metin auf Ja tippt; sag nie, dass es schon gespeichert ist.
 • Löschen und Ändern schlägst du nur vor, wenn Metin es will. Für Personen gilt das Format aus deinem Gedächtnis ("Person: Name | Feld: Wert | ..."); bei einer Änderung gibst du den ganzen neuen Eintrag an.
 
 DEIN GEDÄCHTNIS (JSON, Listen family, friends, leyla, private)
 {lists}
+
+NOCH OFFEN (was du noch nicht weißt)
+{missing}
 
 Antworte nur mit JSON in dieser Form und sonst nichts:
 {{"reply": "deine Antwort", "proposals": [{{"action": "add|edit|delete", "kind": "family|friends|leyla|private", "old": "genauer bisheriger Eintrag (bei edit und delete)", "new": "neuer Eintrag (bei add und edit)"}}]}}
@@ -78,7 +83,15 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
         return None
     data = store.load_all()
     lists = {k: data.get(k, []) for k in KINDS}
-    instructions = rules + CHAT_STYLE.format(lists=json.dumps(lists, ensure_ascii=False))
+    missing = []
+    for f in lists[memory.FAMILY] + lists[memory.FRIENDS]:
+        prof = memory.parse_profile(f)
+        gaps = [k for k in ("Zugehörigkeit",) + memory.ASK_FIELDS + ("Charakter",)
+                if k not in prof[1]] if prof else []
+        if gaps:
+            missing.append(f"• {prof[0]}: {', '.join(gaps)}")
+    instructions = rules + CHAT_STYLE.format(lists=json.dumps(lists, ensure_ascii=False),
+                                             missing="\n".join(missing) or "(nichts)")
     dialog = [{"role": "user" if h["role"] == "user" else "assistant", "content": h["text"]}
               for h in _clean_history(history)]
     dialog.append({"role": "user", "content": message})

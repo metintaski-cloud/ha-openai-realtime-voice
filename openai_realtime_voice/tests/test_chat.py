@@ -52,3 +52,35 @@ async def test_answer_uses_rules_memory_and_no_confidential(tmp_path, monkeypatc
     assert "Knie" not in sent["instructions"]
     assert [m["role"] for m in sent["input"]] == ["user", "assistant", "user"]
     assert await chat.answer("k", ["m"], "R", store, [], "   ") is None
+
+
+async def test_chat_style_asks_and_proposes_by_itself(tmp_path, monkeypatch):
+    store = memory.MemoryStore(str(tmp_path / "m.json"))
+    store.save_all({"family": ["Person: Umut | Zugehörigkeit: Bruder | Arbeit: Lehrer"]})
+    sent = {}
+
+    class Resp:
+        status_code = 200
+
+        def json(self):
+            return {"output_text": '{"reply": "Hi!", "proposals": []}'}
+
+    class Client:
+        def __init__(self, *a, **k):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        async def post(self, url, headers=None, json=None):
+            sent.update(json)
+            return Resp()
+
+    monkeypatch.setattr(chat.httpx, "AsyncClient", Client)
+    await chat.answer("k", ["m"], "R", store, [], "Hallo")
+    ins = sent["instructions"]
+    assert "stellst du meist eine Frage" in ins and "von dir aus" in ins
+    assert "• Umut: Geburtstag, Kinder, Interessen, Charakter" in ins
