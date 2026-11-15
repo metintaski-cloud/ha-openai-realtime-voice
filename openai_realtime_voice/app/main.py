@@ -658,6 +658,30 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 self._followup = None
             return False
 
+    async def _app_hello(self, client_ws) -> Optional[bool]:
+        """Live talk from the memory app connects to /app and first sends
+        {"type": "hello", "code": ...}. True for the app with the right code word, False for
+        the Voice PE, None when the app connection was refused (and closed)."""
+        request = getattr(client_ws, "request", None)
+        path = getattr(request, "path", "") or getattr(client_ws, "path", "") or ""
+        if not path.startswith("/app"):
+            return False
+        try:
+            hello = json.loads(await asyncio.wait_for(client_ws.recv(), timeout=5))
+            ok = (isinstance(hello, dict) and hello.get("type") == "hello"
+                  and memory_web.check_code(hello.get("code"), self.code_phrase))
+        except Exception:
+            ok = False
+        if not ok:
+            logger.info("Live talk from the app refused (code word missing or wrong)")
+            try:
+                await client_ws.close(4003, "code word")
+            except Exception:
+                pass
+            return None
+        client_ws.leyla_app = True
+        return True
+
     def _client_id_from_ws(self, ws) -> str:
         """Derive a client id (e.g. for recording)."""
         if hasattr(ws, "remote_address") and ws.remote_address:
@@ -1089,9 +1113,10 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         if self.recorder:
             self.recorder.stop_recording()
             rec_path = self.recorder.input_path
-        if self.tv.available:
-            self._in_background(self.tv.unduck())
-        self._in_background(self.lamp.end())
+        if not getattr(client_ws, "leyla_app", False):
+            if self.tv.available:
+                self._in_background(self.tv.unduck())
+            self._in_background(self.lamp.end())
         duration = time.monotonic() - start_time
         reason = end_reason.get("reason", "unknown")
         self._finish_recording(rec_path, reason, state)
@@ -1113,11 +1138,17 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         """One client connection = one GPT Live session. Connect, send ready to the
         client, then run the forwarding tasks. Client only sends audio after ready."""
         client_id = self._client_id_from_ws(client_ws)
+        app = await self._app_hello(client_ws)
+        if app is None:
+            return
+        if app:
+            client_id = "app_" + client_id
         logger.info("Client connected: %s", client_id)
         start_time = time.monotonic()
-        if self.tv.available:
-            self._in_background(self.tv.duck())  # so Leyla hears the family, not the TV
-        self._in_background(self.lamp.begin())
+        if not app:  # the phone app may be anywhere: no TV ducking, no lamp show
+            if self.tv.available:
+                self._in_background(self.tv.duck())  # so Leyla hears the family, not the TV
+            self._in_background(self.lamp.begin())
 
         old_ws = self._active_sessions.get(client_id)
         if old_ws is not None:
@@ -1161,6 +1192,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                             if len(self.instructions) > 100 else self.instructions)
             await client_ws.send(json.dumps({"type": "ready"}))
             logger.info("Sent ready signal to client")
+            if app:  # the code word was typed in the app: it is Metin
+                await self._unlock(live_ws, state)
             metrics.record("ready", client=client_id, live_open_s=live_open_s,
                            connect_to_ready_s=time.monotonic() - start_time)
             state["input_clock"] = time.monotonic()

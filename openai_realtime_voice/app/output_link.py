@@ -32,6 +32,8 @@ class OutputMixin:
         GPT Live has no end of audio event, so silence on the queue ends a reply."""
         sender = PacedSender(client_ws)
         idle_ticks = 0
+        # Live talk from the phone app: the living room lamps do not follow it.
+        lamp = None if getattr(client_ws, "leyla_app", False) else self.lamp
         try:
             while True:
                 try:
@@ -46,7 +48,8 @@ class OutputMixin:
 
                 if isinstance(chunk, tuple) and chunk[0] == "phase":
                     await sender.pump(flush=True, force=True)
-                    self.lamp.phase(chunk[1])
+                    if lamp:
+                        lamp.phase(chunk[1])
                     await self._send_phase(client_ws, chunk[1])
                     continue
 
@@ -73,7 +76,8 @@ class OutputMixin:
                     first_audio_to_client[0] = True
                     logger.info("First audio to client (%d bytes)", len(chunk))
 
-                self.lamp.audio(pcm_level(chunk)[0])
+                if lamp:
+                    lamp.audio(pcm_level(chunk)[0])
                 sender.add(chunk)
                 await sender.pump()
         except asyncio.CancelledError:

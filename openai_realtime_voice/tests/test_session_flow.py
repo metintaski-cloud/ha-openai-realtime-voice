@@ -389,3 +389,19 @@ async def test_without_a_warm_connection_everything_still_works(env, monkeypatch
         async with b.connect() as client:
             assert json.loads(await asyncio.wait_for(client.recv(), 5))["type"] == "ready"
         assert len(fake.session_conns) == 1
+
+
+async def test_live_talk_from_the_app_needs_the_code_word_and_unlocks(env):
+    async with FakeLive() as fake, Bridge() as b:
+        async with websockets.connect(f"ws://127.0.0.1:{b.port}/app") as client:
+            await client.send(json.dumps({"type": "hello", "code": "falsch"}))
+            with pytest.raises(websockets.exceptions.ConnectionClosed):
+                await asyncio.wait_for(client.recv(), 5)
+        assert not any(e["type"] == "session.start" for e in fake.received)
+        async with websockets.connect(f"ws://127.0.0.1:{b.port}/app") as client:
+            await client.send(json.dumps({"type": "hello", "code": "sesam"}))
+            assert json.loads(await asyncio.wait_for(client.recv(), 5)) == {"type": "ready"}
+            await asyncio.sleep(0.3)
+            assert getattr(client, "close", None)
+        notes = [e for e in fake.received if e["type"] == "session.commentary.append"]
+        assert any("Codewort" in e["content"] for e in notes)  # Leyla knows it is Metin
