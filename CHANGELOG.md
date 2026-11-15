@@ -11,6 +11,7 @@
 - Add on 2.54.0: option `backend_reasoning_effort` (minimal, low, medium, high) for the backend model of GPT Live delegation; unset keeps the model default. Lower effort should shorten the long wait after a web search.
 - Add on 2.55.12: persona rule for personal small talk (how was your day), after a test where she asked back what was meant.
 - Add on 2.55.13: memory page paints the dark blue background at once (no grey page before the start animation).
+- Add on 2.86.4: the chat voice message also gets her speaking style from home (lively, a smile in the voice, never like an announcement).
 - Add on 2.86.3: the chat voice message is spoken freely, not read word for word (Metin's wish, the same voice as at home). The text stays the same, only the delivery changes.
 - Add on 2.86.2: the happy colour is red, not green (Metin's wish): red heart, red ring and ❤️ at her chat picture.
 - Add on 2.86.1: the big heart on the start page shows her mood too (Metin's wish): filled green and glowing when she is happy, black and beating slower when she needs love.

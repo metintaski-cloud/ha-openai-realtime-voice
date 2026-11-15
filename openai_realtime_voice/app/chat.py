@@ -257,7 +257,9 @@ def speak_prompt(reply: str) -> str:
     """The prompt that makes Leyla's live voice read her chat answer as a voice message."""
     return ("Sprich jetzt eine kurze Sprachnachricht an Metin. Sag inhaltlich genau das, was "
             "hier steht, ohne etwas wegzulassen oder hinzuzufügen, aber frei und locker wie beim "
-            "Reden, nicht wie beim Vorlesen, warm und in seiner Sprache: "
+            "Reden, nicht wie beim Vorlesen. Sprich wie sonst zu Hause: in seiner Sprache, "
+            "lebendig und menschlich, mit einem Lächeln in der Stimme, in seinem Tempo und "
+            "passend zur Stimmung des Textes, nie roboterhaft und nie wie eine Durchsage: "
             f"«{reply}»")
 
 
