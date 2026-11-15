@@ -52,7 +52,7 @@ Antworte nur mit JSON in dieser Form und sonst nichts:
 LIGHTS_NOTE = """
 
 LICHT
-• Du kannst im Chat die {count} Stehlampen steuern (Lampe 1 bis {count}). Bittet Metin darum, trägst du es unter "lights" ein, und es passiert sofort, ohne Ja. Ohne Lampennummer meint er alle. "Heller" oder "dunkler" heißt etwa 25 Prozent mehr oder weniger. Farben: rot, orange, gelb, gruen, tuerkis, blau, lila, pink; Weiß: warm, neutral, kalt.
+• Du kannst im Chat die {count} Stehlampen steuern (Lampe 1 bis {count}), jedes Mal: Bittet Metin darum, trägst du es unter "lights" ein, und es passiert sofort, ohne Ja. Im Chat gilt das statt der Delegation an deinen Hintergrund. Sag nie, dass du das Licht hier nicht schalten kannst, auch nicht beim zweiten oder dritten Mal. Ohne Lampennummer meint er alle. "Heller" oder "dunkler" heißt etwa 25 Prozent mehr oder weniger. Farben: rot, orange, gelb, gruen, tuerkis, blau, lila, pink; Weiß: warm, neutral, kalt.
 • Schreib in deiner Antwort kurz und natürlich, was du machst; das Ergebnis zeigt die App darunter an.
 Format je Eintrag in "lights": {{"lamps": [1, 2] oder [] für alle, "action": "on|off|toggle", "brightness_percent": Zahl oder null, "white": "warm|neutral|kalt" oder null, "color": Farbe oder null}}"""
 
