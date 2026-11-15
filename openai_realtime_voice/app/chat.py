@@ -126,7 +126,7 @@ async def _other_provider(client, base_url: str, key: str, model: str, instructi
         resp = await client.post(
             base_url.rstrip("/") + "/chat/completions",
             headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
-            json={"model": model, "response_format": {"type": "json_object"},
+            json={"model": model,
                   "messages": [{"role": "system", "content": instructions}] + dialog})
     except Exception as e:
         logger.warning("Chat request to the other provider failed after %.1f s: %r",
