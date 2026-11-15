@@ -1,4 +1,4 @@
-"""Metin's Google contacts for Leyla's e-mails (read only), add on 2.82.0.
+"""Metin's Google account for Leyla's e-mails: contacts (read only) and sending, add on 2.82.0.
 
 Google allows contacts only through OAuth since March 2025, so Metin creates a small OAuth client
 of the type "Desktop app" in his Google Cloud project (options `google_client_id`,
@@ -7,9 +7,12 @@ pastes the address of the page Google sends him to (http://127.0.0.1/?code=..., 
 load on the phone; only its code counts). The refresh token is kept in /data/google_token.json.
 
 Leyla may write only to contacts Metin ticked in the app (/data/mail_allowed.json, by address).
-Names and addresses are never logged.
+Since 2.82.1 mails go out through the Gmail API with the same sign in (scope gmail.send), because
+app passwords need two step verification, which Metin's account does not use. Names and addresses
+are never logged.
 """
 
+import base64
 import json
 import logging
 import os
@@ -21,7 +24,9 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-SCOPE = "https://www.googleapis.com/auth/contacts.readonly"
+SCOPE = ("https://www.googleapis.com/auth/contacts.readonly "
+         "https://www.googleapis.com/auth/gmail.send")
+SEND_URL = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send"
 REDIRECT = "http://127.0.0.1"
 AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 TOKEN_URL = "https://oauth2.googleapis.com/token"
@@ -160,6 +165,19 @@ class GoogleContacts:
         _write(self.cache_path, {"at": time.time(), "list": found})
         logger.info("Google contacts read: %d addresses", len(found))
         return found
+
+    async def send(self, message) -> bool:
+        """Send an email.message.EmailMessage from Metin's Gmail (Metin tapped Senden)."""
+        raw = base64.urlsafe_b64encode(message.as_bytes()).decode("ascii")
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            token = await self._token(client)
+            if not token:
+                return False
+            resp = await client.post(SEND_URL, json={"raw": raw},
+                                     headers={"Authorization": f"Bearer {token}"})
+        if resp.status_code != 200:
+            logger.warning("Gmail send failed (HTTP %s)", resp.status_code)
+        return resp.status_code == 200
 
     # ---- which contacts Leyla may write to ----
     def allowed(self) -> set:

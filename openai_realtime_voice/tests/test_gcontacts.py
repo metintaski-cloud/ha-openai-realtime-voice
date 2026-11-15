@@ -75,3 +75,28 @@ def test_web_address_draft_is_marked(tmp_path):
     assert "error" in m.draft("Stadtwerke", "Frage", "Hallo", web_addr="kein adresse")
     assert m.pending()[-1]["web"] is True
     assert m.draft("Umut", "x", "y")["ok"] and m.pending()[-1]["web"] is False
+
+
+def test_mail_goes_out_through_the_gmail_api_after_sign_in(tmp_path, monkeypatch):
+    calls = []
+    monkeypatch.setattr(gcontacts.httpx, "AsyncClient", fake(calls, PEOPLE))
+    sent = []
+
+    class C(fake(calls, PEOPLE)):
+        async def post(self, url, data=None, json=None, headers=None):
+            if url == gcontacts.SEND_URL:
+                sent.append(json["raw"])
+                return Resp(200, {"id": "m1"})
+            return await super().post(url, data=data)
+    monkeypatch.setattr(gcontacts.httpx, "AsyncClient", C)
+    g = gcontacts.GoogleContacts("id", "secret", str(tmp_path))
+    m = mail.Mailer("", "", "Umut: u@y.de", path=str(tmp_path / "d.json"), google=g)
+    assert not m.available  # no app password and not signed in
+    assert "gmail.send" in g.auth_url()
+    asyncio.run(g.connect("http://127.0.0.1/?code=abc"))
+    assert m.available and m.via_google
+    d = m.draft("Umut", "Hallo", "Wie geht's?")
+    assert asyncio.run(m.send(d["id"]))["ok"] and len(sent) == 1 and m.pending() == []
+    import base64
+    raw = base64.urlsafe_b64decode(sent[0]).decode()
+    assert "To: u@y.de" in raw and "Subject: Hallo" in raw

@@ -107,8 +107,13 @@ class Mailer:
         return out
 
     @property
+    def via_google(self) -> bool:
+        return bool(self.google and self.google.connected)
+
+    @property
     def available(self) -> bool:
-        return bool(self.address and self.password)
+        """Sending works through the Google sign in (2.82.1) or an app password (2.81.0)."""
+        return self.via_google or bool(self.address and self.password)
 
     def names(self) -> str:
         return ", ".join(self.contacts) or "(keine)"
@@ -180,10 +185,16 @@ class Mailer:
         self._save(rest)
         return len(rest) < len(drafts)
 
-    def _smtp_send(self, d: dict) -> None:
+    def _message(self, d: dict) -> EmailMessage:
         msg = EmailMessage()
-        msg["From"], msg["To"], msg["Subject"] = self.address, d["addr"], d["subject"]
+        if self.address:
+            msg["From"] = self.address
+        msg["To"], msg["Subject"] = d["addr"], d["subject"]
         msg.set_content(d["body"])
+        return msg
+
+    def _smtp_send(self, d: dict) -> None:
+        msg = self._message(d)
         with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=30) as s:
             s.starttls(context=ssl.create_default_context())
             s.login(self.address, self.password)
@@ -196,7 +207,12 @@ class Mailer:
         if not d:
             return {"ok": False, "error": "Entwurf nicht mehr da (älter als 24 Stunden?)."}
         try:
-            await asyncio.to_thread(self._smtp_send, d)
+            if self.via_google:
+                if not await self.google.send(self._message(d)):
+                    return {"ok": False, "error": "Senden ging nicht. In der App unter Google "
+                                                  "Kontakte neu verbinden?"}
+            else:
+                await asyncio.to_thread(self._smtp_send, d)
         except Exception as e:
             logger.warning("Mail could not be sent: %s", type(e).__name__)
             return {"ok": False, "error": "Senden ging nicht. Stimmt das App Passwort?"}
