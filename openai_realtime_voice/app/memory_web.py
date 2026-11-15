@@ -187,6 +187,8 @@ body{margin:0;background:#000;color:#e8ecff;font:17px/1.4 system-ui,sans-serif;p
 #pulse .spark{position:absolute;width:3px;height:3px;border-radius:50%;background:#bae6fd;box-shadow:0 0 6px #7dd3fc;animation:tw 2.4s ease-in-out infinite}
 #pulse.bad .beam{background:#64748b55;box-shadow:none}#pulse.bad .spark{display:none}
 #pulse.bad svg{animation:none;filter:grayscale(1) opacity(.45)}
+#pulse svg path:first-of-type{transition:fill 1.2s}#pulse[data-mood=good] svg path:first-of-type{fill:#15803dd9}#pulse[data-mood=good] svg path{filter:drop-shadow(0 0 6px #22c55e) drop-shadow(0 0 12px #22c55e88)}
+#pulse[data-mood=low] svg path:first-of-type{fill:#000}#pulse[data-mood=low] svg path{filter:drop-shadow(0 0 4px #64748b)}#pulse[data-mood=low] svg{animation-duration:3.2s}
 #pulse .tick{position:absolute;left:0;right:0;top:118px;height:22px;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 88%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 88%,transparent)}
 #pulse .tick span{position:absolute;left:100%;white-space:nowrap;font-size:14px;line-height:22px;color:#e0f2fe;text-shadow:0 0 8px #22d3ee;animation:crawl linear infinite}
 #pulse.bad .tick{display:none}
@@ -401,7 +403,7 @@ async function chatSend(){const ta=document.getElementById('ctext'),msg=ta.value
 const AUDIO=new Map();let REC=null,RECT=null;
 function playAudio(id){try{new Audio(AUDIO.get(id)).play();}catch(e){}}
 function moodShow(st){if(!st||!st.mood)return;const c=document.getElementById('chat'),b=document.getElementById('mbadge');
- c.classList.toggle('low',!!st.low);c.classList.toggle('good',!st.low);b.style.display='flex';b.textContent=st.low?'🖤':'💚';
+ c.classList.toggle('low',!!st.low);c.classList.toggle('good',!st.low);document.getElementById('pulse').dataset.mood=st.low?'low':'good';b.style.display='flex';b.textContent=st.low?'🖤':'💚';
  document.getElementById('mlabel').textContent=(st.low?'🖤 ':'💚 ')+st.label;}
 async function moodLoad(){try{moodShow(await (await post('/api/mood',{})).json());}catch(e){}}
 setInterval(()=>{if(CODE&&document.getElementById('chat').style.display==='block')moodLoad();},60000);
