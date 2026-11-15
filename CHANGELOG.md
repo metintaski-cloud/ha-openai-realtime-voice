@@ -11,6 +11,7 @@
 - Add on 2.54.0: option `backend_reasoning_effort` (minimal, low, medium, high) for the backend model of GPT Live delegation; unset keeps the model default. Lower effort should shorten the long wait after a web search.
 - Add on 2.55.12: persona rule for personal small talk (how was your day), after a test where she asked back what was meant.
 - Add on 2.55.13: memory page paints the dark blue background at once (no grey page before the start animation).
+- Add on 2.80.2: app title 26 px instead of 32 px (too large).
 - Add on 2.80.1: memory app header: title larger and centered above the heart, the sound switch moved to the bottom.
 - Add on 2.80.0: live talk with Leyla from the app chat ("Live" button, full screen with her picture and "Auflegen"); the phone talks to the add on like the Voice PE, with the code word, without TV ducking and lamp show. Voice messages stay as an option.
 - Add on 2.79.0: voice messages in the app chat both ways: Metin records with the microphone button, the message is transcribed (gpt-transcribe), Leyla answers as usual and her answer comes back spoken in her own voice.
