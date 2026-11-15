@@ -107,7 +107,7 @@ def test_icon_and_manifest(tmp_path):
 
 
 def test_page_has_sounds():
-    assert "AudioContext" in memory_web.PAGE and 'id="snd"' in memory_web.PAGE
+    assert "AudioContext" in memory_web.PAGE and "t.id='snd'" in memory_web.PAGE
 
 
 def test_page_has_splash():
