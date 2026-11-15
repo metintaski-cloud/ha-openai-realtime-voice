@@ -118,6 +118,8 @@ HAOS on a dedicated host. ESPHome config under e.g.:
 
 Device name, friendly name, wake words, and other production settings can differ from the repo default.
 
+Home Assistant answers on `http://192.168.2.240` (port 80, not 8123). The add on is called "GPT Live Voice" there and has the slug `5b94124a_openai_realtime_voice` (the hash `a0d7b954` belongs to the Tailscale add on). The exact update steps through the browser are in `STATUS.md`, section Umgebung.
+
 ## Remote access from the phone (Tailscale, 15 Nov 2026)
 
 The memory app (port 8082) and live talk (port 8080) are reachable from outside the home through Tailscale, never through an open port on the router (the page has no login besides the code word).
