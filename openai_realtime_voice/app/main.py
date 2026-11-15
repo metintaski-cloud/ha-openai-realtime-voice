@@ -321,11 +321,9 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
 
     async def _chat(self, history, message) -> Optional[dict]:
         """A text message from Metin in the memory app (code word checked by the page)."""
-        # what she can do right now, also before the first voice talk (no stale "not yet")
-        devices = [what for available, _t, _h, what in self._capabilities() if available]
-        has_fan, has_tv, has_messages = (self.fan.available, self.tv.available,
-                                         self.messages.available)
-        rules = persona.build(devices, fan=has_fan, tv=has_tv, messages=has_messages,
+        # the chat can do only what chat.answer offers (CHAT_ABILITIES_NOTE); the voice tools are
+        # not listed, or she claims to have done them (2.84.10: "Metin'e ilettim" in the chat)
+        rules = persona.build([], fan=False, tv=False, messages=False,
                               extra=self.instructions)
         out = await chat.answer(self.openai_api_key, [self.memory_model, self.backend_model],
                                 rules, self.memory, history, message,
@@ -335,7 +333,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                                 room=(lambda: chat.room_values(self.lights.api_url,
                                                                self.lights.token))
                                 if self.lights.token else None,
-                                mailer=self.mailer, inbox=self.inbox)
+                                mailer=self.mailer, inbox=self.inbox,
+                                mama=self.messages.from_metin if self.messages.available else None)
         if out:
             logger.info("Chat with Metin in the app: answered, %d proposals, %d light commands",
                         len(out["proposals"]), len(out["lights"]))

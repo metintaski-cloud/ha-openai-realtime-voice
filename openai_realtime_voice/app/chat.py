@@ -133,7 +133,7 @@ def _parse(text: str, lists: dict) -> Optional[dict]:
     return {"reply": reply,
             "proposals": valid_proposals(parsed.get("proposals"), lists),
             "lights_raw": parsed.get("lights"), "email_raw": parsed.get("email"),
-            "mail_raw": parsed.get("mail")}
+            "mail_raw": parsed.get("mail"), "mama_raw": parsed.get("mama")}
 
 
 def describe_lamps(result: dict) -> str:
@@ -181,6 +181,18 @@ async def _do_lights(raw, run) -> list[str]:
 ROOM_RE = re.compile(
     r"\b(warm|wärmer|kalt|kälter|temperatur\w*|grad|heiß|hitze|feucht\w*|luftfeucht\w*|"
     r"klima|sıcak\w*|soğuk\w*|sıcaklık\w*|derece|nem\w*)\b", re.I)
+
+MAMA_NOTE = """
+
+NACHRICHT AN ANNE
+• Im Chat schreibt dir immer Metin selbst. Bittet er dich, seiner Mutter etwas auszurichten ("sag Mama", "richte Anne aus", "Nachricht weiterleiten", oder er schreibt ihr direkt etwas auf Türkisch), trägst du unter "mama" genau seinen Text ein, Türkisch bleibt Türkisch. Du sagst es Anne dann zu Hause über den Lautsprecher, und sie kann dir antworten.
+• Sag ihm kurz, dass du es Anne ausrichtest. Eine Nachricht an Metin selbst gibt es im Chat nicht, er schreibt dir ja gerade."""
+
+CHAT_ABILITIES_NOTE = """
+
+WAS DU IM CHAT KANNST (nur das, alles andere geht nur im Gespräch zu Hause)
+{abilities}
+Behaupte nie, etwas erledigt zu haben, das nicht in dieser Liste steht; sag dann, dass das nur im Gespräch zu Hause geht."""
 
 ROOM_NOTE = """
 
@@ -248,7 +260,8 @@ def speak_prompt(reply: str) -> str:
 
 async def answer(api_key: str, models: list[str], rules: str, store: memory.MemoryStore,
                  history, message: str, url: str = memory.RESPONSES_URL,
-                 lights=None, room=None, mailer=None, inbox=None) -> Optional[dict]:
+                 lights=None, room=None, mailer=None, inbox=None,
+                 mama=None) -> Optional[dict]:
     """`lights`: (count, run) of the light controller, so Leyla can switch the lamps.
     `room`: async function giving the room values, asked only when Metin asks about them.
     `mailer`: `mail.Mailer`; an "email" in her answer becomes a draft card, never a sent mail.
@@ -262,6 +275,19 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
             rules = rules + ROOM_NOTE.format(values=values)
     if inbox and inbox.available:
         rules = rules + inbox_mod.CHAT_NOTE
+    abilities = ["mit Metin schreiben und dein Gedächtnis mit ihm pflegen (Vorschläge)"]
+    if lights:
+        abilities.append("die Stehlampen schalten")
+    if room:
+        abilities.append("Temperatur und Luftfeuchte nennen, wenn er danach fragt")
+    if mailer and mailer.available:
+        abilities.append("E-Mails vorbereiten, er sendet sie selbst")
+    if inbox and inbox.available:
+        abilities.append("seine Mails lesen und Löschen vorschlagen")
+    if mama:
+        rules = rules + MAMA_NOTE
+        abilities.append("Anne etwas von Metin ausrichten")
+    rules = rules + CHAT_ABILITIES_NOTE.format(abilities="\n".join("• " + a for a in abilities))
     out = await _answer(api_key, models, rules, store, history, message, url, lights)
     trash = None
     req = out.pop("mail_raw", None) if out else None
@@ -282,6 +308,14 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
         out.pop("lights_raw", None)
         out.pop("mail_raw", None)
         out.setdefault("lights", [])
+        m = out.pop("mama_raw", None)
+        if mama and isinstance(m, str) and m.strip():
+            try:
+                await mama(m.strip()[:500])
+                out["lights"].append("📣 Leyla richtet Anne aus: " + m.strip()[:500])
+            except Exception as e:
+                logger.warning("Message to Mama from the chat failed: %s", e)
+                out["lights"].append("📣 Konnte Anne gerade nicht erreicht werden.")
         if trash:
             out["trash"] = trash
         e = out.pop("email_raw", None)

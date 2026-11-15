@@ -244,3 +244,21 @@ def test_tech_proposals_are_dropped_and_profile_edits_do_not_repeat():
           "new": "Person: Metin | Arbeit: Elektriker in Schicht, Frühschicht diese Woche"}
     out = chat.valid_proposals([ok], lists)
     assert out[0]["new"] == "Person: Metin | Arbeit: Elektriker in Schicht, Frühschicht diese Woche"
+
+
+async def test_chat_lists_only_its_abilities_and_passes_a_message_to_mama(tmp_path, monkeypatch):
+    store = memory.MemoryStore(str(tmp_path / "m.json"))
+    seen, sent = [], []
+
+    async def fake_answer(api_key, models, rules, store, history, message, url, lights):
+        seen.append(rules)
+        return {"reply": "Ich richte es Anne aus.", "proposals": [], "lights_raw": None,
+                "email_raw": None, "mail_raw": None, "mama_raw": "Eve biraz geç gelicem"}
+
+    async def mama(text):
+        sent.append(text)
+    monkeypatch.setattr(chat, "_answer", fake_answer)
+    out = await chat.answer("k", ["m"], "R", store, [], "Sag Mama: Eve biraz geç gelicem", mama=mama)
+    assert sent == ["Eve biraz geç gelicem"]
+    assert "WAS DU IM CHAT KANNST" in seen[0] and "Anne etwas von Metin ausrichten" in seen[0]
+    assert any("Anne" in line for line in out["lights"])
