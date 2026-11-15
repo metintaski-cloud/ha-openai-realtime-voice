@@ -410,7 +410,7 @@ function gmailDraw(st){const box=document.getElementById('gmail');box.innerHTML=
   const p=document.createElement('div');p.className='hint';p.textContent='1. Auf "Mit Google anmelden" tippen und anmelden. 2. Die Seite danach lädt nicht, das ist richtig: ihre ganze Adresse oben kopieren, hier einfügen und auf "Verbinden" tippen.';box.appendChild(p);
   const i=document.createElement('input');i.type='text';i.placeholder='http://127.0.0.1/?code=...';i.autocomplete='off';box.appendChild(i);
   const row=document.createElement('div');row.className='gb';const a=document.createElement('button');a.textContent='Mit Google anmelden';
-  a.onclick=async()=>{const j=await gpost('auth');if(j.url)window.open(j.url,'_blank');};
+  a.onclick=async()=>{const w=window.open('about:blank','_blank');const j=await gpost('auth');if(j.url&&w)w.location.href=j.url;else if(j.url)location.href=j.url;else if(w)w.close();};
   const c=document.createElement('button');c.textContent='Verbinden';c.onclick=async()=>{c.disabled=true;const j=await gpost('connect',{url:i.value});c.disabled=false;
    if(j.ok){snd.save();gmailLoad();}else{p.textContent=j.error||'Hat nicht geklappt.';}};row.append(a,c);box.appendChild(row);return;}
  const on=GM.list.filter(x=>x.allowed).length;h.textContent='E-MAIL KONTAKTE ('+on+' FREIGEGEBEN)';
