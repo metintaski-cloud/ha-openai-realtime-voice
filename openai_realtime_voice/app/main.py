@@ -1305,7 +1305,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                                             rules=self._readable_rules, chat=self._chat,
                                             voice=self._chat_voice, mailer=self.mailer,
                                             google=self.google, inbox=self.inbox,
-                                            mood=self.mood, agenda=self.agenda)
+                                            mood=self.mood)
             except Exception as e:
                 logger.warning("Memory page could not start: %s", e)
         if self.messages.available:

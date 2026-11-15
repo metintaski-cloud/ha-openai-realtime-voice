@@ -452,14 +452,14 @@ async function gmailLoad(force){const st=await gpost('status');const box=documen
  GM.needs=!st.connected||!!(st.missing&&st.missing.length);
  if(st.connected){const j=await gpost('contacts',{force:!!force});GM.list=j.contacts||[];}
  GM.shown=true;box.style.display=(sec==='mail'&&!view)?'block':'none';gmailDraw(st);}
-function trashCard(m,i){const c=document.createElement('div');c.className='mc tr';const t=m.t;const cal=t.kind==='cal';
- const h=document.createElement('b');h.textContent='🗑 '+t.items.length+(cal?(t.items.length===1?' Termin':' Termine')+' löschen?':(t.items.length===1?' Mail':' Mails')+' in den Papierkorb?');c.appendChild(h);
+function trashCard(m,i){const c=document.createElement('div');c.className='mc tr';const t=m.t;
+ const h=document.createElement('b');h.textContent='🗑 '+t.items.length+(t.items.length===1?' Mail':' Mails')+' in den Papierkorb?';c.appendChild(h);
  const ul=document.createElement('ul');t.items.forEach(x=>{const li=document.createElement('li');li.textContent=x.betreff+'  ·  '+x.von;ul.appendChild(li);});c.appendChild(ul);
  if(m.done){const s=document.createElement('div');s.className='meta';s.textContent=m.done;c.appendChild(s);return c;}
- const row=document.createElement('div');row.className='row';const y=document.createElement('button');y.textContent=cal?'Löschen':'In den Papierkorb';const n=document.createElement('button');n.textContent='Nein';n.className='no';
- y.onclick=async()=>{y.disabled=n.disabled=true;let r={ok:false};try{r=await (await post(cal?'/api/agenda/delete':'/api/mail/trash',{id:t.id})).json();}catch(_){}
-  CHAT[i].done=r.ok?(r.anzahl+(cal?' gelöscht (30 Tage wiederherstellbar)':' im Papierkorb (30 Tage wiederherstellbar)')):(r.error||'Ging nicht');if(r.ok)snd.del();chatSave();chatDraw();};
- n.onclick=async()=>{try{await post(cal?'/api/agenda/discard':'/api/mail/trash_discard',{id:t.id});}catch(_){}CHAT[i].done=cal?'Bleibt im Kalender':'Bleibt im Posteingang';snd.off();chatSave();chatDraw();};
+ const row=document.createElement('div');row.className='row';const y=document.createElement('button');y.textContent='In den Papierkorb';const n=document.createElement('button');n.textContent='Nein';n.className='no';
+ y.onclick=async()=>{y.disabled=n.disabled=true;let r={ok:false};try{r=await (await post('/api/mail/trash',{id:t.id})).json();}catch(_){}
+  CHAT[i].done=r.ok?(r.anzahl+' im Papierkorb (30 Tage wiederherstellbar)'):(r.error||'Ging nicht');if(r.ok)snd.del();chatSave();chatDraw();};
+ n.onclick=async()=>{try{await post('/api/mail/trash_discard',{id:t.id});}catch(_){}CHAT[i].done='Bleibt im Posteingang';snd.off();chatSave();chatDraw();};
  row.append(y,n);c.appendChild(row);return c;}
 async function mailPending(){let j=null;try{j=await (await post('/api/mail/pending',{})).json();}catch(_){}
  if(!j||!j.ok)return;let added=false;(j.drafts||[]).forEach(e=>{if(!CHAT.some(m=>m.role==='mail'&&m.e.id===e.id)){CHAT.push({role:'mail',e});added=true;}});
@@ -677,7 +677,7 @@ async def _lamp_api(lamp, method: str, path: str, body: bytes):
 
 async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "", rules=None,
                   chat=None, voice=None, mailer=None, google=None, inbox=None,
-                  mood=None, agenda=None) -> None:
+                  mood=None) -> None:
     try:
         head = await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), timeout=10)
         lines = head.decode("latin-1").split("\r\n")
@@ -761,8 +761,7 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
             if unlocked and mailer:
                 if path == "/api/mail/pending":
                     out = {"ok": True, "drafts": mailer.pending(),
-                           "trash": (inbox.pending() if inbox else [])
-                           + (agenda.pending() if agenda else [])}
+                           "trash": inbox.pending() if inbox else []}
                 elif path == "/api/mail/send":
                     out = await mailer.send(str(d.get("id", "")))
                 elif path == "/api/mail/discard":
@@ -771,14 +770,6 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                     out = await inbox.confirm(str(d.get("id", "")))
                 elif path == "/api/mail/trash_discard" and inbox:
                     out = {"ok": inbox.discard(str(d.get("id", "")))}
-            await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
-        elif method == "POST" and path.startswith("/api/agenda/"):
-            out = {"ok": False}
-            if unlocked and agenda:
-                if path == "/api/agenda/delete":
-                    out = await agenda.confirm(str(d.get("id", "")))
-                elif path == "/api/agenda/discard":
-                    out = {"ok": agenda.discard(str(d.get("id", "")))}
             await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
         elif method == "POST" and path == "/api/mood":
             out = mood.status() if (unlocked and mood) else {}
@@ -832,11 +823,11 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
 async def start_http(store: memory.MemoryStore, sync: Optional[object] = None,
                      host: str = "0.0.0.0", port: int = 8082, lamp: Optional[object] = None,
                      code_phrase: str = "", rules=None, chat=None, voice=None,
-                     mailer=None, google=None, inbox=None, mood=None, agenda=None):
+                     mailer=None, google=None, inbox=None, mood=None):
     """`rules`: a function that returns Leyla's instructions without memory and without the
     code word; shown read only after the code word."""
     server = await asyncio.start_server(
         lambda r, w: _handle(store, sync, r, w, lamp, code_phrase, rules, chat, voice, mailer, google,
-                          inbox, mood, agenda), host, port)
+                          inbox, mood), host, port)
     logger.info("Memory page on port %d", port)
     return server

@@ -9,7 +9,7 @@ Leyla meldet sich mit Metins Google Konto an, um vier Dinge zu tun:
 1. **Kontakte lesen** (nur lesen): Name und E-Mail Adresse der Kontakte, damit Leyla weiß, an wen eine Mail gehen soll.
 2. **E-Mails senden**: nur nachdem Metin in der App auf "Senden" getippt hat.
 3. **E-Mails lesen und aufräumen**: Leyla sucht und liest Mails auf Metins Wunsch. Löschen verschiebt Mails nur in den Papierkorb und nur nachdem Metin in der App getippt hat.
-4. **Kalender verwalten**: Leyla sieht Termine an, trägt neue ein und ändert sie auf Metins Wunsch. Löschen geschieht nur, nachdem Metin in der App getippt hat.
+4. **Kalender verwalten**: Leyla sieht Termine an, trägt neue ein und ändert sie auf Metins Wunsch. Löschen geschieht auf Metins Wunsch sofort; Google hebt gelöschte Termine 30 Tage im Papierkorb des Kalenders auf.
 
 ## Speicherung
 

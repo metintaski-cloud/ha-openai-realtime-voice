@@ -59,7 +59,7 @@ def berlin(monkeypatch):
 
 def make(tmp_path, **kw):
     g = FakeGoogle(**kw)
-    return g, agenda.Agenda(g, str(tmp_path / "t.json"))
+    return g, agenda.Agenda(g)
 
 
 def test_parse_date_and_time():
@@ -75,8 +75,8 @@ def test_parse_date_and_time():
 
 
 def test_not_available_without_the_scope(tmp_path):
-    assert not agenda.Agenda(FakeGoogle(scopes=()), str(tmp_path / "t.json")).available
-    assert not agenda.Agenda(None, str(tmp_path / "t.json")).available
+    assert not agenda.Agenda(FakeGoogle(scopes=())).available
+    assert not agenda.Agenda(None).available
 
 
 def test_show_numbers_and_defaults(tmp_path):
@@ -148,22 +148,6 @@ def test_change_allday_to_timed_clears_the_date(tmp_path):
     assert body["start"]["date"] is None and body["start"]["dateTime"].startswith("2026-11-17T09:00")
 
 
-def test_delete_is_only_a_card_until_metin_taps(tmp_path):
-    g, ag = make(tmp_path)
-    asyncio.run(ag.show())
-    out = asyncio.run(ag.run({"aktion": "loeschen", "nummern": [2, 2, 9]}))
-    assert out["ok"] and out["anzahl"] == 1
-    assert not any(c[0] == "DELETE" for c in g.calls)
-    card = ag.pending()[0]
-    assert card["kind"] == "cal" and card["items"][0]["betreff"] == "Urlaub"
-    assert asyncio.run(ag.confirm(card["id"])) == {"ok": True, "anzahl": 1}
-    assert [c for c in g.calls if c[0] == "DELETE"][0][1].endswith("/e2")
-    assert ag.pending() == []
-    asyncio.run(ag.propose_delete([1]))
-    assert ag.discard(ag.pending()[0]["id"]) and ag.pending() == []
-    assert asyncio.run(ag.confirm("gone"))["ok"] is False
-
-
 def test_google_errors_give_plain_messages(tmp_path):
     _, ag = make(tmp_path, fail=403)
     assert "Calendar API" in asyncio.run(ag.show())["error"]
@@ -194,30 +178,9 @@ def test_chat_looks_then_answers_with_the_result(tmp_path, monkeypatch):
     assert "trash" not in out and "kalender_raw" not in out
 
 
-def test_chat_create_and_delete_card(tmp_path, monkeypatch):
-    store = memory.MemoryStore(str(tmp_path / "mem.json"))
-    g, ag = make(tmp_path)
-    asyncio.run(ag.show())
-    answers = iter([
-        {"reply": "Trage ich ein.", "proposals": [], "lights_raw": None, "email_raw": None,
-         "mail_raw": None, "kalender_raw": {"aktion": "anlegen", "titel": "Sport",
-                                            "datum": "2026-11-19", "beginn": "18:00"}},
-        {"reply": "Sport steht am Donnerstag um 18 Uhr.", "proposals": [], "lights_raw": None,
-         "email_raw": None, "mail_raw": None, "kalender_raw": {"aktion": "loeschen", "nummern": [1]}},
-    ])
-
-    async def fake_answer(*a, **k):
-        return dict(next(answers))
-    monkeypatch.setattr(chat, "_answer", fake_answer)
-    out = asyncio.run(chat.answer("k", ["m"], "R", store, [], "Sport Donnerstag 18 Uhr", agenda=ag))
-    assert any(c[0] == "POST" and c[3]["summary"] == "Sport" for c in g.calls)
-    assert out["trash"]["kind"] == "cal" and out["trash"]["items"][0]["betreff"] == "Zahnarzt"
-    assert not any(c[0] == "DELETE" for c in g.calls)
-
-
 def test_chat_without_the_scope_offers_nothing(tmp_path, monkeypatch):
     store = memory.MemoryStore(str(tmp_path / "mem.json"))
-    ag = agenda.Agenda(FakeGoogle(scopes=()), str(tmp_path / "t.json"))
+    ag = agenda.Agenda(FakeGoogle(scopes=()))
     seen = []
 
     async def fake_answer(api_key, models, rules, store, history, message, url, lights):
@@ -229,27 +192,60 @@ def test_chat_without_the_scope_offers_nothing(tmp_path, monkeypatch):
     assert "KALENDER" not in seen[0] and "Kalender" not in seen[0] and "trash" not in out
 
 
-def test_delete_in_one_step_by_search_word(tmp_path):
+def test_delete_by_number_deletes_at_once(tmp_path):
     g, ag = make(tmp_path)
+    asyncio.run(ag.show())
+    out = asyncio.run(ag.run({"aktion": "loeschen", "nummern": [2, 2, 9]}))
+    assert out == {"ok": True, "anzahl": 1, "geloescht": [{"titel": "Urlaub", "wann": "ganztägig Di 17.11. bis Mi 18.11."}]}
+    assert [c for c in g.calls if c[0] == "DELETE"][0][1].endswith("/e2")
+    assert "error" in asyncio.run(ag.run({"aktion": "loeschen", "nummern": [1]}))  # numbers are stale now
+
+
+def test_delete_in_one_step_by_search_word(tmp_path, monkeypatch):
+    g, ag = make(tmp_path)
+    only_one = lambda *a, **k: Resp(200, {"items": [TIMED]})  # noqa: E731
+    real = g.api
+
+    async def api(method, url, **kw):
+        if method == "GET":
+            g.calls.append((method, url, kw.get("params"), kw.get("json")))
+            return only_one()
+        return await real(method, url, **kw)
+    g.api = api
     out = asyncio.run(ag.run({"aktion": "loeschen", "suche": "Zahnarzt"}))  # no look before
-    assert out["ok"] and g.calls[0][2]["q"] == "Zahnarzt" and g.calls[0][2]["timeMax"].startswith("2027-01-15")
+    assert out["ok"] and out["geloescht"][0]["titel"] == "Zahnarzt"
+    assert g.calls[0][2]["q"] == "Zahnarzt" and g.calls[0][2]["timeMax"].startswith("2027-01-15")
+    assert [c for c in g.calls if c[0] == "DELETE"][0][1].endswith("/e1")
+    asyncio.run(ag.run({"aktion": "loeschen", "suche": "Zahnarzt", "datum": "2026-11-16"}))
+    assert g.calls[2][2]["timeMin"].startswith("2026-11-16") and g.calls[2][2]["timeMax"].startswith("2026-11-17")
+
+
+def test_several_matches_delete_nothing_and_give_the_list(tmp_path):
+    g, ag = make(tmp_path)  # the fake calendar always has two appointments
+    out = asyncio.run(ag.run({"aktion": "loeschen", "suche": "Termin"}))
+    assert out["ok"] is False and out["mehrere"] and out["anzahl"] == 2
     assert not any(c[0] == "DELETE" for c in g.calls)
-    assert ag.pending()[0]["items"][0]["betreff"] == "Zahnarzt"
-    day = asyncio.run(ag.run({"aktion": "loeschen", "suche": "Urlaub", "datum": "2026-11-17"}))
-    assert day["ok"] and g.calls[1][2]["timeMin"].startswith("2026-11-17") \
-        and g.calls[1][2]["timeMax"].startswith("2026-11-18")
+    done = asyncio.run(ag.run({"aktion": "loeschen", "nummern": [1]}))  # the list is the numbering
+    assert done["ok"] and done["geloescht"][0]["titel"] == "Zahnarzt"
     assert "Titel oder Datum" in asyncio.run(ag.run({"aktion": "loeschen"}))["error"]
-    assert "Titel oder Datum" in asyncio.run(ag.run({"aktion": "loeschen", "nummern": [7]}))["error"]
 
 
-def test_chat_failed_delete_goes_back_to_her(tmp_path, monkeypatch):
+def test_delete_failure_is_reported(tmp_path):
+    g, ag = make(tmp_path)
+    asyncio.run(ag.show())
+    g.fail = 403
+    assert "ging nicht" in asyncio.run(ag.run({"aktion": "loeschen", "nummern": [1]}))["error"]
+
+
+def test_chat_delete_runs_at_once_and_she_answers_with_the_result(tmp_path, monkeypatch):
     store = memory.MemoryStore(str(tmp_path / "mem.json"))
     g, ag = make(tmp_path)
+    asyncio.run(ag.show())
     seen = []
     answers = iter([
-        {"reply": "Ich lege die Karte vor.", "proposals": [], "lights_raw": None, "email_raw": None,
-         "mail_raw": None, "kalender_raw": {"aktion": "loeschen", "nummern": [5]}},
-        {"reply": "Dazu habe ich keinen Termin gefunden.", "proposals": [], "lights_raw": None,
+        {"reply": "Ich lösche ihn.", "proposals": [], "lights_raw": None, "email_raw": None,
+         "mail_raw": None, "kalender_raw": {"aktion": "loeschen", "nummern": [1]}},
+        {"reply": "Der Zahnarzt Termin ist gelöscht.", "proposals": [], "lights_raw": None,
          "email_raw": None, "mail_raw": None, "kalender_raw": None},
     ])
 
@@ -257,6 +253,6 @@ def test_chat_failed_delete_goes_back_to_her(tmp_path, monkeypatch):
         seen.append(rules)
         return dict(next(answers))
     monkeypatch.setattr(chat, "_answer", fake_answer)
-    out = asyncio.run(chat.answer("k", ["m"], "R", store, [], "Lösch den Termin", agenda=ag))
-    assert out["reply"].startswith("Dazu habe ich keinen") and "trash" not in out
-    assert "Keinen passenden Termin" in seen[1]
+    out = asyncio.run(chat.answer("k", ["m"], "R", store, [], "Lösch den Zahnarzt", agenda=ag))
+    assert any(c[0] == "DELETE" and c[1].endswith("/e1") for c in g.calls)
+    assert out["reply"].startswith("Der Zahnarzt") and "trash" not in out and "geloescht" in seen[1]

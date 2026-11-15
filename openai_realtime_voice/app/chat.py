@@ -273,8 +273,8 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
     `mailer`: `mail.Mailer`; an "email" in her answer becomes a draft card, never a sent mail.
     `inbox`: `inbox.Inbox`; a "mail" search or read is run and she answers again with the result
     (one extra pass at most), a "loeschen" becomes a bin card that Metin confirms.
-    `agenda`: `agenda.Agenda`; a "kalender" request is run the same way (looking, creating and
-    changing at once with one extra pass, deleting only as a card)."""
+    `agenda`: `agenda.Agenda`; a "kalender" request (looking, creating, changing, deleting) is
+    run at once and she answers once more with the result (one extra pass)."""
     if mailer and mailer.available:
         rules = rules + mail.MAIL_NOTE.format(names=mailer.names())
     if room and ROOM_RE.search(message or ""):
@@ -295,8 +295,7 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
     if inbox and inbox.available:
         abilities.append("seine Mails lesen und Löschen vorschlagen")
     if agenda and agenda.available:
-        abilities.append("seinen Kalender verwalten (Termine ansehen, eintragen, ändern; "
-                         "Löschen nur nach seinem Tipp)")
+        abilities.append("seinen Kalender verwalten (Termine ansehen, eintragen, ändern, löschen)")
     if mama:
         rules = rules + MAMA_NOTE
         abilities.append("Anne etwas von Metin ausrichten")
@@ -319,18 +318,13 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
                 second["proposals"] = out["proposals"] + second["proposals"]
                 out = second
     if out and agenda and agenda.available and isinstance(cal_req, dict):
-        note, card = await agenda.chat_step(cal_req)
-        trash = card or trash
-        if note:
-            second = await _answer(api_key, models, rules + note, store, history, message, url,
-                                   lights)
-            if second:
-                req2 = second.pop("kalender_raw", None)
-                if isinstance(req2, dict) and req2.get("aktion") == "loeschen":
-                    _, card = await agenda.chat_step(req2)
-                    trash = card or trash
-                second["proposals"] = out["proposals"] + second["proposals"]
-                out = second
+        note = await agenda.chat_step(cal_req)
+        second = await _answer(api_key, models, rules + note, store, history, message, url,
+                               lights)
+        if second:
+            second.pop("kalender_raw", None)
+            second["proposals"] = out["proposals"] + second["proposals"]
+            out = second
     if out and lights and out.get("lights_raw"):
         out["lights"] = await _do_lights(out["lights_raw"], lights[1])
     if out:

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add on 2.87.2: Leyla deletes calendar appointments at once, no confirmation card (Metin: asking her to delete and then tapping myself makes no sense). Several matches delete nothing and she asks which one; at most 5 per call; failed deletes are reported back.
+
 ### Leyla fork (deployed setup, 13 Nov 2026)
 
 - Own wake word "Hallo Leyla" (`hallo_leyla.json`, 99% cutoff, gain factor 4). "Okay Nabu" and "Hey Mycroft" are removed on the device.
