@@ -18,6 +18,7 @@ Audio pacing: audio may arrive faster than real time. The ESP32 client consumes
 24 kHz x 2 bytes = 48 000 bytes/sec, so a token bucket sender paces it.
 """
 import os
+import re
 import sys
 import asyncio
 import json
@@ -316,7 +317,16 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         url, model = opt("CHAT_API_URL"), opt("CHAT_MODEL")
         return {"url": url, "key": opt("CHAT_API_KEY"), "model": model} if url and model else None
 
-    async def _chat(self, history, message) -> Optional[dict]:
+    def _chat_info(self) -> dict:
+        """For the switch in the app chat: is another provider set, and its short name."""
+        other = self._chat_provider()
+        if not other:
+            return {"other": False}
+        host = re.sub(r"^https?://", "", other["url"]).split("/")[0].split(":")[0]
+        parts = [p for p in host.split(".") if p not in ("api", "www")]
+        return {"other": True, "name": (parts[0] if parts else host).capitalize()}
+
+    async def _chat(self, history, message, use_other: bool = True) -> Optional[dict]:
         """A text message from Metin in the memory app (code word checked by the page)."""
         devices, has_fan, has_tv, has_messages = getattr(
             self, "_devices", ([], False, False, False))
@@ -325,7 +335,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         out = await chat.answer(self.openai_api_key, [self.memory_model, self.backend_model],
                                 rules, self.memory, history, message,
                                 url=os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL),
-                                other=self._chat_provider())
+                                other=self._chat_provider() if use_other else None)
         if out:
             logger.info("Chat with Metin in the app: answered, %d proposals", len(out["proposals"]))
         return out
@@ -1228,7 +1238,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 await memory_web.start_http(self.memory, self.todo_sync,
                                             port=int(os.environ.get("MEMORY_WEB_PORT", "8082")),
                                             lamp=self.lamp, code_phrase=self.code_phrase,
-                                            rules=self._readable_rules, chat=self._chat)
+                                            rules=self._readable_rules, chat=self._chat,
+                                            chat_info=self._chat_info)
             except Exception as e:
                 logger.warning("Memory page could not start: %s", e)
         if self.messages.available:
