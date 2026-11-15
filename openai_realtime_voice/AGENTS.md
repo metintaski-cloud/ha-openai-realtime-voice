@@ -120,8 +120,7 @@ Update when:
 - A config option or tool is added or changed
 - The Docker build or dependencies change
 - When shipping a fix or feature: update version in `config.yaml` (semver-like; see Version above).
-- **Session learnings:** The memory page script is a normal Python string: write `\\n` and `\\s` in the source for `\n` and `\s` in the JS, and run `node --check` on the extracted script before every commit (a bare `\n` broke the page once, 15 Nov 2026).
-- **Session learnings (old):** If you discover something during a session that cost time or caused confusion (e.g. environment quirks, tool invocation details, non-obvious gotchas), add it here before finishing. Future sessions start fresh and won't have that context unless it's written down.
+- **Session learnings:** If you discover something during a session that cost time or caused confusion (e.g. environment quirks, tool invocation details, non-obvious gotchas), add it here before finishing. Future sessions start fresh and won't have that context unless it's written down.
 
 ## Session learnings (GPT Live)
 
