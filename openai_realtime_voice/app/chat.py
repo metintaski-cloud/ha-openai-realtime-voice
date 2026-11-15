@@ -8,10 +8,7 @@ propose changes to the memory; nothing is stored here. The page shows each propo
 still never deletes or changes anything by herself.
 """
 import json
-import ipaddress
 import logging
-import time
-from urllib.parse import urlparse
 from typing import Optional
 
 import httpx
@@ -22,9 +19,6 @@ logger = logging.getLogger(__name__)
 
 KINDS = (memory.FAMILY, memory.FRIENDS, memory.LEYLA, memory.PRIVATE)
 MAX_HISTORY = 20
-# Gemma 4 thinks first: slower, and now and then all text went into "reasoning" with an empty
-# answer (15 Nov 2026). "none" turns thinking off on Ollama; other providers ignore it.
-NO_THINKING = "none"
 MAX_MESSAGE = 2000
 
 CHAT_STYLE = """
@@ -61,23 +55,6 @@ LICHT
 • Du kannst im Chat die {count} Stehlampen steuern (Lampe 1 bis {count}), jedes Mal: Bittet Metin darum, trägst du es unter "lights" ein, und es passiert sofort, ohne Ja. Im Chat gilt das statt der Delegation an deinen Hintergrund. Sag nie, dass du das Licht hier nicht schalten kannst, auch nicht beim zweiten oder dritten Mal. Ohne Lampennummer meint er alle. "Heller" oder "dunkler" heißt etwa 25 Prozent mehr oder weniger. Farben: rot, orange, gelb, gruen, tuerkis, blau, lila, pink; Weiß: warm, neutral, kalt.
 • Schreib in deiner Antwort kurz und natürlich, was du machst; das Ergebnis zeigt die App darunter an.
 Format je Eintrag in "lights": {{"lamps": [1, 2] oder [] für alle, "action": "on|off|toggle", "brightness_percent": Zahl oder null, "white": "warm|neutral|kalt" oder null, "color": Farbe oder null}}"""
-
-OTHER_NOTE = """
-
-HINWEIS FÜR DIESEN CHAT
-• Was du über Familie, Freunde und Verwandte weißt, ist in diesem Chat nicht dabei. Fragt Metin danach, sag ihm locker, dass du das hier gerade nicht vor dir hast, und schlag dazu nichts zum Merken vor; über ihn und euch beide darfst du alles."""
-
-
-def in_house(url: str) -> bool:
-    """True when the provider runs in the home network (private address, localhost, .local)."""
-    host = (urlparse(url).hostname or "").lower()
-    if host == "localhost" or host.endswith(".local"):
-        return True
-    try:
-        return ipaddress.ip_address(host).is_private
-    except ValueError:
-        return False
-
 
 def _clean_history(history) -> list[dict]:
     out = []
@@ -134,39 +111,6 @@ def _parse(text: str, lists: dict) -> Optional[dict]:
             "lights_raw": parsed.get("lights")}
 
 
-async def _other_provider(client, base_url: str, key: str, model: str, instructions: str,
-                          dialog: list, lists: dict) -> Optional[dict]:
-    """An OpenAI compatible chat completions endpoint of another provider (chat_api_url)."""
-    t0 = time.monotonic()
-    try:
-        resp = await client.post(
-            base_url.rstrip("/") + "/chat/completions",
-            headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
-            json={"model": model, "reasoning_effort": NO_THINKING,
-                  "messages": [{"role": "system", "content": instructions}] + dialog})
-    except Exception as e:
-        logger.warning("Chat request to the other provider failed after %.1f s: %r",
-                       time.monotonic() - t0, e)
-        return None
-    logger.info("Other provider answered in %.1f s (HTTP %s)", time.monotonic() - t0,
-                resp.status_code)
-    if resp.status_code != 200:
-        logger.warning("Chat with the other provider failed: HTTP %s %s", resp.status_code,
-                       resp.text[:200])
-        return None
-    try:
-        msg = resp.json()["choices"][0]["message"]
-        text = msg.get("content") or ""
-    except Exception:
-        logger.warning("Chat with the other provider: answer without a message")
-        return None
-    out = _parse(text, lists)
-    if out is None:  # never log the text itself: the chat is private
-        logger.warning("Chat with the other provider: empty answer (fields %s, finish %s)",
-                       sorted(msg), resp.json()["choices"][0].get("finish_reason"))
-    return out
-
-
 def describe_lamps(result: dict) -> str:
     """'Lampe 1: an, 40 %, warm · Lampe 2: aus' from the light controller's result."""
     if not isinstance(result, dict):
@@ -210,10 +154,9 @@ async def _do_lights(raw, run) -> list[str]:
 
 async def answer(api_key: str, models: list[str], rules: str, store: memory.MemoryStore,
                  history, message: str, url: str = memory.RESPONSES_URL,
-                 other: Optional[dict] = None, lights=None) -> Optional[dict]:
-    """`other`: {"url", "key", "model"} of another provider; OpenAI is the fallback.
-    `lights`: (count, run) of the light controller, so Leyla can switch the lamps."""
-    out = await _answer(api_key, models, rules, store, history, message, url, other, lights)
+                 lights=None) -> Optional[dict]:
+    """`lights`: (count, run) of the light controller, so Leyla can switch the lamps."""
+    out = await _answer(api_key, models, rules, store, history, message, url, lights)
     if out and lights and out.get("lights_raw"):
         out["lights"] = await _do_lights(out["lights_raw"], lights[1])
     if out:
@@ -222,7 +165,7 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
     return out
 
 
-async def _answer(api_key, models, rules, store, history, message, url, other, lights):
+async def _answer(api_key, models, rules, store, history, message, url, lights):
     """{"reply": ..., "proposals": [...]} or None when no model answered."""
     message = (message or "").strip()[:MAX_MESSAGE]
     if not message:
@@ -244,25 +187,6 @@ async def _answer(api_key, models, rules, store, history, message, url, other, l
               for h in _clean_history(history)]
     dialog.append({"role": "user", "content": message})
     async with httpx.AsyncClient(timeout=60.0) as client:
-        if other and other.get("url") and other.get("model"):
-            if in_house(other["url"]):
-                # HomeAI on a computer in the home network: the data stays in the house, so it
-                # gets everything the OpenAI chat gets (Metin's wish, 15 Nov 2026).
-                mine, outside = lists, instructions
-            else:
-                # Family and friends never leave for a provider outside the house: only what
-                # the two of them have (Metin's private list and Leyla's own story).
-                mine = {memory.LEYLA: lists[memory.LEYLA], memory.PRIVATE: lists[memory.PRIVATE]}
-                outside = rules + OTHER_NOTE + CHAT_STYLE.format(
-                    lists=json.dumps(mine, ensure_ascii=False), missing="(nichts)")
-            out = await _other_provider(client, other["url"], other.get("key", ""), other["model"],
-                                        outside, dialog, mine)
-            if out:
-                out["via"] = "other"
-                return out
-            fallback = True
-        else:
-            fallback = False
         for model in [m for m in models if m]:
             try:
                 resp = await client.post(
@@ -286,7 +210,5 @@ async def _answer(api_key, models, rules, store, history, message, url, other, l
                                 text += part.get("text", "")
             out = _parse(text, lists)
             if out:
-                out["via"] = "openai"
-                out["fallback"] = fallback
                 return out
     return None

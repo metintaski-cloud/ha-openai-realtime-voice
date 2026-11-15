@@ -645,7 +645,6 @@ async def summarize(
     url: str = RESPONSES_URL,
     today: Optional[_dt.date] = None,
     unlocked_by_code: bool = False,
-    local: Optional[dict] = None,
 ) -> Optional[dict]:
     """Ask a text model for the updated lists. Tries the given models in order. Without the
     code phrase the private list always comes back unchanged."""
@@ -665,7 +664,7 @@ async def summarize(
         max_confidential=MAX_CONFIDENTIAL,
     )
     text = await textmodel.ask(prompt, api_key, models, url, "Memory update",
-                               check=lambda t: parse_lists_json(t) is not None, local=local)
+                               check=lambda t: parse_lists_json(t) is not None)
     if text is None:
         return None
     lists = parse_lists_json(text)

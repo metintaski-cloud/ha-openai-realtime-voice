@@ -38,12 +38,11 @@ def needs_report(dialog: list) -> bool:
 
 
 async def write_report(api_key: str, models: list[str], dialog: list,
-                       url: str = memory.RESPONSES_URL,
-                       local: Optional[dict] = None) -> Optional[str]:
+                       url: str = memory.RESPONSES_URL) -> Optional[str]:
     """Leyla's message to Metin, or None when nobody was rude (or no model answered)."""
     prompt = PROMPT.format(dialog=memory.format_dialog(dialog)[-12000:])
     text = await textmodel.ask(prompt, api_key, models, url, "Rudeness report",
-                               check=lambda t: bool(t.strip()), local=local, timeout=60.0)
+                               check=lambda t: bool(t.strip()), timeout=60.0)
     if not text or text.strip(" .").upper() == NOTHING:
         return None
     return text.strip()

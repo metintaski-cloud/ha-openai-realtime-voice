@@ -113,60 +113,6 @@ def test_chat_has_the_unofficial_couple_with_healthy_limits():
     assert "augenzwinkernd und kurz" in chat.CHAT_STYLE and "nie kontrollierend" in chat.CHAT_STYLE and "Familie und Freunden" in chat.CHAT_STYLE
 
 
-async def test_other_provider_is_used_first_and_openai_is_the_fallback(tmp_path, monkeypatch):
-    store = memory.MemoryStore(str(tmp_path / "m.json"))
-    store.save_all({"family": ["Person: Metin"]})
-    calls = []
-
-    class Resp:
-        def __init__(self, code, body):
-            self.status_code, self._b, self.text = code, body, ""
-
-        def json(self):
-            return self._b
-
-    class Client:
-        fail = False
-
-        def __init__(self, *a, **k):
-            pass
-
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, *a):
-            return False
-
-        async def post(self, url, headers=None, json=None):
-            calls.append((url, json.get("model")))
-            if url.endswith("/chat/completions"):
-                if Client.fail:
-                    return Resp(500, {})
-                assert json["messages"][0]["role"] == "system"
-                sys_text = json["messages"][0]["content"]
-                if "venice" in url:
-                    assert "Person: Metin" not in sys_text and "Familie, Freunde und Verwandte" in sys_text
-                else:  # HomeAI in the house gets everything
-                    assert "Person: Metin" in sys_text
-                return Resp(200, {"choices": [{"message": {"content": '{"reply": "Hallo Schatz", "proposals": []}'}}]})
-            return Resp(200, {"output_text": '{"reply": "Hallo von OpenAI", "proposals": []}'})
-
-    monkeypatch.setattr(chat.httpx, "AsyncClient", Client)
-    other = {"url": "https://api.venice.ai/api/v1/", "key": "v", "model": "venice-uncensored"}
-    out = await chat.answer("k", ["m"], "R", store, [], "Hi", other=other)
-    assert out["reply"] == "Hallo Schatz" and calls[0] == ("https://api.venice.ai/api/v1/chat/completions", "venice-uncensored")
-    assert out["via"] == "other"
-    Client.fail = True
-    out = await chat.answer("k", ["m"], "R", store, [], "Hi", other=other)
-    assert out["reply"] == "Hallo von OpenAI" and out["via"] == "openai" and out["fallback"]
-    out = await chat.answer("k", ["m"], "R", store, [], "Hi")
-    assert out["via"] == "openai" and not out["fallback"]
-    Client.fail = False
-    home = {"url": "http://192.168.2.36:11434/v1", "key": "", "model": "gemma"}
-    out = await chat.answer("k", ["m"], "R", store, [], "Hi", other=home)
-    assert out["via"] == "other"
-
-
 async def test_chat_switches_lamps_and_reports_the_real_state(tmp_path, monkeypatch):
     store = memory.MemoryStore(str(tmp_path / "m.json"))
     sent, ran = {}, []
@@ -213,10 +159,3 @@ def test_question_field_is_added_to_the_reply():
     out = chat._parse('{"reply": "Schön! Und wo bist du gerade?", "question": "Und wo bist du gerade?"}', {})
     assert out["reply"] == "Schön! Und wo bist du gerade?"
     assert "fast immer aus" in chat.CHAT_STYLE
-
-
-def test_homeai_in_the_house_gets_everything_outside_providers_only_their_lists():
-    assert chat.in_house("http://192.168.2.36:11434/v1")
-    assert chat.in_house("http://localhost:11434/v1") and chat.in_house("http://pc.local:11434/v1")
-    assert not chat.in_house("https://api.venice.ai/api/v1")
-    assert not chat.in_house("http://8.8.8.8/v1")

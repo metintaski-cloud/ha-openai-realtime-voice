@@ -199,9 +199,6 @@ body{margin:0;background:#000;color:#e8ecff;font:17px/1.4 system-ui,sans-serif;p
 #chat .chead img{width:76px;height:76px;border-radius:50%;object-fit:cover;border:2px solid #22d3ee;box-shadow:0 0 12px #22d3ee88,0 0 18px #d946ef55}
 #clog .lr{display:flex;gap:8px;align-items:flex-end;align-self:flex-start;max-width:92%}#clog .lr img{width:28px;height:28px;border-radius:50%;object-fit:cover;flex:none;border:1px solid #d946ef88}
 #clog .lr .m{max-width:none}
-#cprov{display:none;margin:0 4px 10px;border:1px solid #3b82f655;border-radius:999px;overflow:hidden;width:max-content}
-#cprov button{width:auto;padding:6px 16px;border-radius:0;background:transparent;box-shadow:none;font-size:14px;color:#9fb4ff}
-#cprov button.on{background:linear-gradient(90deg,var(--cy),var(--vi));color:#fff}
 #clog{max-height:38vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:2px}
 #clog .m{max-width:85%;padding:9px 12px;border-radius:14px;white-space:pre-wrap;word-break:break-word;font-size:16px}
 #clog .u{align-self:flex-end;background:#0d1750;border:1px solid #22d3ee55}
@@ -259,7 +256,7 @@ button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 @media (prefers-reduced-motion:reduce){.rg{animation-duration:.1s}.sp img{animation:none}}
 </style></head><body>
 <div id="splash"><div class="sp"><img src="/icon.png?v=5" alt=""><svg viewBox="0 0 200 200"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#a855f7"/><stop offset="1" stop-color="#d946ef"/></linearGradient></defs><circle class="trk" cx="100" cy="100" r="90"/><circle class="rg" cx="100" cy="100" r="90" pathLength="100"/></svg></div></div>
-<header><button id="back">&#8249;</button><img src="/icon.png?v=5" alt=""><h1>Leyla Gedächtnis</h1><button id="snd"></button></header><div id="pulse" class="ok" title="Alles in Ordnung"><div class="tick" id="tick" style="display:none"><span></span></div><i class="spark" style="left:12%;top:30%;animation-delay:0s"></i><i class="spark" style="left:22%;top:68%;animation-delay:0.6s"></i><i class="spark" style="left:31%;top:22%;animation-delay:1.2s"></i><i class="spark" style="left:68%;top:74%;animation-delay:0.3s"></i><i class="spark" style="left:77%;top:28%;animation-delay:0.9s"></i><i class="spark" style="left:88%;top:60%;animation-delay:1.5s"></i><i class="spark" style="left:40%;top:80%;animation-delay:1.8s"></i><i class="spark" style="left:60%;top:18%;animation-delay:2.1s"></i><div class="beam"></div><svg viewBox="0 0 100 90"><defs><linearGradient id="hg" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#f43f5e"/></linearGradient><radialGradient id="hc"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#7dd3fc"/><stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/></radialGradient></defs><path d="M50 84C20 62 4 46 4 28C4 14 15 4 28 4C38 4 46 10 50 18C54 10 62 4 72 4C85 4 96 14 96 28C96 46 80 62 50 84Z" fill="#0b1650cc" stroke="url(#hg)" stroke-width="3.2" stroke-linejoin="round"/><path d="M14 40H34L40 28L47 54L53 34L58 44H86" fill="none" stroke="#e0f2fe" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/><circle cx="54" cy="38" r="9" fill="url(#hc)"/></svg></div><div id="chat"><div class="chead"><img src="/leyla.jpg" alt=""><h2>Chat mit Leyla</h2></div><div id="cprov"><button data-p="openai">OpenAI</button><button data-p="other" id="cother">Andere</button></div><div id="clog"></div><div id="cin"><textarea id="ctext" placeholder="Schreib Leyla ..."></textarea><button id="csend">Senden</button></div></div><div id="rules"><div class="top"><button id="rback">&#8249;</button><h1>So ist Leyla</h1></div><div id="rtext"></div></div><div id="root"></div><div id="lamps" style="display:none"></div>
+<header><button id="back">&#8249;</button><img src="/icon.png?v=5" alt=""><h1>Leyla Gedächtnis</h1><button id="snd"></button></header><div id="pulse" class="ok" title="Alles in Ordnung"><div class="tick" id="tick" style="display:none"><span></span></div><i class="spark" style="left:12%;top:30%;animation-delay:0s"></i><i class="spark" style="left:22%;top:68%;animation-delay:0.6s"></i><i class="spark" style="left:31%;top:22%;animation-delay:1.2s"></i><i class="spark" style="left:68%;top:74%;animation-delay:0.3s"></i><i class="spark" style="left:77%;top:28%;animation-delay:0.9s"></i><i class="spark" style="left:88%;top:60%;animation-delay:1.5s"></i><i class="spark" style="left:40%;top:80%;animation-delay:1.8s"></i><i class="spark" style="left:60%;top:18%;animation-delay:2.1s"></i><div class="beam"></div><svg viewBox="0 0 100 90"><defs><linearGradient id="hg" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#f43f5e"/></linearGradient><radialGradient id="hc"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#7dd3fc"/><stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/></radialGradient></defs><path d="M50 84C20 62 4 46 4 28C4 14 15 4 28 4C38 4 46 10 50 18C54 10 62 4 72 4C85 4 96 14 96 28C96 46 80 62 50 84Z" fill="#0b1650cc" stroke="url(#hg)" stroke-width="3.2" stroke-linejoin="round"/><path d="M14 40H34L40 28L47 54L53 34L58 44H86" fill="none" stroke="#e0f2fe" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/><circle cx="54" cy="38" r="9" fill="url(#hc)"/></svg></div><div id="chat"><div class="chead"><img src="/leyla.jpg" alt=""><h2>Chat mit Leyla</h2></div><div id="clog"></div><div id="cin"><textarea id="ctext" placeholder="Schreib Leyla ..."></textarea><button id="csend">Senden</button></div></div><div id="rules"><div class="top"><button id="rback">&#8249;</button><h1>So ist Leyla</h1></div><div id="rtext"></div></div><div id="root"></div><div id="lamps" style="display:none"></div>
 <div id="bar"><button id="del" disabled>Markierte löschen</button></div>
 <script>
 let CODE=null;
@@ -350,18 +347,12 @@ function propCard(m,i){const c=document.createElement('div');c.className='p';con
   CHAT[i].done=ok?'Gespeichert':'Ging nicht, der Eintrag hat sich inzwischen geändert';if(ok)snd.save();chatSave();chatDraw();last='';load();};
  n.onclick=()=>{CHAT[i].done='Verworfen';snd.off();chatSave();chatDraw();};
  row.append(y,n);c.appendChild(row);return c;}
-let PROV='openai';try{PROV=localStorage.getItem('lprov')||'openai'}catch(e){}
-function provDraw(){document.querySelectorAll('#cprov button').forEach(b=>b.classList.toggle('on',b.dataset.p===PROV));}
-document.querySelectorAll('#cprov button').forEach(b=>b.onclick=()=>{PROV=b.dataset.p;try{localStorage.setItem('lprov',PROV)}catch(e){}provDraw();snd.on();});
-async function provInfo(){let j={other:false};try{j=await (await post('/api/chatinfo',{})).json();}catch(e){}
- const box=document.getElementById('cprov');if(!j.other){box.style.display='none';PROV='openai';return;}
- document.getElementById('cother').textContent=j.name||'Andere';box.style.display='flex';provDraw();}
 async function chatSend(){const ta=document.getElementById('ctext'),msg=ta.value.trim();if(!msg)return;
  const history=CHAT.filter(m=>m.role==='user'||m.role==='leyla').map(m=>({role:m.role,text:m.text}));
  CHAT.push({role:'user',text:msg});ta.value='';chatSave();chatDraw(true);snd.on();
- let j=null;try{j=await (await post('/api/chat',{history,message:msg,provider:PROV})).json();}catch(e){}
+ let j=null;try{j=await (await post('/api/chat',{history,message:msg})).json();}catch(e){}
  if(!j||j.error||!j.reply){CHAT.push({role:'leyla',text:'Hmm, gerade komme ich nicht durch. Versuch es gleich nochmal.'});}
- else{CHAT.push({role:'leyla',text:j.reply});if(j.fallback)CHAT.push({role:'info',text:(document.getElementById('cother').textContent||'HomeAI')+' war nicht erreichbar, OpenAI hat geantwortet.'});(j.lights||[]).forEach(t=>CHAT.push({role:'info',text:'💡 '+t}));(j.proposals||[]).forEach(p=>CHAT.push({role:'prop',p}));}
+ else{CHAT.push({role:'leyla',text:j.reply});(j.lights||[]).forEach(t=>CHAT.push({role:'info',text:'💡 '+t}));(j.proposals||[]).forEach(p=>CHAT.push({role:'prop',p}));}
  chatSave();chatDraw();snd.drop();}
 document.getElementById('csend').onclick=chatSend;
 let FRESH=new Set(),TICK='';
@@ -371,7 +362,7 @@ function render(d){FRESH=new Set(d.fresh||[]);ticker(d.ticker);const root=docume
  const back=document.getElementById('back'),h1=document.querySelector('h1');
  let found=null;
  if(view){const l=d.lists.find(x=>x.kind===view.kind);const t=l&&l.items.find(x=>parts(x).head===view.head);if(t){found={l,t};}else view=null;}
- back.style.display=view?'block':'none';document.getElementById('pulse').style.display=view?'none':'block';const ch=document.getElementById('chat'),showChat=!!CODE&&!view;if(showChat&&ch.style.display!=='block'){ch.style.display='block';chatDraw();provInfo();}else if(!showChat)ch.style.display='none';document.getElementById('lamps').style.display=(view||!lampOn)?'none':'block';h1.textContent=view?title(view.head):'Leyla Gedächtnis';
+ back.style.display=view?'block':'none';document.getElementById('pulse').style.display=view?'none':'block';const ch=document.getElementById('chat'),showChat=!!CODE&&!view;if(showChat&&ch.style.display!=='block'){ch.style.display='block';chatDraw();}else if(!showChat)ch.style.display='none';document.getElementById('lamps').style.display=(view||!lampOn)?'none':'block';h1.textContent=view?title(view.head):'Leyla Gedächtnis';
  if(found){view.text=found.t;const fields=parts(found.t).fields;
   const box=document.createElement('div');box.className='list';box.dataset.kind=found.l.kind;
   const h=document.createElement('h2');h.textContent='Punkte ('+fields.length+')';box.appendChild(h);
@@ -540,8 +531,8 @@ async def _lamp_api(lamp, method: str, path: str, body: bytes):
     return {"result": await lamp.reset()}
 
 
-async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "", rules=None, chat=None,
-                  chat_info=None) -> None:
+async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "", rules=None,
+                  chat=None) -> None:
     try:
         head = await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), timeout=10)
         lines = head.decode("latin-1").split("\r\n")
@@ -592,14 +583,11 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
             out = None
             if unlocked and chat:
                 try:
-                    out = await chat(d.get("history"), d.get("message"), d.get("provider") != "openai")
+                    out = await chat(d.get("history"), d.get("message"))
                 except Exception as e:
                     logger.warning("Chat failed: %s", e)
             await _respond(writer, "200 OK", "application/json",
                            json.dumps(out or {"error": True}, ensure_ascii=False))
-        elif method == "POST" and path == "/api/chatinfo":
-            info = chat_info() if (unlocked and chat_info) else {"other": False}
-            await _respond(writer, "200 OK", "application/json", json.dumps(info))
         elif method == "POST" and path == "/api/unlock":
             if unlocked:
                 logger.info("Memory page: private list opened")
@@ -648,10 +636,10 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
 
 async def start_http(store: memory.MemoryStore, sync: Optional[object] = None,
                      host: str = "0.0.0.0", port: int = 8082, lamp: Optional[object] = None,
-                     code_phrase: str = "", rules=None, chat=None, chat_info=None):
+                     code_phrase: str = "", rules=None, chat=None):
     """`rules`: a function that returns Leyla's instructions without memory and without the
     code word; shown read only after the code word."""
     server = await asyncio.start_server(
-        lambda r, w: _handle(store, sync, r, w, lamp, code_phrase, rules, chat, chat_info), host, port)
+        lambda r, w: _handle(store, sync, r, w, lamp, code_phrase, rules, chat), host, port)
     logger.info("Memory page on port %d", port)
     return server

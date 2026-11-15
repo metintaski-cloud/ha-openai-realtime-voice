@@ -35,7 +35,7 @@ import dotenv
 import websockets
 
 from app.audio_recorder import AudioRecorder
-from app import memory, memory_web, textmodel
+from app import memory, memory_web
 from app import context
 from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, pcm_level
 from app.live_link import END_CONVERSATION_TOOL
@@ -307,21 +307,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                              code_phrase="(dein Codewort)" if self.code_phrase else "",
                              extra=self.instructions)
 
-    @staticmethod
-    def _chat_provider() -> Optional[dict]:
-        """HomeAI (chat_api_url, chat_api_key, chat_model): the app chat and the background
-        jobs ask it first, OpenAI stays the fallback (`textmodel`)."""
-        return textmodel.local_provider()
-
-    def _chat_info(self) -> dict:
-        """For the switch in the app chat: is another provider set, and its short name."""
-        other = self._chat_provider()
-        if not other:
-            return {"other": False}
-        name = (os.environ.get("CHAT_NAME") or "").strip()
-        return {"other": True, "name": name if name and name.lower() != "null" else "HomeAI"}
-
-    async def _chat(self, history, message, use_other: bool = True) -> Optional[dict]:
+    async def _chat(self, history, message) -> Optional[dict]:
         """A text message from Metin in the memory app (code word checked by the page)."""
         devices, has_fan, has_tv, has_messages = getattr(
             self, "_devices", ([], False, False, False))
@@ -330,13 +316,10 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         out = await chat.answer(self.openai_api_key, [self.memory_model, self.backend_model],
                                 rules, self.memory, history, message,
                                 url=os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL),
-                                other=self._chat_provider() if use_other else None,
                                 lights=(len(self.lights.entities), self.lights.run)
                                 if self.lights.available else None)
         if out:
-            logger.info("Chat with Metin in the app: answered via %s%s, %d proposals, "
-                        "%d light commands", out.get("via", "?"),
-                        " (other provider failed)" if out.get("fallback") else "",
+            logger.info("Chat with Metin in the app: answered, %d proposals, %d light commands",
                         len(out["proposals"]), len(out["lights"]))
         return out
 
@@ -1238,8 +1221,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 await memory_web.start_http(self.memory, self.todo_sync,
                                             port=int(os.environ.get("MEMORY_WEB_PORT", "8082")),
                                             lamp=self.lamp, code_phrase=self.code_phrase,
-                                            rules=self._readable_rules, chat=self._chat,
-                                            chat_info=self._chat_info)
+                                            rules=self._readable_rules, chat=self._chat)
             except Exception as e:
                 logger.warning("Memory page could not start: %s", e)
         if self.messages.available:
