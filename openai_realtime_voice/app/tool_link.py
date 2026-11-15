@@ -7,7 +7,7 @@ import asyncio
 import json
 import logging
 
-from app import cleanup, costs, fan, inbox, lights, mail, messages, purifier, technik, vacuum
+from app import agenda, cleanup, costs, fan, inbox, lights, mail, messages, purifier, technik, vacuum
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +52,10 @@ class ToolLinkMixin:
             if not self._only_metin(state):
                 return metin_error("Mails liest")
 
+        def agenda_gate(args, state):
+            if not self._only_metin(state):
+                return metin_error("Termine verwaltet")
+
         def cleanup_after(args, result):
             if args.get("action") == "streichen" and self.todo_sync:
                 self.todo_sync.kick()
@@ -95,6 +99,11 @@ class ToolLinkMixin:
             inbox.INBOX_TOOL["name"]: {
                 "label": "Mail inbox", "timeout": 30.0, "run": self.inbox.run,
                 "gate": inbox_gate, "error": "Der Posteingang ist gerade nicht erreichbar.",
+                "log": lambda a, r: f"{a.get('aktion')} -> " + (
+                    str(r.get("anzahl", "ok")) if r.get("ok") else str(r.get("error", ""))[:60])},
+            agenda.AGENDA_TOOL["name"]: {
+                "label": "Calendar", "timeout": 30.0, "run": self.agenda.run,
+                "gate": agenda_gate, "error": "Der Kalender ist gerade nicht erreichbar.",
                 "log": lambda a, r: f"{a.get('aktion')} -> " + (
                     str(r.get("anzahl", "ok")) if r.get("ok") else str(r.get("error", ""))[:60])},
             messages.TO_METIN_TOOL["name"]: {

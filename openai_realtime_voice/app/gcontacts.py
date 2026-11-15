@@ -11,9 +11,10 @@ is gone), every mail still waits for his tap on "Senden".
 Since 2.82.1 mails go out through the Gmail API with the same sign in (scope gmail.send), because
 app passwords need two step verification, which Metin's account does not use. Since 2.83.0 the
 sign in also reads the "other contacts" Gmail keeps by itself (contacts.other.readonly) and lets
-Leyla read his mails and move them to the bin (gmail.modify, see inbox.py). A sign in from before
-lacks these scopes (`missing`), the app then asks him to connect again. Names and addresses are
-never logged.
+Leyla read his mails and move them to the bin (gmail.modify, see inbox.py). Since 2.87.0 it also
+manages his calendar (calendar.events, see agenda.py). A sign in from before lacks these scopes
+(`missing`), the app then asks him to connect again; features whose scope is missing simply stay
+off, everything else keeps working. Names and addresses are never logged.
 """
 
 import base64
@@ -31,7 +32,8 @@ logger = logging.getLogger(__name__)
 SCOPES = ("https://www.googleapis.com/auth/contacts.readonly",
           "https://www.googleapis.com/auth/contacts.other.readonly",
           "https://www.googleapis.com/auth/gmail.send",
-          "https://www.googleapis.com/auth/gmail.modify")
+          "https://www.googleapis.com/auth/gmail.modify",
+          "https://www.googleapis.com/auth/calendar.events")
 SCOPE = " ".join(SCOPES)
 OTHER_URL = "https://people.googleapis.com/v1/otherContacts"
 SEND_URL = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send"

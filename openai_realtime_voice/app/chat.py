@@ -134,6 +134,7 @@ def _parse(text: str, lists: dict) -> Optional[dict]:
             "proposals": valid_proposals(parsed.get("proposals"), lists),
             "lights_raw": parsed.get("lights"), "email_raw": parsed.get("email"),
             "mail_raw": parsed.get("mail"), "mama_raw": parsed.get("mama"),
+            "kalender_raw": parsed.get("kalender"),
             "mood_resolved": parsed.get("mood_resolved") is True,
             "mood_pause": parsed.get("mood_pause") is True}
 
@@ -266,12 +267,14 @@ def speak_prompt(reply: str) -> str:
 async def answer(api_key: str, models: list[str], rules: str, store: memory.MemoryStore,
                  history, message: str, url: str = memory.RESPONSES_URL,
                  lights=None, room=None, mailer=None, inbox=None,
-                 mama=None, mood=None) -> Optional[dict]:
+                 mama=None, mood=None, agenda=None) -> Optional[dict]:
     """`lights`: (count, run) of the light controller, so Leyla can switch the lamps.
     `room`: async function giving the room values, asked only when Metin asks about them.
     `mailer`: `mail.Mailer`; an "email" in her answer becomes a draft card, never a sent mail.
     `inbox`: `inbox.Inbox`; a "mail" search or read is run and she answers again with the result
-    (one extra pass at most), a "loeschen" becomes a bin card that Metin confirms."""
+    (one extra pass at most), a "loeschen" becomes a bin card that Metin confirms.
+    `agenda`: `agenda.Agenda`; a "kalender" request is run the same way (looking, creating and
+    changing at once with one extra pass, deleting only as a card)."""
     if mailer and mailer.available:
         rules = rules + mail.MAIL_NOTE.format(names=mailer.names())
     if room and ROOM_RE.search(message or ""):
@@ -280,6 +283,8 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
             rules = rules + ROOM_NOTE.format(values=values)
     if inbox and inbox.available:
         rules = rules + inbox_mod.CHAT_NOTE
+    if agenda and agenda.available:
+        rules = rules + agenda.chat_note()
     abilities = ["mit Metin schreiben und dein Gedächtnis mit ihm pflegen (Vorschläge)"]
     if lights:
         abilities.append("die Stehlampen schalten")
@@ -289,6 +294,9 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
         abilities.append("E-Mails vorbereiten, er sendet sie selbst")
     if inbox and inbox.available:
         abilities.append("seine Mails lesen und Löschen vorschlagen")
+    if agenda and agenda.available:
+        abilities.append("seinen Kalender verwalten (Termine ansehen, eintragen, ändern; "
+                         "Löschen nur nach seinem Tipp)")
     if mama:
         rules = rules + MAMA_NOTE
         abilities.append("Anne etwas von Metin ausrichten")
@@ -297,6 +305,7 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
     rules = rules + CHAT_ABILITIES_NOTE.format(abilities="\n".join("• " + a for a in abilities))
     out = await _answer(api_key, models, rules, store, history, message, url, lights)
     trash = None
+    cal_req = out.pop("kalender_raw", None) if out else None
     req = out.pop("mail_raw", None) if out else None
     if out and inbox and inbox.available and isinstance(req, dict):
         note, trash = await inbox.chat_step(req)
@@ -309,11 +318,25 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
                     _, trash = await inbox.chat_step({"loeschen": req2["loeschen"]})
                 second["proposals"] = out["proposals"] + second["proposals"]
                 out = second
+    if out and agenda and agenda.available and isinstance(cal_req, dict):
+        note, card = await agenda.chat_step(cal_req)
+        trash = card or trash
+        if note:
+            second = await _answer(api_key, models, rules + note, store, history, message, url,
+                                   lights)
+            if second:
+                req2 = second.pop("kalender_raw", None)
+                if isinstance(req2, dict) and req2.get("aktion") == "loeschen":
+                    _, card = await agenda.chat_step(req2)
+                    trash = card or trash
+                second["proposals"] = out["proposals"] + second["proposals"]
+                out = second
     if out and lights and out.get("lights_raw"):
         out["lights"] = await _do_lights(out["lights_raw"], lights[1])
     if out:
         out.pop("lights_raw", None)
         out.pop("mail_raw", None)
+        out.pop("kalender_raw", None)
         out.setdefault("lights", [])
         resolved, paused = out.pop("mood_resolved", False), out.pop("mood_pause", False)
         if mood:
