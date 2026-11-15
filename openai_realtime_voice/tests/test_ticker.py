@@ -10,9 +10,11 @@ def test_news_line_keeps_the_newest_and_shows_german(tmp_path):
     ticker.add("Leyla erzählt", "Umut war frech zu mir.", p, now - 30)
     ticker.add("Leyla", "alt", p, now - 4 * 24 * 3600)
     lines = ticker.recent(p, now)
-    assert lines[0].endswith("Leyla: Umut war frech zu mir.")
-    assert lines[1].endswith("Mama: Bitte Brot mitbringen") and lines[1].startswith("11:59")
-    assert len(lines) == 2
+    assert lines == [lines[0]] and lines[0].endswith("Leyla: Umut war frech zu mir.")  # only the newest
+    ticker.add("Leyla: Nachricht von Mama", "Ekmek al lütfen\n(Bitte Brot mitbringen)", p, now)
+    newest = ticker.recent(p, now)
+    assert len(newest) == 1 and newest[0].endswith("Mama: Bitte Brot mitbringen")
+    assert newest[0].startswith("12:00")
     for i in range(30):
         ticker.add("Leyla", f"n{i}", p, now)
     assert len(ticker._load(p)) == ticker.KEEP and len(ticker.recent(p, now)) == ticker.SHOW_ITEMS

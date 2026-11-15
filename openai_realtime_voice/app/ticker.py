@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 PATH = os.environ.get("TICKER_PATH", "/data/ticker.json")
 KEEP = 20          # stored items
 SHOW_HOURS = 72    # what the app shows
-SHOW_ITEMS = 6
+SHOW_ITEMS = 1  # only the newest message runs (Metin, 15 Nov 2026; was 6)
 MAX_TEXT = 160
 
 
