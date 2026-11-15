@@ -118,6 +118,17 @@ HAOS on a dedicated host. ESPHome config under e.g.:
 
 Device name, friendly name, wake words, and other production settings can differ from the repo default.
 
+## Remote access from the phone (Tailscale, 15 Nov 2026)
+
+The memory app (port 8082) and live talk (port 8080) are reachable from outside the home through Tailscale, never through an open port on the router (the page has no login besides the code word).
+
+- Home Assistant add on **Tailscale** (`a0d7b954_tailscale`, from the community repository hassio-addons) is installed, starts with Home Assistant (boot auto, watchdog on).
+- Add on option `advertise_routes: ["192.168.2.0/24"]`: Home Assistant acts as subnet router, so the phone reaches the same addresses as at home (`http://192.168.2.240:8082/` for the app, `ws://192.168.2.240:8080/app` for live talk). That keeps the Chrome flag "Insecure origins treated as secure" for `http://192.168.2.240:8082` valid, which the microphone needs.
+- Tailscale account: Metin's Google account, free Personal plan. In the admin console (login.tailscale.com/admin/machines) the machine "homeassistant" has the route 192.168.2.0/24 approved and key expiry disabled (otherwise the connection would stop in May 2027).
+- Phone: Tailscale app, signed in with the same Google account. With the VPN on, the app works on mobile data exactly as in the WLAN.
+- Why not the Speedport Smart 4 Plus WireGuard VPN: it needs a DynDNS account (free providers are reported as unreliable with the Speedport) and breaks when the public address changes; Tailscale needs neither and works behind changing addresses.
+- To undo: uninstall the add on and remove the machine in the Tailscale admin console.
+
 ## Commit messages
 
 Use [Conventional Commits](https://www.conventionalcommits.org/): `type: description`.
