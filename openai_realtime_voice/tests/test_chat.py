@@ -155,3 +155,43 @@ async def test_other_provider_is_used_first_and_openai_is_the_fallback(tmp_path,
     Client.fail = True
     out = await chat.answer("k", ["m"], "R", store, [], "Hi", other=other)
     assert out["reply"] == "Hallo von OpenAI"
+
+
+async def test_chat_switches_lamps_and_reports_the_real_state(tmp_path, monkeypatch):
+    store = memory.MemoryStore(str(tmp_path / "m.json"))
+    sent, ran = {}, []
+
+    class Resp:
+        status_code = 200
+
+        def json(self):
+            return {"output_text": '{"reply": "Mach ich, gemütlich warm!", "proposals": [], '
+                                   '"lights": [{"lamps": [], "action": "on", "brightness_percent": 40, '
+                                   '"white": "warm", "color": null}]}'}
+
+    class Client:
+        def __init__(self, *a, **k):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        async def post(self, url, headers=None, json=None):
+            sent.update(json)
+            return Resp()
+
+    async def run(args):
+        ran.append(args)
+        return {"lamps": [{"lamp": 1, "state": "on", "brightness_percent": 40, "white": "warm"},
+                          {"lamp": 2, "state": "unavailable"}]}
+
+    monkeypatch.setattr(chat.httpx, "AsyncClient", Client)
+    out = await chat.answer("k", ["m"], "R", store, [], "Mach das Licht gemütlich", lights=(4, run))
+    assert "Lampe 1 bis 4" in sent["instructions"]
+    assert ran == [{"lamps": [], "action": "on", "brightness_percent": 40, "white": "warm", "color": None}]
+    assert out["lights"] == ["Lampe 1: an, 40 %, warm · Lampe 2: nicht erreichbar"]
+    out = await chat.answer("k", ["m"], "R", store, [], "Hi")
+    assert out["lights"] == [] and "LICHT" not in sent["instructions"]

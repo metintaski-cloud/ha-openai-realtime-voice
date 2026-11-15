@@ -46,8 +46,15 @@ NOCH OFFEN (was du noch nicht weißt)
 
 Antworte nur mit JSON in dieser Form und sonst nichts:
 {{"reply": "deine Antwort", "proposals": [{{"action": "add|edit|delete|move", "kind": "family|friends|leyla|private", "to": "Zielliste (nur bei move)", "old": "genauer bisheriger Eintrag (bei edit, delete und move)", "new": "neuer Eintrag (bei add und edit)"}}]}}
-"proposals" ist leer, wenn es nichts zu ändern gibt."""
+"proposals" ist leer, wenn es nichts zu ändern gibt. Sollst du Lampen schalten, kommt zusätzlich "lights": [...] dazu."""
 
+
+LIGHTS_NOTE = """
+
+LICHT
+• Du kannst im Chat die {count} Stehlampen steuern (Lampe 1 bis {count}). Bittet Metin darum, trägst du es unter "lights" ein, und es passiert sofort, ohne Ja. Ohne Lampennummer meint er alle. "Heller" oder "dunkler" heißt etwa 25 Prozent mehr oder weniger. Farben: rot, orange, gelb, gruen, tuerkis, blau, lila, pink; Weiß: warm, neutral, kalt.
+• Schreib in deiner Antwort kurz und natürlich, was du machst; das Ergebnis zeigt die App darunter an.
+Format je Eintrag in "lights": {{"lamps": [1, 2] oder [] für alle, "action": "on|off|toggle", "brightness_percent": Zahl oder null, "white": "warm|neutral|kalt" oder null, "color": Farbe oder null}}"""
 
 OTHER_NOTE = """
 
@@ -102,7 +109,8 @@ def _parse(text: str, lists: dict) -> Optional[dict]:
         reply = (text or "").strip()
         return {"reply": reply, "proposals": []} if reply else None
     return {"reply": parsed["reply"].strip(),
-            "proposals": valid_proposals(parsed.get("proposals"), lists)}
+            "proposals": valid_proposals(parsed.get("proposals"), lists),
+            "lights_raw": parsed.get("lights")}
 
 
 async def _other_provider(client, base_url: str, key: str, model: str, instructions: str,
@@ -127,10 +135,62 @@ async def _other_provider(client, base_url: str, key: str, model: str, instructi
     return _parse(text, lists)
 
 
+def describe_lamps(result: dict) -> str:
+    """'Lampe 1: an, 40 %, warm · Lampe 2: aus' from the light controller's result."""
+    if not isinstance(result, dict):
+        return ""
+    if result.get("error"):
+        return "Licht: " + str(result["error"])
+    parts = []
+    for lamp in result.get("lamps", []):
+        state = lamp.get("state")
+        bits = ["an" if state == "on" else "aus" if state == "off" else "nicht erreichbar"]
+        if state == "on":
+            if lamp.get("brightness_percent") is not None:
+                bits.append(f"{lamp['brightness_percent']} %")
+            if lamp.get("white"):
+                bits.append(lamp["white"])
+            elif lamp.get("color"):
+                bits.append(lamp["color"])
+        parts.append(f"Lampe {lamp.get('lamp')}: " + ", ".join(bits))
+    return " · ".join(parts)
+
+
+async def _do_lights(raw, run) -> list[str]:
+    out = []
+    for item in (raw if isinstance(raw, list) else [])[:3]:
+        if not isinstance(item, dict) or item.get("action") not in ("on", "off", "toggle"):
+            continue
+        args = {"lamps": [n for n in item.get("lamps") or [] if isinstance(n, int)],
+                "action": item["action"],
+                "brightness_percent": item.get("brightness_percent"),
+                "white": item.get("white"), "color": item.get("color")}
+        try:
+            result = await run(args)
+        except Exception as e:
+            logger.warning("Chat light command failed: %s", e)
+            result = {"error": "Die Lampen haben gerade nicht reagiert."}
+        line = describe_lamps(result)
+        if line:
+            out.append(line)
+    return out
+
+
 async def answer(api_key: str, models: list[str], rules: str, store: memory.MemoryStore,
                  history, message: str, url: str = memory.RESPONSES_URL,
-                 other: Optional[dict] = None) -> Optional[dict]:
-    """`other`: {"url", "key", "model"} of another provider; OpenAI is the fallback."""
+                 other: Optional[dict] = None, lights=None) -> Optional[dict]:
+    """`other`: {"url", "key", "model"} of another provider; OpenAI is the fallback.
+    `lights`: (count, run) of the light controller, so Leyla can switch the lamps."""
+    out = await _answer(api_key, models, rules, store, history, message, url, other, lights)
+    if out and lights and out.get("lights_raw"):
+        out["lights"] = await _do_lights(out["lights_raw"], lights[1])
+    if out:
+        out.pop("lights_raw", None)
+        out.setdefault("lights", [])
+    return out
+
+
+async def _answer(api_key, models, rules, store, history, message, url, other, lights):
     """{"reply": ..., "proposals": [...]} or None when no model answered."""
     message = (message or "").strip()[:MAX_MESSAGE]
     if not message:
@@ -144,6 +204,8 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
                 if k not in prof[1]] if prof else []
         if gaps:
             missing.append(f"• {prof[0]}: {', '.join(gaps)}")
+    if lights:
+        rules = rules + LIGHTS_NOTE.format(count=lights[0])
     instructions = rules + CHAT_STYLE.format(lists=json.dumps(lists, ensure_ascii=False),
                                              missing="\n".join(missing) or "(nichts)")
     dialog = [{"role": "user" if h["role"] == "user" else "assistant", "content": h["text"]}

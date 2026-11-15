@@ -328,6 +328,7 @@ const KNAME={family:'Familie',friends:'Freunde',leyla:'Leylas Geschichte',privat
 function chatSave(){CHAT=CHAT.slice(-40);try{localStorage.setItem('lchat',JSON.stringify(CHAT))}catch(e){}}
 function chatDraw(wait){const log=document.getElementById('clog');log.innerHTML='';
  CHAT.forEach((m,i)=>{if(m.role==='prop')return log.appendChild(propCard(m,i));
+  if(m.role==='info'){const n=document.createElement('div');n.className='wait';n.textContent=m.text;return log.appendChild(n);}
   const d=document.createElement('div');d.className='m '+(m.role==='user'?'u':'l');d.textContent=m.text;
   if(m.role==='user')return log.appendChild(d);const r=document.createElement('div');r.className='lr';const im=document.createElement('img');im.src='/leyla.jpg';im.alt='';r.append(im,d);log.appendChild(r);});
  if(wait){const w=document.createElement('div');w.className='wait';w.textContent='Leyla schreibt ...';log.appendChild(w);}
@@ -356,11 +357,11 @@ async function provInfo(){let j={other:false};try{j=await (await post('/api/chat
  const box=document.getElementById('cprov');if(!j.other){box.style.display='none';PROV='openai';return;}
  document.getElementById('cother').textContent=j.name||'Andere';box.style.display='flex';provDraw();}
 async function chatSend(){const ta=document.getElementById('ctext'),msg=ta.value.trim();if(!msg)return;
- const history=CHAT.filter(m=>m.role!=='prop').map(m=>({role:m.role,text:m.text}));
+ const history=CHAT.filter(m=>m.role==='user'||m.role==='leyla').map(m=>({role:m.role,text:m.text}));
  CHAT.push({role:'user',text:msg});ta.value='';chatSave();chatDraw(true);snd.on();
  let j=null;try{j=await (await post('/api/chat',{history,message:msg,provider:PROV})).json();}catch(e){}
  if(!j||j.error||!j.reply){CHAT.push({role:'leyla',text:'Hmm, gerade komme ich nicht durch. Versuch es gleich nochmal.'});}
- else{CHAT.push({role:'leyla',text:j.reply});(j.proposals||[]).forEach(p=>CHAT.push({role:'prop',p}));}
+ else{CHAT.push({role:'leyla',text:j.reply});(j.lights||[]).forEach(t=>CHAT.push({role:'info',text:'💡 '+t}));(j.proposals||[]).forEach(p=>CHAT.push({role:'prop',p}));}
  chatSave();chatDraw();snd.drop();}
 document.getElementById('csend').onclick=chatSend;
 let FRESH=new Set(),TICK='';

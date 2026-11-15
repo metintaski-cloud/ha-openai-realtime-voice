@@ -335,9 +335,12 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         out = await chat.answer(self.openai_api_key, [self.memory_model, self.backend_model],
                                 rules, self.memory, history, message,
                                 url=os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL),
-                                other=self._chat_provider() if use_other else None)
+                                other=self._chat_provider() if use_other else None,
+                                lights=(len(self.lights.entities), self.lights.run)
+                                if self.lights.available else None)
         if out:
-            logger.info("Chat with Metin in the app: answered, %d proposals", len(out["proposals"]))
+            logger.info("Chat with Metin in the app: answered, %d proposals, %d light commands",
+                        len(out["proposals"]), len(out["lights"]))
         return out
 
     def _instructions_with_memory(self) -> str:
