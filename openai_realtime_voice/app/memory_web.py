@@ -197,6 +197,13 @@ body{margin:0;background:#000;color:#e8ecff;font:17px/1.4 system-ui,sans-serif;p
 #chat h2{margin:2px 4px 8px}
 #chat .chead{display:flex;align-items:center;gap:14px;margin:4px 4px 12px}#chat .chead h2{margin:0;font-size:20px;letter-spacing:.06em}
 #chat .chead #clive{margin-left:auto;width:auto;padding:8px 14px;font-size:15px}
+#gmail{margin:14px 12px;padding:12px;border:1px solid #3b82f688;border-radius:14px;background:#060c33}
+#gmail h3{margin:0 0 8px;font-size:15px;letter-spacing:.08em;color:var(--cy)}#gmail .gr{display:flex;align-items:center;gap:10px;padding:7px 2px;border-bottom:1px solid #1b2a6b}
+#gmail .gr span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#gmail .gr small{color:#9fb4ff;display:block}
+#gmail input[type=text]{width:100%;box-sizing:border-box;font:inherit;color:#fff;background:#000;border:1px solid var(--bl);border-radius:10px;padding:9px;margin:6px 0}
+#gmail .gb{display:flex;gap:10px;margin-top:8px}#gmail .gb button{flex:1;width:auto;font-size:15px;padding:10px;box-shadow:none;background:#1b2a6b;border:1px solid var(--cy)}
+#gmail .hint{color:#9fb4ff;font-size:14px;margin:4px 0}
+.mc .web{color:#fbbf24;font-weight:600;margin:4px 0}
 .mc{margin:8px 0;padding:10px 12px;border:1px solid #d946ef88;border-radius:12px;background:#140a2e}.mc b{color:#e9d5ff}.mc .meta{color:#9fb4ff;font-size:14px;margin:4px 0}.mc pre{white-space:pre-wrap;font:inherit;margin:6px 0 8px}.mc .row{display:flex;gap:8px}.mc .row button{flex:1}
 #live{display:none;position:fixed;inset:0;z-index:50;background:#000;flex-direction:column;align-items:center;justify-content:center;gap:22px}
 #live img{width:180px;height:180px;border-radius:50%;object-fit:cover;border:3px solid #22d3ee;box-shadow:0 0 24px #22d3ee99,0 0 40px #d946ef66;transition:transform .15s}
@@ -266,7 +273,7 @@ button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 @media (prefers-reduced-motion:reduce){.rg{animation-duration:.1s}.sp img{animation:none}}
 </style></head><body>
 <div id="splash"><div class="sp"><img src="/icon.png?v=5" alt=""><svg viewBox="0 0 200 200"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#a855f7"/><stop offset="1" stop-color="#d946ef"/></linearGradient></defs><circle class="trk" cx="100" cy="100" r="90"/><circle class="rg" cx="100" cy="100" r="90" pathLength="100"/></svg></div></div>
-<header><button id="back">&#8249;</button><img src="/icon.png?v=5" alt=""><h1>Leyla Gedächtnis</h1></header><div id="pulse" class="ok" title="Alles in Ordnung"><div class="tick" id="tick" style="display:none"><span></span></div><i class="spark" style="left:12%;top:30%;animation-delay:0s"></i><i class="spark" style="left:22%;top:68%;animation-delay:0.6s"></i><i class="spark" style="left:31%;top:22%;animation-delay:1.2s"></i><i class="spark" style="left:68%;top:74%;animation-delay:0.3s"></i><i class="spark" style="left:77%;top:28%;animation-delay:0.9s"></i><i class="spark" style="left:88%;top:60%;animation-delay:1.5s"></i><i class="spark" style="left:40%;top:80%;animation-delay:1.8s"></i><i class="spark" style="left:60%;top:18%;animation-delay:2.1s"></i><div class="beam"></div><svg viewBox="0 0 100 90"><defs><linearGradient id="hg" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#f43f5e"/></linearGradient><radialGradient id="hc"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#7dd3fc"/><stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/></radialGradient></defs><path d="M50 84C20 62 4 46 4 28C4 14 15 4 28 4C38 4 46 10 50 18C54 10 62 4 72 4C85 4 96 14 96 28C96 46 80 62 50 84Z" fill="#0b1650cc" stroke="url(#hg)" stroke-width="3.2" stroke-linejoin="round"/><path d="M14 40H34L40 28L47 54L53 34L58 44H86" fill="none" stroke="#e0f2fe" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/><circle cx="54" cy="38" r="9" fill="url(#hc)"/></svg></div><div id="chat"><div class="chead"><img src="/leyla.jpg" alt=""><h2>Chat mit Leyla</h2><button id="clive" title="Live mit Leyla reden">&#128222; Live</button></div><div id="clog"></div><div id="cin"><textarea id="ctext" placeholder="Schreib Leyla ..."></textarea><button id="cmic" title="Sprachnachricht">&#127908;</button><button id="csend">Senden</button></div></div><div id="live"><img src="/leyla.jpg" alt=""><div id="lstat">Verbinde ...</div><button id="lend">Auflegen</button></div><div id="rules"><div class="top"><button id="rback">&#8249;</button><h1>So ist Leyla</h1></div><div id="rtext"></div></div><div id="root"></div><div id="lamps" style="display:none"></div>
+<header><button id="back">&#8249;</button><img src="/icon.png?v=5" alt=""><h1>Leyla Gedächtnis</h1></header><div id="pulse" class="ok" title="Alles in Ordnung"><div class="tick" id="tick" style="display:none"><span></span></div><i class="spark" style="left:12%;top:30%;animation-delay:0s"></i><i class="spark" style="left:22%;top:68%;animation-delay:0.6s"></i><i class="spark" style="left:31%;top:22%;animation-delay:1.2s"></i><i class="spark" style="left:68%;top:74%;animation-delay:0.3s"></i><i class="spark" style="left:77%;top:28%;animation-delay:0.9s"></i><i class="spark" style="left:88%;top:60%;animation-delay:1.5s"></i><i class="spark" style="left:40%;top:80%;animation-delay:1.8s"></i><i class="spark" style="left:60%;top:18%;animation-delay:2.1s"></i><div class="beam"></div><svg viewBox="0 0 100 90"><defs><linearGradient id="hg" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#f43f5e"/></linearGradient><radialGradient id="hc"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#7dd3fc"/><stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/></radialGradient></defs><path d="M50 84C20 62 4 46 4 28C4 14 15 4 28 4C38 4 46 10 50 18C54 10 62 4 72 4C85 4 96 14 96 28C96 46 80 62 50 84Z" fill="#0b1650cc" stroke="url(#hg)" stroke-width="3.2" stroke-linejoin="round"/><path d="M14 40H34L40 28L47 54L53 34L58 44H86" fill="none" stroke="#e0f2fe" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/><circle cx="54" cy="38" r="9" fill="url(#hc)"/></svg></div><div id="chat"><div class="chead"><img src="/leyla.jpg" alt=""><h2>Chat mit Leyla</h2><button id="clive" title="Live mit Leyla reden">&#128222; Live</button></div><div id="clog"></div><div id="cin"><textarea id="ctext" placeholder="Schreib Leyla ..."></textarea><button id="cmic" title="Sprachnachricht">&#127908;</button><button id="csend">Senden</button></div></div><div id="live"><img src="/leyla.jpg" alt=""><div id="lstat">Verbinde ...</div><button id="lend">Auflegen</button></div><div id="rules"><div class="top"><button id="rback">&#8249;</button><h1>So ist Leyla</h1></div><div id="rtext"></div></div><div id="root"></div><div id="gmail" style="display:none"></div><div id="lamps" style="display:none"></div>
 <div id="bar"><button id="del" disabled>Markierte löschen</button></div>
 <script>
 let CODE=null;
@@ -387,6 +394,7 @@ document.getElementById('cmic').onclick=async()=>{const b=document.getElementByI
 function mailCard(m,i){const c=document.createElement('div');c.className='mc';const e=m.e;
  const h=document.createElement('b');h.textContent='✉ E-Mail an '+e.to;c.appendChild(h);
  const a=document.createElement('div');a.className='meta';a.textContent=e.addr+'  ·  Betreff: '+e.subject;c.appendChild(a);
+ if(e.web){const w=document.createElement('div');w.className='web';w.textContent='⚠ Adresse aus dem Web gefunden, bitte prüfen';c.appendChild(w);}
  const t=document.createElement('pre');t.textContent=e.body;c.appendChild(t);
  if(m.done){const s=document.createElement('div');s.className='meta';s.textContent=m.done;c.appendChild(s);return c;}
  const row=document.createElement('div');row.className='row';const y=document.createElement('button');y.textContent='Senden';const n=document.createElement('button');n.textContent='Nein';n.className='no';
@@ -394,6 +402,32 @@ function mailCard(m,i){const c=document.createElement('div');c.className='mc';co
   CHAT[i].done=r.ok?'Gesendet':(r.error||'Senden ging nicht');if(r.ok)snd.save();chatSave();chatDraw();};
  n.onclick=async()=>{try{await post('/api/mail/discard',{id:e.id});}catch(_){}CHAT[i].done='Nicht gesendet';snd.off();chatSave();chatDraw();};
  row.append(y,n);c.appendChild(row);return c;}
+const GM={shown:false,list:[],q:''};
+async function gpost(p,b){try{return await (await post('/api/google/'+p,b||{})).json();}catch(e){return {};}}
+function gmailDraw(st){const box=document.getElementById('gmail');box.innerHTML='';
+ const h=document.createElement('h3');box.appendChild(h);
+ if(!st.connected){h.textContent='GOOGLE KONTAKTE';
+  const p=document.createElement('div');p.className='hint';p.textContent='1. Auf "Mit Google anmelden" tippen und anmelden. 2. Die Seite danach lädt nicht, das ist richtig: ihre ganze Adresse oben kopieren, hier einfügen und auf "Verbinden" tippen.';box.appendChild(p);
+  const i=document.createElement('input');i.type='text';i.placeholder='http://127.0.0.1/?code=...';i.autocomplete='off';box.appendChild(i);
+  const row=document.createElement('div');row.className='gb';const a=document.createElement('button');a.textContent='Mit Google anmelden';
+  a.onclick=async()=>{const j=await gpost('auth');if(j.url)window.open(j.url,'_blank');};
+  const c=document.createElement('button');c.textContent='Verbinden';c.onclick=async()=>{c.disabled=true;const j=await gpost('connect',{url:i.value});c.disabled=false;
+   if(j.ok){snd.save();gmailLoad();}else{p.textContent=j.error||'Hat nicht geklappt.';}};row.append(a,c);box.appendChild(row);return;}
+ const on=GM.list.filter(x=>x.allowed).length;h.textContent='E-MAIL KONTAKTE ('+on+' FREIGEGEBEN)';
+ const p=document.createElement('div');p.className='hint';p.textContent='Leyla darf nur an angehakte Kontakte schreiben.';box.appendChild(p);
+ const q=document.createElement('input');q.type='text';q.placeholder='Kontakt suchen ...';q.value=GM.q;box.appendChild(q);
+ const list=document.createElement('div');box.appendChild(list);
+ const fill=()=>{list.innerHTML='';const w=GM.q.toLowerCase();const rows=GM.list.filter(x=>!w||(x.name+' '+x.addr).toLowerCase().includes(w));
+  rows.sort((a,b)=>(b.allowed-a.allowed));rows.slice(0,60).forEach(x=>{const r=document.createElement('label');r.className='gr';const cb=document.createElement('input');cb.type='checkbox';cb.checked=!!x.allowed;
+   cb.onchange=async()=>{x.allowed=cb.checked;(cb.checked?snd.on:snd.off)();await gpost('allow',{addr:x.addr,on:cb.checked});h.textContent='E-MAIL KONTAKTE ('+GM.list.filter(y=>y.allowed).length+' FREIGEGEBEN)';};
+   const sp=document.createElement('span');sp.textContent=x.name;const sm=document.createElement('small');sm.textContent=x.addr;sp.appendChild(sm);r.append(cb,sp);list.appendChild(r);});
+  if(rows.length>60){const m=document.createElement('div');m.className='hint';m.textContent=(rows.length-60)+' weitere, bitte suchen.';list.appendChild(m);}};
+ q.oninput=()=>{GM.q=q.value;fill();};fill();
+ const row=document.createElement('div');row.className='gb';const r=document.createElement('button');r.textContent='Neu laden';r.onclick=()=>gmailLoad(true);row.appendChild(r);box.appendChild(row);}
+async function gmailLoad(force){const st=await gpost('status');const box=document.getElementById('gmail');
+ if(!st.configured){GM.shown=false;box.style.display='none';return;}
+ if(st.connected){const j=await gpost('contacts',{force:!!force});GM.list=j.contacts||[];}
+ GM.shown=true;box.style.display='block';gmailDraw(st);}
 async function mailPending(){let j=null;try{j=await (await post('/api/mail/pending',{})).json();}catch(_){}
  if(!j||!j.ok)return;let added=false;(j.drafts||[]).forEach(e=>{if(!CHAT.some(m=>m.role==='mail'&&m.e.id===e.id)){CHAT.push({role:'mail',e});added=true;}});
  if(added){chatSave();chatDraw();}}
@@ -435,7 +469,7 @@ function render(d){FRESH=new Set(d.fresh||[]);ticker(d.ticker);const root=docume
  const back=document.getElementById('back'),h1=document.querySelector('h1');
  let found=null;
  if(view){const l=d.lists.find(x=>x.kind===view.kind);const t=l&&l.items.find(x=>parts(x).head===view.head);if(t){found={l,t};}else view=null;}
- back.style.display=view?'block':'none';document.getElementById('pulse').style.display=view?'none':'block';const ch=document.getElementById('chat'),showChat=!!CODE&&!view;if(showChat&&ch.style.display!=='block'){ch.style.display='block';chatDraw();mailPending();}else if(!showChat)ch.style.display='none';document.getElementById('lamps').style.display=(view||!lampOn)?'none':'block';h1.textContent=view?title(view.head):'Leyla Gedächtnis';
+ back.style.display=view?'block':'none';document.getElementById('pulse').style.display=view?'none':'block';const ch=document.getElementById('chat'),showChat=!!CODE&&!view;if(showChat&&ch.style.display!=='block'){ch.style.display='block';chatDraw();mailPending();gmailLoad();}else if(!showChat)ch.style.display='none';if(!showChat)document.getElementById('gmail').style.display='none';else if(GM.shown)document.getElementById('gmail').style.display='block';document.getElementById('lamps').style.display=(view||!lampOn)?'none':'block';h1.textContent=view?title(view.head):'Leyla Gedächtnis';
  if(found){view.text=found.t;const fields=parts(found.t).fields;
   const box=document.createElement('div');box.className='list';box.dataset.kind=found.l.kind;
   const h=document.createElement('h2');h.textContent='Punkte ('+fields.length+')';box.appendChild(h);
@@ -605,7 +639,7 @@ async def _lamp_api(lamp, method: str, path: str, body: bytes):
 
 
 async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "", rules=None,
-                  chat=None, voice=None, mailer=None) -> None:
+                  chat=None, voice=None, mailer=None, google=None) -> None:
     try:
         head = await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), timeout=10)
         lines = head.decode("latin-1").split("\r\n")
@@ -670,6 +704,25 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                     logger.warning("Voice message failed: %s", e)
             await _respond(writer, "200 OK", "application/json",
                            json.dumps(out or {"error": True}, ensure_ascii=False))
+        elif method == "POST" and path.startswith("/api/google/"):
+            out = {"ok": False}
+            if unlocked and google:
+                if path == "/api/google/status":
+                    out = {"ok": True, "configured": google.configured,
+                           "connected": google.connected}
+                elif path == "/api/google/auth" and google.configured:
+                    out = {"ok": True, "url": google.auth_url()}
+                elif path == "/api/google/connect":
+                    out = await google.connect(str(d.get("url", "")))
+                elif path == "/api/google/contacts":
+                    ok = google.allowed()
+                    out = {"ok": True, "contacts": [
+                        {**c, "allowed": c["addr"].lower() in ok}
+                        for c in await google.contacts(force=bool(d.get("force")))]}
+                elif path == "/api/google/allow":
+                    google.set_allowed(str(d.get("addr", "")), bool(d.get("on")))
+                    out = {"ok": True}
+            await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
         elif method == "POST" and path.startswith("/api/mail/"):
             out = {"ok": False}
             if unlocked and mailer:
@@ -729,10 +782,10 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
 async def start_http(store: memory.MemoryStore, sync: Optional[object] = None,
                      host: str = "0.0.0.0", port: int = 8082, lamp: Optional[object] = None,
                      code_phrase: str = "", rules=None, chat=None, voice=None,
-                     mailer=None):
+                     mailer=None, google=None):
     """`rules`: a function that returns Leyla's instructions without memory and without the
     code word; shown read only after the code word."""
     server = await asyncio.start_server(
-        lambda r, w: _handle(store, sync, r, w, lamp, code_phrase, rules, chat, voice, mailer), host, port)
+        lambda r, w: _handle(store, sync, r, w, lamp, code_phrase, rules, chat, voice, mailer, google), host, port)
     logger.info("Memory page on port %d", port)
     return server

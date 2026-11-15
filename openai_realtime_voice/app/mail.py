@@ -12,6 +12,7 @@ import asyncio
 import json
 import logging
 import os
+import re
 import smtplib
 import ssl
 import time
@@ -40,6 +41,9 @@ EMAIL_TOOL = {
         "type": "object",
         "properties": {
             "an": {"type": "string", "description": "Name of the person as Metin said it."},
+            "adresse": {"type": "string", "description": "Only for an address you found with "
+                        "the web search (a company, office, shop); never one Metin dictated. "
+                        "Leave out for people of his contacts."},
             "betreff": {"type": "string", "description": "Short subject line."},
             "text": {"type": "string", "description": "The whole mail text, ready to send, "
                      "in the language Metin wants, signed with Metin."},
@@ -53,13 +57,18 @@ EMAIL_BACKEND_HINT = (
     " E-mail (email_entwurf): only for Metin after the code word. Write subject and text from "
     "what he says, then tell him in one sentence that the draft is in the chat of his app and "
     "goes out only when he taps Senden there. Never say it was sent. If the name is not in the "
-    "contact list, say so and name the people you can write to.")
+    "contact list, say so and name the people you can write to. For a company or office you may "
+    "look up its address with the web search and pass it as adresse; the card then asks Metin "
+    "to check it.")
 
 MAIL_NOTE = """
 
 E-MAIL
 • Bittet Metin dich, eine E-Mail zu schreiben oder zu schicken, trägst du sie unter "email" ein: {{"to": Name aus der Liste, "subject": kurzer Betreff, "body": fertiger Text, mit Metin unterschrieben}}. Verschickt wird nichts von dir: In der App erscheint eine Karte, und erst Metins Tipp auf "Senden" schickt sie ab. Sag also nie, sie sei verschickt, sondern dass sie unten zum Senden bereitliegt.
 • Nur an diese Kontakte: {names}. Steht der Name nicht dabei, sag es ihm und schreib keine Mail; Adressen, die er diktiert, nimmst du nicht."""
+
+
+ADDR_RE = re.compile(r"[^@\s<>,;]+@[^@\s<>,;]+\.[a-z]{2,}", re.I)
 
 
 def _norm(text: str) -> str:
@@ -80,18 +89,26 @@ def parse_contacts(raw: str) -> dict:
 
 class Mailer:
     def __init__(self, address: str = "", password: str = "", contacts: str = "",
-                 path: Optional[str] = None) -> None:
+                 path: Optional[str] = None, google=None) -> None:
         def opt(v):
             v = (v or "").strip()
             return "" if v.lower() == "null" else v
         self.address = opt(address or os.environ.get("EMAIL_ADDRESS"))
         self.password = opt(password or os.environ.get("EMAIL_APP_PASSWORD")).replace(" ", "")
-        self.contacts = parse_contacts(opt(contacts or os.environ.get("EMAIL_CONTACTS")))
+        self.fixed = parse_contacts(opt(contacts or os.environ.get("EMAIL_CONTACTS")))
+        self.google = google  # gcontacts.GoogleContacts: the Google contacts Metin ticked
         self.path = path or os.environ.get("MAIL_DRAFTS_PATH", DRAFTS_PATH)
 
     @property
+    def contacts(self) -> dict:
+        """Everyone Leyla may write to: the option list plus the ticked Google contacts."""
+        out = dict(self.google.allowed_contacts()) if self.google else {}
+        out.update(self.fixed)
+        return out
+
+    @property
     def available(self) -> bool:
-        return bool(self.address and self.password and self.contacts)
+        return bool(self.address and self.password)
 
     def names(self) -> str:
         return ", ".join(self.contacts) or "(keine)"
@@ -101,10 +118,11 @@ class Mailer:
         said = _norm(name)
         if not said:
             return None
-        for n in self.contacts:
+        contacts = self.contacts
+        for n in contacts:
             if _norm(n) == said:
                 return n
-        hits = [n for n in self.contacts
+        hits = [n for n in contacts
                 if _norm(n).split()[0] in said.split() or said.split()[0] == _norm(n).split()[0]]
         return hits[0] if len(hits) == 1 else None
 
@@ -125,18 +143,25 @@ class Mailer:
             json.dump(drafts[-MAX_DRAFTS:], f, ensure_ascii=False)
         os.replace(tmp, self.path)
 
-    def draft(self, to: str, subject: str, body: str) -> dict:
-        """A new draft for a contact, or an error naming the possible people."""
+    def draft(self, to: str, subject: str, body: str, web_addr: str = "") -> dict:
+        """A new draft for a contact (or an address found on the web), or an error naming the
+        possible people."""
         if not self.available:
             return {"error": "E-Mail ist nicht eingerichtet."}
+        contacts = self.contacts
         name = self.resolve(to)
-        if not name:
+        web_addr = (web_addr or "").strip()
+        if name:
+            addr, web = contacts[name], False
+        elif ADDR_RE.fullmatch(web_addr):
+            name, addr, web = (to or "").strip() or web_addr, web_addr, True
+        else:
             return {"error": f"'{to}' steht nicht in Metins E-Mail Kontakten.",
-                    "kontakte": list(self.contacts)}
+                    "kontakte": list(contacts)}
         body = (body or "").strip()[:MAX_TEXT]
         if not body:
             return {"error": "Der Text fehlt."}
-        d = {"id": uuid.uuid4().hex[:12], "to": name, "addr": self.contacts[name],
+        d = {"id": uuid.uuid4().hex[:12], "to": name, "addr": addr, "web": web,
              "subject": (subject or "").strip()[:200] or "(ohne Betreff)", "body": body,
              "at": time.time()}
         drafts = self._load() + [d]
@@ -146,7 +171,8 @@ class Mailer:
                 "hinweis": "Entwurf liegt im Chat der App, erst Metins Tipp auf Senden schickt ihn."}
 
     def pending(self) -> list:
-        return [{k: d[k] for k in ("id", "to", "addr", "subject", "body")} for d in self._load()]
+        return [{**{k: d[k] for k in ("id", "to", "addr", "subject", "body")},
+                 "web": bool(d.get("web"))} for d in self._load()]
 
     def discard(self, draft_id: str) -> bool:
         drafts = self._load()
@@ -180,4 +206,5 @@ class Mailer:
 
     async def run(self, args: dict) -> dict:
         """The voice tool email_entwurf."""
-        return self.draft(args.get("an", ""), args.get("betreff", ""), args.get("text", ""))
+        return self.draft(args.get("an", ""), args.get("betreff", ""), args.get("text", ""),
+                          args.get("adresse", ""))

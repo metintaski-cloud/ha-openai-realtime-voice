@@ -11,6 +11,7 @@
 - Add on 2.54.0: option `backend_reasoning_effort` (minimal, low, medium, high) for the backend model of GPT Live delegation; unset keeps the model default. Lower effort should shorten the long wait after a web search.
 - Add on 2.55.12: persona rule for personal small talk (how was your day), after a test where she asked back what was meant.
 - Add on 2.55.13: memory page paints the dark blue background at once (no grey page before the start animation).
+- Add on 2.82.0: Google contacts for the e-mails: Metin connects his Google account once in the app (OAuth, read only) and ticks who Leyla may write to; Leyla may also use an address she found with the web search, marked on the card. New options google_client_id, google_client_secret.
 - Add on 2.81.0: Leyla prepares e-mails from Metin's Gmail to people of a fixed contact list, by voice (only after the code word) or in the app chat; they go out only when Metin taps "Senden" on the card in the chat. New options email_address, email_app_password, email_contacts.
 - Add on 2.80.2: app title 26 px instead of 32 px (too large), the words themselves centered above the heart (icon to their left).
 - Add on 2.80.1: memory app header: title larger and centered above the heart, the sound switch moved to the bottom.

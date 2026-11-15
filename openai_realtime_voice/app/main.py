@@ -35,7 +35,7 @@ import dotenv
 import websockets
 
 from app.audio_recorder import AudioRecorder
-from app import mail, memory, memory_web
+from app import gcontacts, mail, memory, memory_web
 from app import context
 from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, pcm_level
 from app.live_link import END_CONVERSATION_TOOL
@@ -155,7 +155,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self.vacuum = vacuum.VacuumController()
         self.purifier = purifier.PurifierController()
         self.messages = messages.from_env(self._speak_once)
-        self.mailer = mail.Mailer()
+        self.google = gcontacts.GoogleContacts()
+        self.mailer = mail.Mailer(google=self.google)
         self.technik = technik.TechnikChecker(
             notify=self.messages.push if self.messages.available else None)
         self.technik.lamp_count = len(self.lights.entities)
@@ -1287,7 +1288,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                                             port=int(os.environ.get("MEMORY_WEB_PORT", "8082")),
                                             lamp=self.lamp, code_phrase=self.code_phrase,
                                             rules=self._readable_rules, chat=self._chat,
-                                            voice=self._chat_voice, mailer=self.mailer)
+                                            voice=self._chat_voice, mailer=self.mailer,
+                                            google=self.google)
             except Exception as e:
                 logger.warning("Memory page could not start: %s", e)
         if self.messages.available:
