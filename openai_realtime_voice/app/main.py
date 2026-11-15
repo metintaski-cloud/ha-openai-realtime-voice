@@ -322,9 +322,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         other = self._chat_provider()
         if not other:
             return {"other": False}
-        host = re.sub(r"^https?://", "", other["url"]).split("/")[0].split(":")[0]
-        parts = [p for p in host.split(".") if p not in ("api", "www")]
-        return {"other": True, "name": (parts[0] if parts else host).capitalize()}
+        name = (os.environ.get("CHAT_NAME") or "").strip()
+        return {"other": True, "name": name if name and name.lower() != "null" else "HomeAI"}
 
     async def _chat(self, history, message, use_other: bool = True) -> Optional[dict]:
         """A text message from Metin in the memory app (code word checked by the page)."""

@@ -32,6 +32,7 @@ CODE_PHRASE=$(bashio::config 'code_phrase')
 CHAT_API_URL=$(bashio::config 'chat_api_url')
 CHAT_API_KEY=$(bashio::config 'chat_api_key')
 CHAT_MODEL=$(bashio::config 'chat_model')
+CHAT_NAME=$(bashio::config 'chat_name')
 NOTIFY_SERVICE=$(bashio::config 'notify_service')
 ANNOUNCE_PLAYER=$(bashio::config 'announce_player')
 ANNOUNCE_BASE_URL=$(bashio::config 'announce_base_url')
@@ -68,7 +69,7 @@ export TV_DUCK
 export LAMP_SHOW LAMP_SHOW_LIGHTS
 export STROMPREIS_CT
 export CODE_PHRASE
-export CHAT_API_URL CHAT_API_KEY CHAT_MODEL
+export CHAT_API_URL CHAT_API_KEY CHAT_MODEL CHAT_NAME
 export NOTIFY_SERVICE
 export ANNOUNCE_PLAYER
 export ANNOUNCE_BASE_URL
