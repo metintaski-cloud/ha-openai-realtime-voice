@@ -363,7 +363,7 @@ function makeRow(kind,t){const lab=document.createElement('label');lab._t=t;
  lab.append(cb,s);attachDrag(lab);return lab;}
 let CHAT=[];try{CHAT=JSON.parse(localStorage.getItem('lchat')||'[]')}catch(e){CHAT=[]}
 const KNAME={family:'Familie',friends:'Freunde',leyla:'Leylas Geschichte',private:'Privat'};
-function chatSave(){CHAT=CHAT.slice(-40);try{localStorage.setItem('lchat',JSON.stringify(CHAT))}catch(e){}}
+function chatSave(){CHAT=CHAT.slice(-20);try{localStorage.setItem('lchat',JSON.stringify(CHAT))}catch(e){}}
 function chatDraw(wait){const log=document.getElementById('clog');log.innerHTML='';
  CHAT.forEach((m,i)=>{if(m.role==='prop'){if(m.done==='Gespeichert'||m.done==='Verworfen')return;return log.appendChild(propCard(m,i));}
   if(m.role==='info'){const n=document.createElement('div');n.className='wait';n.textContent=m.text;return log.appendChild(n);}
