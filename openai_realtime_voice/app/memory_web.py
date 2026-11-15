@@ -193,20 +193,20 @@ body{margin:0;background:#000;color:#e8ecff;font:17px/1.4 system-ui,sans-serif;p
 @keyframes crawl{from{transform:translateX(0)}to{transform:translateX(calc(-100% - 100vw))}}
 @keyframes beat{0%,100%{transform:scale(1)}12%{transform:scale(1.12)}24%{transform:scale(.98)}36%{transform:scale(1.07)}50%{transform:scale(1)}}
 @keyframes tw{0%,100%{opacity:.1;transform:scale(.6)}50%{opacity:1;transform:scale(1.2)}}
-#chat{margin:0 12px 14px;padding:10px;border:1px solid #3b82f655;border-radius:14px;background:#050a24;display:none}
+#chat{margin:0 10px 16px;padding:12px;border:1px solid #3b82f655;border-radius:14px;background:#050a24;display:none}
 #chat h2{margin:2px 4px 8px}
-#chat .chead{display:flex;align-items:center;gap:10px;margin:2px 4px 10px}#chat .chead h2{margin:0}
-#chat .chead img{width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid #22d3ee;box-shadow:0 0 12px #22d3ee88,0 0 18px #d946ef55}
-#clog .lr{display:flex;gap:8px;align-items:flex-end;align-self:flex-start;max-width:92%}#clog .lr img{width:28px;height:28px;border-radius:50%;object-fit:cover;flex:none;border:1px solid #22d3ee88}
+#chat .chead{display:flex;align-items:center;gap:14px;margin:4px 4px 12px}#chat .chead h2{margin:0;font-size:20px;letter-spacing:.06em}
+#chat .chead img{width:76px;height:76px;border-radius:50%;object-fit:cover;border:2px solid #22d3ee;box-shadow:0 0 12px #22d3ee88,0 0 18px #d946ef55}
+#clog .lr{display:flex;gap:8px;align-items:flex-end;align-self:flex-start;max-width:92%}#clog .lr img{width:40px;height:40px;border-radius:50%;object-fit:cover;flex:none;border:1px solid #22d3ee88}
 #clog .lr .m{max-width:none}
-#clog{max-height:38vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:2px}
-#clog .m{max-width:85%;padding:9px 12px;border-radius:14px;white-space:pre-wrap;word-break:break-word;font-size:16px}
+#clog{max-height:52vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:2px}
+#clog .m{max-width:85%;padding:11px 14px;border-radius:16px;white-space:pre-wrap;word-break:break-word;font-size:18px}
 #clog .u{align-self:flex-end;background:#3a1457;border:1px solid #d946ef66}
 #clog .l{align-self:flex-start;background:#0d1750;border:1px solid #22d3ee55}
 #clog .p{align-self:flex-start;max-width:90%;padding:9px 12px;border-radius:12px;background:#0a2a22;border:1px dashed #22c55e;font-size:15px}
 #clog .p b{color:#86efac}#clog .p .row{display:flex;gap:8px;margin-top:8px}#clog .p button{flex:1;padding:8px}
 #clog .wait{align-self:flex-start;color:#9fb4ff;font-size:14px;padding:2px 6px}
-#cin{display:flex;gap:8px;margin-top:10px}#cin textarea{flex:1;min-height:44px;max-height:120px;font:inherit;color:#fff;background:#000;border:1px solid var(--bl);border-radius:10px;padding:9px;resize:vertical}
+#cin{display:flex;gap:8px;margin-top:12px}#cin textarea{flex:1;min-height:56px;font-size:18px;max-height:120px;font:inherit;color:#fff;background:#000;border:1px solid var(--bl);border-radius:10px;padding:9px;resize:vertical}
 #cin button{width:auto;padding:0 16px}
 header{display:flex;align-items:center;gap:12px;padding:16px}
 header img{width:44px;height:44px;border-radius:11px;box-shadow:0 0 14px #3b82f688}
