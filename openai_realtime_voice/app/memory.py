@@ -327,17 +327,46 @@ def _keeps_all(old_text: str, new_text: str) -> bool:
     return set(_words(old_text)) <= set(_words(new_text))
 
 
+HISTORY_FIELDS = ("Stimmung", "Zuletzt")  # their "davor:" chain is a wanted history
+DAVOR = "; davor: "
+
+
+def _significant(text: str) -> set[str]:
+    return {w for w in _words(text) if len(w) >= 4 and w not in STOP_WORDS}
+
+
+def _covered(old_part: str, text: str) -> bool:
+    """True when the text already says what the old part said (nearly all its significant
+    words are in it), so keeping it after "davor:" would only repeat it (2.84.6: Metin's
+    work field held the same sentence three times)."""
+    old_w = _significant(old_part)
+    if not old_w:
+        return True
+    return len(old_w & set(_words(text))) >= 0.85 * len(old_w)
+
+
+def _merge_value(key: str, old: str, new: str) -> str:
+    if key in HISTORY_FIELDS:
+        return new if _keeps_all(old, new) else f"{new}{DAVOR}{old}"
+    kept = new
+    for part in [p.strip() for p in old.split(DAVOR) if p.strip()]:
+        if not _covered(part, kept):
+            kept = f"{kept}{DAVOR}{part}"
+    return kept
+
+
 def _merge_profile(old_fact: str, new_fact: str) -> str:
     """The new profile with nothing of the old one lost: a missing field comes back, a field
-    whose old value is no longer in it keeps that value after "davor:"."""
+    whose old value is no longer in it keeps that value after "davor:" (only the parts the new
+    value does not already say, except for the history fields Stimmung and Zuletzt)."""
     name, old_f = parse_profile(old_fact)
     new_name, new_f = parse_profile(new_fact)
     merged = dict(new_f)
     for key, value in old_f.items():
         if key not in merged:
             merged[key] = value
-        elif not _keeps_all(value, merged[key]):
-            merged[key] = f"{merged[key]}; davor: {value}"
+        else:
+            merged[key] = _merge_value(key, value, merged[key])
     order = list(old_f) + [k for k in new_f if k not in old_f]
     return " | ".join([f"Person: {new_name or name}"] + [f"{k}: {merged[k]}" for k in order])
 

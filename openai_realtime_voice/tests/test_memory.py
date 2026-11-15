@@ -481,3 +481,15 @@ def test_code_phrase_counts_as_metin_talking():
     assert memory.keep_untouched(old, new, dialog, dt.date(2026, 11, 14))[0]["family"] == old["family"]
     assert memory.keep_untouched(old, new, dialog, dt.date(2026, 11, 14), metin_known=True)[0][
         "family"] == ["Person: Metin | Zugehörigkeit: Sohn | Stimmung: gut gelaunt; davor: müde"]
+
+
+def test_profile_merge_does_not_repeat_what_the_new_value_says():
+    old = ("Person: Metin | Arbeit: Elektriker; arbeitet in Früh- und Spätschicht; davor: "
+           "Elektriker; arbeitet in Früh- und Spätschicht | Stimmung: müde")
+    new = ("Person: Metin | Arbeit: Elektriker; arbeitet in Früh- und Spätschicht; hat die "
+           "Gedächtnis App gebaut | Stimmung: gut gelaunt")
+    merged = memory._merge_profile(old, new)
+    assert merged.count("davor") == 1  # only Stimmung keeps its history
+    assert "Stimmung: gut gelaunt; davor: müde" in merged
+    keep = memory._merge_profile("Person: X | Arbeit: Bäcker", "Person: X | Arbeit: Maurer")
+    assert "Maurer; davor: Bäcker" in keep  # real information is still never lost

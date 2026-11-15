@@ -68,6 +68,17 @@ def _clean_history(history) -> list[dict]:
     return out[-MAX_HISTORY:]
 
 
+# technical work on Leyla herself is never worth remembering (2.84.6: the style rule alone let
+# "das Upgrade ist fast fertig" through); checked only on the words a proposal adds
+TECH_RE = re.compile(r"\b(upgrade\w*|update\w*|funktion\w*|programmier\w*|feature\w*|"
+                     r"version\w*|erweiter\w*|einricht\w*|eingerichtet)\b", re.I)
+
+
+def _added_text(old: str, new: str) -> str:
+    gone = set(memory._words(old))
+    return " ".join(w for w in memory._words(new) if w not in gone)
+
+
 def valid_proposals(raw, lists: dict) -> list[dict]:
     """Only proposals that can be applied as they are: a known list, an existing old entry for
     edit and delete, a new text for add and edit."""
@@ -89,7 +100,11 @@ def valid_proposals(raw, lists: dict) -> list[dict]:
             continue
         if action == "add" and new in lists.get(kind, []):
             continue
+        if action == "edit" and memory.parse_profile(old) and memory.parse_profile(new):
+            new = memory._merge_profile(old, new)  # no repeated "davor:" values on the card
         if action == "edit" and new == old:
+            continue
+        if action in ("add", "edit") and TECH_RE.search(_added_text(old, new)):
             continue
         item = {"action": action, "kind": kind, "old": old, "new": new}
         same = (new or old).lower()

@@ -215,7 +215,7 @@ body{margin:0;background:#000;color:#e8ecff;font:17px/1.4 system-ui,sans-serif;p
 #clog .m{max-width:85%;padding:9px 12px;border-radius:14px;white-space:pre-wrap;word-break:break-word;font-size:16px}
 #clog .u{align-self:flex-end;background:#0d1750;border:1px solid #22d3ee55}
 #clog .l{align-self:flex-start;background:#3a1457;border:1px solid #d946ef66}
-#clog .p{align-self:flex-start;max-width:90%;padding:9px 12px;border-radius:12px;background:#0a2a22;border:1px dashed #22c55e;font-size:15px}
+#clog .p{align-self:flex-start;max-width:90%;padding:9px 12px;border-radius:12px;background:#0a2a22;border:1px dashed #22c55e;font-size:15px;white-space:pre-line}
 #clog .p b{color:#86efac}#clog .p .row{display:flex;gap:8px;margin-top:8px}#clog .p button{flex:1;padding:8px}
 #clog .wait{align-self:flex-start;color:#9fb4ff;font-size:14px;padding:2px 6px}
 #cin{display:flex;gap:8px;margin-top:10px}#cin textarea{flex:1;min-height:44px;max-height:120px;font:inherit;color:#fff;background:#000;border:1px solid var(--bl);border-radius:10px;padding:9px;resize:vertical}
@@ -370,7 +370,11 @@ function chatDraw(wait){const log=document.getElementById('clog');log.innerHTML=
  if(wait){const w=document.createElement('div');w.className='wait';w.textContent='Leyla schreibt ...';log.appendChild(w);}
  log.scrollTop=log.scrollHeight;}
 function diffText(o,n){if(o.indexOf(' | ')<0&&n.indexOf(' | ')<0)return o+'  \u2192  '+n;const a=o.split(' | '),b=n.split(' | ');
- const add=b.filter(x=>!a.includes(x)),gone=a.filter(x=>!b.includes(x));return title(b[0])+': '+[...add.map(x=>'neu: '+x),...gone.map(x=>'weg: '+x)].join('; ');}
+ const kv=l=>{const m=new Map();l.slice(1).forEach(x=>{const i=x.indexOf(':');m.set(i>0?x.slice(0,i).trim():x,i>0?x.slice(i+1).trim():'');});return m;};
+ const A=kv(a),B=kv(b),out=[];
+ B.forEach((v,k)=>{if(!A.has(k))out.push('neu '+k+': '+v);else if(A.get(k)!==v){const nv=v.split('; davor:')[0].trim();out.push(k+': '+nv);}});
+ A.forEach((v,k)=>{if(!B.has(k))out.push('weg: '+k);});
+ return title(b[0])+'\n'+(out.join('\n')||'(nur Kleinigkeiten)');}
 function propCard(m,i){const c=document.createElement('div');c.className='p';const p=m.p;
  const what=p.action==='add'?'Merken':p.action==='edit'?'Ändern':p.action==='move'?'Verschieben nach '+(KNAME[p.to]||p.to)+' von':'Streichen';
  const h=document.createElement('b');h.textContent=what+' ('+(KNAME[p.kind]||p.kind)+')';c.appendChild(h);

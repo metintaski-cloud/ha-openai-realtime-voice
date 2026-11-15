@@ -232,3 +232,15 @@ async def test_voice_message_is_transcribed_with_the_current_model(monkeypatch):
 def test_dashes_become_commas():
     assert chat.no_dashes("Ich merke mir das — bis dahin bleibe ich") == "Ich merke mir das, bis dahin bleibe ich"
     assert chat.no_dashes("A – B") == "A, B"
+
+
+def test_tech_proposals_are_dropped_and_profile_edits_do_not_repeat():
+    old = "Person: Metin | Arbeit: Elektriker; davor: Elektriker in Schicht"
+    lists = {"family": [old], "friends": [], "leyla": [], "private": []}
+    tech = {"action": "edit", "kind": "family", "old": old,
+            "new": "Person: Metin | Arbeit: Elektriker in Schicht; das Upgrade ist fast fertig"}
+    assert chat.valid_proposals([tech], lists) == []
+    ok = {"action": "edit", "kind": "family", "old": old,
+          "new": "Person: Metin | Arbeit: Elektriker in Schicht, Frühschicht diese Woche"}
+    out = chat.valid_proposals([ok], lists)
+    assert out[0]["new"] == "Person: Metin | Arbeit: Elektriker in Schicht, Frühschicht diese Woche"
