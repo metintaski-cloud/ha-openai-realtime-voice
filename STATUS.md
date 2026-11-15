@@ -29,7 +29,6 @@ Diese Datei ist das Gedaechtnis des Projekts. Wer eine Sitzung beginnt, liest si
 - Wake Word Cutoff 99 Prozent wurde am 13 Nov 2026 per Netzwerk installiert, Ergebnis noch zu pruefen.
 
 ## Offen
-- Lokale Stimme beobachten (Metins Wunsch, 15.11.2026: auch Leylas Stimme weg von OpenAI): Stand 15.11.2026 gibt es kein offenes Sprachmodell, das Tuerkisch spricht und in 12 GB passt (Qwen3 Omni: Tuerkisch nur als Eingabe, rund 70 GB). Websuche koennte spaeter ueber eine eigene Suchmaschine (SearXNG) auf HomeAI.
 - HomeAI komplett entfernt (Add on 2.77.0, 15.11.2026, Metins Entscheidung: Leistung enttaeuschend). Ollama wird von Metin auf dem PC deinstalliert; Reste dort: Umgebungsvariablen OLLAMA_KEEP_ALIVE und OLLAMA_FLASH_ATTENTION, Firewall Regel ollama, Modelle unter C:\Users\Metin\.ollama, WLAN Profil steht auf Privat.
 - Lamba 1 (Matter) blieb am 14 Nov 2026 um 23:00 nach dem Gespraech magenta an, drei Ausschaltversuche ohne Wirkung, die Wiederholung im Hintergrund hat sie danach ausgeschaltet. Beobachten: kommt es oefter vor, Ursache bei Matter suchen (Thread Signal, Befehlsrate).
 - Gedaechtnis regelmaessig mit Metin durchsehen (Claude): was darf weg (abgelaufene Aktuell Eintraege, erledigte Faeden, lange davor Ketten, doppelte Eintraege), dazu Mamas vertrauliche Liste selbst pruefen und Metin nur Anzahlen nennen. Erste Durchsicht in etwa einer Woche.
