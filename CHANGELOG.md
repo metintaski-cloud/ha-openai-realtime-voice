@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add on 2.87.3: Metin's own chat bubble is black instead of dark blue (his wish), the light blue border stays.
+
 - Add on 2.87.2: Leyla deletes calendar appointments at once, no confirmation card (Metin: asking her to delete and then tapping myself makes no sense). Several matches delete nothing and she asks which one; at most 5 per call; failed deletes are reported back.
 
 ### Leyla fork (deployed setup, 13 Nov 2026)

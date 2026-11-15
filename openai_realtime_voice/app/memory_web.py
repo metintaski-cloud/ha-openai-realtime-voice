@@ -218,7 +218,7 @@ body{margin:0;background:#000;color:#e8ecff;font:17px/1.4 system-ui,sans-serif;p
 #clog .lr .m{max-width:none}
 #clog{max-height:38vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:2px}
 #clog .m{max-width:85%;padding:9px 12px;border-radius:14px;white-space:pre-wrap;word-break:break-word;font-size:16px}
-#clog .u{align-self:flex-end;background:#0d1750;border:1px solid #22d3ee55}
+#clog .u{align-self:flex-end;background:#000;border:1px solid #22d3ee55}
 #clog .l{align-self:flex-start;background:#3a1457;border:1px solid #d946ef66}
 #clog .p{align-self:flex-start;max-width:90%;padding:9px 12px;border-radius:12px;background:#0a2a22;border:1px dashed #22c55e;font-size:15px;white-space:pre-line}
 #clog .p b{color:#86efac}#clog .p .row{display:flex;gap:8px;margin-top:8px}#clog .p button{flex:1;padding:8px}
