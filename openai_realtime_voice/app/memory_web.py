@@ -361,7 +361,7 @@ let CHAT=[];try{CHAT=JSON.parse(localStorage.getItem('lchat')||'[]')}catch(e){CH
 const KNAME={family:'Familie',friends:'Freunde',leyla:'Leylas Geschichte',private:'Privat'};
 function chatSave(){CHAT=CHAT.slice(-40);try{localStorage.setItem('lchat',JSON.stringify(CHAT))}catch(e){}}
 function chatDraw(wait){const log=document.getElementById('clog');log.innerHTML='';
- CHAT.forEach((m,i)=>{if(m.role==='prop')return log.appendChild(propCard(m,i));
+ CHAT.forEach((m,i)=>{if(m.role==='prop'){if(m.done==='Gespeichert'||m.done==='Verworfen')return;return log.appendChild(propCard(m,i));}
   if(m.role==='info'){const n=document.createElement('div');n.className='wait';n.textContent=m.text;return log.appendChild(n);}
   if(m.role==='mail')return log.appendChild(mailCard(m,i));
   if(m.role==='trash')return log.appendChild(trashCard(m,i));
@@ -384,8 +384,8 @@ function propCard(m,i){const c=document.createElement('div');c.className='p';con
    else if(p.action==='move'){ok=(await (await post('/api/add',{kind:p.to,text:p.old})).json()).ok;
     if(ok)ok=(await (await post('/api/delete',{items:[{kind:p.kind,text:p.old}]})).json()).removed>0;}
    else ok=(await (await post('/api/delete',{items:[{kind:p.kind,text:p.old}]})).json()).removed>0;}catch(e){}
-  CHAT[i].done=ok?'Gespeichert':'Ging nicht, der Eintrag hat sich inzwischen geändert';if(ok)snd.save();chatSave();chatDraw();last='';load();};
- n.onclick=()=>{CHAT[i].done='Verworfen';snd.off();chatSave();chatDraw();};
+  if(ok){CHAT.splice(i,1);snd.save();}else CHAT[i].done='Ging nicht, der Eintrag hat sich inzwischen geändert';chatSave();chatDraw();last='';load();};
+ n.onclick=()=>{CHAT.splice(i,1);snd.off();chatSave();chatDraw();};
  row.append(y,n);c.appendChild(row);return c;}
 async function chatSend(){const ta=document.getElementById('ctext'),msg=ta.value.trim();if(!msg)return;
  const history=CHAT.filter(m=>m.role==='user'||m.role==='leyla').map(m=>({role:m.role,text:m.text}));
