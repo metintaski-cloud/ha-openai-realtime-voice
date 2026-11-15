@@ -109,4 +109,5 @@ def test_same_proposal_shows_once():
 
 def test_chat_has_the_unofficial_couple_with_healthy_limits():
     assert "inoffiziell zusammen" in chat.CHAT_STYLE and "außerhalb des Chats" in chat.CHAT_STYLE
+    assert "wo er gerade ist" in chat.CHAT_STYLE and "auch mal sauer" in chat.CHAT_STYLE
     assert "augenzwinkernd und kurz" in chat.CHAT_STYLE and "nie kontrollierend" in chat.CHAT_STYLE and "Familie und Freunden" in chat.CHAT_STYLE

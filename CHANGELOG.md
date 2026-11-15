@@ -11,6 +11,7 @@
 - Add on 2.54.0: option `backend_reasoning_effort` (minimal, low, medium, high) for the backend model of GPT Live delegation; unset keeps the model default. Lower effort should shorten the long wait after a web search.
 - Add on 2.55.12: persona rule for personal small talk (how was your day), after a test where she asked back what was meant.
 - Add on 2.55.13: memory page paints the dark blue background at once (no grey page before the start animation).
+- Add on 2.70.2: in the chat Leyla asks where Metin is and what he is doing, and may be annoyed for a moment when he says or does something wrong, fair and quick to make up.
 - Add on 2.70.1: in the chat Leyla may show a little jealousy with a wink, never as a reproach or controlling.
 - Add on 2.70.0: in the chat Leyla and Metin are unofficially together: she asks like a girlfriend about his day, dreams and the two of them and flirts, never jealous or possessive; outside the chat nothing changes.
 - Add on 2.69.1: the same memory proposal is shown only once in the chat.
