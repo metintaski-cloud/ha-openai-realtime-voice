@@ -317,7 +317,10 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                                 rules, self.memory, history, message,
                                 url=os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL),
                                 lights=(len(self.lights.entities), self.lights.run)
-                                if self.lights.available else None)
+                                if self.lights.available else None,
+                                room=(lambda: chat.room_values(self.lights.api_url,
+                                                               self.lights.token))
+                                if self.lights.token else None)
         if out:
             logger.info("Chat with Metin in the app: answered, %d proposals, %d light commands",
                         len(out["proposals"]), len(out["lights"]))

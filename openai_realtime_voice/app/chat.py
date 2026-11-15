@@ -9,6 +9,7 @@ still never deletes or changes anything by herself.
 """
 import json
 import logging
+import re
 from typing import Optional
 
 import httpx
@@ -152,10 +153,48 @@ async def _do_lights(raw, run) -> list[str]:
     return out
 
 
+# Room values only when Metin asks for them (his wish, 15 Nov 2026), not with every message.
+ROOM_RE = re.compile(
+    r"\b(warm|wärmer|kalt|kälter|temperatur\w*|grad|heiß|hitze|feucht\w*|luftfeucht\w*|"
+    r"klima|sıcak\w*|soğuk\w*|sıcaklık\w*|derece|nem\w*)\b", re.I)
+
+ROOM_NOTE = """
+
+RAUMWERTE JETZT (gerade gemessen, nenne sie so, runde auf ganze Grad und Prozent)
+{values}"""
+
+
+async def room_values(api_url: str, token: str) -> str:
+    """Every temperature and humidity sensor in Home Assistant as plain lines, or ""."""
+    try:
+        async with httpx.AsyncClient(timeout=6.0) as client:
+            resp = await client.get(f"{api_url}/states",
+                                    headers={"Authorization": f"Bearer {token}"})
+        if resp.status_code != 200:
+            return ""
+        lines = []
+        for st in resp.json():
+            a = st.get("attributes", {})
+            if (st.get("entity_id", "").startswith("sensor.")
+                    and a.get("device_class") in ("temperature", "humidity")
+                    and st.get("state") not in ("unknown", "unavailable", None)):
+                lines.append(f"• {a.get('friendly_name', st['entity_id'])}: "
+                             f"{st['state']} {a.get('unit_of_measurement', '')}".rstrip())
+        return "\n".join(lines)
+    except Exception as e:
+        logger.warning("Room values could not be read: %s", e)
+        return ""
+
+
 async def answer(api_key: str, models: list[str], rules: str, store: memory.MemoryStore,
                  history, message: str, url: str = memory.RESPONSES_URL,
-                 lights=None) -> Optional[dict]:
-    """`lights`: (count, run) of the light controller, so Leyla can switch the lamps."""
+                 lights=None, room=None) -> Optional[dict]:
+    """`lights`: (count, run) of the light controller, so Leyla can switch the lamps.
+    `room`: async function giving the room values, asked only when Metin asks about them."""
+    if room and ROOM_RE.search(message or ""):
+        values = await room()
+        if values:
+            rules = rules + ROOM_NOTE.format(values=values)
     out = await _answer(api_key, models, rules, store, history, message, url, lights)
     if out and lights and out.get("lights_raw"):
         out["lights"] = await _do_lights(out["lights_raw"], lights[1])

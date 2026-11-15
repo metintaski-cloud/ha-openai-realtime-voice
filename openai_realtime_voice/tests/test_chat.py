@@ -159,3 +159,39 @@ def test_question_field_is_added_to_the_reply():
     out = chat._parse('{"reply": "Schön! Und wo bist du gerade?", "question": "Und wo bist du gerade?"}', {})
     assert out["reply"] == "Schön! Und wo bist du gerade?"
     assert "fast immer aus" in chat.CHAT_STYLE
+
+
+async def test_room_values_only_when_metin_asks(tmp_path, monkeypatch):
+    store = memory.MemoryStore(str(tmp_path / "m.json"))
+    seen, asked = [], []
+
+    async def room():
+        asked.append(1)
+        return "• Wohnzimmer Temperatur: 23.7 °C"
+
+    class Client:
+        def __init__(self, *a, **k):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        async def post(self, url, headers=None, json=None):
+            seen.append(json["instructions"])
+
+            class R:
+                status_code = 200
+
+                def json(self):
+                    return {"output_text": '{"reply": "ok", "proposals": []}'}
+            return R()
+
+    monkeypatch.setattr(chat.httpx, "AsyncClient", Client)
+    await chat.answer("k", ["m"], "R", store, [], "Wie geht es dir?", room=room)
+    assert not asked and "RAUMWERTE" not in seen[-1]
+    await chat.answer("k", ["m"], "R", store, [], "Wie warm ist es im Wohnzimmer?", room=room)
+    assert asked and "23.7 °C" in seen[-1]
+    assert chat.ROOM_RE.search("Salon ne kadar sıcak?") and chat.ROOM_RE.search("Luftfeuchtigkeit?")
