@@ -195,3 +195,35 @@ async def test_room_values_only_when_metin_asks(tmp_path, monkeypatch):
     await chat.answer("k", ["m"], "R", store, [], "Wie warm ist es im Wohnzimmer?", room=room)
     assert asked and "23.7 °C" in seen[-1]
     assert chat.ROOM_RE.search("Salon ne kadar sıcak?") and chat.ROOM_RE.search("Luftfeuchtigkeit?")
+
+
+async def test_voice_message_is_transcribed_with_the_current_model(monkeypatch):
+    calls = []
+
+    class Client:
+        def __init__(self, *a, **k):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        async def post(self, url, headers=None, data=None, files=None):
+            calls.append(data["model"])
+
+            class R:
+                status_code = 200 if data["model"] == "gpt-transcribe" else 500
+                text = ""
+
+                def json(self):
+                    return {"text": " Wie warm ist es? "}
+            return R()
+
+    monkeypatch.setattr(chat.httpx, "AsyncClient", Client)
+    assert await chat.transcribe("k", b"x" * 3000, "audio/webm;codecs=opus") == "Wie warm ist es?"
+    assert calls == ["gpt-transcribe"]
+    assert await chat.transcribe("k", b"", "audio/webm") == ""
+    assert await chat.transcribe("k", b"x" * (chat.MAX_AUDIO_BYTES + 1)) == ""
+    assert "Wort für Wort" in chat.speak_prompt("Hallo du") and "Hallo du" in chat.speak_prompt("Hallo du")

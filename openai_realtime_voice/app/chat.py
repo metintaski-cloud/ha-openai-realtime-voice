@@ -186,6 +186,42 @@ async def room_values(api_url: str, token: str) -> str:
         return ""
 
 
+TRANSCRIBE_URL = "https://api.openai.com/v1/audio/transcriptions"
+# gpt-transcribe is the current model; gpt-4o-transcribe (deprecated, shut down 2027-02-26)
+# stays as the fallback while it exists.
+TRANSCRIBE_MODELS = ("gpt-transcribe", "gpt-4o-transcribe")
+MAX_AUDIO_BYTES = 1_500_000  # about 60 s of opus from the phone
+
+
+async def transcribe(api_key: str, audio: bytes, mime: str = "audio/webm",
+                     url: str = TRANSCRIBE_URL) -> str:
+    """Metin's voice message as text ("" when nothing was understood)."""
+    if not audio or len(audio) > MAX_AUDIO_BYTES:
+        return ""
+    ext = "mp4" if "mp4" in mime else "ogg" if "ogg" in mime else "webm"
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        for model in TRANSCRIBE_MODELS:
+            try:
+                resp = await client.post(url, headers={"Authorization": f"Bearer {api_key}"},
+                                         data={"model": model},
+                                         files={"file": (f"voice.{ext}", audio, mime)})
+            except Exception as e:
+                logger.warning("Transcription failed (%s): %s", model, e)
+                continue
+            if resp.status_code == 200:
+                return (resp.json().get("text") or "").strip()
+            logger.warning("Transcription with %s failed: HTTP %s %s", model, resp.status_code,
+                           resp.text[:200])
+    return ""
+
+
+def speak_prompt(reply: str) -> str:
+    """The prompt that makes Leyla's live voice read her chat answer as a voice message."""
+    return ("Sprich jetzt als Sprachnachricht an Metin genau diesen Text, Wort für Wort, ohne "
+            "etwas wegzulassen oder hinzuzufügen, warm und natürlich in seiner Sprache: "
+            f"«{reply}»")
+
+
 async def answer(api_key: str, models: list[str], rules: str, store: memory.MemoryStore,
                  history, message: str, url: str = memory.RESPONSES_URL,
                  lights=None, room=None) -> Optional[dict]:

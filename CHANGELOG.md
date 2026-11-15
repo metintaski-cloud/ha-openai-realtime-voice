@@ -11,6 +11,7 @@
 - Add on 2.54.0: option `backend_reasoning_effort` (minimal, low, medium, high) for the backend model of GPT Live delegation; unset keeps the model default. Lower effort should shorten the long wait after a web search.
 - Add on 2.55.12: persona rule for personal small talk (how was your day), after a test where she asked back what was meant.
 - Add on 2.55.13: memory page paints the dark blue background at once (no grey page before the start animation).
+- Add on 2.79.0: voice messages in the app chat both ways: Metin records with the microphone button, the message is transcribed (gpt-transcribe), Leyla answers as usual and her answer comes back spoken in her own voice.
 - Add on 2.78.0: Leyla can tell the room temperature and humidity in the app chat; the sensors are read only when Metin asks about warmth, cold, temperature or humidity.
 - Add on 2.77.0: HomeAI and the second chat provider removed again (Metin: too weak and too slow on a 12 GB card). Options chat_api_url, chat_api_key, chat_model, chat_name, the switch in the app chat and the fallback line are gone; chat, memory update, cleanup and report use OpenAI only. The shared helper `app/textmodel.py` stays for the three background jobs.
 - Add on 2.76.0: HomeAI in the home network gets the whole memory like the OpenAI chat (it did not know who Metin was); a provider outside the house still gets only Leyla's story and the private list.

@@ -25,7 +25,7 @@ TITLES = ((memory.FAMILY, "Familie und Haushalt"),
           (memory.FRIENDS, "Freunde und Verwandte"),
           (memory.LEYLA, "Leylas eigene Geschichte"))
 PRIVATE_TITLE = (memory.PRIVATE, "Privat, nur für dich")
-MAX_BODY = 64 * 1024
+MAX_BODY = 2 * 1024 * 1024  # a voice message from the chat is up to about 1.5 MB
 CODE_MAX_FAILS = 5        # wrong code words in a row, then the private list is locked for a while
 CODE_LOCK_S = 300
 _code_fails = {"n": 0, "until": 0.0}
@@ -208,6 +208,9 @@ body{margin:0;background:#000;color:#e8ecff;font:17px/1.4 system-ui,sans-serif;p
 #clog .wait{align-self:flex-start;color:#9fb4ff;font-size:14px;padding:2px 6px}
 #cin{display:flex;gap:8px;margin-top:10px}#cin textarea{flex:1;min-height:44px;max-height:120px;font:inherit;color:#fff;background:#000;border:1px solid var(--bl);border-radius:10px;padding:9px;resize:vertical}
 #cin button{width:auto;padding:0 16px}
+#cmic{padding:0 14px!important;font-size:20px}#cmic.rec{background:linear-gradient(90deg,#ef4444,#f97316);animation:recp 1s infinite}
+@keyframes recp{50%{opacity:.6}}
+.m .play{display:inline-block;margin-left:8px;width:auto;padding:2px 10px;font-size:14px}
 header{display:flex;align-items:center;gap:12px;padding:16px}
 header img{width:44px;height:44px;border-radius:11px;box-shadow:0 0 14px #3b82f688}
 h1{font-size:21px;margin:0;background:linear-gradient(90deg,var(--cy),var(--vi),var(--mg));-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -256,7 +259,7 @@ button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 @media (prefers-reduced-motion:reduce){.rg{animation-duration:.1s}.sp img{animation:none}}
 </style></head><body>
 <div id="splash"><div class="sp"><img src="/icon.png?v=5" alt=""><svg viewBox="0 0 200 200"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#a855f7"/><stop offset="1" stop-color="#d946ef"/></linearGradient></defs><circle class="trk" cx="100" cy="100" r="90"/><circle class="rg" cx="100" cy="100" r="90" pathLength="100"/></svg></div></div>
-<header><button id="back">&#8249;</button><img src="/icon.png?v=5" alt=""><h1>Leyla Gedächtnis</h1><button id="snd"></button></header><div id="pulse" class="ok" title="Alles in Ordnung"><div class="tick" id="tick" style="display:none"><span></span></div><i class="spark" style="left:12%;top:30%;animation-delay:0s"></i><i class="spark" style="left:22%;top:68%;animation-delay:0.6s"></i><i class="spark" style="left:31%;top:22%;animation-delay:1.2s"></i><i class="spark" style="left:68%;top:74%;animation-delay:0.3s"></i><i class="spark" style="left:77%;top:28%;animation-delay:0.9s"></i><i class="spark" style="left:88%;top:60%;animation-delay:1.5s"></i><i class="spark" style="left:40%;top:80%;animation-delay:1.8s"></i><i class="spark" style="left:60%;top:18%;animation-delay:2.1s"></i><div class="beam"></div><svg viewBox="0 0 100 90"><defs><linearGradient id="hg" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#f43f5e"/></linearGradient><radialGradient id="hc"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#7dd3fc"/><stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/></radialGradient></defs><path d="M50 84C20 62 4 46 4 28C4 14 15 4 28 4C38 4 46 10 50 18C54 10 62 4 72 4C85 4 96 14 96 28C96 46 80 62 50 84Z" fill="#0b1650cc" stroke="url(#hg)" stroke-width="3.2" stroke-linejoin="round"/><path d="M14 40H34L40 28L47 54L53 34L58 44H86" fill="none" stroke="#e0f2fe" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/><circle cx="54" cy="38" r="9" fill="url(#hc)"/></svg></div><div id="chat"><div class="chead"><img src="/leyla.jpg" alt=""><h2>Chat mit Leyla</h2></div><div id="clog"></div><div id="cin"><textarea id="ctext" placeholder="Schreib Leyla ..."></textarea><button id="csend">Senden</button></div></div><div id="rules"><div class="top"><button id="rback">&#8249;</button><h1>So ist Leyla</h1></div><div id="rtext"></div></div><div id="root"></div><div id="lamps" style="display:none"></div>
+<header><button id="back">&#8249;</button><img src="/icon.png?v=5" alt=""><h1>Leyla Gedächtnis</h1><button id="snd"></button></header><div id="pulse" class="ok" title="Alles in Ordnung"><div class="tick" id="tick" style="display:none"><span></span></div><i class="spark" style="left:12%;top:30%;animation-delay:0s"></i><i class="spark" style="left:22%;top:68%;animation-delay:0.6s"></i><i class="spark" style="left:31%;top:22%;animation-delay:1.2s"></i><i class="spark" style="left:68%;top:74%;animation-delay:0.3s"></i><i class="spark" style="left:77%;top:28%;animation-delay:0.9s"></i><i class="spark" style="left:88%;top:60%;animation-delay:1.5s"></i><i class="spark" style="left:40%;top:80%;animation-delay:1.8s"></i><i class="spark" style="left:60%;top:18%;animation-delay:2.1s"></i><div class="beam"></div><svg viewBox="0 0 100 90"><defs><linearGradient id="hg" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#f43f5e"/></linearGradient><radialGradient id="hc"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#7dd3fc"/><stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/></radialGradient></defs><path d="M50 84C20 62 4 46 4 28C4 14 15 4 28 4C38 4 46 10 50 18C54 10 62 4 72 4C85 4 96 14 96 28C96 46 80 62 50 84Z" fill="#0b1650cc" stroke="url(#hg)" stroke-width="3.2" stroke-linejoin="round"/><path d="M14 40H34L40 28L47 54L53 34L58 44H86" fill="none" stroke="#e0f2fe" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/><circle cx="54" cy="38" r="9" fill="url(#hc)"/></svg></div><div id="chat"><div class="chead"><img src="/leyla.jpg" alt=""><h2>Chat mit Leyla</h2></div><div id="clog"></div><div id="cin"><textarea id="ctext" placeholder="Schreib Leyla ..."></textarea><button id="cmic" title="Sprachnachricht">&#127908;</button><button id="csend">Senden</button></div></div><div id="rules"><div class="top"><button id="rback">&#8249;</button><h1>So ist Leyla</h1></div><div id="rtext"></div></div><div id="root"></div><div id="lamps" style="display:none"></div>
 <div id="bar"><button id="del" disabled>Markierte löschen</button></div>
 <script>
 let CODE=null;
@@ -327,6 +330,7 @@ function chatDraw(wait){const log=document.getElementById('clog');log.innerHTML=
  CHAT.forEach((m,i)=>{if(m.role==='prop')return log.appendChild(propCard(m,i));
   if(m.role==='info'){const n=document.createElement('div');n.className='wait';n.textContent=m.text;return log.appendChild(n);}
   const d=document.createElement('div');d.className='m '+(m.role==='user'?'u':'l');d.textContent=m.text;
+  if(m.aid&&AUDIO.has(m.aid)){const b=document.createElement('button');b.className='play';b.textContent='\u25B6';b.onclick=()=>playAudio(m.aid);d.appendChild(b);}
   if(m.role==='user')return log.appendChild(d);const r=document.createElement('div');r.className='lr';const im=document.createElement('img');im.src='/leyla.jpg';im.alt='';r.append(im,d);log.appendChild(r);});
  if(wait){const w=document.createElement('div');w.className='wait';w.textContent='Leyla schreibt ...';log.appendChild(w);}
  log.scrollTop=log.scrollHeight;}
@@ -351,9 +355,26 @@ async function chatSend(){const ta=document.getElementById('ctext'),msg=ta.value
  const history=CHAT.filter(m=>m.role==='user'||m.role==='leyla').map(m=>({role:m.role,text:m.text}));
  CHAT.push({role:'user',text:msg});ta.value='';chatSave();chatDraw(true);snd.on();
  let j=null;try{j=await (await post('/api/chat',{history,message:msg})).json();}catch(e){}
- if(!j||j.error||!j.reply){CHAT.push({role:'leyla',text:'Hmm, gerade komme ich nicht durch. Versuch es gleich nochmal.'});}
- else{CHAT.push({role:'leyla',text:j.reply});(j.lights||[]).forEach(t=>CHAT.push({role:'info',text:'💡 '+t}));(j.proposals||[]).forEach(p=>CHAT.push({role:'prop',p}));}
- chatSave();chatDraw();snd.drop();}
+ chatAnswer(j);chatSave();chatDraw();snd.drop();}
+const AUDIO=new Map();let REC=null,RECT=null;
+function playAudio(id){try{new Audio(AUDIO.get(id)).play();}catch(e){}}
+function chatAnswer(j){if(!j||j.error||!j.reply){CHAT.push({role:'leyla',text:'Hmm, gerade komme ich nicht durch. Versuch es gleich nochmal.'});return null;}
+ const m={role:'leyla',text:j.reply};if(j.audio){m.aid='a'+Date.now();AUDIO.set(m.aid,'data:audio/wav;base64,'+j.audio);}CHAT.push(m);
+ (j.lights||[]).forEach(t=>CHAT.push({role:'info',text:'💡 '+t}));(j.proposals||[]).forEach(p=>CHAT.push({role:'prop',p}));return m.aid||null;}
+function blobB64(b){return new Promise(r=>{const f=new FileReader();f.onload=()=>r(String(f.result).split(',')[1]||'');f.readAsDataURL(b);});}
+async function voiceSend(blob,mime){const history=CHAT.filter(m=>m.role==='user'||m.role==='leyla').map(m=>({role:m.role,text:m.text}));
+ const u={role:'user',text:'🎤 ...'};CHAT.push(u);chatSave();chatDraw(true);snd.on();
+ let j=null;try{j=await (await post('/api/chat_voice',{history,audio:await blobB64(blob),mime})).json();}catch(e){}
+ if(j&&j.heard){u.text='🎤 '+j.heard;}else{u.text='🎤 (nicht verstanden)';}
+ const aid=(j&&j.heard)?chatAnswer(j):null;chatSave();chatDraw();snd.drop();if(aid)playAudio(aid);}
+document.getElementById('cmic').onclick=async()=>{const b=document.getElementById('cmic');
+ if(REC){REC.stop();return;}
+ if(!navigator.mediaDevices||!window.MediaRecorder){CHAT.push({role:'info',text:'Das Mikrofon ist auf dieser Seite nicht frei (Chrome Einstellung fehlt).'});chatSave();chatDraw();return;}
+ let st;try{st=await navigator.mediaDevices.getUserMedia({audio:true});}catch(e){CHAT.push({role:'info',text:'Kein Zugriff aufs Mikrofon.'});chatSave();chatDraw();return;}
+ const parts=[];REC=new MediaRecorder(st);REC.ondataavailable=e=>{if(e.data.size)parts.push(e.data);};
+ REC.onstop=()=>{st.getTracks().forEach(t=>t.stop());clearTimeout(RECT);const mime=REC.mimeType||'audio/webm';REC=null;b.classList.remove('rec');b.innerHTML='&#127908;';
+  const blob=new Blob(parts,{type:mime});if(blob.size>2000)voiceSend(blob,mime);};
+ REC.start();b.classList.add('rec');b.innerHTML='&#9632;';snd.on();RECT=setTimeout(()=>{if(REC)REC.stop();},60000);};
 document.getElementById('csend').onclick=chatSend;
 let FRESH=new Set(),TICK='';
 function ticker(list){const t=(list||[]).join('   \u2726   ');if(t===TICK)return;TICK=t;const box=document.getElementById('tick'),sp=box.firstChild;
@@ -532,7 +553,7 @@ async def _lamp_api(lamp, method: str, path: str, body: bytes):
 
 
 async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "", rules=None,
-                  chat=None) -> None:
+                  chat=None, voice=None) -> None:
     try:
         head = await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), timeout=10)
         lines = head.decode("latin-1").split("\r\n")
@@ -588,6 +609,15 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                     logger.warning("Chat failed: %s", e)
             await _respond(writer, "200 OK", "application/json",
                            json.dumps(out or {"error": True}, ensure_ascii=False))
+        elif method == "POST" and path == "/api/chat_voice":
+            out = None
+            if unlocked and voice:
+                try:
+                    out = await voice(d.get("history"), d.get("audio"), d.get("mime"))
+                except Exception as e:
+                    logger.warning("Voice message failed: %s", e)
+            await _respond(writer, "200 OK", "application/json",
+                           json.dumps(out or {"error": True}, ensure_ascii=False))
         elif method == "POST" and path == "/api/unlock":
             if unlocked:
                 logger.info("Memory page: private list opened")
@@ -636,10 +666,10 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
 
 async def start_http(store: memory.MemoryStore, sync: Optional[object] = None,
                      host: str = "0.0.0.0", port: int = 8082, lamp: Optional[object] = None,
-                     code_phrase: str = "", rules=None, chat=None):
+                     code_phrase: str = "", rules=None, chat=None, voice=None):
     """`rules`: a function that returns Leyla's instructions without memory and without the
     code word; shown read only after the code word."""
     server = await asyncio.start_server(
-        lambda r, w: _handle(store, sync, r, w, lamp, code_phrase, rules, chat), host, port)
+        lambda r, w: _handle(store, sync, r, w, lamp, code_phrase, rules, chat, voice), host, port)
     logger.info("Memory page on port %d", port)
     return server

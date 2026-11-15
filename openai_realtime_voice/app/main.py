@@ -326,6 +326,30 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                         len(out["proposals"]), len(out["lights"]))
         return out
 
+    async def _chat_voice(self, history, audio_b64, mime) -> Optional[dict]:
+        """A voice message from Metin in the memory app: text, Leyla's answer, her voice."""
+        try:
+            audio = base64.b64decode(audio_b64 or "", validate=False)
+        except Exception:
+            return None
+        heard = await chat.transcribe(self.openai_api_key, audio, mime or "audio/webm")
+        if not heard:
+            logger.info("Voice message in the app: nothing understood (%d bytes)", len(audio))
+            return {"heard": ""}
+        out = await self._chat(history, heard)
+        if not out:
+            return {"heard": heard}
+        out["heard"] = heard
+        try:
+            pcm = await self._speak_once(chat.speak_prompt(out["reply"]), max_s=60.0)
+            if pcm:
+                out["audio"] = base64.b64encode(messages.pcm_to_wav(pcm)).decode("ascii")
+        except Exception as e:
+            logger.warning("Voice reply could not be spoken: %s", e)
+        logger.info("Voice message in the app: %d bytes heard, reply audio %s",
+                    len(audio), "yes" if out.get("audio") else "no")
+        return out
+
     def _instructions_with_memory(self) -> str:
         devices, has_fan, has_tv, has_messages = getattr(
             self, "_devices", ([], False, False, False))
@@ -1224,7 +1248,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 await memory_web.start_http(self.memory, self.todo_sync,
                                             port=int(os.environ.get("MEMORY_WEB_PORT", "8082")),
                                             lamp=self.lamp, code_phrase=self.code_phrase,
-                                            rules=self._readable_rules, chat=self._chat)
+                                            rules=self._readable_rules, chat=self._chat,
+                                            voice=self._chat_voice)
             except Exception as e:
                 logger.warning("Memory page could not start: %s", e)
         if self.messages.available:

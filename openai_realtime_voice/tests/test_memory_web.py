@@ -224,3 +224,33 @@ def test_new_and_changed_entries_are_marked_fresh_for_two_days(tmp_path):
     assert "Person: Metin||Interessen: Pizza" in fresh
     assert "Person: Metin||Arbeit: Elektriker" not in fresh
     assert s.fresh(now=time.time() + 3 * 24 * 3600) == set()
+
+
+def test_voice_route_needs_the_code_word_and_takes_a_large_body(tmp_path, monkeypatch):
+    monkeypatch.setitem(memory_web._code_fails, "n", 0)
+    monkeypatch.setitem(memory_web._code_fails, "until", 0.0)
+    s = _store(tmp_path)
+    got = []
+
+    async def voice(history, audio, mime):
+        got.append((len(audio), mime))
+        return {"heard": "hallo", "reply": "Hallo Metin", "proposals": [], "lights": [], "audio": "UklG"}
+
+    async def go(code):
+        server = await memory_web.start_http(s, None, host="127.0.0.1", port=0,
+                                             code_phrase="Leyla Sonne Mond", voice=voice)
+        port = server.sockets[0].getsockname()[1]
+        body = json.dumps({"code": code, "audio": "A" * 300_000, "mime": "audio/webm",
+                           "history": []}).encode()
+        r, w = await asyncio.open_connection("127.0.0.1", port)
+        w.write(b"POST /api/chat_voice HTTP/1.1\r\nContent-Length: %d\r\n\r\n" % len(body) + body)
+        await w.drain()
+        data = await r.read()
+        w.close()
+        server.close()
+        return json.loads(data.split(b"\r\n\r\n", 1)[1])
+
+    assert asyncio.run(go("falsch")) == {"error": True} and not got
+    out = asyncio.run(go("Sonne Mond"))
+    assert out["reply"] == "Hallo Metin" and got == [(300_000, "audio/webm")]
+    assert 'id="cmic"' in memory_web.PAGE and "/api/chat_voice" in memory_web.PAGE
