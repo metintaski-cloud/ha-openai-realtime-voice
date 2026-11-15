@@ -53,7 +53,7 @@ async def ask(prompt: str, api_key: str, models: list, url: str, label: str,
                     local["url"].rstrip("/") + "/chat/completions",
                     headers={"Authorization": f"Bearer {local.get('key') or 'none'}",
                              "Content-Type": "application/json"},
-                    json={"model": local["model"],
+                    json={"model": local["model"], "reasoning_effort": "none",
                           "messages": [{"role": "user", "content": prompt}]})
             took = time.monotonic() - t0
             if resp.status_code == 200:

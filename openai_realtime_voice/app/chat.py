@@ -20,6 +20,9 @@ logger = logging.getLogger(__name__)
 
 KINDS = (memory.FAMILY, memory.FRIENDS, memory.LEYLA, memory.PRIVATE)
 MAX_HISTORY = 20
+# Gemma 4 thinks first: slower, and now and then all text went into "reasoning" with an empty
+# answer (15 Nov 2026). "none" turns thinking off on Ollama; other providers ignore it.
+NO_THINKING = "none"
 MAX_MESSAGE = 2000
 
 CHAT_STYLE = """
@@ -126,7 +129,7 @@ async def _other_provider(client, base_url: str, key: str, model: str, instructi
         resp = await client.post(
             base_url.rstrip("/") + "/chat/completions",
             headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
-            json={"model": model,
+            json={"model": model, "reasoning_effort": NO_THINKING,
                   "messages": [{"role": "system", "content": instructions}] + dialog})
     except Exception as e:
         logger.warning("Chat request to the other provider failed after %.1f s: %r",
