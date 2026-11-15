@@ -187,7 +187,7 @@ body{margin:0;background:#000;color:#e8ecff;font:17px/1.4 system-ui,sans-serif;p
 #pulse .spark{position:absolute;width:3px;height:3px;border-radius:50%;background:#bae6fd;box-shadow:0 0 6px #7dd3fc;animation:tw 2.4s ease-in-out infinite}
 #pulse.bad .beam{background:#64748b55;box-shadow:none}#pulse.bad .spark{display:none}
 #pulse.bad svg{animation:none;filter:grayscale(1) opacity(.45)}
-#pulse svg path:first-of-type{transition:fill 1.2s}#pulse[data-mood=good] svg path:first-of-type{fill:#15803dd9}#pulse[data-mood=good] svg path{filter:drop-shadow(0 0 6px #22c55e) drop-shadow(0 0 12px #22c55e88)}
+#pulse svg path:first-of-type{transition:fill 1.2s}#pulse[data-mood=good] svg path:first-of-type{fill:#dc2626e6}#pulse[data-mood=good] svg path{filter:drop-shadow(0 0 6px #ef4444) drop-shadow(0 0 12px #f43f5e88)}
 #pulse[data-mood=low] svg path:first-of-type{fill:#000}#pulse[data-mood=low] svg path{filter:drop-shadow(0 0 4px #64748b)}#pulse[data-mood=low] svg{animation-duration:3.2s}
 #pulse .tick{position:absolute;left:0;right:0;top:118px;height:22px;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 88%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 88%,transparent)}
 #pulse .tick span{position:absolute;left:100%;white-space:nowrap;font-size:14px;line-height:22px;color:#e0f2fe;text-shadow:0 0 8px #22d3ee;animation:crawl linear infinite}
@@ -198,9 +198,9 @@ body{margin:0;background:#000;color:#e8ecff;font:17px/1.4 system-ui,sans-serif;p
 #chat{margin:0 12px 14px;padding:10px;border:1px solid #3b82f655;border-radius:14px;background:#050a24;display:none}
 #chat h2{margin:2px 4px 8px}
 #chat .chead{display:flex;align-items:center;gap:14px;margin:4px 4px 12px}#chat .chead h2{margin:0;font-size:20px;letter-spacing:.06em}
-#chat .cav{position:relative;flex:none}#mbadge{position:absolute;right:-2px;bottom:-2px;width:28px;height:28px;border-radius:50%;display:none;align-items:center;justify-content:center;font-size:16px;background:#060c33;border:2px solid #22c55e}
-#mlabel{font-size:14px;margin-top:4px;color:#86efac}#chat.low #mlabel{color:#cbd5e1}#chat.low #mbadge{border-color:#475569}
-#chat.good .chead img{border-color:#22c55e;box-shadow:0 0 14px #22c55eaa,0 0 20px #22c55e44}#chat.low .chead img{border-color:#111;box-shadow:0 0 14px #000,0 0 18px #64748b66;filter:saturate(.6)}
+#chat .cav{position:relative;flex:none}#mbadge{position:absolute;right:-2px;bottom:-2px;width:28px;height:28px;border-radius:50%;display:none;align-items:center;justify-content:center;font-size:16px;background:#060c33;border:2px solid #ef4444}
+#mlabel{font-size:14px;margin-top:4px;color:#fca5a5}#chat.low #mlabel{color:#cbd5e1}#chat.low #mbadge{border-color:#475569}
+#chat.good .chead img{border-color:#ef4444;box-shadow:0 0 14px #ef4444aa,0 0 20px #f43f5e44}#chat.low .chead img{border-color:#111;box-shadow:0 0 14px #000,0 0 18px #64748b66;filter:saturate(.6)}
 #chat .chead #clive{margin-left:auto;width:auto;padding:8px 14px;font-size:15px}
 #gmail{margin:14px 12px;padding:12px;border:1px solid #3b82f688;border-radius:14px;background:#060c33}
 #gmail h3{margin:0 0 8px;font-size:15px;letter-spacing:.08em;color:var(--cy)}
@@ -403,8 +403,8 @@ async function chatSend(){const ta=document.getElementById('ctext'),msg=ta.value
 const AUDIO=new Map();let REC=null,RECT=null;
 function playAudio(id){try{new Audio(AUDIO.get(id)).play();}catch(e){}}
 function moodShow(st){if(!st||!st.mood)return;const c=document.getElementById('chat'),b=document.getElementById('mbadge');
- c.classList.toggle('low',!!st.low);c.classList.toggle('good',!st.low);document.getElementById('pulse').dataset.mood=st.low?'low':'good';b.style.display='flex';b.textContent=st.low?'🖤':'💚';
- document.getElementById('mlabel').textContent=(st.low?'🖤 ':'💚 ')+st.label;}
+ c.classList.toggle('low',!!st.low);c.classList.toggle('good',!st.low);document.getElementById('pulse').dataset.mood=st.low?'low':'good';b.style.display='flex';b.textContent=st.low?'🖤':'❤️';
+ document.getElementById('mlabel').textContent=(st.low?'🖤 ':'❤️ ')+st.label;}
 async function moodLoad(){try{moodShow(await (await post('/api/mood',{})).json());}catch(e){}}
 setInterval(()=>{if(CODE&&document.getElementById('chat').style.display==='block')moodLoad();},60000);
 function chatAnswer(j){if(!j||j.error||!j.reply){CHAT.push({role:'leyla',text:'Hmm, gerade komme ich nicht durch. Versuch es gleich nochmal.'});return null;}
