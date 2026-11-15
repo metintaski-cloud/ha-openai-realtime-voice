@@ -240,6 +240,11 @@ textarea{-webkit-user-select:text;user-select:text;width:100%;box-sizing:border-
 .row{display:flex;gap:10px;margin-top:8px}.row button{padding:10px;font-size:16px;background:linear-gradient(90deg,var(--bl),var(--vi));box-shadow:none}.row .no{background:#2a3468}
 .ph{margin:0 12px 8px;border:2px dashed var(--cy);border-radius:12px;background:#22d3ee14}
 .float{position:fixed;left:8px;right:8px;z-index:10;pointer-events:none;background:#1a1f6e;border:1px solid var(--cy);border-radius:12px;box-shadow:0 8px 24px #000a,0 0 18px #22d3ee66;opacity:.97;margin:0}
+#micon{cursor:pointer;transition:transform .15s}#micon:active{transform:scale(.92)}#micon.open{box-shadow:0 0 0 2px var(--cy),0 0 18px #22d3eeaa}
+#menu{display:none;margin:8px 12px 4px;padding:6px;border:1px solid #22d3ee66;border-radius:16px;background:#060c33ee;box-shadow:0 8px 30px #000a}
+#menu .mi{display:flex;align-items:center;gap:12px;width:100%;margin:4px 0;padding:13px 14px;font-size:17px;text-align:left;background:#0b1650;border:1px solid #1b2a6b;border-radius:12px;box-shadow:none}
+#menu .mi i{font-style:normal;width:26px;text-align:center}#menu .mi span{flex:1}#menu .mi small{color:#9fb4ff;font-size:14px}#menu .mi b{color:var(--cy);font-size:20px;font-weight:400}
+#home{color:#9fb4ff;text-align:center;font-size:15px;margin:10px 16px}
 #back{display:none;position:absolute;left:16px;width:auto;font-size:26px;line-height:1;padding:6px 14px;box-shadow:none;background:#1b2a6b;border:1px solid #3b82f688}
 .fold .t{position:relative;padding-right:26px}.fold .t::after{content:'\\203A';position:absolute;right:2px;top:50%;margin-top:-18px;font-size:34px;color:var(--cy)}
 .add{margin:4px 12px;width:calc(100% - 24px);display:block;background:#1b2a6b;border:1px solid var(--cy);box-shadow:none;font-size:16px;padding:12px}
@@ -272,7 +277,7 @@ button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 @media (prefers-reduced-motion:reduce){.rg{animation-duration:.1s}.sp img{animation:none}}
 </style></head><body>
 <div id="splash"><div class="sp"><img src="/icon.png?v=5" alt=""><svg viewBox="0 0 200 200"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#a855f7"/><stop offset="1" stop-color="#d946ef"/></linearGradient></defs><circle class="trk" cx="100" cy="100" r="90"/><circle class="rg" cx="100" cy="100" r="90" pathLength="100"/></svg></div></div>
-<header><button id="back">&#8249;</button><img src="/icon.png?v=5" alt=""><h1>Leyla Gedächtnis</h1></header><div id="pulse" class="ok" title="Alles in Ordnung"><div class="tick" id="tick" style="display:none"><span></span></div><i class="spark" style="left:12%;top:30%;animation-delay:0s"></i><i class="spark" style="left:22%;top:68%;animation-delay:0.6s"></i><i class="spark" style="left:31%;top:22%;animation-delay:1.2s"></i><i class="spark" style="left:68%;top:74%;animation-delay:0.3s"></i><i class="spark" style="left:77%;top:28%;animation-delay:0.9s"></i><i class="spark" style="left:88%;top:60%;animation-delay:1.5s"></i><i class="spark" style="left:40%;top:80%;animation-delay:1.8s"></i><i class="spark" style="left:60%;top:18%;animation-delay:2.1s"></i><div class="beam"></div><svg viewBox="0 0 100 90"><defs><linearGradient id="hg" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#f43f5e"/></linearGradient><radialGradient id="hc"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#7dd3fc"/><stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/></radialGradient></defs><path d="M50 84C20 62 4 46 4 28C4 14 15 4 28 4C38 4 46 10 50 18C54 10 62 4 72 4C85 4 96 14 96 28C96 46 80 62 50 84Z" fill="#0b1650cc" stroke="url(#hg)" stroke-width="3.2" stroke-linejoin="round"/><path d="M14 40H34L40 28L47 54L53 34L58 44H86" fill="none" stroke="#e0f2fe" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/><circle cx="54" cy="38" r="9" fill="url(#hc)"/></svg></div><div id="chat"><div class="chead"><img src="/leyla.jpg" alt=""><h2>Chat mit Leyla</h2><button id="clive" title="Live mit Leyla reden">&#128222; Live</button></div><div id="clog"></div><div id="cin"><textarea id="ctext" placeholder="Schreib Leyla ..."></textarea><button id="cmic" title="Sprachnachricht">&#127908;</button><button id="csend">Senden</button></div></div><div id="live"><img src="/leyla.jpg" alt=""><div id="lstat">Verbinde ...</div><button id="lend">Auflegen</button></div><div id="rules"><div class="top"><button id="rback">&#8249;</button><h1>So ist Leyla</h1></div><div id="rtext"></div></div><div id="root"></div><div id="gmail" style="display:none"></div><div id="lamps" style="display:none"></div>
+<header><button id="back">&#8249;</button><img id="micon" src="/icon.png?v=5" alt="Menü" title="Menü"><h1>Leyla Gedächtnis</h1></header><div id="menu"></div><div id="pulse" class="ok" title="Alles in Ordnung"><div class="tick" id="tick" style="display:none"><span></span></div><i class="spark" style="left:12%;top:30%;animation-delay:0s"></i><i class="spark" style="left:22%;top:68%;animation-delay:0.6s"></i><i class="spark" style="left:31%;top:22%;animation-delay:1.2s"></i><i class="spark" style="left:68%;top:74%;animation-delay:0.3s"></i><i class="spark" style="left:77%;top:28%;animation-delay:0.9s"></i><i class="spark" style="left:88%;top:60%;animation-delay:1.5s"></i><i class="spark" style="left:40%;top:80%;animation-delay:1.8s"></i><i class="spark" style="left:60%;top:18%;animation-delay:2.1s"></i><div class="beam"></div><svg viewBox="0 0 100 90"><defs><linearGradient id="hg" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#f43f5e"/></linearGradient><radialGradient id="hc"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#7dd3fc"/><stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/></radialGradient></defs><path d="M50 84C20 62 4 46 4 28C4 14 15 4 28 4C38 4 46 10 50 18C54 10 62 4 72 4C85 4 96 14 96 28C96 46 80 62 50 84Z" fill="#0b1650cc" stroke="url(#hg)" stroke-width="3.2" stroke-linejoin="round"/><path d="M14 40H34L40 28L47 54L53 34L58 44H86" fill="none" stroke="#e0f2fe" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/><circle cx="54" cy="38" r="9" fill="url(#hc)"/></svg></div><div id="chat"><div class="chead"><img src="/leyla.jpg" alt=""><h2>Chat mit Leyla</h2><button id="clive" title="Live mit Leyla reden">&#128222; Live</button></div><div id="clog"></div><div id="cin"><textarea id="ctext" placeholder="Schreib Leyla ..."></textarea><button id="cmic" title="Sprachnachricht">&#127908;</button><button id="csend">Senden</button></div></div><div id="live"><img src="/leyla.jpg" alt=""><div id="lstat">Verbinde ...</div><button id="lend">Auflegen</button></div><div id="rules"><div class="top"><button id="rback">&#8249;</button><h1>So ist Leyla</h1></div><div id="rtext"></div></div><div id="root"></div><div id="gmail" style="display:none"></div><div id="lamps" style="display:none"></div>
 <div id="bar"><button id="del" disabled>Markierte löschen</button></div>
 <script>
 let CODE=null;
@@ -309,9 +314,24 @@ function fmt(t){if(view)return esc(t);const p=parts(t);if(!p.folder)return esc(t
 async function saveFields(fields){if(!view)return false;
  const r=await post('/api/folder',{kind:view.kind,old:view.text,fields});
  const j=await r.json();if(j.ok)view.text=j.text;return j.ok;}
+let sec=null,menuOpen=false,LASTD=null;
+const SECNAME={family:'Familie und Haushalt',friends:'Freunde und Verwandte',leyla:'Leylas Geschichte',private:'Privat',mail:'E-Mail',lamps:'Lampenfarben',set:'Einstellungen'};
+const SECICON={family:'👪',friends:'🤝',leyla:'💜',private:'🔒',mail:'✉',lamps:'💡',rules:'📜',set:'⚙'};
+function menuItems(){const it=[];const ls=(LASTD&&LASTD.lists)||[];
+ for(const l of ls)it.push([l.kind,l.title,l.items.length]);
+ if(CODE&&GM.shown)it.push(['mail','E-Mail','']);if(lampOn)it.push(['lamps','Lampenfarben','']);
+ if(CODE)it.push(['rules','So ist Leyla','']);it.push(['set','Einstellungen','']);return it;}
+function drawMenu(){const m=document.getElementById('menu');m.innerHTML='';m.style.display=menuOpen?'block':'none';document.getElementById('micon').classList.toggle('open',menuOpen);if(!menuOpen)return;
+ for(const [k,t,n] of menuItems()){const b=document.createElement('button');b.className='mi';const i=document.createElement('i');i.textContent=SECICON[k]||'•';
+  const sp=document.createElement('span');sp.textContent=t;const sm=document.createElement('small');sm.textContent=n===''?'':String(n);const ch=document.createElement('b');ch.textContent='›';
+  b.append(i,sp,sm,ch);b.onclick=()=>openSec(k);m.appendChild(b);}}
+document.getElementById('micon').onclick=()=>{menuOpen=!menuOpen;snd[menuOpen?'on':'off']();drawMenu();};
+function openSec(k){menuOpen=false;drawMenu();if(k==='rules'){openRules();return;}
+ const was=sec;sec=k;view=null;sel=new Set();last='';if(!was)history.pushState({s:1},'');else history.replaceState({s:1},'');window.scrollTo(0,0);snd.on();
+ if(k==='mail')gmailLoad();if(k==='lamps')loadLamps();load();}
 function openFolder(kind,head){view={kind,head,text:''};sel=new Set();last='';history.pushState({f:1},'');window.scrollTo(0,0);snd.on();load();}
 function closeFolder(){view=null;sel=new Set();last='';load();}
-window.addEventListener('popstate',()=>{if(view)closeFolder();});
+window.addEventListener('popstate',()=>{if(view)closeFolder();else if(sec&&!rulesOpen){sec=null;sel=new Set();last='';if(menuOpen){menuOpen=false;drawMenu();}load();}});
 document.getElementById('back').onclick=()=>history.back();
 function startEdit(span,kind,text,saver){editing=true;span.onclick=null;span.innerHTML='';
  const ta=document.createElement('textarea');ta.value=text;
@@ -418,7 +438,7 @@ function gmailDraw(st){const box=document.getElementById('gmail');box.innerHTML=
 async function gmailLoad(force){const st=await gpost('status');const box=document.getElementById('gmail');
  if(!st.configured){GM.shown=false;box.style.display='none';return;}
  if(st.connected){const j=await gpost('contacts',{force:!!force});GM.list=j.contacts||[];}
- GM.shown=true;box.style.display='block';gmailDraw(st);}
+ GM.shown=true;box.style.display=(sec==='mail'&&!view)?'block':'none';gmailDraw(st);}
 function trashCard(m,i){const c=document.createElement('div');c.className='mc tr';const t=m.t;
  const h=document.createElement('b');h.textContent='🗑 '+t.items.length+(t.items.length===1?' Mail':' Mails')+' in den Papierkorb?';c.appendChild(h);
  const ul=document.createElement('ul');t.items.forEach(x=>{const li=document.createElement('li');li.textContent=x.betreff+'  ·  '+x.von;ul.appendChild(li);});c.appendChild(ul);
@@ -470,7 +490,9 @@ function render(d){FRESH=new Set(d.fresh||[]);ticker(d.ticker);const root=docume
  const back=document.getElementById('back'),h1=document.querySelector('h1');
  let found=null;
  if(view){const l=d.lists.find(x=>x.kind===view.kind);const t=l&&l.items.find(x=>parts(x).head===view.head);if(t){found={l,t};}else view=null;}
- back.style.display=view?'block':'none';document.getElementById('pulse').style.display=view?'none':'block';const ch=document.getElementById('chat'),showChat=!!CODE&&!view;if(showChat&&ch.style.display!=='block'){ch.style.display='block';chatDraw();mailPending();gmailLoad();}else if(!showChat)ch.style.display='none';if(!showChat)document.getElementById('gmail').style.display='none';else if(GM.shown)document.getElementById('gmail').style.display='block';document.getElementById('lamps').style.display=(view||!lampOn)?'none':'block';h1.textContent=view?title(view.head):'Leyla Gedächtnis';
+ LASTD=d;const kinds=d.lists.map(l=>l.kind);if(sec&&!SECNAME[sec])sec=null;if(sec==='private'&&!kinds.includes('private'))sec=null;if((sec==='mail'||sec==='private')&&!CODE)sec=null;
+ const home=!view&&!sec,isList=!!view||kinds.includes(sec);
+ back.style.display=home?'none':'block';document.getElementById('micon').style.display=home?'':'none';document.getElementById('pulse').style.display=home?'block':'none';const ch=document.getElementById('chat'),showChat=!!CODE&&home;if(showChat&&ch.style.display!=='block'){ch.style.display='block';chatDraw();mailPending();gmailLoad();}else if(!showChat)ch.style.display='none';document.getElementById('gmail').style.display=(sec==='mail'&&GM.shown&&!view)?'block':'none';document.getElementById('lamps').style.display=(sec==='lamps'&&lampOn&&!view)?'block':'none';document.getElementById('bar').style.display=isList?'':'none';h1.textContent=view?title(view.head):sec?SECNAME[sec]:'Leyla Gedächtnis';if(menuOpen)drawMenu();
  if(found){view.text=found.t;const fields=parts(found.t).fields;
   const box=document.createElement('div');box.className='list';box.dataset.kind=found.l.kind;
   const h=document.createElement('h2');h.textContent='Punkte ('+fields.length+')';box.appendChild(h);
@@ -482,7 +504,9 @@ function render(d){FRESH=new Set(d.fresh||[]);ticker(d.ticker);const root=docume
    root.insertBefore(bx,add);add.style.display='none';startEdit(sp,found.l.kind,'',v=>saveFields([...fields,v]));};
   root.appendChild(add);
  }else{
- for(const l of d.lists){const box=document.createElement('div');box.className='list';box.dataset.kind=l.kind;
+ if(home){const n=document.createElement('div');n.id='home';n.textContent='Tippe oben auf das Symbol für das Menü.';root.appendChild(n);if(!CODE)root.appendChild(privBox());}
+ if(sec==='set')root.appendChild(privBox());
+ for(const l of d.lists.filter(x=>x.kind===sec)){const box=document.createElement('div');box.className='list';box.dataset.kind=l.kind;
   const h=document.createElement('h2');h.textContent=l.title+' ('+l.items.length+')';box.appendChild(h);
   const e=document.createElement('div');e.className='empty';e.textContent='leer';box.appendChild(e);
   for(const t of l.items){all.add(key(l.kind,t));box.appendChild(makeRow(l.kind,t));}
@@ -491,8 +515,7 @@ function render(d){FRESH=new Set(d.fresh||[]);ticker(d.ticker);const root=docume
   add.onclick=()=>{if(editing)return;const bx=document.createElement('div');bx.className='addbox';const sp=document.createElement('span');bx.appendChild(sp);
    root.insertBefore(bx,add);add.style.display='none';
    startEdit(sp,l.kind,'',async v=>{const r=await post('/api/add',{kind:l.kind,text:v});return (await r.json()).ok;});};
-  root.appendChild(add);}
- root.appendChild(privBox());}
+  root.appendChild(add);}}
  sel=new Set([...sel].filter(x=>all.has(x)));upd();}
 function privBox(){const b=document.createElement('div');b.className='lb';
  if(CODE){const r=document.createElement('button');r.textContent='So ist Leyla';r.onclick=openRules;
@@ -570,7 +593,7 @@ const LTXT={ok:'',busy:'Leyla spricht gerade, bitte danach testen.',off:'Lampens
 async function lampPost(path,body){try{const r=await fetch(path,{method:'POST',body:JSON.stringify(body||{})});return await r.json();}catch(e){return {result:'error'};}}
 async function loadLamps(){let d;try{d=await (await fetch('/api/lamp')).json();}catch(e){return;}
  lampOn=!!d.available;const box=document.getElementById('lamps');box.innerHTML='';if(!lampOn){box.style.display='none';return;}
- box.style.display=view?'none':'block';
+ box.style.display=(sec==='lamps'&&!view)?'block':'none';
  const h=document.createElement('h2');h.textContent='Lampenfarben';box.appendChild(h);
  for(const [mode,name,keys] of LROWS){const c=document.createElement('div');c.className='card';
   const n=document.createElement('div');n.className='n';n.innerHTML=esc(name)+(keys.length>1?'<small>leise und laut, das Licht wechselt mit ihrer Stimme</small>':'');c.appendChild(n);
