@@ -338,7 +338,9 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                                 lights=(len(self.lights.entities), self.lights.run)
                                 if self.lights.available else None)
         if out:
-            logger.info("Chat with Metin in the app: answered, %d proposals, %d light commands",
+            logger.info("Chat with Metin in the app: answered via %s%s, %d proposals, "
+                        "%d light commands", out.get("via", "?"),
+                        " (other provider failed)" if out.get("fallback") else "",
                         len(out["proposals"]), len(out["lights"]))
         return out
 

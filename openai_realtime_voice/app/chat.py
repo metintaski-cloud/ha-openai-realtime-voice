@@ -126,7 +126,7 @@ async def _other_provider(client, base_url: str, key: str, model: str, instructi
             headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
             json={"model": model, "messages": [{"role": "system", "content": instructions}] + dialog})
     except Exception as e:
-        logger.warning("Chat request to the other provider failed: %s", e)
+        logger.warning("Chat request to the other provider failed: %r", e)
         return None
     if resp.status_code != 200:
         logger.warning("Chat with the other provider failed: HTTP %s %s", resp.status_code,
@@ -225,7 +225,11 @@ async def _answer(api_key, models, rules, store, history, message, url, other, l
             out = await _other_provider(client, other["url"], other.get("key", ""), other["model"],
                                         outside, dialog, mine)
             if out:
+                out["via"] = "other"
                 return out
+            fallback = True
+        else:
+            fallback = False
         for model in [m for m in models if m]:
             try:
                 resp = await client.post(
@@ -249,5 +253,7 @@ async def _answer(api_key, models, rules, store, history, message, url, other, l
                                 text += part.get("text", "")
             out = _parse(text, lists)
             if out:
+                out["via"] = "openai"
+                out["fallback"] = fallback
                 return out
     return None

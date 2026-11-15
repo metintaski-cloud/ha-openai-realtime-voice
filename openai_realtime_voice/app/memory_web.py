@@ -361,7 +361,7 @@ async function chatSend(){const ta=document.getElementById('ctext'),msg=ta.value
  CHAT.push({role:'user',text:msg});ta.value='';chatSave();chatDraw(true);snd.on();
  let j=null;try{j=await (await post('/api/chat',{history,message:msg,provider:PROV})).json();}catch(e){}
  if(!j||j.error||!j.reply){CHAT.push({role:'leyla',text:'Hmm, gerade komme ich nicht durch. Versuch es gleich nochmal.'});}
- else{CHAT.push({role:'leyla',text:j.reply});(j.lights||[]).forEach(t=>CHAT.push({role:'info',text:'💡 '+t}));(j.proposals||[]).forEach(p=>CHAT.push({role:'prop',p}));}
+ else{CHAT.push({role:'leyla',text:j.reply});if(j.fallback)CHAT.push({role:'info',text:(document.getElementById('cother').textContent||'HomeAI')+' war nicht erreichbar, OpenAI hat geantwortet.'});(j.lights||[]).forEach(t=>CHAT.push({role:'info',text:'💡 '+t}));(j.proposals||[]).forEach(p=>CHAT.push({role:'prop',p}));}
  chatSave();chatDraw();snd.drop();}
 document.getElementById('csend').onclick=chatSend;
 let FRESH=new Set(),TICK='';

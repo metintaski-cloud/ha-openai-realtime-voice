@@ -152,9 +152,12 @@ async def test_other_provider_is_used_first_and_openai_is_the_fallback(tmp_path,
     other = {"url": "https://api.venice.ai/api/v1/", "key": "v", "model": "venice-uncensored"}
     out = await chat.answer("k", ["m"], "R", store, [], "Hi", other=other)
     assert out["reply"] == "Hallo Schatz" and calls[0] == ("https://api.venice.ai/api/v1/chat/completions", "venice-uncensored")
+    assert out["via"] == "other"
     Client.fail = True
     out = await chat.answer("k", ["m"], "R", store, [], "Hi", other=other)
-    assert out["reply"] == "Hallo von OpenAI"
+    assert out["reply"] == "Hallo von OpenAI" and out["via"] == "openai" and out["fallback"]
+    out = await chat.answer("k", ["m"], "R", store, [], "Hi")
+    assert out["via"] == "openai" and not out["fallback"]
 
 
 async def test_chat_switches_lamps_and_reports_the_real_state(tmp_path, monkeypatch):
