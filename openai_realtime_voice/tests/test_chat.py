@@ -143,6 +143,8 @@ async def test_other_provider_is_used_first_and_openai_is_the_fallback(tmp_path,
                 if Client.fail:
                     return Resp(500, {})
                 assert json["messages"][0]["role"] == "system"
+                assert "Person: Metin" not in json["messages"][0]["content"]
+                assert "Familie, Freunde und Verwandte" in json["messages"][0]["content"]
                 return Resp(200, {"choices": [{"message": {"content": '{"reply": "Hallo Schatz", "proposals": []}'}}]})
             return Resp(200, {"output_text": '{"reply": "Hallo von OpenAI", "proposals": []}'})
 
