@@ -195,3 +195,11 @@ async def test_chat_switches_lamps_and_reports_the_real_state(tmp_path, monkeypa
     assert out["lights"] == ["Lampe 1: an, 40 %, warm · Lampe 2: nicht erreichbar"]
     out = await chat.answer("k", ["m"], "R", store, [], "Hi")
     assert out["lights"] == [] and "LICHT" not in sent["instructions"]
+
+
+def test_question_field_is_added_to_the_reply():
+    out = chat._parse('{"reply": "Schön!", "question": "Und wo bist du gerade?", "proposals": []}', {})
+    assert out["reply"] == "Schön! Und wo bist du gerade?"
+    out = chat._parse('{"reply": "Schön! Und wo bist du gerade?", "question": "Und wo bist du gerade?"}', {})
+    assert out["reply"] == "Schön! Und wo bist du gerade?"
+    assert "fast immer aus" in chat.CHAT_STYLE

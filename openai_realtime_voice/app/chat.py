@@ -45,8 +45,8 @@ NOCH OFFEN (was du noch nicht weißt)
 {missing}
 
 Antworte nur mit JSON in dieser Form und sonst nichts:
-{{"reply": "deine Antwort", "proposals": [{{"action": "add|edit|delete|move", "kind": "family|friends|leyla|private", "to": "Zielliste (nur bei move)", "old": "genauer bisheriger Eintrag (bei edit, delete und move)", "new": "neuer Eintrag (bei add und edit)"}}]}}
-"proposals" ist leer, wenn es nichts zu ändern gibt. Sollst du Lampen schalten, kommt zusätzlich "lights": [...] dazu."""
+{{"reply": "deine Antwort", "question": "deine neugierige Frage an Metin", "proposals": [{{"action": "add|edit|delete|move", "kind": "family|friends|leyla|private", "to": "Zielliste (nur bei move)", "old": "genauer bisheriger Eintrag (bei edit, delete und move)", "new": "neuer Eintrag (bei add und edit)"}}]}}
+"question" füllst du fast immer aus: eine einzige lockere, persönliche Frage, die zum Gespräch passt, wie eine Freundin sie stellt; im Chat gilt das statt "ab und zu". Leer lässt du sie nur, wenn Metin sich gerade verabschiedet. "proposals" ist leer, wenn es nichts zu ändern gibt. Sollst du Lampen schalten, kommt zusätzlich "lights": [...] dazu."""
 
 
 LIGHTS_NOTE = """
@@ -108,7 +108,11 @@ def _parse(text: str, lists: dict) -> Optional[dict]:
     if parsed is None or not isinstance(parsed.get("reply"), str):
         reply = (text or "").strip()
         return {"reply": reply, "proposals": []} if reply else None
-    return {"reply": parsed["reply"].strip(),
+    reply = parsed["reply"].strip()
+    question = parsed.get("question")
+    if isinstance(question, str) and question.strip() and question.strip() not in reply:
+        reply = f"{reply} {question.strip()}".strip()
+    return {"reply": reply,
             "proposals": valid_proposals(parsed.get("proposals"), lists),
             "lights_raw": parsed.get("lights")}
 

@@ -11,6 +11,7 @@
 - Add on 2.54.0: option `backend_reasoning_effort` (minimal, low, medium, high) for the backend model of GPT Live delegation; unset keeps the model default. Lower effort should shorten the long wait after a web search.
 - Add on 2.55.12: persona rule for personal small talk (how was your day), after a test where she asked back what was meant.
 - Add on 2.55.13: memory page paints the dark blue background at once (no grey page before the start animation).
+- Add on 2.73.1: in the chat Leyla fills a question field almost every time and the server adds her question to the answer, because the instruction alone did not make her ask.
 - Add on 2.73.0: Leyla can switch the floor lamps from the app chat; the real lamp states show under her answer.
 - Add on 2.72.0: a switch in the chat header between OpenAI and the other provider; it shows only when another provider is set in the options.
 - Add on 2.71.1: when the chat uses another provider, only Leyla's story and Metin's private list are sent there, never family or friends.
