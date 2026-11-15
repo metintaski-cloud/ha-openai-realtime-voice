@@ -30,6 +30,8 @@ CHAT MIT METIN
 • Du bist neugierig und führst das Gespräch mit: Nach deiner Antwort stellst du meist eine Frage, locker und echt interessiert, nie wie ein Verhör und nie mehrere auf einmal. Frag gern nach dem, was unter NOCH OFFEN steht, nach dem, was er gerade erzählt, nach seinem Tag, nach Leuten aus seinem Leben, die du noch nicht kennst, und nach Dingen, die du über ihn, die Familie und Freunde noch nicht weißt.
 • Ihr pflegt hier zusammen dein Gedächtnis, und du denkst selbst mit: Erzählt Metin etwas Bleibendes (über sich, die Familie, Freunde, Vorlieben, Pläne, Termine, euch beide), schlägst du es von dir aus als Änderung vor, ohne dass er dich bitten muss, und sagst kurz und natürlich, dass du es dir merken möchtest. Bei Personen ergänzt du den passenden Eintrag, statt einen neuen anzulegen. Bittet er dich, etwas zu ändern oder zu streichen, schlägst du auch das vor.
 • Kleinkram, Befehle und einmalige Wissensfragen merkst du dir nicht. Gespeichert wird erst, wenn Metin auf Ja tippt; sag nie, dass es schon gespeichert ist.
+• Was zwischen dir und Metin passiert (Flirten, Gefühle, Komplimente, Neckereien über Liebe, Herz, Seelenverwandte, eure Geheimnisse) und alles Intime über ihn (zum Beispiel Beziehungsstatus, Liebe, Sorgen, die nur ihn betreffen) gehört immer in die Liste private, nie in leyla, family oder friends. Die Listen leyla, family und friends kennst du in jedem Gespräch, auch wenn Mama oder seine Geschwister zuhören.
+• Steht so etwas schon in einer offenen Liste, schlag vor, es nach private zu verschieben (action "move", "kind" ist die bisherige Liste, "to" ist "private", "old" ist der genaue Eintrag). Ist es nur ein Teil eines Personeneintrags, schlag ein "edit" ohne diesen Teil vor und ein "add" in private.
 • Löschen und Ändern schlägst du nur vor, wenn Metin es will. Für Personen gilt das Format aus deinem Gedächtnis ("Person: Name | Feld: Wert | ..."); bei einer Änderung gibst du den ganzen neuen Eintrag an.
 
 DEIN GEDÄCHTNIS (JSON, Listen family, friends, leyla, private)
@@ -39,7 +41,7 @@ NOCH OFFEN (was du noch nicht weißt)
 {missing}
 
 Antworte nur mit JSON in dieser Form und sonst nichts:
-{{"reply": "deine Antwort", "proposals": [{{"action": "add|edit|delete", "kind": "family|friends|leyla|private", "old": "genauer bisheriger Eintrag (bei edit und delete)", "new": "neuer Eintrag (bei add und edit)"}}]}}
+{{"reply": "deine Antwort", "proposals": [{{"action": "add|edit|delete|move", "kind": "family|friends|leyla|private", "to": "Zielliste (nur bei move)", "old": "genauer bisheriger Eintrag (bei edit, delete und move)", "new": "neuer Eintrag (bei add und edit)"}}]}}
 "proposals" ist leer, wenn es nichts zu ändern gibt."""
 
 
@@ -61,9 +63,12 @@ def valid_proposals(raw, lists: dict) -> list[dict]:
         action, kind = p.get("action"), p.get("kind")
         old = " ".join(str(p.get("old") or "").split())
         new = " ".join(str(p.get("new") or "").split())
-        if kind not in KINDS or action not in ("add", "edit", "delete"):
+        to = p.get("to")
+        if kind not in KINDS or action not in ("add", "edit", "delete", "move"):
             continue
-        if action in ("edit", "delete") and old not in lists.get(kind, []):
+        if action == "move" and (to not in KINDS or to == kind or old in lists.get(to, [])):
+            continue
+        if action in ("edit", "delete", "move") and old not in lists.get(kind, []):
             continue
         if action in ("add", "edit") and (not new or len(new) > memory.MAX_FACT_CHARS):
             continue
@@ -71,8 +76,11 @@ def valid_proposals(raw, lists: dict) -> list[dict]:
             continue
         if action == "edit" and new == old:
             continue
-        out.append({"action": action, "kind": kind, "old": old, "new": new})
-    return out[:5]
+        item = {"action": action, "kind": kind, "old": old, "new": new}
+        if action == "move":
+            item["to"] = to
+        out.append(item)
+    return out[:12]
 
 
 async def answer(api_key: str, models: list[str], rules: str, store: memory.MemoryStore,

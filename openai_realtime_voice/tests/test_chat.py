@@ -84,3 +84,16 @@ async def test_chat_style_asks_and_proposes_by_itself(tmp_path, monkeypatch):
     ins = sent["instructions"]
     assert "stellst du meist eine Frage" in ins and "von dir aus" in ins
     assert "• Umut: Geburtstag, Kinder, Interessen, Charakter" in ins
+
+
+def test_move_to_private_is_a_valid_proposal_and_style_says_so():
+    lists = {"family": [], "friends": [], "leyla": ["Wir sind Seelenverwandte."], "private": []}
+    out = chat.valid_proposals([{"action": "move", "kind": "leyla", "to": "private",
+                                 "old": "Wir sind Seelenverwandte."},
+                                {"action": "move", "kind": "leyla", "to": "leyla",
+                                 "old": "Wir sind Seelenverwandte."},
+                                {"action": "move", "kind": "leyla", "to": "private", "old": "fehlt"}], lists)
+    assert out == [{"action": "move", "kind": "leyla", "old": "Wir sind Seelenverwandte.", "new": "",
+                    "to": "private"}]
+    assert "gehört immer in die Liste private" in chat.CHAT_STYLE
+    assert "gehören nie hierher" in memory.SUMMARY_PROMPT

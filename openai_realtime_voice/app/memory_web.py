@@ -332,7 +332,7 @@ function chatDraw(wait){const log=document.getElementById('clog');log.innerHTML=
 function diffText(o,n){if(o.indexOf(' | ')<0&&n.indexOf(' | ')<0)return o+'  \u2192  '+n;const a=o.split(' | '),b=n.split(' | ');
  const add=b.filter(x=>!a.includes(x)),gone=a.filter(x=>!b.includes(x));return title(b[0])+': '+[...add.map(x=>'neu: '+x),...gone.map(x=>'weg: '+x)].join('; ');}
 function propCard(m,i){const c=document.createElement('div');c.className='p';const p=m.p;
- const what=p.action==='add'?'Merken':p.action==='edit'?'Ändern':'Streichen';
+ const what=p.action==='add'?'Merken':p.action==='edit'?'Ändern':p.action==='move'?'Verschieben nach '+(KNAME[p.to]||p.to)+' von':'Streichen';
  const h=document.createElement('b');h.textContent=what+' ('+(KNAME[p.kind]||p.kind)+')';c.appendChild(h);
  const t=document.createElement('div');t.textContent=p.action==='add'?p.new:p.action==='edit'?diffText(p.old,p.new):p.old;c.appendChild(t);
  if(m.done){const s=document.createElement('div');s.textContent=m.done;s.style.marginTop='6px';s.style.color='#9fb4ff';c.appendChild(s);return c;}
@@ -340,6 +340,8 @@ function propCard(m,i){const c=document.createElement('div');c.className='p';con
  y.onclick=async()=>{y.disabled=n.disabled=true;let ok=false;
   try{if(p.action==='add')ok=(await (await post('/api/add',{kind:p.kind,text:p.new})).json()).ok;
    else if(p.action==='edit')ok=(await (await post('/api/edit',{kind:p.kind,old:p.old,new:p.new})).json()).ok;
+   else if(p.action==='move'){ok=(await (await post('/api/add',{kind:p.to,text:p.old})).json()).ok;
+    if(ok)ok=(await (await post('/api/delete',{items:[{kind:p.kind,text:p.old}]})).json()).removed>0;}
    else ok=(await (await post('/api/delete',{items:[{kind:p.kind,text:p.old}]})).json()).removed>0;}catch(e){}
   CHAT[i].done=ok?'Gespeichert':'Ging nicht, der Eintrag hat sich inzwischen geändert';if(ok)snd.save();chatSave();chatDraw();last='';load();};
  n.onclick=()=>{CHAT[i].done='Verworfen';snd.off();chatSave();chatDraw();};
