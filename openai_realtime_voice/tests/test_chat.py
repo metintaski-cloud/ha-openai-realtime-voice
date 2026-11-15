@@ -97,3 +97,11 @@ def test_move_to_private_is_a_valid_proposal_and_style_says_so():
                     "to": "private"}]
     assert "gehört immer in die Liste private" in chat.CHAT_STYLE
     assert "gehören nie hierher" in memory.SUMMARY_PROMPT
+
+
+def test_same_proposal_shows_once():
+    lists = {"family": [], "friends": [], "leyla": [], "private": []}
+    raw = [{"action": "add", "kind": "private", "new": "Metin mag Tee."},
+           {"action": "add", "kind": "private", "new": "Metin mag Tee."},
+           {"action": "add", "kind": "leyla", "new": "Metin mag Tee."}]
+    assert len(chat.valid_proposals(raw, lists)) == 1

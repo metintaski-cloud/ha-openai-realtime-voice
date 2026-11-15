@@ -77,6 +77,9 @@ def valid_proposals(raw, lists: dict) -> list[dict]:
         if action == "edit" and new == old:
             continue
         item = {"action": action, "kind": kind, "old": old, "new": new}
+        same = (new or old).lower()
+        if any((o["new"] or o["old"]).lower() == same for o in out):
+            continue  # the model sometimes proposes the same thing twice (or in two lists)
         if action == "move":
             item["to"] = to
         out.append(item)

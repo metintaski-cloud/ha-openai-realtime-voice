@@ -11,6 +11,7 @@
 - Add on 2.54.0: option `backend_reasoning_effort` (minimal, low, medium, high) for the backend model of GPT Live delegation; unset keeps the model default. Lower effort should shorten the long wait after a web search.
 - Add on 2.55.12: persona rule for personal small talk (how was your day), after a test where she asked back what was meant.
 - Add on 2.55.13: memory page paints the dark blue background at once (no grey page before the start animation).
+- Add on 2.69.1: the same memory proposal is shown only once in the chat.
 - Add on 2.69.0: what happens between Leyla and Metin (flirting, feelings, secrets) and intimate things about him go only to his private list, never to the open lists that Leyla knows in every talk; Leyla can propose moving an entry there with one card; the after talk summary keeps such things out of her story too.
 - Add on 2.68.0: Leyla in the chat is curious now: she usually asks one question after her answer (about gaps in the profiles, his day, people she does not know yet) and proposes durable things to remember by herself, without being asked.
 - Add on 2.67.3: chat bubbles and input back to their first size; only the picture and the title "Chat mit Leyla" stay bigger.
