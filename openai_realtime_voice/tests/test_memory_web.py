@@ -304,7 +304,7 @@ def test_agenda_routes_need_the_code_word_and_cards_ride_with_the_mail_ones(tmp_
             return R()
     ag = agenda.Agenda(G(), str(tmp_path / "a.json"))
     asyncio.run(ag.show())
-    ag.propose_delete([1])
+    asyncio.run(ag.propose_delete([1]))
     card = ag.pending()[0]
     s = _store(tmp_path)
 
