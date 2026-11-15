@@ -143,8 +143,11 @@ async def test_other_provider_is_used_first_and_openai_is_the_fallback(tmp_path,
                 if Client.fail:
                     return Resp(500, {})
                 assert json["messages"][0]["role"] == "system"
-                assert "Person: Metin" not in json["messages"][0]["content"]
-                assert "Familie, Freunde und Verwandte" in json["messages"][0]["content"]
+                sys_text = json["messages"][0]["content"]
+                if "venice" in url:
+                    assert "Person: Metin" not in sys_text and "Familie, Freunde und Verwandte" in sys_text
+                else:  # HomeAI in the house gets everything
+                    assert "Person: Metin" in sys_text
                 return Resp(200, {"choices": [{"message": {"content": '{"reply": "Hallo Schatz", "proposals": []}'}}]})
             return Resp(200, {"output_text": '{"reply": "Hallo von OpenAI", "proposals": []}'})
 
@@ -158,6 +161,10 @@ async def test_other_provider_is_used_first_and_openai_is_the_fallback(tmp_path,
     assert out["reply"] == "Hallo von OpenAI" and out["via"] == "openai" and out["fallback"]
     out = await chat.answer("k", ["m"], "R", store, [], "Hi")
     assert out["via"] == "openai" and not out["fallback"]
+    Client.fail = False
+    home = {"url": "http://192.168.2.36:11434/v1", "key": "", "model": "gemma"}
+    out = await chat.answer("k", ["m"], "R", store, [], "Hi", other=home)
+    assert out["via"] == "other"
 
 
 async def test_chat_switches_lamps_and_reports_the_real_state(tmp_path, monkeypatch):
@@ -206,3 +213,10 @@ def test_question_field_is_added_to_the_reply():
     out = chat._parse('{"reply": "Schön! Und wo bist du gerade?", "question": "Und wo bist du gerade?"}', {})
     assert out["reply"] == "Schön! Und wo bist du gerade?"
     assert "fast immer aus" in chat.CHAT_STYLE
+
+
+def test_homeai_in_the_house_gets_everything_outside_providers_only_their_lists():
+    assert chat.in_house("http://192.168.2.36:11434/v1")
+    assert chat.in_house("http://localhost:11434/v1") and chat.in_house("http://pc.local:11434/v1")
+    assert not chat.in_house("https://api.venice.ai/api/v1")
+    assert not chat.in_house("http://8.8.8.8/v1")

@@ -8,8 +8,10 @@ propose changes to the memory; nothing is stored here. The page shows each propo
 still never deletes or changes anything by herself.
 """
 import json
+import ipaddress
 import logging
 import time
+from urllib.parse import urlparse
 from typing import Optional
 
 import httpx
@@ -64,6 +66,17 @@ OTHER_NOTE = """
 
 HINWEIS FÜR DIESEN CHAT
 • Was du über Familie, Freunde und Verwandte weißt, ist in diesem Chat nicht dabei. Fragt Metin danach, sag ihm locker, dass du das hier gerade nicht vor dir hast, und schlag dazu nichts zum Merken vor; über ihn und euch beide darfst du alles."""
+
+
+def in_house(url: str) -> bool:
+    """True when the provider runs in the home network (private address, localhost, .local)."""
+    host = (urlparse(url).hostname or "").lower()
+    if host == "localhost" or host.endswith(".local"):
+        return True
+    try:
+        return ipaddress.ip_address(host).is_private
+    except ValueError:
+        return False
 
 
 def _clean_history(history) -> list[dict]:
@@ -232,11 +245,16 @@ async def _answer(api_key, models, rules, store, history, message, url, other, l
     dialog.append({"role": "user", "content": message})
     async with httpx.AsyncClient(timeout=60.0) as client:
         if other and other.get("url") and other.get("model"):
-            # Family and friends never leave for another provider: only what the two of them
-            # have (Metin's private list and Leyla's own story).
-            mine = {memory.LEYLA: lists[memory.LEYLA], memory.PRIVATE: lists[memory.PRIVATE]}
-            outside = rules + OTHER_NOTE + CHAT_STYLE.format(
-                lists=json.dumps(mine, ensure_ascii=False), missing="(nichts)")
+            if in_house(other["url"]):
+                # HomeAI on a computer in the home network: the data stays in the house, so it
+                # gets everything the OpenAI chat gets (Metin's wish, 15 Nov 2026).
+                mine, outside = lists, instructions
+            else:
+                # Family and friends never leave for a provider outside the house: only what
+                # the two of them have (Metin's private list and Leyla's own story).
+                mine = {memory.LEYLA: lists[memory.LEYLA], memory.PRIVATE: lists[memory.PRIVATE]}
+                outside = rules + OTHER_NOTE + CHAT_STYLE.format(
+                    lists=json.dumps(mine, ensure_ascii=False), missing="(nichts)")
             out = await _other_provider(client, other["url"], other.get("key", ""), other["model"],
                                         outside, dialog, mine)
             if out:
