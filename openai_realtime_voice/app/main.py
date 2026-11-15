@@ -252,14 +252,16 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
              cleanup.CLEANUP_BACKEND_HINT,
              "das Gedächtnis aufräumen (nur Metin, nach dem Codewort)"),
             (self.messages.available, messages.TO_METIN_TOOL, messages.TO_METIN_BACKEND_HINT,
-             "Nachrichten an Metin"),
+             "Nachrichten an Metin aufs Handy schicken, für jeden in der Familie, ohne Codewort "
+             "(zum Beispiel wenn Anne sagt „Metin'e söyle …“)"),
             (self.mailer.available and bool(self.code_phrase), mail.EMAIL_TOOL,
              mail.EMAIL_BACKEND_HINT,
-             "E-Mails für Metin vorbereiten (nur nach dem Codewort; er schickt sie in der App ab)"),
+             "E-Mails aus Metins Gmail an andere Leute vorbereiten (nur für Metin selbst nach "
+             "seinem Codewort; er schickt sie in der App ab)"),
             (self.inbox.available and bool(self.code_phrase), inbox.INBOX_TOOL,
              inbox.INBOX_BACKEND_HINT,
-             "Metins E-Mails lesen und vorlesen (nur nach dem Codewort; Löschen bestätigt er "
-             "in der App)"),
+             "Metins Posteingang lesen und vorlesen (nur für Metin selbst nach seinem Codewort; "
+             "Löschen bestätigt er in der App)"),
         ]
 
     def _session_start(self, extra: str = "") -> dict:

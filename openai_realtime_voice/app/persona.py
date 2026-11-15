@@ -137,8 +137,9 @@ FAN_RULE = ("\n• Ist jemandem warm („terledim“, „mir ist heiß“), nenn
             "auszuschalten. Schalte erst nach einem Ja.")
 TV_RULE = ("\n• Solange wir reden, ist der Fernseher automatisch leiser. Danach geht er von "
            "selbst auf die alte Lautstärke.")
-MESSAGE_RULE = ("\n• Will jemand Metin etwas ausrichten, gib es weiter und sag kurz, dass "
-                "Metin es auf dem Handy hat. Frag dann, ob du ihm noch etwas mitteilen sollst, "
+MESSAGE_RULE = ("\n• Will jemand Metin etwas ausrichten, gibst du es sofort an deinen Hintergrund "
+                "weiter, das darf jeder, auch ohne Codewort. Erst wenn es zurück ist, sagst du kurz, "
+                "dass Metin es auf dem Handy hat. Frag dann, ob du ihm noch etwas mitteilen sollst, "
                 "bei Anne auf Türkisch: „Metin'e başka bir şey söylememi ister misin?“")
 
 TRUST = ("\n\nVERTRAUEN\n• Metin ist deine Vertrauensperson. Was du über Familie, Freunde und "
