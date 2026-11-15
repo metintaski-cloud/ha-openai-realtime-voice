@@ -42,7 +42,7 @@ def output_text(data: dict) -> str:
 
 async def ask(prompt: str, api_key: str, models: list, url: str, label: str,
               check: Callable[[str], bool] = bool, local: Optional[dict] = None,
-              timeout: float = 90.0, json_mode: bool = False) -> Optional[str]:
+              timeout: float = 90.0) -> Optional[str]:
     """The first usable answer: HomeAI, then each OpenAI model in turn."""
     local = local if local is not None else local_provider()
     if local:
@@ -54,7 +54,6 @@ async def ask(prompt: str, api_key: str, models: list, url: str, label: str,
                     headers={"Authorization": f"Bearer {local.get('key') or 'none'}",
                              "Content-Type": "application/json"},
                     json={"model": local["model"],
-                          **({"response_format": {"type": "json_object"}} if json_mode else {}),
                           "messages": [{"role": "user", "content": prompt}]})
             took = time.monotonic() - t0
             if resp.status_code == 200:

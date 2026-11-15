@@ -130,7 +130,7 @@ class Cleaner:
             obj = memory._json_object(text)
             return obj is not None and isinstance(obj.get("streichen"), list)
         text = await textmodel.ask(prompt, self.api_key, self.models, self.url, "Cleanup review",
-                                   check=usable, json_mode=True)
+                                   check=usable)
         return memory._json_object(text)["streichen"] if text else None
 
     async def review(self, today: Optional[_dt.date] = None) -> dict:

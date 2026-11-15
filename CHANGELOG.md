@@ -12,6 +12,7 @@
 - Add on 2.55.12: persona rule for personal small talk (how was your day), after a test where she asked back what was meant.
 - Add on 2.55.13: memory page paints the dark blue background at once (no grey page before the start animation).
 - Add on 2.75.2: the app chat no longer asks HomeAI for JSON mode: with it the answers took 47 s and more instead of 6 to 9 s.
+- Add on 2.75.2: JSON mode for HomeAI removed again: with it Gemma needed 47 s or more than 60 s per chat answer instead of 6 to 9 s (measured 15.11.2026); empty answers are still logged with their fields.
 - Add on 2.75.1: HomeAI is asked for JSON (response_format json_object) in the chat, memory update and cleanup, after an empty HomeAI answer made the chat fall back to OpenAI; an empty answer is logged with its fields, never its text.
 - Add on 2.75.0: memory update, nightly cleanup and rudeness report ask HomeAI (the local model on Metin's PC) first and OpenAI only when it is off or answers unusably (`app/textmodel.py`). Only the voice (GPT Live) and web search stay with OpenAI.
 - Add on 2.73.4: the log shows how long HomeAI took to answer or to fail.

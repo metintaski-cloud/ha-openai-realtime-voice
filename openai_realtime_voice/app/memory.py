@@ -665,8 +665,7 @@ async def summarize(
         max_confidential=MAX_CONFIDENTIAL,
     )
     text = await textmodel.ask(prompt, api_key, models, url, "Memory update",
-                               check=lambda t: parse_lists_json(t) is not None, local=local,
-                               json_mode=True)
+                               check=lambda t: parse_lists_json(t) is not None, local=local)
     if text is None:
         return None
     lists = parse_lists_json(text)
