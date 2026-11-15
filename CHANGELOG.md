@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add on 2.87.5: the chat header shows how many messages Leyla sees (`#ccount`, at most 20; cards and info lines take slots of the 20 kept on the phone, so the count can be lower).
+
 - Add on 2.87.4: the phone keeps the last 20 chat messages instead of 40 (Metin's wish), the same 20 Leyla sees.
 
 - Add on 2.87.3: Metin's own chat bubble is black instead of dark blue (his wish), the light blue border stays.
