@@ -578,7 +578,7 @@ function scrollLoop(){if(!dragging)return;
  moveDrag();raf=requestAnimationFrame(scrollLoop);}
 async function endDrag(){snd.drop();dragging=false;cancelAnimationFrame(raf);justDragged=Date.now();
  ph.parentNode.insertBefore(dragLab,ph);ph.remove();clone.remove();dragLab.style.display='';
- const lists={};document.querySelectorAll('.list').forEach(b=>{lists[b.dataset.kind]=[...b.querySelectorAll('label')].map(x=>x._t);});
+ const lists={};((LASTD&&LASTD.lists)||[]).forEach(l=>{lists[l.kind]=l.items.slice();});document.querySelectorAll('.list').forEach(b=>{lists[b.dataset.kind]=[...b.querySelectorAll('label')].map(x=>x._t);});
  try{if(view)await saveFields(lists[view.kind]);else await post('/api/move',{lists});}catch(e){}
  last='';load();}
 function health(ok){const p=document.getElementById('pulse');p.className=ok?'ok':'bad';p.title=ok?'Alles in Ordnung':'Leyla ist gerade nicht erreichbar';}
