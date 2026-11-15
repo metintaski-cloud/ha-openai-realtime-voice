@@ -327,7 +327,10 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
 
     async def _chat(self, history, message, use_other: bool = True) -> Optional[dict]:
         """A text message from Metin in the memory app (code word checked by the page)."""
-        rules = persona.build_chat(extra=self.instructions)
+        devices, has_fan, has_tv, has_messages = getattr(
+            self, "_devices", ([], False, False, False))
+        rules = persona.build(devices, fan=has_fan, tv=has_tv, messages=has_messages,
+                              extra=self.instructions)
         out = await chat.answer(self.openai_api_key, [self.memory_model, self.backend_model],
                                 rules, self.memory, history, message,
                                 url=os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL),
