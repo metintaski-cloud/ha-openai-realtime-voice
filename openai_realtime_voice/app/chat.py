@@ -126,7 +126,8 @@ async def _other_provider(client, base_url: str, key: str, model: str, instructi
         resp = await client.post(
             base_url.rstrip("/") + "/chat/completions",
             headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
-            json={"model": model, "messages": [{"role": "system", "content": instructions}] + dialog})
+            json={"model": model, "response_format": {"type": "json_object"},
+                  "messages": [{"role": "system", "content": instructions}] + dialog})
     except Exception as e:
         logger.warning("Chat request to the other provider failed after %.1f s: %r",
                        time.monotonic() - t0, e)
@@ -138,10 +139,16 @@ async def _other_provider(client, base_url: str, key: str, model: str, instructi
                        resp.text[:200])
         return None
     try:
-        text = resp.json()["choices"][0]["message"]["content"] or ""
+        msg = resp.json()["choices"][0]["message"]
+        text = msg.get("content") or ""
     except Exception:
+        logger.warning("Chat with the other provider: answer without a message")
         return None
-    return _parse(text, lists)
+    out = _parse(text, lists)
+    if out is None:  # never log the text itself: the chat is private
+        logger.warning("Chat with the other provider: empty answer (fields %s, finish %s)",
+                       sorted(msg), resp.json()["choices"][0].get("finish_reason"))
+    return out
 
 
 def describe_lamps(result: dict) -> str:

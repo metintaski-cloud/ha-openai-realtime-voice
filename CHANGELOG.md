@@ -11,6 +11,7 @@
 - Add on 2.54.0: option `backend_reasoning_effort` (minimal, low, medium, high) for the backend model of GPT Live delegation; unset keeps the model default. Lower effort should shorten the long wait after a web search.
 - Add on 2.55.12: persona rule for personal small talk (how was your day), after a test where she asked back what was meant.
 - Add on 2.55.13: memory page paints the dark blue background at once (no grey page before the start animation).
+- Add on 2.75.1: HomeAI is asked for JSON (response_format json_object) in the chat, memory update and cleanup, after an empty HomeAI answer made the chat fall back to OpenAI; an empty answer is logged with its fields, never its text.
 - Add on 2.75.0: memory update, nightly cleanup and rudeness report ask HomeAI (the local model on Metin's PC) first and OpenAI only when it is off or answers unusably (`app/textmodel.py`). Only the voice (GPT Live) and web search stay with OpenAI.
 - Add on 2.73.4: the log shows how long HomeAI took to answer or to fail.
 - Add on 2.73.3: the app chat shows a line when HomeAI (the other provider) could not be reached and OpenAI answered instead; the log says which provider answered and the real connection error.
