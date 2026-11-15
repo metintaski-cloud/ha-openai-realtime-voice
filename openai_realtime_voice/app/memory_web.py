@@ -203,7 +203,7 @@ body{margin:0;background:#000;color:#e8ecff;font:17px/1.4 system-ui,sans-serif;p
 #gmail input[type=text]{width:100%;box-sizing:border-box;font:inherit;color:#fff;background:#000;border:1px solid var(--bl);border-radius:10px;padding:9px;margin:6px 0}
 #gmail .gb{display:flex;gap:10px;margin-top:8px}#gmail .gb button{flex:1;width:auto;font-size:15px;padding:10px;box-shadow:none;background:#1b2a6b;border:1px solid var(--cy)}
 #gmail .hint{color:#9fb4ff;font-size:14px;margin:4px 0}
-.mc .web{color:#fbbf24;font-weight:600;margin:4px 0}
+.mc .web{color:#fbbf24;font-weight:600;margin:4px 0}.mc.tr{border-color:#f43f5e88}.mc.tr li{margin:3px 0}.mc.tr ul{margin:6px 0 8px;padding-left:18px}
 .mc{margin:8px 0;padding:10px 12px;border:1px solid #d946ef88;border-radius:12px;background:#140a2e}.mc b{color:#e9d5ff}.mc .meta{color:#9fb4ff;font-size:14px;margin:4px 0}.mc pre{white-space:pre-wrap;font:inherit;margin:6px 0 8px}.mc .row{display:flex;gap:8px}.mc .row button{flex:1}
 #live{display:none;position:fixed;inset:0;z-index:50;background:#000;flex-direction:column;align-items:center;justify-content:center;gap:22px}
 #live img{width:180px;height:180px;border-radius:50%;object-fit:cover;border:3px solid #22d3ee;box-shadow:0 0 24px #22d3ee99,0 0 40px #d946ef66;transition:transform .15s}
@@ -345,6 +345,7 @@ function chatDraw(wait){const log=document.getElementById('clog');log.innerHTML=
  CHAT.forEach((m,i)=>{if(m.role==='prop')return log.appendChild(propCard(m,i));
   if(m.role==='info'){const n=document.createElement('div');n.className='wait';n.textContent=m.text;return log.appendChild(n);}
   if(m.role==='mail')return log.appendChild(mailCard(m,i));
+  if(m.role==='trash')return log.appendChild(trashCard(m,i));
   const d=document.createElement('div');d.className='m '+(m.role==='user'?'u':'l');d.textContent=m.text;
   if(m.aid&&AUDIO.has(m.aid)){const b=document.createElement('button');b.className='play';b.textContent='\u25B6';b.onclick=()=>playAudio(m.aid);d.appendChild(b);}
   if(m.role==='user')return log.appendChild(d);const r=document.createElement('div');r.className='lr';const im=document.createElement('img');im.src='/leyla.jpg';im.alt='';r.append(im,d);log.appendChild(r);});
@@ -376,7 +377,7 @@ const AUDIO=new Map();let REC=null,RECT=null;
 function playAudio(id){try{new Audio(AUDIO.get(id)).play();}catch(e){}}
 function chatAnswer(j){if(!j||j.error||!j.reply){CHAT.push({role:'leyla',text:'Hmm, gerade komme ich nicht durch. Versuch es gleich nochmal.'});return null;}
  const m={role:'leyla',text:j.reply};if(j.audio){m.aid='a'+Date.now();AUDIO.set(m.aid,'data:audio/wav;base64,'+j.audio);}CHAT.push(m);
- (j.lights||[]).forEach(t=>CHAT.push({role:'info',text:(t.startsWith('✉')?'':'💡 ')+t}));if(j.email)CHAT.push({role:'mail',e:j.email});(j.proposals||[]).forEach(p=>CHAT.push({role:'prop',p}));return m.aid||null;}
+ (j.lights||[]).forEach(t=>CHAT.push({role:'info',text:(t.startsWith('✉')?'':'💡 ')+t}));if(j.email)CHAT.push({role:'mail',e:j.email});if(j.trash)CHAT.push({role:'trash',t:j.trash});(j.proposals||[]).forEach(p=>CHAT.push({role:'prop',p}));return m.aid||null;}
 function blobB64(b){return new Promise(r=>{const f=new FileReader();f.onload=()=>r(String(f.result).split(',')[1]||'');f.readAsDataURL(b);});}
 async function voiceSend(blob,mime){const history=CHAT.filter(m=>m.role==='user'||m.role==='leyla').map(m=>({role:m.role,text:m.text}));
  const u={role:'user',text:'🎤 ...'};CHAT.push(u);chatSave();chatDraw(true);snd.on();
@@ -406,8 +407,8 @@ const GM={shown:false,list:[],q:''};
 async function gpost(p,b){try{return await (await post('/api/google/'+p,b||{})).json();}catch(e){return {};}}
 function gmailDraw(st){const box=document.getElementById('gmail');box.innerHTML='';
  const h=document.createElement('h3');box.appendChild(h);
- if(!st.connected){h.textContent='GOOGLE KONTAKTE';
-  const p=document.createElement('div');p.className='hint';p.textContent='1. Auf "Mit Google anmelden" tippen und anmelden. 2. Die Seite danach lädt nicht, das ist richtig: ihre ganze Adresse oben kopieren, hier einfügen und auf "Verbinden" tippen.';box.appendChild(p);
+ if(!st.connected||(st.missing&&st.missing.length)){h.textContent='GOOGLE KONTAKTE';
+  const p=document.createElement('div');p.className='hint';p.textContent=(st.connected?'Für Mails lesen und weitere Kontakte bitte einmal neu verbinden, dabei alle Häkchen setzen. ':'')+'1. Auf "Mit Google anmelden" tippen und anmelden. 2. Die Seite danach lädt nicht, das ist richtig: ihre ganze Adresse oben kopieren, hier einfügen und auf "Verbinden" tippen.';box.appendChild(p);
   const i=document.createElement('input');i.type='text';i.placeholder='http://127.0.0.1/?code=...';i.autocomplete='off';box.appendChild(i);
   const row=document.createElement('div');row.className='gb';const a=document.createElement('button');a.textContent='Mit Google anmelden';
   a.onclick=async()=>{const w=window.open('about:blank','_blank');const j=await gpost('auth');if(j.url&&w)w.location.href=j.url;else if(j.url)location.href=j.url;else if(w)w.close();};
@@ -428,8 +429,18 @@ async function gmailLoad(force){const st=await gpost('status');const box=documen
  if(!st.configured){GM.shown=false;box.style.display='none';return;}
  if(st.connected){const j=await gpost('contacts',{force:!!force});GM.list=j.contacts||[];}
  GM.shown=true;box.style.display='block';gmailDraw(st);}
+function trashCard(m,i){const c=document.createElement('div');c.className='mc tr';const t=m.t;
+ const h=document.createElement('b');h.textContent='🗑 '+t.items.length+(t.items.length===1?' Mail':' Mails')+' in den Papierkorb?';c.appendChild(h);
+ const ul=document.createElement('ul');t.items.forEach(x=>{const li=document.createElement('li');li.textContent=x.betreff+'  ·  '+x.von;ul.appendChild(li);});c.appendChild(ul);
+ if(m.done){const s=document.createElement('div');s.className='meta';s.textContent=m.done;c.appendChild(s);return c;}
+ const row=document.createElement('div');row.className='row';const y=document.createElement('button');y.textContent='In den Papierkorb';const n=document.createElement('button');n.textContent='Nein';n.className='no';
+ y.onclick=async()=>{y.disabled=n.disabled=true;let r={ok:false};try{r=await (await post('/api/mail/trash',{id:t.id})).json();}catch(_){}
+  CHAT[i].done=r.ok?(r.anzahl+' im Papierkorb (30 Tage wiederherstellbar)'):(r.error||'Ging nicht');if(r.ok)snd.del();chatSave();chatDraw();};
+ n.onclick=async()=>{try{await post('/api/mail/trash_discard',{id:t.id});}catch(_){}CHAT[i].done='Bleibt im Posteingang';snd.off();chatSave();chatDraw();};
+ row.append(y,n);c.appendChild(row);return c;}
 async function mailPending(){let j=null;try{j=await (await post('/api/mail/pending',{})).json();}catch(_){}
  if(!j||!j.ok)return;let added=false;(j.drafts||[]).forEach(e=>{if(!CHAT.some(m=>m.role==='mail'&&m.e.id===e.id)){CHAT.push({role:'mail',e});added=true;}});
+ (j.trash||[]).forEach(t=>{if(!CHAT.some(m=>m.role==='trash'&&m.t.id===t.id)){CHAT.push({role:'trash',t});added=true;}});
  if(added){chatSave();chatDraw();}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&CODE)mailPending();});
 let LIVE=null;
@@ -639,7 +650,7 @@ async def _lamp_api(lamp, method: str, path: str, body: bytes):
 
 
 async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "", rules=None,
-                  chat=None, voice=None, mailer=None, google=None) -> None:
+                  chat=None, voice=None, mailer=None, google=None, inbox=None) -> None:
     try:
         head = await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), timeout=10)
         lines = head.decode("latin-1").split("\r\n")
@@ -709,7 +720,8 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
             if unlocked and google:
                 if path == "/api/google/status":
                     out = {"ok": True, "configured": google.configured,
-                           "connected": google.connected}
+                           "connected": google.connected,
+                           "missing": google.missing if google.connected else []}
                 elif path == "/api/google/auth" and google.configured:
                     out = {"ok": True, "url": google.auth_url()}
                 elif path == "/api/google/connect":
@@ -727,11 +739,16 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
             out = {"ok": False}
             if unlocked and mailer:
                 if path == "/api/mail/pending":
-                    out = {"ok": True, "drafts": mailer.pending()}
+                    out = {"ok": True, "drafts": mailer.pending(),
+                           "trash": inbox.pending() if inbox else []}
                 elif path == "/api/mail/send":
                     out = await mailer.send(str(d.get("id", "")))
                 elif path == "/api/mail/discard":
                     out = {"ok": mailer.discard(str(d.get("id", "")))}
+                elif path == "/api/mail/trash" and inbox:
+                    out = await inbox.confirm(str(d.get("id", "")))
+                elif path == "/api/mail/trash_discard" and inbox:
+                    out = {"ok": inbox.discard(str(d.get("id", "")))}
             await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
         elif method == "POST" and path == "/api/unlock":
             if unlocked:
@@ -782,10 +799,11 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
 async def start_http(store: memory.MemoryStore, sync: Optional[object] = None,
                      host: str = "0.0.0.0", port: int = 8082, lamp: Optional[object] = None,
                      code_phrase: str = "", rules=None, chat=None, voice=None,
-                     mailer=None, google=None):
+                     mailer=None, google=None, inbox=None):
     """`rules`: a function that returns Leyla's instructions without memory and without the
     code word; shown read only after the code word."""
     server = await asyncio.start_server(
-        lambda r, w: _handle(store, sync, r, w, lamp, code_phrase, rules, chat, voice, mailer, google), host, port)
+        lambda r, w: _handle(store, sync, r, w, lamp, code_phrase, rules, chat, voice, mailer, google,
+                          inbox), host, port)
     logger.info("Memory page on port %d", port)
     return server

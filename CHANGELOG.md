@@ -11,6 +11,7 @@
 - Add on 2.54.0: option `backend_reasoning_effort` (minimal, low, medium, high) for the backend model of GPT Live delegation; unset keeps the model default. Lower effort should shorten the long wait after a web search.
 - Add on 2.55.12: persona rule for personal small talk (how was your day), after a test where she asked back what was meant.
 - Add on 2.55.13: memory page paints the dark blue background at once (no grey page before the start animation).
+- Add on 2.83.0: Leyla reads Metin's Gmail (new `app/inbox.py`, tool `email_lesen`, only after the code word): she searches and reads mails aloud by voice and in the app chat (one extra chat pass with the result); deleting is a card in the app chat and only his tap moves the mails to the Gmail bin. The contact list also holds Gmail's "other contacts" (people he wrote to). New scopes contacts.other.readonly and gmail.modify, so the app asks once to connect Google again.
 - Add on 2.82.2: "Mit Google anmelden" opens the Google tab right on the click, so Edge and Chrome no longer block it as a pop up. Google setup done and the first mail sent (15 Nov 2026).
 - Add on 2.82.1: e-mails go out through the Gmail API with the Google sign in (no app password needed, Metin's account has no app passwords).
 - Add on 2.82.0: Google contacts for the e-mails: Metin connects his Google account once in the app (OAuth, read only) and ticks who Leyla may write to; Leyla may also use an address she found with the web search, marked on the card. New options google_client_id, google_client_secret.

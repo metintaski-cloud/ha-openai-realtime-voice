@@ -7,7 +7,7 @@ import asyncio
 import json
 import logging
 
-from app import cleanup, costs, fan, lights, mail, messages, purifier, technik, vacuum
+from app import cleanup, costs, fan, inbox, lights, mail, messages, purifier, technik, vacuum
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +47,10 @@ class ToolLinkMixin:
         def mail_gate(args, state):
             if not self._only_metin(state):
                 return metin_error("E-Mails schreibt")
+
+        def inbox_gate(args, state):
+            if not self._only_metin(state):
+                return metin_error("Mails liest")
 
         def cleanup_after(args, result):
             if args.get("action") == "streichen" and self.todo_sync:
@@ -88,6 +92,11 @@ class ToolLinkMixin:
                 "label": "Mail draft", "timeout": 10.0, "run": self.mailer.run,
                 "gate": mail_gate, "error": "Der Entwurf konnte gerade nicht angelegt werden.",
                 "log": lambda a, r: "ok" if r.get("ok") else str(r.get("error", ""))[:60]},
+            inbox.INBOX_TOOL["name"]: {
+                "label": "Mail inbox", "timeout": 30.0, "run": self.inbox.run,
+                "gate": inbox_gate, "error": "Der Posteingang ist gerade nicht erreichbar.",
+                "log": lambda a, r: f"{a.get('aktion')} -> " + (
+                    str(r.get("anzahl", "ok")) if r.get("ok") else str(r.get("error", ""))[:60])},
             messages.TO_METIN_TOOL["name"]: {
                 "label": "Message", "timeout": 20.0, "run": self.messages.to_metin,
                 "error": "Die Nachricht konnte gerade nicht gesendet werden.",

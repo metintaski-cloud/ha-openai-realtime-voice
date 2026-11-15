@@ -8,8 +8,11 @@ load on the phone; only its code counts). The refresh token is kept in /data/goo
 
 Leyla may write only to contacts Metin ticked in the app (/data/mail_allowed.json, by address).
 Since 2.82.1 mails go out through the Gmail API with the same sign in (scope gmail.send), because
-app passwords need two step verification, which Metin's account does not use. Names and addresses
-are never logged.
+app passwords need two step verification, which Metin's account does not use. Since 2.83.0 the
+sign in also reads the "other contacts" Gmail keeps by itself (contacts.other.readonly) and lets
+Leyla read his mails and move them to the bin (gmail.modify, see inbox.py). A sign in from before
+lacks these scopes (`missing`), the app then asks him to connect again. Names and addresses are
+never logged.
 """
 
 import base64
@@ -24,8 +27,12 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-SCOPE = ("https://www.googleapis.com/auth/contacts.readonly "
-         "https://www.googleapis.com/auth/gmail.send")
+SCOPES = ("https://www.googleapis.com/auth/contacts.readonly",
+          "https://www.googleapis.com/auth/contacts.other.readonly",
+          "https://www.googleapis.com/auth/gmail.send",
+          "https://www.googleapis.com/auth/gmail.modify")
+SCOPE = " ".join(SCOPES)
+OTHER_URL = "https://people.googleapis.com/v1/otherContacts"
 SEND_URL = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send"
 REDIRECT = "http://127.0.0.1"
 AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
@@ -82,6 +89,24 @@ class GoogleContacts:
     def connected(self) -> bool:
         return self.configured and bool(_read(self.token_path, {}).get("refresh_token"))
 
+    @property
+    def missing(self) -> list:
+        """Scopes the stored sign in lacks (a sign in from before 2.83.0 has no scope record)."""
+        granted = set((_read(self.token_path, {}).get("scope") or "").split())
+        return [s.rsplit("/", 1)[-1] for s in SCOPES if s not in granted]
+
+    def has(self, scope_end: str) -> bool:
+        return self.connected and scope_end not in self.missing
+
+    async def api(self, method: str, url: str, **kw):
+        """One authorised Google API call; the httpx response, or None without a token."""
+        async with httpx.AsyncClient(timeout=kw.pop("timeout", 20.0)) as client:
+            token = await self._token(client)
+            if not token:
+                return None
+            return await client.request(method, url, headers={"Authorization": f"Bearer {token}"},
+                                        **kw)
+
     def auth_url(self) -> str:
         return AUTH_URL + "?" + urllib.parse.urlencode({
             "client_id": self.client_id, "redirect_uri": REDIRECT, "response_type": "code",
@@ -101,7 +126,8 @@ class GoogleContacts:
             logger.warning("Google contacts: sign in failed (HTTP %s)", resp.status_code)
             return {"ok": False, "error": "Google hat den Code nicht angenommen. Bitte nochmal "
                                           "verbinden, der Code gilt nur kurz."}
-        _write(self.token_path, {"refresh_token": data["refresh_token"]})
+        _write(self.token_path, {"refresh_token": data["refresh_token"],
+                                 "scope": data.get("scope", "")})
         self._access, self._access_until = data.get("access_token", ""), \
             time.time() + float(data.get("expires_in", 0)) - 60
         logger.info("Google contacts connected")
@@ -158,12 +184,43 @@ class GoogleContacts:
                     page = data.get("nextPageToken", "")
                     if not page:
                         break
+                if "contacts.other.readonly" not in self.missing:
+                    found += await self._other(client, token)
         except Exception as e:
             logger.warning("Google contacts could not be read: %s", type(e).__name__)
             return cache.get("list") or []
-        found.sort(key=lambda c: c["name"].lower())
+        seen, unique = set(), []
+        for c in found:  # saved contacts come first and win over the other contacts
+            if c["addr"].lower() not in seen:
+                seen.add(c["addr"].lower())
+                unique.append(c)
+        found = sorted(unique, key=lambda c: c["name"].lower())
         _write(self.cache_path, {"at": time.time(), "list": found})
         logger.info("Google contacts read: %d addresses", len(found))
+        return found
+
+    async def _other(self, client, token: str) -> list:
+        """The "other contacts" Gmail saved by itself (people Metin wrote to or got mail from)."""
+        found, page = [], ""
+        for _ in range(20):
+            params = {"readMask": "names,emailAddresses", "pageSize": 1000}
+            if page:
+                params["pageToken"] = page
+            resp = await client.get(OTHER_URL, params=params,
+                                    headers={"Authorization": f"Bearer {token}"})
+            if resp.status_code != 200:
+                logger.warning("Google other contacts: list failed (HTTP %s)", resp.status_code)
+                break
+            data = resp.json()
+            for p in data.get("otherContacts", []):
+                name = ((p.get("names") or [{}])[0].get("displayName") or "").strip()
+                for e in p.get("emailAddresses") or []:
+                    addr = (e.get("value") or "").strip()
+                    if "@" in addr:
+                        found.append({"name": name or addr, "addr": addr})
+            page = data.get("nextPageToken", "")
+            if not page:
+                break
         return found
 
     async def send(self, message) -> bool:

@@ -418,3 +418,16 @@ async def test_mail_draft_is_only_for_metin(env):
     assert "Nicht erlaubt" in (await call(bridge, "email_entwurf", {"an": "Ayşe"}, {}))[0].result()["error"]
     assert ran == []
     assert (await call(bridge, "email_entwurf", {"an": "Ayşe"}, {"unlocked": True}))[0].result() == {"ok": True}
+
+
+async def test_reading_mails_is_only_for_metin(env):
+    bridge = m.LiveVoiceBridge()
+    ran = []
+
+    async def run(args):
+        ran.append(args)
+        return {"ok": True, "anzahl": 0}
+    bridge._tools["email_lesen"]["run"] = run
+    blocked = (await call(bridge, "email_lesen", {"aktion": "suchen"}, {}))[0].result()
+    assert "Nicht erlaubt" in blocked["error"] and ran == []
+    assert (await call(bridge, "email_lesen", {"aktion": "suchen"}, {"unlocked": True}))[0].result()["ok"]

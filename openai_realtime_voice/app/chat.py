@@ -14,6 +14,7 @@ from typing import Optional
 
 import httpx
 
+from app import inbox as inbox_mod
 from app import mail, memory
 
 logger = logging.getLogger(__name__)
@@ -109,7 +110,8 @@ def _parse(text: str, lists: dict) -> Optional[dict]:
         reply = f"{reply} {question.strip()}".strip()
     return {"reply": reply,
             "proposals": valid_proposals(parsed.get("proposals"), lists),
-            "lights_raw": parsed.get("lights"), "email_raw": parsed.get("email")}
+            "lights_raw": parsed.get("lights"), "email_raw": parsed.get("email"),
+            "mail_raw": parsed.get("mail")}
 
 
 def describe_lamps(result: dict) -> str:
@@ -224,22 +226,42 @@ def speak_prompt(reply: str) -> str:
 
 async def answer(api_key: str, models: list[str], rules: str, store: memory.MemoryStore,
                  history, message: str, url: str = memory.RESPONSES_URL,
-                 lights=None, room=None, mailer=None) -> Optional[dict]:
+                 lights=None, room=None, mailer=None, inbox=None) -> Optional[dict]:
     """`lights`: (count, run) of the light controller, so Leyla can switch the lamps.
     `room`: async function giving the room values, asked only when Metin asks about them.
-    `mailer`: `mail.Mailer`; an "email" in her answer becomes a draft card, never a sent mail."""
+    `mailer`: `mail.Mailer`; an "email" in her answer becomes a draft card, never a sent mail.
+    `inbox`: `inbox.Inbox`; a "mail" search or read is run and she answers again with the result
+    (one extra pass at most), a "loeschen" becomes a bin card that Metin confirms."""
     if mailer and mailer.available:
         rules = rules + mail.MAIL_NOTE.format(names=mailer.names())
     if room and ROOM_RE.search(message or ""):
         values = await room()
         if values:
             rules = rules + ROOM_NOTE.format(values=values)
+    if inbox and inbox.available:
+        rules = rules + inbox_mod.CHAT_NOTE
     out = await _answer(api_key, models, rules, store, history, message, url, lights)
+    trash = None
+    req = out.pop("mail_raw", None) if out else None
+    if out and inbox and inbox.available and isinstance(req, dict):
+        note, trash = await inbox.chat_step(req)
+        if note:
+            second = await _answer(api_key, models, rules + note, store, history, message, url,
+                                   lights)
+            if second:
+                req2 = second.pop("mail_raw", None)
+                if isinstance(req2, dict) and "loeschen" in req2:
+                    _, trash = await inbox.chat_step({"loeschen": req2["loeschen"]})
+                second["proposals"] = out["proposals"] + second["proposals"]
+                out = second
     if out and lights and out.get("lights_raw"):
         out["lights"] = await _do_lights(out["lights_raw"], lights[1])
     if out:
         out.pop("lights_raw", None)
+        out.pop("mail_raw", None)
         out.setdefault("lights", [])
+        if trash:
+            out["trash"] = trash
         e = out.pop("email_raw", None)
         if mailer and mailer.available and isinstance(e, dict):
             made = mailer.draft(str(e.get("to", "")), str(e.get("subject", "")),
