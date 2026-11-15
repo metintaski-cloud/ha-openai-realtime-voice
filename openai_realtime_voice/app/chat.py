@@ -90,8 +90,41 @@ def valid_proposals(raw, lists: dict) -> list[dict]:
     return out[:12]
 
 
+def _parse(text: str, lists: dict) -> Optional[dict]:
+    parsed = memory._json_object(text)
+    if parsed is None or not isinstance(parsed.get("reply"), str):
+        reply = (text or "").strip()
+        return {"reply": reply, "proposals": []} if reply else None
+    return {"reply": parsed["reply"].strip(),
+            "proposals": valid_proposals(parsed.get("proposals"), lists)}
+
+
+async def _other_provider(client, base_url: str, key: str, model: str, instructions: str,
+                          dialog: list, lists: dict) -> Optional[dict]:
+    """An OpenAI compatible chat completions endpoint of another provider (chat_api_url)."""
+    try:
+        resp = await client.post(
+            base_url.rstrip("/") + "/chat/completions",
+            headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+            json={"model": model, "messages": [{"role": "system", "content": instructions}] + dialog})
+    except Exception as e:
+        logger.warning("Chat request to the other provider failed: %s", e)
+        return None
+    if resp.status_code != 200:
+        logger.warning("Chat with the other provider failed: HTTP %s %s", resp.status_code,
+                       resp.text[:200])
+        return None
+    try:
+        text = resp.json()["choices"][0]["message"]["content"] or ""
+    except Exception:
+        return None
+    return _parse(text, lists)
+
+
 async def answer(api_key: str, models: list[str], rules: str, store: memory.MemoryStore,
-                 history, message: str, url: str = memory.RESPONSES_URL) -> Optional[dict]:
+                 history, message: str, url: str = memory.RESPONSES_URL,
+                 other: Optional[dict] = None) -> Optional[dict]:
+    """`other`: {"url", "key", "model"} of another provider; OpenAI is the fallback."""
     """{"reply": ..., "proposals": [...]} or None when no model answered."""
     message = (message or "").strip()[:MAX_MESSAGE]
     if not message:
@@ -111,6 +144,11 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
               for h in _clean_history(history)]
     dialog.append({"role": "user", "content": message})
     async with httpx.AsyncClient(timeout=60.0) as client:
+        if other and other.get("url") and other.get("model"):
+            out = await _other_provider(client, other["url"], other.get("key", ""), other["model"],
+                                        instructions, dialog, lists)
+            if out:
+                return out
         for model in [m for m in models if m]:
             try:
                 resp = await client.post(
@@ -132,12 +170,7 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
                         for part in item.get("content", []):
                             if part.get("type") == "output_text":
                                 text += part.get("text", "")
-            parsed = memory._json_object(text)
-            if parsed is None or not isinstance(parsed.get("reply"), str):
-                reply = text.strip()
-                if not reply:
-                    continue
-                return {"reply": reply, "proposals": []}
-            return {"reply": parsed["reply"].strip(),
-                    "proposals": valid_proposals(parsed.get("proposals"), lists)}
+            out = _parse(text, lists)
+            if out:
+                return out
     return None

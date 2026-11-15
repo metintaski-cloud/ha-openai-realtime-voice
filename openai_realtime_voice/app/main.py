@@ -306,6 +306,16 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                              code_phrase="(dein Codewort)" if self.code_phrase else "",
                              extra=self.instructions)
 
+    @staticmethod
+    def _chat_provider() -> Optional[dict]:
+        """chat_api_url, chat_api_key, chat_model: another OpenAI compatible provider for the
+        app chat only (for example Venice), OpenAI stays the fallback."""
+        def opt(name: str) -> str:
+            v = (os.environ.get(name) or "").strip()
+            return "" if v.lower() == "null" else v
+        url, model = opt("CHAT_API_URL"), opt("CHAT_MODEL")
+        return {"url": url, "key": opt("CHAT_API_KEY"), "model": model} if url and model else None
+
     async def _chat(self, history, message) -> Optional[dict]:
         """A text message from Metin in the memory app (code word checked by the page)."""
         devices, has_fan, has_tv, has_messages = getattr(
@@ -314,7 +324,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                               extra=self.instructions)
         out = await chat.answer(self.openai_api_key, [self.memory_model, self.backend_model],
                                 rules, self.memory, history, message,
-                                url=os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL))
+                                url=os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL),
+                                other=self._chat_provider())
         if out:
             logger.info("Chat with Metin in the app: answered, %d proposals", len(out["proposals"]))
         return out

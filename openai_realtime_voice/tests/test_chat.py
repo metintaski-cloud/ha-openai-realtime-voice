@@ -111,3 +111,45 @@ def test_chat_has_the_unofficial_couple_with_healthy_limits():
     assert "inoffiziell zusammen" in chat.CHAT_STYLE and "außerhalb des Chats" in chat.CHAT_STYLE
     assert "immer jugendfrei" in chat.CHAT_STYLE and "wo er gerade ist" in chat.CHAT_STYLE and "auch mal sauer" in chat.CHAT_STYLE
     assert "augenzwinkernd und kurz" in chat.CHAT_STYLE and "nie kontrollierend" in chat.CHAT_STYLE and "Familie und Freunden" in chat.CHAT_STYLE
+
+
+async def test_other_provider_is_used_first_and_openai_is_the_fallback(tmp_path, monkeypatch):
+    store = memory.MemoryStore(str(tmp_path / "m.json"))
+    store.save_all({"family": ["Person: Metin"]})
+    calls = []
+
+    class Resp:
+        def __init__(self, code, body):
+            self.status_code, self._b, self.text = code, body, ""
+
+        def json(self):
+            return self._b
+
+    class Client:
+        fail = False
+
+        def __init__(self, *a, **k):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        async def post(self, url, headers=None, json=None):
+            calls.append((url, json.get("model")))
+            if url.endswith("/chat/completions"):
+                if Client.fail:
+                    return Resp(500, {})
+                assert json["messages"][0]["role"] == "system"
+                return Resp(200, {"choices": [{"message": {"content": '{"reply": "Hallo Schatz", "proposals": []}'}}]})
+            return Resp(200, {"output_text": '{"reply": "Hallo von OpenAI", "proposals": []}'})
+
+    monkeypatch.setattr(chat.httpx, "AsyncClient", Client)
+    other = {"url": "https://api.venice.ai/api/v1/", "key": "v", "model": "venice-uncensored"}
+    out = await chat.answer("k", ["m"], "R", store, [], "Hi", other=other)
+    assert out["reply"] == "Hallo Schatz" and calls[0] == ("https://api.venice.ai/api/v1/chat/completions", "venice-uncensored")
+    Client.fail = True
+    out = await chat.answer("k", ["m"], "R", store, [], "Hi", other=other)
+    assert out["reply"] == "Hallo von OpenAI"
