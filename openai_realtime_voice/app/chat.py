@@ -255,8 +255,9 @@ async def transcribe(api_key: str, audio: bytes, mime: str = "audio/webm",
 
 def speak_prompt(reply: str) -> str:
     """The prompt that makes Leyla's live voice read her chat answer as a voice message."""
-    return ("Sprich jetzt als Sprachnachricht an Metin genau diesen Text, Wort für Wort, ohne "
-            "etwas wegzulassen oder hinzuzufügen, warm und natürlich in seiner Sprache: "
+    return ("Sprich jetzt eine kurze Sprachnachricht an Metin. Sag inhaltlich genau das, was "
+            "hier steht, ohne etwas wegzulassen oder hinzuzufügen, aber frei und locker wie beim "
+            "Reden, nicht wie beim Vorlesen, warm und in seiner Sprache: "
             f"«{reply}»")
 
 

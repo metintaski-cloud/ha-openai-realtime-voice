@@ -226,7 +226,7 @@ async def test_voice_message_is_transcribed_with_the_current_model(monkeypatch):
     assert calls == ["gpt-transcribe"]
     assert await chat.transcribe("k", b"", "audio/webm") == ""
     assert await chat.transcribe("k", b"x" * (chat.MAX_AUDIO_BYTES + 1)) == ""
-    assert "Wort für Wort" in chat.speak_prompt("Hallo du") and "Hallo du" in chat.speak_prompt("Hallo du")
+    assert "nicht wie beim Vorlesen" in chat.speak_prompt("Hallo du") and "Hallo du" in chat.speak_prompt("Hallo du")
 
 
 def test_dashes_become_commas():
