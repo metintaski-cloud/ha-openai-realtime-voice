@@ -374,7 +374,7 @@ function diffText(o,n){if(o.indexOf(' | ')<0&&n.indexOf(' | ')<0)return o+'  \u2
  const A=kv(a),B=kv(b),out=[];
  B.forEach((v,k)=>{if(!A.has(k))out.push('neu '+k+': '+v);else if(A.get(k)!==v){const nv=v.split('; davor:')[0].trim();out.push(k+': '+nv);}});
  A.forEach((v,k)=>{if(!B.has(k))out.push('weg: '+k);});
- return title(b[0])+'\n'+(out.join('\n')||'(nur Kleinigkeiten)');}
+ return title(b[0])+'\\n'+(out.join('\\n')||'(nur Kleinigkeiten)');}
 function propCard(m,i){const c=document.createElement('div');c.className='p';const p=m.p;
  const what=p.action==='add'?'Merken':p.action==='edit'?'Ändern':p.action==='move'?'Verschieben nach '+(KNAME[p.to]||p.to)+' von':'Streichen';
  const h=document.createElement('b');h.textContent=what+' ('+(KNAME[p.kind]||p.kind)+')';c.appendChild(h);
