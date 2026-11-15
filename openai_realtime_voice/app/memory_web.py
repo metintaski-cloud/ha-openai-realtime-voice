@@ -199,7 +199,7 @@ body{margin:0;background:#000;color:#e8ecff;font:17px/1.4 system-ui,sans-serif;p
 #chat h2{margin:2px 4px 8px}
 #chat .chead{display:flex;align-items:center;gap:14px;margin:4px 4px 12px}#chat .chead h2{margin:0;font-size:20px;letter-spacing:.06em}
 #chat .cav{position:relative;flex:none}#mbadge{position:absolute;right:-2px;bottom:-2px;width:28px;height:28px;border-radius:50%;display:none;align-items:center;justify-content:center;font-size:16px;background:#060c33;border:2px solid #ef4444}
-#ccount{font-size:13px;margin-top:3px;color:#9fb4ff}#ccount.warn{color:#fbbf24}#ccount.over{color:#f87171;font-weight:600}#cnew{width:auto;margin-top:6px;padding:4px 10px;font-size:13px;background:#1e293b;border:1px solid #475569}
+#ccount{font-size:13px;margin-top:3px;color:#9fb4ff}#ccount.warn{color:#fbbf24}#ccount.over{color:#f87171;font-weight:600}#cnew{width:auto;margin-top:6px;padding:4px 10px;font-size:13px;background:#000;border:1px solid #22d3ee55}
 #mlabel{font-size:14px;margin-top:4px;color:#fca5a5}#chat.low #mlabel{color:#cbd5e1}#chat.low #mbadge{border-color:#475569}
 #chat.good .chead img{border-color:#ef4444;box-shadow:0 0 14px #ef4444aa,0 0 20px #f43f5e44}#chat.low .chead img{border-color:#111;box-shadow:0 0 14px #000,0 0 18px #64748b66;filter:saturate(.6)}
 #chat .chead #clive{margin-left:auto;width:auto;padding:8px 14px;font-size:15px}
@@ -368,7 +368,7 @@ let CDROP=0;try{CDROP=+localStorage.getItem('lcdrop')||0}catch(e){}
 const isTalk=m=>m.role==='user'||m.role==='leyla';
 function chatSave(){let k=0,cut=0;for(let i=CHAT.length-1;i>=0;i--){if(isTalk(CHAT[i])&&++k===20){cut=i;break;}}if(cut>0){CDROP+=CHAT.slice(0,cut).filter(isTalk).length;CHAT=CHAT.slice(cut);}try{localStorage.setItem('lchat',JSON.stringify(CHAT));localStorage.setItem('lcdrop',String(CDROP))}catch(e){}}
 function chatNew(){if(!confirm('Neuen Chat beginnen? Der bisherige Verlauf wird gelöscht, das Gedächtnis bleibt.'))return;CHAT=[];CDROP=0;chatSave();chatDraw();}
-function chatDraw(wait){const log=document.getElementById('clog');log.innerHTML='';{const n=CDROP+CHAT.filter(isTalk).length,c=document.getElementById('ccount');c.textContent='Nachrichten '+n+' / 20'+(n>20?', Leyla hat den Anfang vergessen':'');c.className=n>20?'over':n>=17?'warn':'';}
+function chatDraw(wait){const log=document.getElementById('clog');log.innerHTML='';{const n=CDROP+CHAT.filter(isTalk).length,c=document.getElementById('ccount');const r=Math.max(0,20-n);c.textContent='Noch '+r+' von 20';c.className=r===0?'over':r<=3?'warn':'';}
  CHAT.forEach((m,i)=>{if(m.role==='prop'){if(m.done==='Gespeichert'||m.done==='Verworfen')return;return log.appendChild(propCard(m,i));}
   if(m.role==='info'){const n=document.createElement('div');n.className='wait';n.textContent=m.text;return log.appendChild(n);}
   if(m.role==='mail')return log.appendChild(mailCard(m,i));

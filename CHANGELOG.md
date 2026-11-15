@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add on 2.87.8: the chat counter counts down ("Noch 12 von 20", yellow from 3, red at 0, no extra text; Metin's wish), the "Neuer Chat" button is black like his bubble.
+
 - Add on 2.87.7: the chat counter really counts (Metin: 20 / 20 stood still, only looks). It counts every message since "Neuer Chat" (dropped ones in localStorage `lcdrop`), turns yellow at 17 and red above 20 with "Leyla hat den Anfang vergessen". The phone keeps the last 20 messages of the talk plus the cards after them, so Leyla really sees 20. Button "Neuer Chat" clears the history and the counter, the memory stays.
 
 - Add on 2.87.6: the chat header counter reads "Nachrichten 12 / 20" (1 is the oldest message Leyla still sees, at 20 the oldest drops out with every new one).
