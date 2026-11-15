@@ -29,6 +29,7 @@ Diese Datei ist das Gedaechtnis des Projekts. Wer eine Sitzung beginnt, liest si
 - Wake Word Cutoff 99 Prozent wurde am 13 Nov 2026 per Netzwerk installiert, Ergebnis noch zu pruefen.
 
 ## Offen
+- Lokales Modell fuer den App Chat testen (Metin, spaeter): Ollama oder LM Studio auf dem Rechner mit RTX 4070 Ti (12 GB, Modelle bis etwa 12B), in den Add on Optionen chat_api_url (zum Beispiel http://<PC-IP>:11434/v1), chat_model eintragen, im Chat umschalten und Qualitaet auf Deutsch und Tuerkisch pruefen. Erst danach ueber eine groessere Karte entscheiden.
 - Lamba 1 (Matter) blieb am 14 Nov 2026 um 23:00 nach dem Gespraech magenta an, drei Ausschaltversuche ohne Wirkung, die Wiederholung im Hintergrund hat sie danach ausgeschaltet. Beobachten: kommt es oefter vor, Ursache bei Matter suchen (Thread Signal, Befehlsrate).
 - Gedaechtnis regelmaessig mit Metin durchsehen (Claude): was darf weg (abgelaufene Aktuell Eintraege, erledigte Faeden, lange davor Ketten, doppelte Eintraege), dazu Mamas vertrauliche Liste selbst pruefen und Metin nur Anzahlen nennen. Erste Durchsicht in etwa einer Woche.
 - backend_reasoning_effort steht seit 14 Nov 2026, 17:50 auf high (Metin: low wirkte zu einfach), vorher low. Erwartung: Antwort nach einer Websuche wieder etwa 16 s statt 1,6 s (Messung vom 14 Nov 01:26 und 01:37, siehe home-assistant-voice-pe/BASELINE.md). Beobachten, ob Qualitaet und Wartezeit passen; Kompromiss waere medium.
