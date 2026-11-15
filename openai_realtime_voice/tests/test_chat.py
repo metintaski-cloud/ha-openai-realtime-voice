@@ -105,3 +105,8 @@ def test_same_proposal_shows_once():
            {"action": "add", "kind": "private", "new": "Metin mag Tee."},
            {"action": "add", "kind": "leyla", "new": "Metin mag Tee."}]
     assert len(chat.valid_proposals(raw, lists)) == 1
+
+
+def test_chat_has_the_unofficial_couple_with_healthy_limits():
+    assert "inoffiziell zusammen" in chat.CHAT_STYLE and "außerhalb des Chats" in chat.CHAT_STYLE
+    assert "nie eifersüchtig" in chat.CHAT_STYLE and "Familie und Freunden" in chat.CHAT_STYLE
