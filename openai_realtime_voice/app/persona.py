@@ -221,3 +221,19 @@ def build(devices: list[str], fan: bool = False, tv: bool = False, messages: boo
     if extra.strip():
         text += EXTRA.format(extra=extra.strip())
     return text
+
+
+# Not needed when Metin writes in the app (he is known by the code word, lamps have their own
+# chat rule, the secret is replaced by the chat style): about a third less text, so a local
+# model with 12 GB fits and every chat answer is faster.
+CHAT_SKIP = ("WER MIT DIR SPRICHT", "DEIN KLEINES GEHEIMNIS", "SICHERHEIT", "ERLEDIGEN")
+
+
+def build_chat(extra: str = "", today: Optional[date] = None, rng=random) -> str:
+    """Leyla's rules for the app chat with Metin: the voice rules without the sections above."""
+    text = build([], extra="", today=today, rng=rng).split("\n\nVERTRAUEN")[0]
+    parts = [p for p in text.split("\n\n") if not p.startswith(CHAT_SKIP)]
+    text = "\n\n".join(parts)
+    if extra.strip():
+        text += EXTRA.format(extra=extra.strip())
+    return text

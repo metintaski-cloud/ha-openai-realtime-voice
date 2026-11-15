@@ -206,3 +206,14 @@ def test_question_field_is_added_to_the_reply():
     out = chat._parse('{"reply": "Schön! Und wo bist du gerade?", "question": "Und wo bist du gerade?"}', {})
     assert out["reply"] == "Schön! Und wo bist du gerade?"
     assert "fast immer aus" in chat.CHAT_STYLE
+
+
+def test_chat_rules_leave_out_the_voice_only_sections():
+    from app import persona
+    full = persona.build(["Licht"], fan=True, tv=True, messages=True, code_phrase="x y")
+    c = persona.build_chat(extra="Sei nett")
+    for head in persona.CHAT_SKIP + ("VERTRAUEN",):
+        assert head in full and head not in c
+    for head in ("WER DU BIST", "WIE DU SPRICHST", "WAS DU WEISST", "KENNENLERNEN"):
+        assert head in c
+    assert "Sei nett" in c and "x y" not in c and len(c) < len(full) * 0.6
