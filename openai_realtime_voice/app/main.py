@@ -319,8 +319,10 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
 
     async def _chat(self, history, message) -> Optional[dict]:
         """A text message from Metin in the memory app (code word checked by the page)."""
-        devices, has_fan, has_tv, has_messages = getattr(
-            self, "_devices", ([], False, False, False))
+        # what she can do right now, also before the first voice talk (no stale "not yet")
+        devices = [what for available, _t, _h, what in self._capabilities() if available]
+        has_fan, has_tv, has_messages = (self.fan.available, self.tv.available,
+                                         self.messages.available)
         rules = persona.build(devices, fan=has_fan, tv=has_tv, messages=has_messages,
                               extra=self.instructions)
         out = await chat.answer(self.openai_api_key, [self.memory_model, self.backend_model],
