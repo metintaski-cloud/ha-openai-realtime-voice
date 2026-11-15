@@ -197,6 +197,7 @@ body{margin:0;background:#000;color:#e8ecff;font:17px/1.4 system-ui,sans-serif;p
 #chat h2{margin:2px 4px 8px}
 #chat .chead{display:flex;align-items:center;gap:14px;margin:4px 4px 12px}#chat .chead h2{margin:0;font-size:20px;letter-spacing:.06em}
 #chat .chead #clive{margin-left:auto;width:auto;padding:8px 14px;font-size:15px}
+.mc{margin:8px 0;padding:10px 12px;border:1px solid #d946ef88;border-radius:12px;background:#140a2e}.mc b{color:#e9d5ff}.mc .meta{color:#9fb4ff;font-size:14px;margin:4px 0}.mc pre{white-space:pre-wrap;font:inherit;margin:6px 0 8px}.mc .row{display:flex;gap:8px}.mc .row button{flex:1}
 #live{display:none;position:fixed;inset:0;z-index:50;background:#000;flex-direction:column;align-items:center;justify-content:center;gap:22px}
 #live img{width:180px;height:180px;border-radius:50%;object-fit:cover;border:3px solid #22d3ee;box-shadow:0 0 24px #22d3ee99,0 0 40px #d946ef66;transition:transform .15s}
 #live.speak img{transform:scale(1.06);border-color:#d946ef}#live #lstat{font-size:20px;color:#9fb4ff}
@@ -336,6 +337,7 @@ function chatSave(){CHAT=CHAT.slice(-40);try{localStorage.setItem('lchat',JSON.s
 function chatDraw(wait){const log=document.getElementById('clog');log.innerHTML='';
  CHAT.forEach((m,i)=>{if(m.role==='prop')return log.appendChild(propCard(m,i));
   if(m.role==='info'){const n=document.createElement('div');n.className='wait';n.textContent=m.text;return log.appendChild(n);}
+  if(m.role==='mail')return log.appendChild(mailCard(m,i));
   const d=document.createElement('div');d.className='m '+(m.role==='user'?'u':'l');d.textContent=m.text;
   if(m.aid&&AUDIO.has(m.aid)){const b=document.createElement('button');b.className='play';b.textContent='\u25B6';b.onclick=()=>playAudio(m.aid);d.appendChild(b);}
   if(m.role==='user')return log.appendChild(d);const r=document.createElement('div');r.className='lr';const im=document.createElement('img');im.src='/leyla.jpg';im.alt='';r.append(im,d);log.appendChild(r);});
@@ -367,7 +369,7 @@ const AUDIO=new Map();let REC=null,RECT=null;
 function playAudio(id){try{new Audio(AUDIO.get(id)).play();}catch(e){}}
 function chatAnswer(j){if(!j||j.error||!j.reply){CHAT.push({role:'leyla',text:'Hmm, gerade komme ich nicht durch. Versuch es gleich nochmal.'});return null;}
  const m={role:'leyla',text:j.reply};if(j.audio){m.aid='a'+Date.now();AUDIO.set(m.aid,'data:audio/wav;base64,'+j.audio);}CHAT.push(m);
- (j.lights||[]).forEach(t=>CHAT.push({role:'info',text:'💡 '+t}));(j.proposals||[]).forEach(p=>CHAT.push({role:'prop',p}));return m.aid||null;}
+ (j.lights||[]).forEach(t=>CHAT.push({role:'info',text:(t.startsWith('✉')?'':'💡 ')+t}));if(j.email)CHAT.push({role:'mail',e:j.email});(j.proposals||[]).forEach(p=>CHAT.push({role:'prop',p}));return m.aid||null;}
 function blobB64(b){return new Promise(r=>{const f=new FileReader();f.onload=()=>r(String(f.result).split(',')[1]||'');f.readAsDataURL(b);});}
 async function voiceSend(blob,mime){const history=CHAT.filter(m=>m.role==='user'||m.role==='leyla').map(m=>({role:m.role,text:m.text}));
  const u={role:'user',text:'🎤 ...'};CHAT.push(u);chatSave();chatDraw(true);snd.on();
@@ -382,6 +384,20 @@ document.getElementById('cmic').onclick=async()=>{const b=document.getElementByI
  REC.onstop=()=>{st.getTracks().forEach(t=>t.stop());clearTimeout(RECT);const mime=REC.mimeType||'audio/webm';REC=null;b.classList.remove('rec');b.innerHTML='&#127908;';
   const blob=new Blob(parts,{type:mime});if(blob.size>2000)voiceSend(blob,mime);};
  REC.start();b.classList.add('rec');b.innerHTML='&#9632;';snd.on();RECT=setTimeout(()=>{if(REC)REC.stop();},60000);};
+function mailCard(m,i){const c=document.createElement('div');c.className='mc';const e=m.e;
+ const h=document.createElement('b');h.textContent='✉ E-Mail an '+e.to;c.appendChild(h);
+ const a=document.createElement('div');a.className='meta';a.textContent=e.addr+'  ·  Betreff: '+e.subject;c.appendChild(a);
+ const t=document.createElement('pre');t.textContent=e.body;c.appendChild(t);
+ if(m.done){const s=document.createElement('div');s.className='meta';s.textContent=m.done;c.appendChild(s);return c;}
+ const row=document.createElement('div');row.className='row';const y=document.createElement('button');y.textContent='Senden';const n=document.createElement('button');n.textContent='Nein';n.className='no';
+ y.onclick=async()=>{y.disabled=n.disabled=true;let r={ok:false};try{r=await (await post('/api/mail/send',{id:e.id})).json();}catch(_){}
+  CHAT[i].done=r.ok?'Gesendet':(r.error||'Senden ging nicht');if(r.ok)snd.save();chatSave();chatDraw();};
+ n.onclick=async()=>{try{await post('/api/mail/discard',{id:e.id});}catch(_){}CHAT[i].done='Nicht gesendet';snd.off();chatSave();chatDraw();};
+ row.append(y,n);c.appendChild(row);return c;}
+async function mailPending(){let j=null;try{j=await (await post('/api/mail/pending',{})).json();}catch(_){}
+ if(!j||!j.ok)return;let added=false;(j.drafts||[]).forEach(e=>{if(!CHAT.some(m=>m.role==='mail'&&m.e.id===e.id)){CHAT.push({role:'mail',e});added=true;}});
+ if(added){chatSave();chatDraw();}}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&CODE)mailPending();});
 let LIVE=null;
 function liveStat(t,sp){document.getElementById('lstat').textContent=t;document.getElementById('live').classList.toggle('speak',!!sp);}
 function liveStop(){const L=LIVE;LIVE=null;document.getElementById('live').style.display='none';if(!L)return;
@@ -419,7 +435,7 @@ function render(d){FRESH=new Set(d.fresh||[]);ticker(d.ticker);const root=docume
  const back=document.getElementById('back'),h1=document.querySelector('h1');
  let found=null;
  if(view){const l=d.lists.find(x=>x.kind===view.kind);const t=l&&l.items.find(x=>parts(x).head===view.head);if(t){found={l,t};}else view=null;}
- back.style.display=view?'block':'none';document.getElementById('pulse').style.display=view?'none':'block';const ch=document.getElementById('chat'),showChat=!!CODE&&!view;if(showChat&&ch.style.display!=='block'){ch.style.display='block';chatDraw();}else if(!showChat)ch.style.display='none';document.getElementById('lamps').style.display=(view||!lampOn)?'none':'block';h1.textContent=view?title(view.head):'Leyla Gedächtnis';
+ back.style.display=view?'block':'none';document.getElementById('pulse').style.display=view?'none':'block';const ch=document.getElementById('chat'),showChat=!!CODE&&!view;if(showChat&&ch.style.display!=='block'){ch.style.display='block';chatDraw();mailPending();}else if(!showChat)ch.style.display='none';document.getElementById('lamps').style.display=(view||!lampOn)?'none':'block';h1.textContent=view?title(view.head):'Leyla Gedächtnis';
  if(found){view.text=found.t;const fields=parts(found.t).fields;
   const box=document.createElement('div');box.className='list';box.dataset.kind=found.l.kind;
   const h=document.createElement('h2');h.textContent='Punkte ('+fields.length+')';box.appendChild(h);
@@ -589,7 +605,7 @@ async def _lamp_api(lamp, method: str, path: str, body: bytes):
 
 
 async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "", rules=None,
-                  chat=None, voice=None) -> None:
+                  chat=None, voice=None, mailer=None) -> None:
     try:
         head = await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), timeout=10)
         lines = head.decode("latin-1").split("\r\n")
@@ -654,6 +670,16 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                     logger.warning("Voice message failed: %s", e)
             await _respond(writer, "200 OK", "application/json",
                            json.dumps(out or {"error": True}, ensure_ascii=False))
+        elif method == "POST" and path.startswith("/api/mail/"):
+            out = {"ok": False}
+            if unlocked and mailer:
+                if path == "/api/mail/pending":
+                    out = {"ok": True, "drafts": mailer.pending()}
+                elif path == "/api/mail/send":
+                    out = await mailer.send(str(d.get("id", "")))
+                elif path == "/api/mail/discard":
+                    out = {"ok": mailer.discard(str(d.get("id", "")))}
+            await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
         elif method == "POST" and path == "/api/unlock":
             if unlocked:
                 logger.info("Memory page: private list opened")
@@ -702,10 +728,11 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
 
 async def start_http(store: memory.MemoryStore, sync: Optional[object] = None,
                      host: str = "0.0.0.0", port: int = 8082, lamp: Optional[object] = None,
-                     code_phrase: str = "", rules=None, chat=None, voice=None):
+                     code_phrase: str = "", rules=None, chat=None, voice=None,
+                     mailer=None):
     """`rules`: a function that returns Leyla's instructions without memory and without the
     code word; shown read only after the code word."""
     server = await asyncio.start_server(
-        lambda r, w: _handle(store, sync, r, w, lamp, code_phrase, rules, chat, voice), host, port)
+        lambda r, w: _handle(store, sync, r, w, lamp, code_phrase, rules, chat, voice, mailer), host, port)
     logger.info("Memory page on port %d", port)
     return server

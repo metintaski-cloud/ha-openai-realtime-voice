@@ -405,3 +405,16 @@ async def test_live_talk_from_the_app_needs_the_code_word_and_unlocks(env):
             assert getattr(client, "close", None)
         notes = [e for e in fake.received if e["type"] == "session.commentary.append"]
         assert any("Codewort" in e["content"] for e in notes)  # Leyla knows it is Metin
+
+
+async def test_mail_draft_is_only_for_metin(env):
+    bridge = m.LiveVoiceBridge()
+    ran = []
+
+    async def run(args):
+        ran.append(args)
+        return {"ok": True}
+    bridge._tools["email_entwurf"]["run"] = run
+    assert "Nicht erlaubt" in (await call(bridge, "email_entwurf", {"an": "Ayşe"}, {}))[0].result()["error"]
+    assert ran == []
+    assert (await call(bridge, "email_entwurf", {"an": "Ayşe"}, {"unlocked": True}))[0].result() == {"ok": True}

@@ -29,6 +29,9 @@ LAMP_SHOW=$(bashio::config 'lamp_show')
 LAMP_SHOW_LIGHTS=$(bashio::config 'lamp_show_lights')
 STROMPREIS_CT=$(bashio::config 'strompreis_ct')
 CODE_PHRASE=$(bashio::config 'code_phrase')
+EMAIL_ADDRESS=$(bashio::config 'email_address')
+EMAIL_APP_PASSWORD=$(bashio::config 'email_app_password')
+EMAIL_CONTACTS=$(bashio::config 'email_contacts')
 NOTIFY_SERVICE=$(bashio::config 'notify_service')
 ANNOUNCE_PLAYER=$(bashio::config 'announce_player')
 ANNOUNCE_BASE_URL=$(bashio::config 'announce_base_url')
@@ -39,6 +42,7 @@ if [ -z "$OPENAI_API_KEY" ]; then
 fi
 
 export OPENAI_API_KEY
+export EMAIL_ADDRESS EMAIL_APP_PASSWORD EMAIL_CONTACTS
 export WEBSOCKET_PORT
 export INSTRUCTIONS
 export VOICE

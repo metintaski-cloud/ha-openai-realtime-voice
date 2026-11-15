@@ -35,7 +35,7 @@ import dotenv
 import websockets
 
 from app.audio_recorder import AudioRecorder
-from app import memory, memory_web
+from app import mail, memory, memory_web
 from app import context
 from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, pcm_level
 from app.live_link import END_CONVERSATION_TOOL
@@ -155,6 +155,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self.vacuum = vacuum.VacuumController()
         self.purifier = purifier.PurifierController()
         self.messages = messages.from_env(self._speak_once)
+        self.mailer = mail.Mailer()
         self.technik = technik.TechnikChecker(
             notify=self.messages.push if self.messages.available else None)
         self.technik.lamp_count = len(self.lights.entities)
@@ -250,6 +251,9 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
              "das Gedächtnis aufräumen (nur Metin, nach dem Codewort)"),
             (self.messages.available, messages.TO_METIN_TOOL, messages.TO_METIN_BACKEND_HINT,
              "Nachrichten an Metin"),
+            (self.mailer.available and bool(self.code_phrase), mail.EMAIL_TOOL,
+             mail.EMAIL_BACKEND_HINT,
+             "E-Mails für Metin vorbereiten (nur nach dem Codewort; er schickt sie in der App ab)"),
         ]
 
     def _session_start(self, extra: str = "") -> dict:
@@ -320,7 +324,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                                 if self.lights.available else None,
                                 room=(lambda: chat.room_values(self.lights.api_url,
                                                                self.lights.token))
-                                if self.lights.token else None)
+                                if self.lights.token else None,
+                                mailer=self.mailer)
         if out:
             logger.info("Chat with Metin in the app: answered, %d proposals, %d light commands",
                         len(out["proposals"]), len(out["lights"]))
@@ -1282,7 +1287,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                                             port=int(os.environ.get("MEMORY_WEB_PORT", "8082")),
                                             lamp=self.lamp, code_phrase=self.code_phrase,
                                             rules=self._readable_rules, chat=self._chat,
-                                            voice=self._chat_voice)
+                                            voice=self._chat_voice, mailer=self.mailer)
             except Exception as e:
                 logger.warning("Memory page could not start: %s", e)
         if self.messages.available:

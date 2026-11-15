@@ -14,7 +14,7 @@ from typing import Optional
 
 import httpx
 
-from app import memory
+from app import mail, memory
 
 logger = logging.getLogger(__name__)
 
@@ -109,7 +109,7 @@ def _parse(text: str, lists: dict) -> Optional[dict]:
         reply = f"{reply} {question.strip()}".strip()
     return {"reply": reply,
             "proposals": valid_proposals(parsed.get("proposals"), lists),
-            "lights_raw": parsed.get("lights")}
+            "lights_raw": parsed.get("lights"), "email_raw": parsed.get("email")}
 
 
 def describe_lamps(result: dict) -> str:
@@ -224,9 +224,12 @@ def speak_prompt(reply: str) -> str:
 
 async def answer(api_key: str, models: list[str], rules: str, store: memory.MemoryStore,
                  history, message: str, url: str = memory.RESPONSES_URL,
-                 lights=None, room=None) -> Optional[dict]:
+                 lights=None, room=None, mailer=None) -> Optional[dict]:
     """`lights`: (count, run) of the light controller, so Leyla can switch the lamps.
-    `room`: async function giving the room values, asked only when Metin asks about them."""
+    `room`: async function giving the room values, asked only when Metin asks about them.
+    `mailer`: `mail.Mailer`; an "email" in her answer becomes a draft card, never a sent mail."""
+    if mailer and mailer.available:
+        rules = rules + mail.MAIL_NOTE.format(names=mailer.names())
     if room and ROOM_RE.search(message or ""):
         values = await room()
         if values:
@@ -237,6 +240,14 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
     if out:
         out.pop("lights_raw", None)
         out.setdefault("lights", [])
+        e = out.pop("email_raw", None)
+        if mailer and mailer.available and isinstance(e, dict):
+            made = mailer.draft(str(e.get("to", "")), str(e.get("subject", "")),
+                                str(e.get("body", "")))
+            if made.get("ok"):
+                out["email"] = next(d for d in mailer.pending() if d["id"] == made["id"])
+            else:
+                out["lights"].append("✉ " + made["error"])
     return out
 
 
