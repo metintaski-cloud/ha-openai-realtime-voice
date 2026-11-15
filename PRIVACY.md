@@ -21,4 +21,4 @@ Den Zugriff kann Metin jederzeit unter https://myaccount.google.com/permissions 
 
 ## Kontakt
 
-Metin Taskiran, metintaski@gmail.com
+Metin Taskiran (Adresse siehe Google Zustimmungsbildschirm)
