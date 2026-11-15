@@ -227,3 +227,8 @@ async def test_voice_message_is_transcribed_with_the_current_model(monkeypatch):
     assert await chat.transcribe("k", b"", "audio/webm") == ""
     assert await chat.transcribe("k", b"x" * (chat.MAX_AUDIO_BYTES + 1)) == ""
     assert "Wort für Wort" in chat.speak_prompt("Hallo du") and "Hallo du" in chat.speak_prompt("Hallo du")
+
+
+def test_dashes_become_commas():
+    assert chat.no_dashes("Ich merke mir das — bis dahin bleibe ich") == "Ich merke mir das, bis dahin bleibe ich"
+    assert chat.no_dashes("A – B") == "A, B"

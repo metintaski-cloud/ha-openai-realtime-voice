@@ -11,6 +11,7 @@
 - Add on 2.54.0: option `backend_reasoning_effort` (minimal, low, medium, high) for the backend model of GPT Live delegation; unset keeps the model default. Lower effort should shorten the long wait after a web search.
 - Add on 2.55.12: persona rule for personal small talk (how was your day), after a test where she asked back what was meant.
 - Add on 2.55.13: memory page paints the dark blue background at once (no grey page before the start animation).
+- Add on 2.84.2: the hint "Tippe oben auf das Symbol für das Menü" is gone (Metin's wish); dashes in Leyla's chat answers become commas (`chat.no_dashes`), the style rule alone let a "—" through.
 - Add on 2.84.1: a memory proposal card in the chat disappears after Ja (when it was stored) or Nein, instead of staying with "Gespeichert" or "Verworfen" (Metin's wish); a failed Ja keeps the card with its note.
 - Add on 2.84.0: memory app with a menu (Metin's wish, everything listed below each other looked untidy): a tap on the icon opens the menu (Familie und Haushalt, Freunde und Verwandte, Leylas Geschichte, Privat, E-Mail, Lampenfarben, So ist Leyla, Einstellungen, with counts); each opens its own page with the back button, the start page keeps heart, news line and chat (without the code word the code field).
 - Add on 2.83.1: no tick list any more: Leyla may write to all of Metin's Google contacts (each mail still waits for his tap on Senden); an unclear name makes her ask back with up to 8 candidates.

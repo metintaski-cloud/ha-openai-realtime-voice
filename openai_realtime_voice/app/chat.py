@@ -99,15 +99,20 @@ def valid_proposals(raw, lists: dict) -> list[dict]:
     return out[:12]
 
 
+def no_dashes(text: str) -> str:
+    """Metin reads dashes as machine written; the style rule alone did not stop them."""
+    return re.sub(r"\s*[—–]\s*", ", ", text or "").replace(" ,", ",")
+
+
 def _parse(text: str, lists: dict) -> Optional[dict]:
     parsed = memory._json_object(text)
     if parsed is None or not isinstance(parsed.get("reply"), str):
         reply = (text or "").strip()
         return {"reply": reply, "proposals": []} if reply else None
-    reply = parsed["reply"].strip()
+    reply = no_dashes(parsed["reply"].strip())
     question = parsed.get("question")
     if isinstance(question, str) and question.strip() and question.strip() not in reply:
-        reply = f"{reply} {question.strip()}".strip()
+        reply = f"{reply} {no_dashes(question.strip())}".strip()
     return {"reply": reply,
             "proposals": valid_proposals(parsed.get("proposals"), lists),
             "lights_raw": parsed.get("lights"), "email_raw": parsed.get("email"),
