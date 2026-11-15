@@ -9,6 +9,7 @@ still never deletes or changes anything by herself.
 """
 import json
 import logging
+import time
 from typing import Optional
 
 import httpx
@@ -120,14 +121,18 @@ def _parse(text: str, lists: dict) -> Optional[dict]:
 async def _other_provider(client, base_url: str, key: str, model: str, instructions: str,
                           dialog: list, lists: dict) -> Optional[dict]:
     """An OpenAI compatible chat completions endpoint of another provider (chat_api_url)."""
+    t0 = time.monotonic()
     try:
         resp = await client.post(
             base_url.rstrip("/") + "/chat/completions",
             headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
             json={"model": model, "messages": [{"role": "system", "content": instructions}] + dialog})
     except Exception as e:
-        logger.warning("Chat request to the other provider failed: %r", e)
+        logger.warning("Chat request to the other provider failed after %.1f s: %r",
+                       time.monotonic() - t0, e)
         return None
+    logger.info("Other provider answered in %.1f s (HTTP %s)", time.monotonic() - t0,
+                resp.status_code)
     if resp.status_code != 200:
         logger.warning("Chat with the other provider failed: HTTP %s %s", resp.status_code,
                        resp.text[:200])
