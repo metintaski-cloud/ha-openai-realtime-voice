@@ -201,7 +201,7 @@ body{margin:0;background:#000;color:#e8ecff;font:17px/1.4 system-ui,sans-serif;p
 #gmail h3{margin:0 0 8px;font-size:15px;letter-spacing:.08em;color:var(--cy)}
 #gmail input[type=text]{width:100%;box-sizing:border-box;font:inherit;color:#fff;background:#000;border:1px solid var(--bl);border-radius:10px;padding:9px;margin:6px 0}
 #gmail .gb{display:flex;gap:10px;margin-top:8px}#gmail .gb button{flex:1;width:auto;font-size:15px;padding:10px;box-shadow:none;background:#1b2a6b;border:1px solid var(--cy)}
-#gmail .hint{color:#9fb4ff;font-size:14px;margin:4px 0}
+#gmail .hint{color:#9fb4ff;font-size:14px;margin:4px 0}#gmail .sug{margin:2px 0 6px}#gmail .si{display:block;width:100%;text-align:left;margin:4px 0;padding:10px 12px;background:#0b1650;border:1px solid #1b2a6b;border-radius:10px;box-shadow:none}#gmail .si b{display:block;font-weight:600}#gmail .si small{color:#9fb4ff;font-size:14px}
 .mc .web{color:#fbbf24;font-weight:600;margin:4px 0}.mc.tr{border-color:#f43f5e88}.mc.tr li{margin:3px 0}.mc.tr ul{margin:6px 0 8px;padding-left:18px}
 .mc{margin:8px 0;padding:10px 12px;border:1px solid #d946ef88;border-radius:12px;background:#140a2e}.mc b{color:#e9d5ff}.mc .meta{color:#9fb4ff;font-size:14px;margin:4px 0}.mc pre{white-space:pre-wrap;font:inherit;margin:6px 0 8px}.mc .row{display:flex;gap:8px}.mc .row button{flex:1}
 #live{display:none;position:fixed;inset:0;z-index:50;background:#000;flex-direction:column;align-items:center;justify-content:center;gap:22px}
@@ -432,8 +432,18 @@ function gmailDraw(st){const box=document.getElementById('gmail');box.innerHTML=
   a.onclick=async()=>{const w=window.open('about:blank','_blank');const j=await gpost('auth');if(j.url&&w)w.location.href=j.url;else if(j.url)location.href=j.url;else if(w)w.close();};
   const c=document.createElement('button');c.textContent='Verbinden';c.onclick=async()=>{c.disabled=true;const j=await gpost('connect',{url:i.value});c.disabled=false;
    if(j.ok){snd.save();gmailLoad();}else{p.textContent=j.error||'Hat nicht geklappt.';}};row.append(a,c);box.appendChild(row);return;}
- h.textContent='E-MAIL';const p=document.createElement('div');p.className='hint';p.textContent='Mit Google verbunden, '+GM.list.length+' Kontakte. Leyla darf an alle schreiben, jede Mail sendest du selbst mit Senden.';box.appendChild(p);
- const row=document.createElement('div');row.className='gb';const r=document.createElement('button');r.textContent='Neu laden';r.onclick=()=>gmailLoad(true);row.appendChild(r);box.appendChild(row);}
+ h.textContent='KONTAKT SUCHEN';
+ const q=document.createElement('input');q.type='text';q.placeholder='Name oder Adresse eintippen ...';q.autocomplete='off';box.appendChild(q);
+ const sug=document.createElement('div');sug.className='sug';box.appendChild(sug);
+ const fill=()=>{sug.innerHTML='';const w=q.value.trim().toLowerCase();if(!w)return;
+  const hits=GM.list.filter(x=>x.name.toLowerCase().split(/\\s+/).some(t=>t.startsWith(w))||x.name.toLowerCase().startsWith(w)||x.addr.toLowerCase().startsWith(w)).slice(0,6);
+  if(!hits.length){const n=document.createElement('div');n.className='hint';n.textContent='Kein Kontakt gefunden.';sug.appendChild(n);return;}
+  hits.forEach(x=>{const r=document.createElement('button');r.className='si';const b=document.createElement('b');b.textContent=x.name;const sm=document.createElement('small');sm.textContent=x.addr;r.append(b,sm);
+   r.onclick=()=>{const first=x.name.split(/\\s+/)[0];history.back();setTimeout(()=>{const ta=document.getElementById('ctext');if(ta){ta.value='Schreib eine Mail an '+(x.name.includes('@')?x.addr:first)+': ';ta.focus();}},350);snd.on();};
+   sug.appendChild(r);});};
+ q.oninput=fill;
+ const p=document.createElement('div');p.className='hint';p.textContent=GM.list.length+' Kontakte. Tippe einen an, dann schreibt Leyla die Mail im Chat.';box.appendChild(p);
+ const row=document.createElement('div');row.className='gb';const r=document.createElement('button');r.textContent='Kontakte neu laden';r.onclick=()=>gmailLoad(true);row.appendChild(r);box.appendChild(row);}
 async function gmailLoad(force){const st=await gpost('status');const box=document.getElementById('gmail');
  if(!st.configured){GM.shown=false;box.style.display='none';return;}
  if(st.connected){const j=await gpost('contacts',{force:!!force});GM.list=j.contacts||[];}
