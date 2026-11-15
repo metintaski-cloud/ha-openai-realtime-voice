@@ -198,8 +198,7 @@ body{margin:0;background:#000;color:#e8ecff;font:17px/1.4 system-ui,sans-serif;p
 #chat .chead{display:flex;align-items:center;gap:14px;margin:4px 4px 12px}#chat .chead h2{margin:0;font-size:20px;letter-spacing:.06em}
 #chat .chead #clive{margin-left:auto;width:auto;padding:8px 14px;font-size:15px}
 #gmail{margin:14px 12px;padding:12px;border:1px solid #3b82f688;border-radius:14px;background:#060c33}
-#gmail h3{margin:0 0 8px;font-size:15px;letter-spacing:.08em;color:var(--cy)}#gmail .gr{display:flex;align-items:center;gap:10px;padding:7px 2px;border-bottom:1px solid #1b2a6b}
-#gmail .gr span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#gmail .gr small{color:#9fb4ff;display:block}
+#gmail h3{margin:0 0 8px;font-size:15px;letter-spacing:.08em;color:var(--cy)}
 #gmail input[type=text]{width:100%;box-sizing:border-box;font:inherit;color:#fff;background:#000;border:1px solid var(--bl);border-radius:10px;padding:9px;margin:6px 0}
 #gmail .gb{display:flex;gap:10px;margin-top:8px}#gmail .gb button{flex:1;width:auto;font-size:15px;padding:10px;box-shadow:none;background:#1b2a6b;border:1px solid var(--cy)}
 #gmail .hint{color:#9fb4ff;font-size:14px;margin:4px 0}
@@ -403,7 +402,7 @@ function mailCard(m,i){const c=document.createElement('div');c.className='mc';co
   CHAT[i].done=r.ok?'Gesendet':(r.error||'Senden ging nicht');if(r.ok)snd.save();chatSave();chatDraw();};
  n.onclick=async()=>{try{await post('/api/mail/discard',{id:e.id});}catch(_){}CHAT[i].done='Nicht gesendet';snd.off();chatSave();chatDraw();};
  row.append(y,n);c.appendChild(row);return c;}
-const GM={shown:false,list:[],q:''};
+const GM={shown:false,list:[]};
 async function gpost(p,b){try{return await (await post('/api/google/'+p,b||{})).json();}catch(e){return {};}}
 function gmailDraw(st){const box=document.getElementById('gmail');box.innerHTML='';
  const h=document.createElement('h3');box.appendChild(h);
@@ -414,16 +413,7 @@ function gmailDraw(st){const box=document.getElementById('gmail');box.innerHTML=
   a.onclick=async()=>{const w=window.open('about:blank','_blank');const j=await gpost('auth');if(j.url&&w)w.location.href=j.url;else if(j.url)location.href=j.url;else if(w)w.close();};
   const c=document.createElement('button');c.textContent='Verbinden';c.onclick=async()=>{c.disabled=true;const j=await gpost('connect',{url:i.value});c.disabled=false;
    if(j.ok){snd.save();gmailLoad();}else{p.textContent=j.error||'Hat nicht geklappt.';}};row.append(a,c);box.appendChild(row);return;}
- const on=GM.list.filter(x=>x.allowed).length;h.textContent='E-MAIL KONTAKTE ('+on+' FREIGEGEBEN)';
- const p=document.createElement('div');p.className='hint';p.textContent='Leyla darf nur an angehakte Kontakte schreiben.';box.appendChild(p);
- const q=document.createElement('input');q.type='text';q.placeholder='Kontakt suchen ...';q.value=GM.q;box.appendChild(q);
- const list=document.createElement('div');box.appendChild(list);
- const fill=()=>{list.innerHTML='';const w=GM.q.toLowerCase();const rows=GM.list.filter(x=>!w||(x.name+' '+x.addr).toLowerCase().includes(w));
-  rows.sort((a,b)=>(b.allowed-a.allowed));rows.slice(0,60).forEach(x=>{const r=document.createElement('label');r.className='gr';const cb=document.createElement('input');cb.type='checkbox';cb.checked=!!x.allowed;
-   cb.onchange=async()=>{x.allowed=cb.checked;(cb.checked?snd.on:snd.off)();await gpost('allow',{addr:x.addr,on:cb.checked});h.textContent='E-MAIL KONTAKTE ('+GM.list.filter(y=>y.allowed).length+' FREIGEGEBEN)';};
-   const sp=document.createElement('span');sp.textContent=x.name;const sm=document.createElement('small');sm.textContent=x.addr;sp.appendChild(sm);r.append(cb,sp);list.appendChild(r);});
-  if(rows.length>60){const m=document.createElement('div');m.className='hint';m.textContent=(rows.length-60)+' weitere, bitte suchen.';list.appendChild(m);}};
- q.oninput=()=>{GM.q=q.value;fill();};fill();
+ h.textContent='E-MAIL';const p=document.createElement('div');p.className='hint';p.textContent='Mit Google verbunden, '+GM.list.length+' Kontakte. Leyla darf an alle schreiben, jede Mail sendest du selbst mit Senden.';box.appendChild(p);
  const row=document.createElement('div');row.className='gb';const r=document.createElement('button');r.textContent='Neu laden';r.onclick=()=>gmailLoad(true);row.appendChild(r);box.appendChild(row);}
 async function gmailLoad(force){const st=await gpost('status');const box=document.getElementById('gmail');
  if(!st.configured){GM.shown=false;box.style.display='none';return;}
@@ -727,13 +717,7 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                 elif path == "/api/google/connect":
                     out = await google.connect(str(d.get("url", "")))
                 elif path == "/api/google/contacts":
-                    ok = google.allowed()
-                    out = {"ok": True, "contacts": [
-                        {**c, "allowed": c["addr"].lower() in ok}
-                        for c in await google.contacts(force=bool(d.get("force")))]}
-                elif path == "/api/google/allow":
-                    google.set_allowed(str(d.get("addr", "")), bool(d.get("on")))
-                    out = {"ok": True}
+                    out = {"ok": True, "contacts": await google.contacts(force=bool(d.get("force")))}
             await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
         elif method == "POST" and path.startswith("/api/mail/"):
             out = {"ok": False}

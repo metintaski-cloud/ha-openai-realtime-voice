@@ -57,7 +57,7 @@ EMAIL_BACKEND_HINT = (
     " E-mail (email_entwurf): only for Metin after the code word. Write subject and text from "
     "what he says, then tell him in one sentence that the draft is in the chat of his app and "
     "goes out only when he taps Senden there. Never say it was sent. If the name is not in the "
-    "contact list, say so and name the people you can write to. For a company or office you may "
+    "contacts, say so; when several fit, ask him which one he means. For a company or office you may "
     "look up its address with the web search and pass it as adresse; the card then asks Metin "
     "to check it.")
 
@@ -65,7 +65,7 @@ MAIL_NOTE = """
 
 E-MAIL
 • Bittet Metin dich, eine E-Mail zu schreiben oder zu schicken, trägst du sie unter "email" ein: {{"to": Name aus der Liste, "subject": kurzer Betreff, "body": fertiger Text, mit Metin unterschrieben}}. Verschickt wird nichts von dir: In der App erscheint eine Karte, und erst Metins Tipp auf "Senden" schickt sie ab. Sag also nie, sie sei verschickt, sondern dass sie unten zum Senden bereitliegt.
-• Nur an diese Kontakte: {names}. Steht der Name nicht dabei, sag es ihm und schreib keine Mail; Adressen, die er diktiert, nimmst du nicht."""
+• An diese Kontakte: {names}. Findet die App den Namen nicht oder passt er auf mehrere, sagt sie es dir; frag Metin dann nach. Adressen, die er diktiert, nimmst du nicht."""
 
 
 ADDR_RE = re.compile(r"[^@\s<>,;]+@[^@\s<>,;]+\.[a-z]{2,}", re.I)
@@ -102,7 +102,7 @@ class Mailer:
     @property
     def contacts(self) -> dict:
         """Everyone Leyla may write to: the option list plus the ticked Google contacts."""
-        out = dict(self.google.allowed_contacts()) if self.google else {}
+        out = dict(self.google.all_contacts()) if self.google else {}
         out.update(self.fixed)
         return out
 
@@ -116,7 +116,18 @@ class Mailer:
         return self.via_google or bool(self.address and self.password)
 
     def names(self) -> str:
-        return ", ".join(self.contacts) or "(keine)"
+        """For the chat note: the option list by name; the Google contacts only as a count,
+        since a list of a few hundred names would fill the prompt."""
+        n = len(self.google.all_contacts()) if self.google else 0
+        fixed = ", ".join(self.fixed)
+        if n:
+            return (fixed + " und " if fixed else "") + f"seine {n} Google Kontakte (Name so, wie Metin ihn sagt)"
+        return fixed or "(keine)"
+
+    def candidates(self, name: str, limit: int = 8) -> list:
+        """Contact names that share a word with what was said, for a question back."""
+        words = set(_norm(name).split())
+        return [n for n in self.contacts if words & set(_norm(n).split())][:limit]
 
     def resolve(self, name: str) -> Optional[str]:
         """The contact name meant by what was said, or None."""
@@ -161,8 +172,10 @@ class Mailer:
         elif ADDR_RE.fullmatch(web_addr):
             name, addr, web = (to or "").strip() or web_addr, web_addr, True
         else:
-            return {"error": f"'{to}' steht nicht in Metins E-Mail Kontakten.",
-                    "kontakte": list(contacts)}
+            options = self.candidates(to)
+            return {"error": (f"'{to}' ist nicht eindeutig, frag Metin, wen er meint."
+                              if options else f"'{to}' steht nicht in Metins E-Mail Kontakten."),
+                    "kontakte": options}
         body = (body or "").strip()[:MAX_TEXT]
         if not body:
             return {"error": "Der Text fehlt."}

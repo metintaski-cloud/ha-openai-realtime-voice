@@ -6,7 +6,8 @@ of the type "Desktop app" in his Google Cloud project (options `google_client_id
 pastes the address of the page Google sends him to (http://127.0.0.1/?code=..., which does not
 load on the phone; only its code counts). The refresh token is kept in /data/google_token.json.
 
-Leyla may write only to contacts Metin ticked in the app (/data/mail_allowed.json, by address).
+Leyla may write to all of these contacts (since 2.83.1, Metin's wish; the tick list of 2.82.0
+is gone), every mail still waits for his tap on "Senden".
 Since 2.82.1 mails go out through the Gmail API with the same sign in (scope gmail.send), because
 app passwords need two step verification, which Metin's account does not use. Since 2.83.0 the
 sign in also reads the "other contacts" Gmail keeps by itself (contacts.other.readonly) and lets
@@ -78,7 +79,6 @@ class GoogleContacts:
         base = data_dir or os.environ.get("GOOGLE_DATA_DIR", "/data")
         self.token_path = os.path.join(base, "google_token.json")
         self.cache_path = os.path.join(base, "google_contacts.json")
-        self.allowed_path = os.path.join(base, "mail_allowed.json")
         self._access, self._access_until = "", 0.0
 
     @property
@@ -236,20 +236,10 @@ class GoogleContacts:
             logger.warning("Gmail send failed (HTTP %s)", resp.status_code)
         return resp.status_code == 200
 
-    # ---- which contacts Leyla may write to ----
-    def allowed(self) -> set:
-        return {a.lower() for a in _read(self.allowed_path, [])}
-
-    def set_allowed(self, addr: str, on: bool) -> None:
-        addrs = self.allowed()
-        (addrs.add if on else addrs.discard)((addr or "").strip().lower())
-        _write(self.allowed_path, sorted(a for a in addrs if "@" in a))
-
-    def allowed_contacts(self) -> dict:
-        """{"Name": "addr"} of the ticked Google contacts, from the cache (no network)."""
-        ok = self.allowed()
+    def all_contacts(self) -> dict:
+        """{"Name": "addr"} of all Google contacts, from the cache (no network)."""
         out = {}
         for c in _read(self.cache_path, {}).get("list") or []:
-            if c["addr"].lower() in ok and c["name"] not in out:
+            if c["name"] not in out:
                 out[c["name"]] = c["addr"]
         return out

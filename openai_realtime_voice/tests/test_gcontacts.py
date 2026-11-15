@@ -55,14 +55,12 @@ def test_connect_read_and_only_ticked_contacts_reach_leyla(tmp_path, monkeypatch
     assert asyncio.run(g.connect("http://127.0.0.1/?code=abc"))["ok"] and g.connected
     found = asyncio.run(g.contacts())
     assert [c["addr"] for c in found] == ["ayse@x.de", "info@bau.de"]
-    assert g.allowed_contacts() == {}
-    g.set_allowed("AYSE@x.de", True)
-    assert g.allowed_contacts() == {"Ayşe Taskiran": "ayse@x.de"}
+    assert g.all_contacts() == {"Ayşe Taskiran": "ayse@x.de", "Firma Bau": "info@bau.de"}
     m = mail.Mailer("me@gmail.com", "pw", "", path=str(tmp_path / "d.json"), google=g)
     assert m.available and m.draft("Ayşe", "Hallo", "Hi")["ok"]
-    assert "error" in m.draft("Firma Bau", "Hallo", "Hi")  # not ticked
-    g.set_allowed("ayse@x.de", False)
-    assert "error" in m.draft("Ayşe", "Hallo", "Hi")
+    assert m.draft("Firma Bau", "Hallo", "Hi")["ok"]  # every Google contact, no tick list
+    assert "2 Google Kontakte" in m.names()
+    assert "error" in m.draft("Fremder", "Hallo", "Hi")
 
 
 def test_web_address_draft_is_marked(tmp_path):
