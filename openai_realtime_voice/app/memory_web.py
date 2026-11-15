@@ -216,9 +216,10 @@ body{margin:0;background:#000;color:#e8ecff;font:17px/1.4 system-ui,sans-serif;p
 #cmic{padding:0 14px!important;font-size:20px}#cmic.rec{background:linear-gradient(90deg,#ef4444,#f97316);animation:recp 1s infinite}
 @keyframes recp{50%{opacity:.6}}
 .m .play{display:inline-block;margin-left:8px;width:auto;padding:2px 10px;font-size:14px}
-header{display:flex;align-items:center;gap:12px;padding:16px}
+header{display:flex;align-items:center;justify-content:center;gap:12px;padding:18px 16px 6px;position:relative}
 header img{width:44px;height:44px;border-radius:11px;box-shadow:0 0 14px #3b82f688}
 h1{font-size:21px;margin:0;background:linear-gradient(90deg,var(--cy),var(--vi),var(--mg));-webkit-background-clip:text;background-clip:text;color:transparent}
+header h1{font-size:32px;letter-spacing:.01em}header img{width:52px;height:52px}
 h2{font-size:14px;margin:22px 16px 6px;color:var(--cy);text-transform:uppercase;letter-spacing:.08em;text-shadow:0 0 10px #22d3ee66}
 label{display:flex;gap:14px;align-items:flex-start;margin:0 12px 8px;padding:12px 14px;background:#0d1750cc;border:1px solid #3b82f655;border-radius:12px;box-shadow:0 0 12px #3b82f622 inset}
 label.new{background:#0c3b2ecc;border-color:#22c55e;box-shadow:0 0 14px #22c55e55}
@@ -232,11 +233,11 @@ textarea{-webkit-user-select:text;user-select:text;width:100%;box-sizing:border-
 .row{display:flex;gap:10px;margin-top:8px}.row button{padding:10px;font-size:16px;background:linear-gradient(90deg,var(--bl),var(--vi));box-shadow:none}.row .no{background:#2a3468}
 .ph{margin:0 12px 8px;border:2px dashed var(--cy);border-radius:12px;background:#22d3ee14}
 .float{position:fixed;left:8px;right:8px;z-index:10;pointer-events:none;background:#1a1f6e;border:1px solid var(--cy);border-radius:12px;box-shadow:0 8px 24px #000a,0 0 18px #22d3ee66;opacity:.97;margin:0}
-#back{display:none;width:auto;font-size:26px;line-height:1;padding:6px 14px;box-shadow:none;background:#1b2a6b;border:1px solid #3b82f688}
+#back{display:none;position:absolute;left:16px;width:auto;font-size:26px;line-height:1;padding:6px 14px;box-shadow:none;background:#1b2a6b;border:1px solid #3b82f688}
 .fold .t{position:relative;padding-right:26px}.fold .t::after{content:'\\203A';position:absolute;right:2px;top:50%;margin-top:-18px;font-size:34px;color:var(--cy)}
 .add{margin:4px 12px;width:calc(100% - 24px);display:block;background:#1b2a6b;border:1px solid var(--cy);box-shadow:none;font-size:16px;padding:12px}
 .addbox{margin:0 12px 8px;padding:12px 14px;background:#0d1750cc;border:1px solid var(--cy);border-radius:12px}
-#snd{width:auto;margin-left:auto;font-size:14px;padding:8px 12px;box-shadow:none;background:#1b2a6b;border:1px solid #3b82f688}
+#snd{box-shadow:none;background:#1b2a6b;border:1px solid #3b82f688}
 #bar{position:fixed;left:0;right:0;bottom:0;padding:12px 16px;background:#000000e6;border-top:1px solid #3b82f655;backdrop-filter:blur(6px)}
 button{width:100%;font-size:18px;padding:14px;border:0;border-radius:12px;background:linear-gradient(90deg,var(--vi),var(--mg));color:#fff;box-shadow:0 0 16px #a855f777}
 button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
@@ -264,7 +265,7 @@ button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 @media (prefers-reduced-motion:reduce){.rg{animation-duration:.1s}.sp img{animation:none}}
 </style></head><body>
 <div id="splash"><div class="sp"><img src="/icon.png?v=5" alt=""><svg viewBox="0 0 200 200"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#a855f7"/><stop offset="1" stop-color="#d946ef"/></linearGradient></defs><circle class="trk" cx="100" cy="100" r="90"/><circle class="rg" cx="100" cy="100" r="90" pathLength="100"/></svg></div></div>
-<header><button id="back">&#8249;</button><img src="/icon.png?v=5" alt=""><h1>Leyla Gedächtnis</h1><button id="snd"></button></header><div id="pulse" class="ok" title="Alles in Ordnung"><div class="tick" id="tick" style="display:none"><span></span></div><i class="spark" style="left:12%;top:30%;animation-delay:0s"></i><i class="spark" style="left:22%;top:68%;animation-delay:0.6s"></i><i class="spark" style="left:31%;top:22%;animation-delay:1.2s"></i><i class="spark" style="left:68%;top:74%;animation-delay:0.3s"></i><i class="spark" style="left:77%;top:28%;animation-delay:0.9s"></i><i class="spark" style="left:88%;top:60%;animation-delay:1.5s"></i><i class="spark" style="left:40%;top:80%;animation-delay:1.8s"></i><i class="spark" style="left:60%;top:18%;animation-delay:2.1s"></i><div class="beam"></div><svg viewBox="0 0 100 90"><defs><linearGradient id="hg" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#f43f5e"/></linearGradient><radialGradient id="hc"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#7dd3fc"/><stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/></radialGradient></defs><path d="M50 84C20 62 4 46 4 28C4 14 15 4 28 4C38 4 46 10 50 18C54 10 62 4 72 4C85 4 96 14 96 28C96 46 80 62 50 84Z" fill="#0b1650cc" stroke="url(#hg)" stroke-width="3.2" stroke-linejoin="round"/><path d="M14 40H34L40 28L47 54L53 34L58 44H86" fill="none" stroke="#e0f2fe" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/><circle cx="54" cy="38" r="9" fill="url(#hc)"/></svg></div><div id="chat"><div class="chead"><img src="/leyla.jpg" alt=""><h2>Chat mit Leyla</h2><button id="clive" title="Live mit Leyla reden">&#128222; Live</button></div><div id="clog"></div><div id="cin"><textarea id="ctext" placeholder="Schreib Leyla ..."></textarea><button id="cmic" title="Sprachnachricht">&#127908;</button><button id="csend">Senden</button></div></div><div id="live"><img src="/leyla.jpg" alt=""><div id="lstat">Verbinde ...</div><button id="lend">Auflegen</button></div><div id="rules"><div class="top"><button id="rback">&#8249;</button><h1>So ist Leyla</h1></div><div id="rtext"></div></div><div id="root"></div><div id="lamps" style="display:none"></div>
+<header><button id="back">&#8249;</button><img src="/icon.png?v=5" alt=""><h1>Leyla Gedächtnis</h1></header><div id="pulse" class="ok" title="Alles in Ordnung"><div class="tick" id="tick" style="display:none"><span></span></div><i class="spark" style="left:12%;top:30%;animation-delay:0s"></i><i class="spark" style="left:22%;top:68%;animation-delay:0.6s"></i><i class="spark" style="left:31%;top:22%;animation-delay:1.2s"></i><i class="spark" style="left:68%;top:74%;animation-delay:0.3s"></i><i class="spark" style="left:77%;top:28%;animation-delay:0.9s"></i><i class="spark" style="left:88%;top:60%;animation-delay:1.5s"></i><i class="spark" style="left:40%;top:80%;animation-delay:1.8s"></i><i class="spark" style="left:60%;top:18%;animation-delay:2.1s"></i><div class="beam"></div><svg viewBox="0 0 100 90"><defs><linearGradient id="hg" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#f43f5e"/></linearGradient><radialGradient id="hc"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#7dd3fc"/><stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/></radialGradient></defs><path d="M50 84C20 62 4 46 4 28C4 14 15 4 28 4C38 4 46 10 50 18C54 10 62 4 72 4C85 4 96 14 96 28C96 46 80 62 50 84Z" fill="#0b1650cc" stroke="url(#hg)" stroke-width="3.2" stroke-linejoin="round"/><path d="M14 40H34L40 28L47 54L53 34L58 44H86" fill="none" stroke="#e0f2fe" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/><circle cx="54" cy="38" r="9" fill="url(#hc)"/></svg></div><div id="chat"><div class="chead"><img src="/leyla.jpg" alt=""><h2>Chat mit Leyla</h2><button id="clive" title="Live mit Leyla reden">&#128222; Live</button></div><div id="clog"></div><div id="cin"><textarea id="ctext" placeholder="Schreib Leyla ..."></textarea><button id="cmic" title="Sprachnachricht">&#127908;</button><button id="csend">Senden</button></div></div><div id="live"><img src="/leyla.jpg" alt=""><div id="lstat">Verbinde ...</div><button id="lend">Auflegen</button></div><div id="rules"><div class="top"><button id="rback">&#8249;</button><h1>So ist Leyla</h1></div><div id="rtext"></div></div><div id="root"></div><div id="lamps" style="display:none"></div>
 <div id="bar"><button id="del" disabled>Markierte löschen</button></div>
 <script>
 let CODE=null;
@@ -288,7 +289,8 @@ const snd={
  drop:()=>synth(()=>{sw('triangle',1100,1100,.08,.1,0);sw('triangle',740,740,.14,.1,.07);}),
  save:()=>synth(()=>{[880,1320,1760].forEach((f,i)=>{sw('sawtooth',f,f*1.01,.12,.05,i*.07,4000,4000);sw('sine',f*2,f*2,.12,.05,i*.07);});}),
  del:()=>synth(()=>{sw('sawtooth',1800,90,.45,.09,0,6000,200);sw('square',900,60,.4,.04,0,2500,150);})};
-function sndLabel(){const b=document.getElementById('snd');b.textContent=soundOn?'Ton an':'Ton aus';}
+function sndLabel(){const b=document.getElementById('snd');if(b)b.textContent=soundOn?'Ton an':'Ton aus';}
+function sndBtn(){const t=document.createElement('button');t.id='snd';t.onclick=()=>{soundOn=!soundOn;try{localStorage.setItem('snd',soundOn?'1':'0')}catch(e){}sndLabel();if(soundOn)snd.on();};t.textContent=soundOn?'Ton an':'Ton aus';return t;}
 const key=(k,t)=>k+'\\u0000'+t;
 function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
 const SEP=' | ';
@@ -443,7 +445,7 @@ function render(d){FRESH=new Set(d.fresh||[]);ticker(d.ticker);const root=docume
  sel=new Set([...sel].filter(x=>all.has(x)));upd();}
 function privBox(){const b=document.createElement('div');b.className='lb';
  if(CODE){const r=document.createElement('button');r.textContent='So ist Leyla';r.onclick=openRules;
-  const x=document.createElement('button');x.textContent='Private Liste schließen';x.onclick=()=>{CODE=null;try{localStorage.removeItem('lcode')}catch(e){}last='';snd.off();load();};b.append(r,x);return b;}
+  const x=document.createElement('button');x.textContent='Private Liste schließen';x.onclick=()=>{CODE=null;try{localStorage.removeItem('lcode')}catch(e){}last='';snd.off();load();};b.append(r,x,sndBtn());return b;}
  const i=document.createElement('input');i.type='password';i.placeholder='Codewort';i.autocomplete='off';
  i.style.cssText='flex:2;font:inherit;color:#fff;background:#060c33;border:1px solid var(--bl);border-radius:10px;padding:10px;min-width:0';
  const o=document.createElement('button');o.textContent='Privat öffnen';
@@ -452,7 +454,7 @@ function privBox(){const b=document.createElement('div');b.className='lb';
   o.disabled=false;if(ok){CODE=i.value;try{localStorage.setItem('lcode',CODE)}catch(e){}snd.save();last='';load();}else{i.value='';i.placeholder='Falsch, nochmal';snd.del();}};
  o.onclick=go;i.onkeydown=e=>{if(e.key==='Enter')go();};
  i.onfocus=()=>{editing=true;};i.onblur=()=>{setTimeout(()=>{editing=false;},300);};
- b.append(i,o);return b;}
+ b.append(i,o,sndBtn());return b;}
 let rulesOpen=false;
 async function openRules(){let t='';try{const j=await (await post('/api/rules',{})).json();t=j.text||'';}catch(e){}
  if(!t)return;const box=document.getElementById('rtext');box.innerHTML='';
@@ -509,7 +511,7 @@ document.getElementById('del').onclick=async()=>{if(!sel.size||!confirm(sel.size
   await saveFields(rest);snd.del();sel=new Set();last='';load();return;}
  const items=[...sel].map(x=>{const i=x.indexOf('\\u0000');return {kind:x.slice(0,i),text:x.slice(i+1)}});
  await post('/api/delete',{items});snd.del();sel=new Set();last='';load();};
-document.getElementById('snd').onclick=()=>{soundOn=!soundOn;try{localStorage.setItem('snd',soundOn?'1':'0')}catch(e){}sndLabel();if(soundOn)snd.on();};
+
 let lampOn=false;
 const LROWS=[['listen','Zuhören',['listen']],['think','Denken und Suchen',['think']],['speak','Reden',['speak_low','speak_high']]];
 function lmsg(t){document.getElementById('lmsg').textContent=t;}
