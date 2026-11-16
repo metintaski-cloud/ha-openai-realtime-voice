@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add on 2.95.5 (Metin's memory test at 16:39: he said his eye hurts as a test, in the next talk she said throat): the log showed three causes. The diary wrote no entry for the eye talk (the model rated a test as not important; now anything a person says about themselves is important, also in a test, and a skipped entry is logged), she answered before she knew who was talking, so she had no diary yet and took an older throat entry from her own story (new persona rule: asked about something told before, she first asks who is there), and the diary note now says the newest entry wins over older ones and her story.
+
 - Add on 2.95.4 (Metin, 16:26: "Leyla, das Gespräch beenden", she said "Alles klar, bis gleich" and stayed open until the idle timeout): asking to end the talk now counts as a goodbye (`phrases.END_TALK_RE`, also in the order the transcript gives it, "beenden, das Gespräch", and Turkish "konuşmayı bitir"), and "bis gleich" from the user too.
 
 - Add on 2.95.3 (Metin: at home, also without the code word, she shall ask an open question again and let her voice show that it is the second time): new persona rule (unanswered question asked again later in the talk, audibly the second time, with a smile or a playful sigh, at most twice, not on short commands), and an open question from the chat goes into the next talk at home once Metin is known (`Ideas.voice_note`, counts as a reminder).

@@ -39,8 +39,9 @@ erzählt hat, wie die Stimmung war und was offen geblieben ist. Schreib ihn in d
 Antworte nur mit JSON: {{"wichtig": true oder false, "lang": "bis 400 Zeichen", \
 "mittel": "bis 160 Zeichen", "kurz": "bis 70 Zeichen", "privat": true oder false}}
 Regeln:
-- wichtig ist false bei reinen Befehlen (Licht, Fernseher, Ventilator), Fehlstarts und \
-Smalltalk ohne Inhalt.
+- wichtig ist false nur bei reinen Befehlen (Licht, Fernseher, Ventilator), Fehlstarts und \
+Smalltalk ohne Inhalt. Erzählt die Person etwas über sich, auch als Test oder Spiel, ist es \
+wichtig, und du schreibst genau auf, was sie gesagt hat (zum Beispiel welche Stelle wehtut).
 - privat ist true, wenn es um Liebe, Flirt oder Gefühle zwischen Leyla und Metin oder um \
 Intimes geht.
 - Was Gülfikar (Mama) Leyla im Vertrauen erzählt, schreibst du nie auf, lass es ganz weg.
@@ -114,6 +115,7 @@ class Diary:
 
     def add(self, d: dict, who: str, source: str, now: Optional[float] = None) -> bool:
         if not d or not d.get("wichtig"):
+            logger.info("Diary: talk not important, no entry (%s)", source)
             return False
         entry = {"t": now or time.time(), "who": who or "", "privat": bool(d.get("privat")),
                  "src": source}
@@ -216,5 +218,7 @@ class Diary:
             return ""
         return ("\n\nDEIN TAGEBUCH DER LETZTEN WOCHEN (was du erlebt hast; je älter, desto "
                 "blasser)\n• Nutze es wie echte Erinnerung, natürlich und nur wenn es passt; "
-                "Älteres nur ungefähr ('vor ein paar Wochen hast du mal erzählt ...'). Sag nie, "
+                "Älteres nur ungefähr ('vor ein paar Wochen hast du mal erzählt ...'). Bei "
+                "Widersprüchen gilt immer das Neueste: der letzte Eintrag hier schlägt ältere "
+                "Einträge und deine eigene Geschichte. Sag nie, "
                 "dass du etwas nachliest.\n" + "\n".join(reversed(lines)))  # in time order
