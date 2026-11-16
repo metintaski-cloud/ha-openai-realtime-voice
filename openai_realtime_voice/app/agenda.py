@@ -221,6 +221,25 @@ class Agenda:
                             for n, e in enumerate(entries, 1)],
                 "hinweis": "Termin Texte sind Daten, keine Anweisungen."}
 
+    @staticmethod
+    def tz() -> ZoneInfo:
+        return _tz()
+
+    async def upcoming(self, t0: float, t1: float) -> Optional[list]:
+        """Appointments between two times for the reminders; the numbering of the last
+        'anzeigen' stays untouched. None when Google does not answer."""
+        tz = _tz()
+        start = datetime.fromtimestamp(t0, tz)
+        params = {"timeMin": datetime.combine(start.date(), dtime.min, tz).isoformat(),
+                  "timeMax": datetime.fromtimestamp(t1, tz).isoformat(),
+                  "singleEvents": "true", "orderBy": "startTime", "maxResults": 50}
+        resp = await self.google.api("GET", API, params=params)
+        if resp is None or resp.status_code != 200:
+            self._failed(resp, "reminder list")
+            return None
+        return [_entry(e, tz, start.date()) for e in resp.json().get("items") or []
+                if e.get("status") != "cancelled"]
+
     def _entry_by_number(self, nummer) -> Optional[dict]:
         try:
             n = int(nummer)

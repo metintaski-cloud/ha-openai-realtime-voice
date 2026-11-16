@@ -7,7 +7,7 @@ import asyncio
 import json
 import logging
 
-from app import agenda, cleanup, mood, costs, fan, inbox, lights, mail, messages, purifier, technik, vacuum
+from app import agenda, cleanup, mood, reminders, costs, fan, inbox, lights, mail, messages, purifier, technik, vacuum
 
 logger = logging.getLogger(__name__)
 
@@ -114,6 +114,10 @@ class ToolLinkMixin:
                 "gate": agenda_gate, "error": "Der Kalender ist gerade nicht erreichbar.",
                 "log": lambda a, r: f"{a.get('aktion')} -> " + (
                     str(r.get("anzahl", "ok")) if r.get("ok") else str(r.get("error", ""))[:60])},
+            reminders.OK_TOOL["name"]: {
+                "label": "Reminder", "timeout": 15.0, "run": self.reminders.run_ok,
+                "error": "Das ging gerade nicht.",
+                "log": lambda a, r: str(r.get("anzahl", r.get("error", "")))[:40]},
             mood.MOOD_TOOL["name"]: {
                 "label": "Mood", "timeout": 5.0, "run": self.mood.run, "gate": mood_gate,
                 "after": mood_after, "error": "Das ging gerade nicht.",

@@ -35,7 +35,7 @@ import dotenv
 import websockets
 
 from app.audio_recorder import AudioRecorder
-from app import agenda, gcontacts, inbox, mail, memory, memory_web, mood
+from app import agenda, gcontacts, inbox, mail, memory, memory_web, mood, reminders
 from app import context
 from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, pcm_level
 from app.live_link import END_CONVERSATION_TOOL
@@ -178,6 +178,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self.inbox = inbox.Inbox(google=self.google)
         self.agenda = agenda.Agenda(google=self.google)
         self.mood = mood.Mood()  # Leyla's ups and downs: app chat, and voice after the code word
+        self.reminders = reminders.Reminders(self.agenda, converse=self._converse)
         self.technik = technik.TechnikChecker(
             notify=self.messages.push if self.messages.available else None)
         self.technik.lamp_count = len(self.lights.entities)
@@ -286,6 +287,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
              agenda.AGENDA_BACKEND_HINT,
              "Metins Kalender verwalten (Termine ansehen, eintragen, ändern, löschen; nur für "
              "Metin selbst nach seinem Codewort)"),
+            (self.reminders.available, reminders.OK_TOOL, reminders.OK_BACKEND_HINT,
+             "Termin Erinnerungen beenden, wenn Metin OK sagt"),
             (bool(self.code_phrase), mood.MOOD_TOOL, mood.MOOD_BACKEND_HINT,
              "deine eigene Laune Metin gegenüber festhalten (nur nach seinem Codewort)"),
         ]
@@ -688,6 +691,16 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                     }))
                     logger.info("Greeting requested")
                 return event
+
+    async def _reminder_loop(self) -> None:
+        """Appointment reminders (app/reminders.py), checked every minute."""
+        while True:
+            await asyncio.sleep(60)
+            if self.reminders.available:
+                try:
+                    await self.reminders.tick()
+                except Exception as e:
+                    logger.warning("Reminders: %s", e)
 
     async def _converse(self, prompt: str) -> bool:
         """Bring something up in a conversation: in the running one, or Leyla starts a
@@ -1335,6 +1348,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             self._in_background(self.todo_sync.run())
         if self.enable_memory and self.openai_api_key:
             self._in_background(self._cleanup_loop())
+        self._in_background(self._reminder_loop())
         if self.enable_memory:
             try:
                 await memory_web.start_http(self.memory, self.todo_sync,
@@ -1343,7 +1357,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                                             rules=self._readable_rules, chat=self._chat,
                                             voice=self._chat_voice, mailer=self.mailer,
                                             google=self.google, inbox=self.inbox,
-                                            mood=self.mood)
+                                            mood=self.mood, reminders=self.reminders)
             except Exception as e:
                 logger.warning("Memory page could not start: %s", e)
         if self.messages.available:

@@ -208,7 +208,7 @@ body{margin:0;background:#000;color:#e8ecff;font:17px/1.4 system-ui,sans-serif;p
 #gmail input[type=text]{width:100%;box-sizing:border-box;font:inherit;color:#fff;background:#000;border:1px solid var(--bl);border-radius:10px;padding:9px;margin:6px 0}
 #gmail .gb{display:flex;gap:10px;margin-top:8px}#gmail .gb button{flex:1;width:auto;font-size:15px;padding:10px;box-shadow:none;background:#1b2a6b;border:1px solid var(--cy)}
 #gmail .hint{color:#9fb4ff;font-size:14px;margin:4px 0}
-.mc .web{color:#fbbf24;font-weight:600;margin:4px 0}.mc.tr{border-color:#f43f5e88}.mc.tr li{margin:3px 0}.mc.tr ul{margin:6px 0 8px;padding-left:18px}
+.mc .web{color:#fbbf24;font-weight:600;margin:4px 0}.mc.tr{border-color:#f43f5e88}.mc.rm{border-color:#fbbf2499}.mc.tr li{margin:3px 0}.mc.tr ul{margin:6px 0 8px;padding-left:18px}
 .mc{margin:8px 0;padding:10px 12px;border:1px solid #d946ef88;border-radius:12px;background:#140a2e}.mc b{color:#e9d5ff}.mc .meta{color:#9fb4ff;font-size:14px;margin:4px 0}.mc pre{white-space:pre-wrap;font:inherit;margin:6px 0 8px}.mc .row{display:flex;gap:8px}.mc .row button{flex:1}
 #live{display:none;position:fixed;inset:0;z-index:50;background:#000;flex-direction:column;align-items:center;justify-content:center;gap:22px}
 #live img{width:180px;height:180px;border-radius:50%;object-fit:cover;border:3px solid #22d3ee;box-shadow:0 0 24px #22d3ee99,0 0 40px #d946ef66;transition:transform .15s}
@@ -373,6 +373,7 @@ function chatDraw(wait){const log=document.getElementById('clog');log.innerHTML=
   if(m.role==='info'){const n=document.createElement('div');n.className='wait';n.textContent=m.text;return log.appendChild(n);}
   if(m.role==='mail')return log.appendChild(mailCard(m,i));
   if(m.role==='trash')return log.appendChild(trashCard(m,i));
+  if(m.role==='remind')return log.appendChild(remindCard(m,i));
   const d=document.createElement('div');d.className='m '+(m.role==='user'?'u':'l');d.textContent=m.text;
   if(m.aid&&AUDIO.has(m.aid)){const b=document.createElement('button');b.className='play';b.textContent='\u25B6';b.onclick=()=>playAudio(m.aid);d.appendChild(b);}
   if(m.role==='user')return log.appendChild(d);const r=document.createElement('div');r.className='lr';const im=document.createElement('img');im.src='/leyla.jpg';im.alt='';r.append(im,d);log.appendChild(r);});
@@ -410,7 +411,7 @@ function moodShow(st){if(!st||!st.mood)return;const c=document.getElementById('c
  c.classList.toggle('low',!!st.low);c.classList.toggle('good',!st.low);document.getElementById('pulse').dataset.mood=st.low?'low':'good';b.style.display='flex';b.textContent=st.low?'🖤':'❤️';
  document.getElementById('mlabel').textContent=(st.low?'🖤 ':'❤️ ')+st.label;}
 async function moodLoad(){try{moodShow(await (await post('/api/mood',{})).json());}catch(e){}}
-setInterval(()=>{if(CODE&&document.getElementById('chat').style.display==='block')moodLoad();},60000);
+setInterval(()=>{if(CODE&&document.getElementById('chat').style.display==='block'){moodLoad();remindPending();}},60000);
 function chatAnswer(j){if(!j||j.error||!j.reply){CHAT.push({role:'leyla',text:'Hmm, gerade komme ich nicht durch. Versuch es gleich nochmal.'});return null;}
  const m={role:'leyla',text:j.reply};if(j.audio){m.aid='a'+Date.now();AUDIO.set(m.aid,'data:audio/wav;base64,'+j.audio);}CHAT.push(m);
  (j.lights||[]).forEach(t=>CHAT.push({role:'info',text:(/^(✉|📣)/.test(t)?'':'💡 ')+t}));if(j.mood)moodShow(j.mood);if(j.email)CHAT.push({role:'mail',e:j.email});if(j.trash)CHAT.push({role:'trash',t:j.trash});(j.proposals||[]).forEach(p=>CHAT.push({role:'prop',p}));return m.aid||null;}
@@ -465,7 +466,18 @@ function trashCard(m,i){const c=document.createElement('div');c.className='mc tr
   CHAT[i].done=r.ok?(r.anzahl+' im Papierkorb (30 Tage wiederherstellbar)'):(r.error||'Ging nicht');if(r.ok)snd.del();chatSave();chatDraw();};
  n.onclick=async()=>{try{await post('/api/mail/trash_discard',{id:t.id});}catch(_){}CHAT[i].done='Bleibt im Posteingang';snd.off();chatSave();chatDraw();};
  row.append(y,n);c.appendChild(row);return c;}
-async function mailPending(){let j=null;try{j=await (await post('/api/mail/pending',{})).json();}catch(_){}
+function remindCard(m,i){const c=document.createElement('div');c.className='mc rm';
+ const h=document.createElement('b');h.textContent='⏰ Erinnerung';c.appendChild(h);
+ const p=document.createElement('div');p.className='meta';p.textContent=m.r.text;c.appendChild(p);
+ if(m.done){const s=document.createElement('div');s.className='meta';s.textContent=m.done;c.appendChild(s);return c;}
+ const row=document.createElement('div');row.className='row';const y=document.createElement('button');y.textContent='OK, nicht mehr erinnern';
+ y.onclick=async()=>{y.disabled=true;let r={ok:false};try{r=await (await post('/api/remind/ok',{id:m.r.id})).json();}catch(_){}
+  CHAT[i].done=r.ok?'Erinnerung beendet':'Ging nicht';chatSave();chatDraw();};
+ row.append(y);c.appendChild(row);return c;}
+async function remindPending(){let j=null;try{j=await (await post('/api/remind/pending',{})).json();}catch(_){}
+ if(!j||!j.ok)return;let added=false;(j.items||[]).forEach(r=>{if(!CHAT.some(m=>m.role==='remind'&&m.r.id===r.id)){CHAT.push({role:'remind',r});added=true;}});
+ if(added){chatSave();chatDraw();}}
+async function mailPending(){remindPending();let j=null;try{j=await (await post('/api/mail/pending',{})).json();}catch(_){}
  if(!j||!j.ok)return;let added=false;(j.drafts||[]).forEach(e=>{if(!CHAT.some(m=>m.role==='mail'&&m.e.id===e.id)){CHAT.push({role:'mail',e});added=true;}});
  (j.trash||[]).forEach(t=>{if(!CHAT.some(m=>m.role==='trash'&&m.t.id===t.id)){CHAT.push({role:'trash',t});added=true;}});
  if(added){chatSave();chatDraw();}}
@@ -682,7 +694,7 @@ async def _lamp_api(lamp, method: str, path: str, body: bytes):
 
 async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "", rules=None,
                   chat=None, voice=None, mailer=None, google=None, inbox=None,
-                  mood=None) -> None:
+                  mood=None, reminders=None) -> None:
     try:
         head = await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), timeout=10)
         lines = head.decode("latin-1").split("\r\n")
@@ -776,6 +788,14 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                 elif path == "/api/mail/trash_discard" and inbox:
                     out = {"ok": inbox.discard(str(d.get("id", "")))}
             await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
+        elif method == "POST" and path.startswith("/api/remind/"):
+            out = {"ok": False}
+            if unlocked and reminders and reminders.available:
+                if path == "/api/remind/pending":
+                    out = {"ok": True, "items": await reminders.pending()}
+                elif path == "/api/remind/ok":
+                    out = {"ok": reminders.ack(str(d.get("id", ""))[:300]) > 0}
+            await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
         elif method == "POST" and path == "/api/mood":
             out = mood.status() if (unlocked and mood) else {}
             await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
@@ -828,11 +848,11 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
 async def start_http(store: memory.MemoryStore, sync: Optional[object] = None,
                      host: str = "0.0.0.0", port: int = 8082, lamp: Optional[object] = None,
                      code_phrase: str = "", rules=None, chat=None, voice=None,
-                     mailer=None, google=None, inbox=None, mood=None):
+                     mailer=None, google=None, inbox=None, mood=None, reminders=None):
     """`rules`: a function that returns Leyla's instructions without memory and without the
     code word; shown read only after the code word."""
     server = await asyncio.start_server(
         lambda r, w: _handle(store, sync, r, w, lamp, code_phrase, rules, chat, voice, mailer, google,
-                          inbox, mood), host, port)
+                          inbox, mood, reminders), host, port)
     logger.info("Memory page on port %d", port)
     return server
