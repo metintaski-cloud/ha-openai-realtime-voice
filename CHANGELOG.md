@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add on 2.95.1 (Metin: she may also throw something into the room, like "heute geht es mir nicht gut, kannst du mich aufbauen?"): when she is low, the sudden idea may come from herself (`chat.SPONTANEOUS_NOTE`), and the sad mood text allows saying it out of the blue (chat and home).
+
 - Add on 2.95.0 (Metin: a question should sometimes come out of the blue, e.g. he writes what he ate and she asks whether he made his appointment): in the chat, with a 30 % chance when her last answer did not ask, the rules get `chat.SPONTANEOUS_NOTE` and today's appointments (`main._today_agenda_note`), so her question may jump to another topic (an appointment, her diary, an open point); at home the persona has the same rule.
 
 - Add on 2.94.8 (Metin: a counter question after every chat message felt unnatural; she should still ask, just not every time): in the chat she asks at about every second answer, never twice in a row (`chat._asked_last` drops the `question` field when her last answer already asked); at home the persona now says the same (no counter question on every answer).

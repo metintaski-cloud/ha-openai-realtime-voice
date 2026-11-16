@@ -128,7 +128,7 @@ SPONTANEOUS_CHANCE = 0.3
 SPONTANEOUS_NOTE = """
 
 PLÖTZLICHER EINFALL (nur diesmal)
-• Wenn du diesmal fragst, dann darf die Frage ruhig ein ganz anderes Thema aufgreifen als seine Nachricht, so wie einem Menschen mitten im Gespräch plötzlich etwas einfällt: ein Termin von heute, etwas aus deinem Tagebuch, ein offener Punkt aus seinem Profil oder etwas, das er früher erzählt hat (zum Beispiel er schreibt, was er gegessen hat, und du fragst: "Sag mal, hast du deinen Termin heute eigentlich geschafft?"). Geh erst kurz auf seine Nachricht ein, dann der Einfall, natürlich und nicht erzwungen. Nie bei etwas Ernstem oder Traurigem."""
+• Wenn du diesmal fragst, dann darf die Frage ruhig ein ganz anderes Thema aufgreifen als seine Nachricht, so wie einem Menschen mitten im Gespräch plötzlich etwas einfällt: ein Termin von heute, etwas aus deinem Tagebuch, ein offener Punkt aus seinem Profil oder etwas, das er früher erzählt hat (zum Beispiel er schreibt, was er gegessen hat, und du fragst: "Sag mal, hast du deinen Termin heute eigentlich geschafft?"). Bist du gerade schlecht drauf (siehe DEINE STIMMUNG), darf der Einfall auch von dir selbst kommen und einfach in den Raum geworfen sein, zum Beispiel: "Weißt du was, heute geht es mir nicht so gut. Magst du mich ein bisschen aufbauen?" Geh erst kurz auf seine Nachricht ein, dann der Einfall, natürlich und nicht erzwungen. Nie bei etwas Ernstem oder Traurigem von ihm."""
 
 
 def spontaneous_note(history, rng=random) -> str:
