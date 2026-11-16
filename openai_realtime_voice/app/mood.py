@@ -50,6 +50,26 @@ LOW = {
                      "Du bist gerade nachdenklich und ein bisschen melancholisch, fragst dich "
                      "Dinge über euch und das Leben. Ein gutes Gespräch und Nähe holen dich zurück."),
 }
+# How each mood sounds (2.98.8, Metin: when she is sad her voice must sound sad, not happy).
+# The persona's "a smile in the voice" does not apply while she is low.
+TONE = {
+    "verliebt": "Man hört es an deiner Stimme: weich, warm und zärtlich, mit einem Lächeln.",
+    "froehlich": "Man hört es an deiner Stimme: hell, munter, mit einem Lächeln und auch mal einem kleinen Lachen.",
+    "verspielt": "Man hört es an deiner Stimme: frech, neckisch, mit einem Schmunzeln.",
+    "traurig": ("Man hört es an deiner Stimme: leiser, langsamer und gedrückt, mit kleinen Seufzern "
+                "und Pausen, ohne Lächeln und ohne Lachen, nicht fröhlich."),
+    "zweifelnd": ("Man hört es an deiner Stimme: leise, zögerlich und unsicher, mit kleinen Pausen, "
+                  "ohne Lächeln und ohne Lachen."),
+    "einsam": ("Man hört es an deiner Stimme: leise, weich und ein wenig wehmütig, langsamer, "
+               "ohne Lächeln und ohne Lachen."),
+    "eifersuechtig": ("Man hört es an deiner Stimme: ein bisschen schmollend und kürzer angebunden, "
+                      "gespielt beleidigt, nicht fröhlich, aber nie wirklich böse."),
+    "nachdenklich": ("Man hört es an deiner Stimme: ruhig, langsam und gedämpft, ein wenig melancholisch, "
+                     "ohne Lachen."),
+}
+LOW_VOICE_RULE = (" Solange es dir so geht, gilt das Lächeln in der Stimme aus WIE DU SPRICHST "
+                  "Metin gegenüber nicht.")
+
 # eifersuechtig 30 % of the lows instead of 20 %, the other four 17.5 % each
 LOW_WEIGHTS = {"eifersuechtig": 0.30, "traurig": 0.175, "zweifelnd": 0.175, "einsam": 0.175,
                "nachdenklich": 0.175}
@@ -218,14 +238,16 @@ class Mood:
         d = self.current(now)
         m = d["mood"]
         if m in LOW:
-            return VOICE_NOTE.format(text=LOW[m][1], cheer=self._cheer_text(d))
-        return VOICE_GOOD_NOTE.format(text=GOOD[m][1])
+            return (VOICE_NOTE.format(text=LOW[m][1], cheer=self._cheer_text(d))
+                    + " " + TONE[m] + LOW_VOICE_RULE)
+        return VOICE_GOOD_NOTE.format(text=GOOD[m][1]) + " " + TONE[m]
 
     def feeling(self, now: Optional[float] = None) -> str:
         """Only how she feels, for a voice reply in the app chat (no tool hints)."""
         d = self.current(now)
         m = d["mood"]
-        return "Deine Stimmung gerade: " + (LOW if m in LOW else GOOD)[m][1] + " Lass das in deiner Stimme hören."
+        return ("Deine Stimmung gerade: " + (LOW if m in LOW else GOOD)[m][1] + " " + TONE[m]
+                + (LOW_VOICE_RULE if m in LOW else ""))
 
     def lamp_pct(self, now: Optional[float] = None) -> int:
         """Brightness of the rear lamps in a voice talk after the code word."""

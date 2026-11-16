@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.98.8
+
+- Her voice follows her mood: sad, lonely or doubting means quieter and slower without a smile, jealous a little pouty, happy moods with a smile; at home, in the app live talk and in chat voice replies.
+
 ## 2.98.7
 
 - Voice replies in the app chat sound like Leyla talking to Metin again: own speaking setup with their closeness and her mood instead of the announcement voice, content in her own words.
