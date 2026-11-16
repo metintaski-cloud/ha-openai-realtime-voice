@@ -598,7 +598,7 @@ async function endDrag(){snd.drop();dragging=false;cancelAnimationFrame(raf);jus
  last='';load();}
 function health(ok){const p=document.getElementById('pulse');p.className=ok?'ok':'bad';p.title=ok?'Alles in Ordnung':'Leyla ist gerade nicht erreichbar';}
 async function load(){if(editing||dragging)return;try{const r=CODE?await post('/api/lists',{}):await fetch('/api/lists');if(!r.ok)throw 0;const s=await r.text();health(true);if(s!==last){last=s;render(JSON.parse(s));}}catch(e){health(false);}}
-document.getElementById('del').onclick=async()=>{if(!sel.size||!confirm(sel.size+(view?' Punkte':' Einträge')+' endgültig löschen?'))return;
+document.getElementById('del').onclick=async()=>{if(!sel.size)return;
  if(view){const rest=[...document.querySelectorAll('.list label')].map(x=>x._t).filter(t=>!sel.has(key(view.kind,t)));
   await saveFields(rest);snd.del();sel=new Set();last='';load();return;}
  const items=[...sel].map(x=>{const i=x.indexOf('\\u0000');return {kind:x.slice(0,i),text:x.slice(i+1)}});
