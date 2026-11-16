@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add on 2.94.3 (Metin: in real time, also without bye): while Metin talks with her at home (code word or known), every chat answer gets that running talk as it is (`main._live_talk_text`); the other way a talk at home already got the running chat (`Diary.chat_text`). The diary summary stays for afterwards.
+
 - Add on 2.94.2 (Metin: after bye at once, not after 5 minutes): a goodbye in the chat (the voice goodbye phrases plus `main.CHAT_BYE_RE`: bye, bis später, bis morgen, ich geh schlafen, hadi bay and so on) writes the diary entry right after her answer; the 5 minute pause stays only for a chat that just stops.
 
 - Add on 2.94.1 (Metin: after "Neuer Chat" or a goodbye she must still know what you talked about): "Neuer Chat" writes the diary entry at once (`/api/chat_new`, `main._chat_new`; the next chat answer waits for it), the chat pause is 5 minutes instead of 30, and a talk at home after the code word also gets what was written in the chat a moment ago and is not in the diary yet (`Diary.chat_text`).

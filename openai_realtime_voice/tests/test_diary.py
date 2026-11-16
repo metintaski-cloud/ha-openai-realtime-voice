@@ -106,3 +106,12 @@ def test_a_goodbye_in_the_chat_writes_the_diary_at_once(tmp_path, monkeypatch):
         assert m.CHAT_BYE_RE.search(t) or m.contains_goodbye(t), t
     for t in ("maybe", "Wie war dein Tag?"):
         assert not (m.CHAT_BYE_RE.search(t) or m.contains_goodbye(t)), t
+
+
+def test_the_chat_sees_a_running_talk_with_metin_at_home():
+    from app import main as m
+    bridge = m.LiveVoiceBridge.__new__(m.LiveVoiceBridge)
+    bridge._live_sessions = {1: (None, {"dialog": [("user", "Ich bin müde"), ("bot", "Ruh dich aus")]})}
+    assert bridge._live_talk_text() == ""  # nobody known: nothing
+    bridge._live_sessions[1][1]["metin_known"] = True
+    assert bridge._live_talk_text() == "Metin: Ich bin müde\nLeyla: Ruh dich aus"
