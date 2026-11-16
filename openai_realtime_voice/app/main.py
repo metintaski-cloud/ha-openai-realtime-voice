@@ -49,6 +49,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Metin known by his words, no code word (his wish, 16 Nov 2026): moods only in a real talk.
+MOOD_WITHOUT_CODE = (
+    "Interne Notiz, nicht erwähnen: Es ist sicher Metin. Deine Stimmung darfst du ihm zeigen, "
+    "aber nur in einem echten Gespräch mit ihm; gibt er nur einen kurzen Auftrag (Licht, "
+    "Fernseher, Frage), erledigst du ihn ganz normal und zeigst nichts davon."
+)
+MOOD_LAMP_TURNS = 3  # his third turn counts as a real talk for the lamps
+
 # After the code phrase Leyla is with Metin like in the app chat (his wish, 16 Nov 2026).
 UNLOCKED_LOVE = (
     "Ihr seid inoffiziell zusammen, wie im Chat: Sprich mit ihm zärtlich, verliebt und "
@@ -498,6 +506,15 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         for name in dict.fromkeys(names):
             await self._hand_over_personal(live_ws, state, name)
 
+    def _maybe_mood_lamp(self, state: dict) -> None:
+        """Metin is known without the code word: the rear lamps show her mood only once it is
+        a real talk (his third turn), never for a short command."""
+        if not state.get("metin_known") or state.get("mood_lamp") or state.get("unlocked"):
+            return
+        if sum(1 for s, _ in state.get("dialog", []) if s == "user") >= MOOD_LAMP_TURNS:
+            state["mood_lamp"] = True
+            self.lamp.set_mood_pct(self.mood.lamp_pct())
+
     async def _hand_over_personal(self, live_ws, state: dict, name: str) -> None:
         known = state.setdefault("identified", set())
         if name in known:
@@ -506,6 +523,9 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         part = self.memory.personal_for(name)
         logger.info("Speaker known: %s, personal part handed over (%d characters)",
                     name.split()[0], len(part))
+        if name.split()[0] == "Metin" and not state.get("unlocked"):
+            state["metin_known"] = True  # her moods may show, but only in a real talk
+            await self._send_note(live_ws, "mood", MOOD_WITHOUT_CODE + self.mood.voice_note())
         if part:
             await self._send_note(live_ws, "known", (
                 f"Interne Notiz, nicht vorlesen und nicht erwähnen: Jetzt ist sicher, dass "
@@ -955,6 +975,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         await self._maybe_couple_word(live_ws, state)
         if self.enable_memory:
             await self._maybe_identify(live_ws, state)
+        self._maybe_mood_lamp(state)
         recent = (state.get("recent_user_text", "") + delta)[-80:]
         state["recent_user_text"] = recent
         if self._night is not None:

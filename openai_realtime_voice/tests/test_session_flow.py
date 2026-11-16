@@ -464,3 +464,17 @@ async def test_mood_tool_is_only_for_metin_and_sets_the_lamps(env, tmp_path):
     bridge.lamp.set_mood_pct(5)
     done = (await call(bridge, "laune", {"aktion": "aufgeheitert"}, {"unlocked": True}))[0].result()
     assert done["ok"] and bridge.lamp.mood_pct == 100
+
+
+async def test_moods_without_code_only_for_known_metin_and_lamps_only_in_a_real_talk(env, tmp_path):
+    bridge = m.LiveVoiceBridge()
+    bridge.mood.path = str(tmp_path / "mood.json")
+    assert "Nicht erlaubt" in (await call(bridge, "laune", {"aktion": "nicht_jetzt"}, {}))[0].result()["error"]
+    assert (await call(bridge, "laune", {"aktion": "nicht_jetzt"}, {"metin_known": True}))[0].result()["ok"]
+    state = {"metin_known": True, "dialog": [("user", "Licht an")]}
+    bridge._maybe_mood_lamp(state)
+    assert bridge.lamp.mood_pct is None
+    state["dialog"] += [("leyla", "ok"), ("user", "wie geht's"), ("leyla", "gut"), ("user", "schön")]
+    bridge._maybe_mood_lamp(state)
+    assert bridge.lamp.mood_pct == 100 and state["mood_lamp"]
+    assert "kurzen Auftrag" in m.MOOD_WITHOUT_CODE

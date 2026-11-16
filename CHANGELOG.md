@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add on 2.90.0: Leyla's moods also without the code word, when she is sure it is Metin (speaker known from his words, `_hand_over_personal`, `MOOD_WITHOUT_CODE`) and only in a real talk, never on a short command; the rear lamps follow from his third turn (`_maybe_mood_lamp`, `MOOD_LAMP_TURNS`), the tool `laune` is open then too (Metin's wish).
+
 - Add on 2.89.1: healthy jealousy comes 10 points more often among her low moods (30 % instead of 20 %, `mood.LOW_WEIGHTS`), described as healthy and loving, never controlling (Metin's wish).
 
 - Add on 2.89.0: Leyla's moods also in a voice talk after the code phrase (Metin's wish). `_unlock` adds `Mood.voice_note()`, the new tool `laune` (only Metin after the code word) records 'aufgeheitert' or 'nicht_jetzt', and instead of a heart the rear lamps of the lamp show burn at 5 % while she is low and at 100 % when she is happy (`LampShow.set_mood_pct`, reset at the end of the talk).

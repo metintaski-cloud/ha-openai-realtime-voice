@@ -56,8 +56,8 @@ class ToolLinkMixin:
             if not self._only_metin(state):
                 return metin_error("Termine verwaltet")
 
-        def mood_gate(args, state):
-            if not self._only_metin(state):
+        def mood_gate(args, state):  # code word, or Metin known by his words
+            if not (self._only_metin(state) or state.get("metin_known")):
                 return metin_error("Laune")
 
         def mood_after(args, result):
