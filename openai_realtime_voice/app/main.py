@@ -39,7 +39,7 @@ from app import agenda, diary, gcontacts, ideas, inbox, mail, memory, memory_web
 from app import context
 from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, pcm_level
 from app.live_link import END_CONVERSATION_TOOL
-from app.phrases import (END_TALK_RE, NAME_NUDGE, NAME_NUDGE_AFTER_S, NAME_NUDGE_COOLDOWN_S, NAME_RE, PROMISE_NUDGE, PROMISE_NUDGE_AFTER_S, PROMISE_RE, NAME_SAID_RE, WHO_ASKED_RE, WHO_NUDGE, COUPLE_NUDGE, COUPLE_WORD_RE, PET_NUDGE, PET_WORD_RE, addressed_by_name, contains_goodbye, greeting_instruction, parse_greeting_words, pick_greeting)
+from app.phrases import (END_TALK_RE, RECALL_NUDGE, RECALL_RE, NAME_NUDGE, NAME_NUDGE_AFTER_S, NAME_NUDGE_COOLDOWN_S, NAME_RE, PROMISE_NUDGE, PROMISE_NUDGE_AFTER_S, PROMISE_RE, NAME_SAID_RE, WHO_ASKED_RE, WHO_NUDGE, COUPLE_NUDGE, COUPLE_WORD_RE, PET_NUDGE, PET_WORD_RE, addressed_by_name, contains_goodbye, greeting_instruction, parse_greeting_words, pick_greeting)
 from app import (chat, lamp_show, metrics, output_link, session_end, tool_link, after_talk, announce_voice, live_link, night, cleanup, costs, fan, health, lights, messages, persona, purifier, rf, technik, todo_sync,
                  tv, vacuum)
 
@@ -617,6 +617,18 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             logger.info("Leyla used a second Kosewort, reminding her")
             asyncio.create_task(self._send_note(live_ws, "pet", PET_NUDGE))
 
+    async def _maybe_ask_who_before_recall(self, live_ws, state: dict) -> None:
+        """Asked what they told her before by someone not known yet: she asks who it is first,
+        because the diary of that person only comes with _hand_over_personal (2.95.7)."""
+        if (state.get("recall_nudged") or state.get("identified") or state.get("unlocked")
+                or state.get("closing")):
+            return
+        said = "".join(t for sp, t in state.get("dialog", [])[-3:] if sp == "user")[-120:]
+        if RECALL_RE.search(said):
+            state["recall_nudged"] = state["who_nudged"] = True
+            logger.info("Recall question from an unknown speaker, she asks who it is first")
+            await self._send_note(live_ws, "recall", RECALL_NUDGE)
+
     async def _maybe_ask_who(self, live_ws, state: dict) -> None:
         """A new turn of the person begins: remind Leyla once to ask who is there when it is
         their second turn or later, no name was said, no code phrase and she has not asked."""
@@ -1081,6 +1093,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         await self._maybe_couple_word(live_ws, state)
         if self.enable_memory:
             await self._maybe_identify(live_ws, state)
+            await self._maybe_ask_who_before_recall(live_ws, state)
         self._maybe_mood_lamp(state)
         recent = (state.get("recent_user_text", "") + delta)[-80:]
         state["recent_user_text"] = recent

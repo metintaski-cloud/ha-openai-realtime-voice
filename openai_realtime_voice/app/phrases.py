@@ -45,6 +45,18 @@ WHO_ASKED_RE = re.compile(
 NAME_SAID_RE = re.compile(
     r"\b(?:ich bin|hier ist|hier spricht|mein name ist|ben|benim adım|adım|ismim)\s+([A-ZÄÖÜÇĞİŞ]\w+)",
     re.IGNORECASE)
+# Someone asks what they told her before (16 Nov 2026: "nerem ağrıyor" from a speaker she did not
+# know yet; she answered from an old entry and failed). Before an answer she must know who it is.
+RECALL_RE = re.compile(
+    r"nerem (?:ağrı|acı)|neremin|ne demiştim|ne söylemiştim|ne anlatmıştım|hatırlıyor musun|"
+    r"hatırladın mı|unuttun mu|was tut mir weh|wo tut('?s| es) mir weh|was hab(?:e)? ich dir "
+    r"(?:erzählt|gesagt)|weißt du noch|erinnerst du dich|hast du (?:dir )?gemerkt|"
+    r"was hatte ich gesagt", re.IGNORECASE)
+RECALL_NUDGE = (
+    "Interne Notiz, nicht vorlesen: Die Person fragt nach etwas, das sie dir erzählt hat, und du "
+    "weißt noch nicht sicher, wer spricht. Beantworte es jetzt noch nicht und rate nichts: Frag "
+    "zuerst kurz und freundlich, wer da ist, in ihrer Sprache. Sobald du es weißt, bekommst du "
+    "deine Erinnerung an diese Person und antwortest dann.")
 WHO_NUDGE = (
     "Interne Notiz, nicht vorlesen: Du weißt noch nicht, wer mit dir spricht, und hast noch "
     "nicht gefragt. Ist das, was die Person gerade sagt, kein kurzer Befehl, dann beantworte "

@@ -489,3 +489,23 @@ def test_ending_the_talk_by_words_counts_as_goodbye():
             state["recent_user_text"] = (state.get("recent_user_text", "") + " " + word)[-80:]
         assert m.contains_goodbye(state["recent_user_text"]) or m.END_TALK_RE.search(state["recent_user_text"]), said
     assert not m.END_TALK_RE.search("mach den Fernseher aus")
+
+
+async def test_recall_question_from_unknown_speaker_asks_who_first():
+    from app import main as m
+    bridge = m.LiveVoiceBridge.__new__(m.LiveVoiceBridge)
+    sent = []
+
+    async def note(ws, prefix, content):
+        sent.append(prefix)
+    bridge._send_note = note
+    state = {"dialog": [("user", "Leyla benim nerem ağrıyordu")]}
+    await bridge._maybe_ask_who_before_recall(None, state)
+    await bridge._maybe_ask_who_before_recall(None, state)
+    assert sent == ["recall"]
+    known = {"dialog": [("user", "was tut mir weh?")], "identified": {"Metin Taskiran"}}
+    await bridge._maybe_ask_who_before_recall(None, known)
+    assert sent == ["recall"]
+    for q in ("Wo tut es mir weh?", "Weißt du noch, was ich gesagt habe?", "hatırlıyor musun"):
+        assert m.RECALL_RE.search(q), q
+    assert not m.RECALL_RE.search("Mach das Licht an")
