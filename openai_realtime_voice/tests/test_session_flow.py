@@ -478,3 +478,14 @@ async def test_moods_without_code_only_for_known_metin_and_lamps_only_in_a_real_
     bridge._maybe_mood_lamp(state)
     assert bridge.lamp.mood_pct == 100 and state["mood_lamp"]
     assert "kurzen Auftrag" in m.MOOD_WITHOUT_CODE
+
+
+def test_ending_the_talk_by_words_counts_as_goodbye():
+    from app import main as m
+    bridge = m.LiveVoiceBridge.__new__(m.LiveVoiceBridge)
+    for said in (" Leyla, das Gespräch beenden", " einfach nur beenden, das Gespräch", " konuşmayı bitir"):
+        state = {"dialog": []}
+        for word in said.split(" "):
+            state["recent_user_text"] = (state.get("recent_user_text", "") + " " + word)[-80:]
+        assert m.contains_goodbye(state["recent_user_text"]) or m.END_TALK_RE.search(state["recent_user_text"]), said
+    assert not m.END_TALK_RE.search("mach den Fernseher aus")

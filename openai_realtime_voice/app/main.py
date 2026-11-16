@@ -39,7 +39,7 @@ from app import agenda, diary, gcontacts, ideas, inbox, mail, memory, memory_web
 from app import context
 from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, pcm_level
 from app.live_link import END_CONVERSATION_TOOL
-from app.phrases import (NAME_NUDGE, NAME_NUDGE_AFTER_S, NAME_NUDGE_COOLDOWN_S, NAME_RE, PROMISE_NUDGE, PROMISE_NUDGE_AFTER_S, PROMISE_RE, NAME_SAID_RE, WHO_ASKED_RE, WHO_NUDGE, COUPLE_NUDGE, COUPLE_WORD_RE, PET_NUDGE, PET_WORD_RE, addressed_by_name, contains_goodbye, greeting_instruction, parse_greeting_words, pick_greeting)
+from app.phrases import (END_TALK_RE, NAME_NUDGE, NAME_NUDGE_AFTER_S, NAME_NUDGE_COOLDOWN_S, NAME_RE, PROMISE_NUDGE, PROMISE_NUDGE_AFTER_S, PROMISE_RE, NAME_SAID_RE, WHO_ASKED_RE, WHO_NUDGE, COUPLE_NUDGE, COUPLE_WORD_RE, PET_NUDGE, PET_WORD_RE, addressed_by_name, contains_goodbye, greeting_instruction, parse_greeting_words, pick_greeting)
 from app import (chat, lamp_show, metrics, output_link, session_end, tool_link, after_talk, announce_voice, live_link, night, cleanup, costs, fan, health, lights, messages, persona, purifier, rf, technik, todo_sync,
                  tv, vacuum)
 
@@ -1099,7 +1099,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         if not state.get("forget_requested") and memory.wants_to_forget(recent):
             state["forget_requested"] = True
             logger.info("User asked to forget something")
-        if not state.get("closing") and contains_goodbye(recent):
+        if not state.get("closing") and (contains_goodbye(recent) or END_TALK_RE.search(recent)):
             logger.info("Goodbye heard from user: %r", recent.strip())
             state["closing"] = True
         logger.info("User said: %r", delta)

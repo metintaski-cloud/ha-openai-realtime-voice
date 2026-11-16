@@ -84,7 +84,15 @@ GOODBYE_PHRASES = (
 # Only the user may end the session with these softer phrases.
 # "das war's" is not one: it is also the answer to "soll ich ihm noch etwas sagen?" and ended
 # a talk that went on (15 Nov 2026); a real goodbye after it still ends through Leyla.
-USER_ONLY_GOODBYE_PHRASES = ("bis bald", "bis dann")
+USER_ONLY_GOODBYE_PHRASES = ("bis bald", "bis dann", "bis gleich")
+
+# "Leyla, das Gespräch beenden" (16 Nov 2026: she said "bis gleich" and stayed open until the
+# idle timeout); also in reversed order as the transcript gave it: "beenden, das Gespräch".
+END_TALK_RE = re.compile(
+    r"(gespr[äa]ch|unterhaltung)\W+(\w+\W+){0,2}(beenden|beende|beendet|abbrechen|aus\b)"
+    r"|(beenden|beende|abbrechen)\W+(\w+\W+){0,2}(gespr[äa]ch|unterhaltung)"
+    r"|konuşmay[ıi] (bitir|kapat|sonland[ıi]r)|görüşmeyi (bitir|kapat)",
+    re.IGNORECASE)
 
 
 def _normalize(text: str) -> str:

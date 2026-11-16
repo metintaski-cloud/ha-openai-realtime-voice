@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add on 2.95.4 (Metin, 16:26: "Leyla, das Gespräch beenden", she said "Alles klar, bis gleich" and stayed open until the idle timeout): asking to end the talk now counts as a goodbye (`phrases.END_TALK_RE`, also in the order the transcript gives it, "beenden, das Gespräch", and Turkish "konuşmayı bitir"), and "bis gleich" from the user too.
+
 - Add on 2.95.3 (Metin: at home, also without the code word, she shall ask an open question again and let her voice show that it is the second time): new persona rule (unanswered question asked again later in the talk, audibly the second time, with a smile or a playful sigh, at most twice, not on short commands), and an open question from the chat goes into the next talk at home once Metin is known (`Ideas.voice_note`, counts as a reminder).
 
 - Add on 2.95.2 (Metin: varied, realistic, never the same thing twice a day, and an open question must come back): sudden ideas in the chat are rolled from seven kinds (`app/ideas.py`: an appointment today, something he told before, an open profile point, family and friends, a small thing of her own, a wish or plan, her low mood), each kind at most once a day, with the questions she already asked today listed; a question from an idea stays open and the next answers (at most twice, within a day) come back to it until the model reports `frage_beantwortet`. The voice persona has the same rule.
