@@ -35,7 +35,7 @@ MASKABLE_PATH = os.path.join(os.path.dirname(__file__), "memory_icon_maskable.pn
 AVATAR_PATH = os.path.join(os.path.dirname(__file__), "leyla_avatar.jpg")  # her picture in the chat
 BODY_PATH = os.path.join(os.path.dirname(__file__), "leyla_body.jpg")  # her full figure on the stage (2.97.0)
 CLIPS_DIR = os.environ.get("LEYLA_CLIPS_DIR", os.path.join(os.path.dirname(__file__), "clips"))
-CLIP_RE = re.compile(r"^/clips/([a-z]{2,20}[0-9]?)\.mp4$")
+CLIP_RE = re.compile(r"^/clips/([a-z0-9]{2,20})/([a-z]{2,20}[0-9]?)\.(mp4|jpg)$")  # look/scene (2.99.4)
 
 
 def check_code(typed, phrase: str, now: Optional[float] = None) -> bool:
@@ -444,7 +444,13 @@ function moodShow(st){if(!st||!st.mood)return;const c=document.getElementById('c
  c.classList.toggle('low',!!st.low);c.classList.toggle('good',!st.low);document.getElementById('pulse').dataset.mood=st.low?'low':'good';b.style.display='flex';b.textContent=st.low?'🖤':'❤️';
  document.getElementById('mlabel').textContent=(st.low?'🖤 ':'❤️ ')+st.label;LASTST=st;stageMood(st);}
 let CLIPS=null,LASTST=null,STM=null;
-async function clipsLoad(){try{CLIPS=(await (await fetch('/clips.json')).json()).clips||[];}catch(e){CLIPS=[];}if(LASTST)stageMood(LASTST);}
+let OUTFIT='';
+async function clipsLoad(){let outs={};try{outs=(await (await fetch('/clips.json')).json()).outfits||{};}catch(e){}
+ const names=Object.keys(outs);let last='';try{last=localStorage.getItem('loutfit')||'';}catch(e){}
+ const cand=names.length>1?names.filter(n=>n!==last):names;OUTFIT=cand.length?cand[Math.floor(Math.random()*cand.length)]:'';
+ try{if(OUTFIT)localStorage.setItem('loutfit',OUTFIT);}catch(e){}
+ CLIPS=OUTFIT?outs[OUTFIT].clips:[];if(OUTFIT&&outs[OUTFIT].body)document.querySelector('#stage .fig img').src='/clips/'+OUTFIT+'/body.jpg';
+ if(LASTST)stageMood(LASTST);}
 function clipVars(b){return CLIPS.filter(n=>n.replace(/[0-9]$/,'')===b);}
 function clipFor(st){if(clipVars(st.mood).length)return st.mood;const g=st.low?'traurig':'gluecklich';return clipVars(g).length?g:null;}
 let SV=0,STOK=0;
@@ -454,12 +460,12 @@ function stageShow(name,loop,done){const s=document.getElementById('stage'),vs=[
  b.onended=null;b.ontimeupdate=null;b.loop=!!loop;b.oncanplay=()=>{b.oncanplay=null;if(tok!==STOK)return;b.currentTime=0;b.play().catch(()=>{});b.classList.add('on');a.classList.remove('on');s.classList.add('vid');SV=1-SV;
   setTimeout(()=>{if(!a.classList.contains('on'))a.pause();},900);let fired=false;const fire=()=>{if(fired||tok!==STOK||!done)return;fired=true;done();};
   b.ontimeupdate=()=>{if(b.duration&&b.currentTime>b.duration-0.8)fire();};b.onended=fire;};
- b.src='/clips/'+name+'.mp4';b.load();}
+ b.src='/clips/'+OUTFIT+'/'+name+'.mp4';b.load();}
 function stageLoop(b){if(!b)return stageShow(null);const v=clipVars(b);if(v.length<2)return stageShow(v[0],false,()=>stageLoop(b));
  const cur=document.getElementById(SV?'svid2':'svid').src.split('/').pop().replace('.mp4','');const o=v.filter(n=>n!==cur);stageShow(o[Math.floor(Math.random()*o.length)],false,()=>stageLoop(b));}
 function stagePlay(once,loop){const q=once.filter(n=>CLIPS.includes(n));const next=()=>{const n=q.shift();if(n)stageShow(n,false,next);else stageLoop(loop);};next();}
 function stageMood(st){if(CLIPS===null)return;document.getElementById('stage').classList.toggle('low',!!st.low);let once=[];const o=STM;
- if(o){if(o.low&&!st.low)once=['uebergang','kuss'];else if(st.low&&o.low&&(st.cheer||0)>(o.cheer||0))once=['trost'];}
+ if(!o)once=['begruessung'];if(o){if(o.low&&!st.low)once=['uebergang','kuss'];else if(st.low&&o.low&&(st.cheer||0)>(o.cheer||0))once=['trost'];}
  const changed=!o||once.length||o.mood!==st.mood;STM=st;if(changed)stagePlay(once,clipFor(st));}
 clipsLoad();
 function stageFit(){const ch=document.getElementById('chat');if(ch.style.display!=='block')return;const vh=(window.visualViewport?visualViewport.height:innerHeight);ch.style.height=Math.max(420,vh-12)+'px';}
@@ -737,18 +743,30 @@ MANIFEST = json.dumps({"name": "Leyla Gedächtnis", "short_name": "Leyla", "star
                                     "purpose": "maskable"} for sz in ("192x192", "512x512")]})
 
 
-def list_clips() -> list:
-    """The names of Leyla's video clips (traurig, kuss, ...) in CLIPS_DIR."""
+def list_outfits() -> dict:
+    """Leyla's looks (2.99.4, Metin's idea: another dress each time the app opens): one folder
+    per look in CLIPS_DIR with its scenes (traurig.mp4, kuss.mp4, ...) and its still body.jpg."""
+    out = {}
     try:
-        return sorted(f[:-4] for f in os.listdir(CLIPS_DIR)
-                      if f.endswith(".mp4") and CLIP_RE.match("/clips/" + f))
+        looks = sorted(os.listdir(CLIPS_DIR))
     except OSError:
-        return []
+        return out
+    for look in looks:
+        folder = os.path.join(CLIPS_DIR, look)
+        if not os.path.isdir(folder):
+            continue
+        files = os.listdir(folder)
+        clips = sorted(f[:-4] for f in files
+                       if f.endswith(".mp4") and CLIP_RE.match(f"/clips/{look}/{f}"))
+        body = "body.jpg" in files
+        if clips or body:
+            out[look] = {"clips": clips, "body": body}
+    return out
 
 
-async def _send_clip(writer, name: str, lines: list) -> None:
-    """One clip, with byte ranges, because Chrome asks for parts of a video."""
-    fn = os.path.join(CLIPS_DIR, name + ".mp4")
+async def _send_clip(writer, look: str, name: str, ext: str, lines: list) -> None:
+    """One clip or still of a look, with byte ranges, because Chrome asks for parts of a video."""
+    fn = os.path.join(CLIPS_DIR, look, f"{name}.{ext}")
     try:
         size = os.path.getsize(fn)
     except OSError:
@@ -769,7 +787,8 @@ async def _send_clip(writer, name: str, lines: list) -> None:
         f.seek(start)
         raw = f.read(end - start + 1)
     extra = f"Content-Range: bytes {start}-{end}/{size}\r\n" if status.startswith("206") else ""
-    writer.write((f"HTTP/1.1 {status}\r\nContent-Type: video/mp4\r\nContent-Length: {len(raw)}\r\n"
+    ctype = "video/mp4" if ext == "mp4" else "image/jpeg"
+    writer.write((f"HTTP/1.1 {status}\r\nContent-Type: {ctype}\r\nContent-Length: {len(raw)}\r\n"
                   f"Accept-Ranges: bytes\r\n{extra}Cache-Control: max-age=86400\r\n"
                   "Connection: close\r\n\r\n").encode() + raw)
     await writer.drain()
@@ -849,9 +868,10 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                           "Cache-Control: max-age=86400\r\nConnection: close\r\n\r\n").encode() + raw)
             await writer.drain()
         elif method == "GET" and path == "/clips.json":
-            await _respond(writer, "200 OK", "application/json", json.dumps({"clips": list_clips()}))
+            await _respond(writer, "200 OK", "application/json", json.dumps({"outfits": list_outfits()}))
         elif method == "GET" and CLIP_RE.match(path):
-            await _send_clip(writer, CLIP_RE.match(path).group(1), lines)
+            m = CLIP_RE.match(path)
+            await _send_clip(writer, m.group(1), m.group(2), m.group(3), lines)
         elif method == "GET" and path == "/manifest.json":
             await _respond(writer, "200 OK", "application/manifest+json", MANIFEST)
         elif method == "GET" and path == "/api/lists":

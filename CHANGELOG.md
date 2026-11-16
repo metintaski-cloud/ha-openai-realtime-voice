@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.99.4
+
+- Looks: every look has its own folder with still and scenes, each time the app opens Leyla wears another look than last time (red dress, black and gold dress); a greeting scene `begruessung` plays once when the app opens.
+
 ## 2.99.3
 
 - The see through chat shows only the last two messages at the bottom, it no longer fills up over Leyla.
