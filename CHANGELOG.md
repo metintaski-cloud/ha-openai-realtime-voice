@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add on 2.88.0: after the code phrase Leyla talks to Metin by voice like in the chat (tender, flirty, Kosewörter, always clean; `main.UNLOCKED_LOVE` in the unlock note, no Kosewort reminder then). A second voice or a hint that someone is there makes her normal again at once.
+
 - Add on 2.87.9: "markierte löschen" in the memory app deletes at once, without the browser question (Metin's wish; ticking the entries is the choice).
 
 - Add on 2.87.8: the chat counter counts down ("Noch 12 von 20", yellow from 3, red at 0, no extra text; Metin's wish), the "Neuer Chat" button is black like his bubble.

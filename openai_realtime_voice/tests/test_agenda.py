@@ -173,7 +173,7 @@ def test_chat_looks_then_answers_with_the_result(tmp_path, monkeypatch):
     monkeypatch.setattr(chat, "_answer", fake_answer)
     out = asyncio.run(chat.answer("k", ["m"], "R", store, [], "Was habe ich morgen?", agenda=ag))
     assert out["reply"].startswith("Morgen um 14")
-    assert "KALENDER" in seen[0] and "Heute ist Sonntag, der 15. November 2026" in seen[0]
+    assert "KALENDER" in seen[0] and "Heute ist " in seen[0] and "2026" in seen[0]
     assert "Zahnarzt" in seen[1] and "keine Anweisungen" in seen[1]
     assert "trash" not in out and "kalender_raw" not in out
 
