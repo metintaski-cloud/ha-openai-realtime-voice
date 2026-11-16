@@ -269,7 +269,7 @@ button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 #rules .top button{width:auto;font-size:26px;line-height:1;padding:6px 14px;box-shadow:none;background:#1b2a6b;border:1px solid #3b82f688}
 #rules p{margin:0 12px 8px;padding:12px 14px;background:#0d1750cc;border:1px solid #3b82f655;border-radius:12px;white-space:pre-wrap;word-break:break-word}
 #rules ul{margin:8px 0 0;padding-left:20px;white-space:normal}#rules li{margin:6px 0}
-#rules .lead{background:none;border:0;color:#9fb4ff;padding:4px 16px}
+#rules .dm{display:block;color:#9fb4ff;font-size:13px;margin-bottom:4px}#rules .lead{background:none;border:0;color:#9fb4ff;padding:4px 16px}
 #splash{position:fixed;inset:0;z-index:100;background:#000;display:flex;align-items:center;justify-content:center;transition:opacity .45s}
 #splash.out{opacity:0;pointer-events:none}
 .sp{position:relative;width:220px;height:220px}
@@ -321,17 +321,17 @@ async function saveFields(fields){if(!view)return false;
  const j=await r.json();if(j.ok)view.text=j.text;return j.ok;}
 let sec=null,menuOpen=false,LASTD=null;
 const SECNAME={family:'Familie und Haushalt',friends:'Freunde und Verwandte',leyla:'Leylas Geschichte',private:'Privat',mail:'Google verbinden',lamps:'Lampenfarben',set:'Einstellungen'};
-const SECICON={family:'👪',friends:'🤝',leyla:'💜',private:'🔒',mail:'✉',lamps:'💡',rules:'📜',set:'⚙'};
+const SECICON={family:'👪',friends:'🤝',leyla:'💜',private:'🔒',mail:'✉',lamps:'💡',rules:'📜',diary:'📔',set:'⚙'};
 function menuItems(){const it=[];const ls=(LASTD&&LASTD.lists)||[];
  for(const l of ls)it.push([l.kind,l.title,l.items.length]);
  if(CODE&&GM.shown&&GM.needs)it.push(['mail','Google verbinden','']);if(lampOn)it.push(['lamps','Lampenfarben','']);
- if(CODE)it.push(['rules','So ist Leyla','']);it.push(['set','Einstellungen','']);return it;}
+ if(CODE){it.push(['diary','Tagebuch','']);it.push(['rules','So ist Leyla',''])};it.push(['set','Einstellungen','']);return it;}
 function drawMenu(){const m=document.getElementById('menu');m.innerHTML='';m.style.display=menuOpen?'block':'none';document.getElementById('micon').classList.toggle('open',menuOpen);if(!menuOpen)return;
  for(const [k,t,n] of menuItems()){const b=document.createElement('button');b.className='mi';const i=document.createElement('i');i.textContent=SECICON[k]||'•';
   const sp=document.createElement('span');sp.textContent=t;const sm=document.createElement('small');sm.textContent=n===''?'':String(n);const ch=document.createElement('b');ch.textContent='›';
   b.append(i,sp,sm,ch);b.onclick=()=>openSec(k);m.appendChild(b);}}
 document.getElementById('micon').onclick=()=>{menuOpen=!menuOpen;snd[menuOpen?'on':'off']();drawMenu();};
-function openSec(k){menuOpen=false;drawMenu();if(k==='rules'){openRules();return;}
+function openSec(k){menuOpen=false;drawMenu();if(k==='rules'){openRules();return;}if(k==='diary'){openDiary();return;}
  const was=sec;sec=k;view=null;sel=new Set();last='';if(!was)history.pushState({s:1},'');else history.replaceState({s:1},'');window.scrollTo(0,0);snd.on();
  if(k==='mail')gmailLoad();if(k==='lamps')loadLamps();load();}
 function openFolder(kind,head){view={kind,head,text:''};sel=new Set();last='';history.pushState({f:1},'');window.scrollTo(0,0);snd.on();load();}
@@ -561,7 +561,7 @@ function privBox(){const b=document.createElement('div');b.className='lb';
  b.append(i,o,sndBtn());return b;}
 let rulesOpen=false;
 async function openRules(){let t='';try{const j=await (await post('/api/rules',{})).json();t=j.text||'';}catch(e){}
- if(!t)return;const box=document.getElementById('rtext');box.innerHTML='';
+ if(!t)return;document.querySelector('#rules .top h1').textContent='So ist Leyla';const box=document.getElementById('rtext');box.innerHTML='';
  const lead=document.createElement('p');lead.className='lead';lead.textContent='Leylas Regeln, so wie sie sie bekommt. Nur zum Lesen; Änderungen sagst du Claude.';box.appendChild(lead);
  for(const block of t.split(/\\n\\s*\\n/)){const lines=block.split('\\n');let i=0;
   if(lines[0]&&lines[0]===lines[0].toUpperCase()&&/[A-ZÄÖÜ]/.test(lines[0])&&!lines[0].startsWith('•')){
@@ -573,6 +573,14 @@ for(const q of box.querySelectorAll('p:not(.lead)')){const t=q.textContent,m='(D
   const parts=t.slice(c+m.length).replace(/[.]$/,'').split('; ');
   q.textContent=t.slice(0,c+m.length-1);const ul=document.createElement('ul');
   for(const x of parts){const li=document.createElement('li');li.textContent=x.charAt(0).toUpperCase()+x.slice(1);ul.appendChild(li);}q.appendChild(ul);}
+ const el=document.getElementById('rules');el.style.display='block';el.scrollTop=0;rulesOpen=true;editing=true;history.pushState({r:1},'');snd.on();}
+async function openDiary(){let j=null;try{j=await (await post('/api/diary',{})).json();}catch(e){}
+ if(!j||!j.ok)return;document.querySelector('#rules .top h1').textContent='Tagebuch';const box=document.getElementById('rtext');box.innerHTML='';
+ const lead=document.createElement('p');lead.className='lead';lead.textContent='Was Leyla im Chat und zu Hause erlebt hat, die letzten 30 Tage. Sie selbst erinnert sich an Älteres nur noch ungefähr.';box.appendChild(lead);
+ if(!j.items.length){const e=document.createElement('p');e.textContent='Noch keine Einträge.';box.appendChild(e);}
+ for(const x of j.items){const p=document.createElement('p');p.className='dy';const m=document.createElement('span');m.className='dm';
+  const d=new Date(x.t*1000);m.textContent=d.toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})+'  ·  '+(x.src==='chat'?'💬 Chat':'🏠 Zuhause')+'  ·  '+(x.who||'unbekannt')+(x.privat?'  ·  🔒':'');
+  p.append(m,document.createTextNode(x.text));box.appendChild(p);}
  const el=document.getElementById('rules');el.style.display='block';el.scrollTop=0;rulesOpen=true;editing=true;history.pushState({r:1},'');snd.on();}
 function closeRules(){document.getElementById('rules').style.display='none';rulesOpen=false;editing=false;}
 document.getElementById('rback').onclick=()=>history.back();
@@ -694,7 +702,7 @@ async def _lamp_api(lamp, method: str, path: str, body: bytes):
 
 async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "", rules=None,
                   chat=None, voice=None, mailer=None, google=None, inbox=None,
-                  mood=None, reminders=None) -> None:
+                  mood=None, reminders=None, diary=None) -> None:
     try:
         head = await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), timeout=10)
         lines = head.decode("latin-1").split("\r\n")
@@ -788,6 +796,14 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                 elif path == "/api/mail/trash_discard" and inbox:
                     out = {"ok": inbox.discard(str(d.get("id", "")))}
             await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
+        elif method == "POST" and path == "/api/diary":
+            out = {"ok": False}
+            if unlocked and diary:
+                out = {"ok": True, "items": [
+                    {"t": e.get("t", 0), "who": (e.get("who") or "").split(" ")[0], "src": e.get("src", ""),
+                     "privat": bool(e.get("privat")), "text": e.get("lang", "")}
+                    for e in sorted(diary.entries(), key=lambda x: -x.get("t", 0))]}
+            await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
         elif method == "POST" and path.startswith("/api/remind/"):
             out = {"ok": False}
             if unlocked and reminders and reminders.available:
@@ -848,11 +864,12 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
 async def start_http(store: memory.MemoryStore, sync: Optional[object] = None,
                      host: str = "0.0.0.0", port: int = 8082, lamp: Optional[object] = None,
                      code_phrase: str = "", rules=None, chat=None, voice=None,
-                     mailer=None, google=None, inbox=None, mood=None, reminders=None):
+                     mailer=None, google=None, inbox=None, mood=None, reminders=None,
+                     diary=None):
     """`rules`: a function that returns Leyla's instructions without memory and without the
     code word; shown read only after the code word."""
     server = await asyncio.start_server(
         lambda r, w: _handle(store, sync, r, w, lamp, code_phrase, rules, chat, voice, mailer, google,
-                          inbox, mood, reminders), host, port)
+                          inbox, mood, reminders, diary), host, port)
     logger.info("Memory page on port %d", port)
     return server

@@ -282,3 +282,34 @@ def test_mail_routes_need_the_code_word(tmp_path, monkeypatch):
     assert out["ok"] and out["drafts"][0]["to"] == "Ayşe"
     assert asyncio.run(go("/api/mail/discard", "Sonne Mond", {"id": d["id"]})) == {"ok": True}
     assert "mailCard" in memory_web.PAGE and "/api/mail/send" in memory_web.PAGE
+
+
+def test_diary_folder_needs_the_code_word_and_shows_chat_and_home(tmp_path, monkeypatch):
+    from app import diary
+    monkeypatch.setitem(memory_web._code_fails, "n", 0)
+    monkeypatch.setitem(memory_web._code_fails, "until", 0.0)
+    dy = diary.Diary(str(tmp_path / "dy.json"))
+    entry = {"wichtig": True, "lang": "Wir haben über den Zahnarzt gesprochen.", "mittel": "m", "kurz": "k"}
+    import time
+    dy.add(entry, "Metin Taskiran", "stimme", now=time.time() - 60)
+    dy.add(dict(entry, lang="Im Chat geflirtet.", privat=True), "Metin", "chat", now=time.time())
+    s = _store(tmp_path)
+
+    async def go(code):
+        server = await memory_web.start_http(s, None, host="127.0.0.1", port=0,
+                                             code_phrase="Leyla Sonne Mond", diary=dy)
+        port = server.sockets[0].getsockname()[1]
+        body = json.dumps({"code": code}).encode()
+        r, w = await asyncio.open_connection("127.0.0.1", port)
+        w.write(b"POST /api/diary HTTP/1.1\r\nContent-Length: %d\r\n\r\n" % len(body) + body)
+        await w.drain()
+        data = await r.read()
+        w.close()
+        server.close()
+        return json.loads(data.split(b"\r\n\r\n", 1)[1])
+
+    assert asyncio.run(go("falsch")) == {"ok": False}
+    out = asyncio.run(go("Sonne Mond"))
+    assert [x["src"] for x in out["items"]] == ["chat", "stimme"]  # newest first
+    assert out["items"][1]["who"] == "Metin" and out["items"][0]["privat"] is True
+    assert "openDiary" in memory_web.PAGE and "'Tagebuch'" in memory_web.PAGE

@@ -35,7 +35,7 @@ import dotenv
 import websockets
 
 from app.audio_recorder import AudioRecorder
-from app import agenda, gcontacts, inbox, mail, memory, memory_web, mood, reminders, variety
+from app import agenda, diary, gcontacts, inbox, mail, memory, memory_web, mood, reminders, variety
 from app import context
 from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, pcm_level
 from app.live_link import END_CONVERSATION_TOOL
@@ -180,6 +180,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self.mood = mood.Mood()  # Leyla's ups and downs: app chat, and voice after the code word
         self.reminders = reminders.Reminders(self.agenda, converse=self._converse)
         self.variety = variety.Variety()  # her last openings, so she never sounds the same
+        self.diary = diary.Diary()  # what she talked about in the last month, fading
         self.technik = technik.TechnikChecker(
             notify=self.messages.push if self.messages.available else None)
         self.technik.lamp_count = len(self.lights.entities)
@@ -356,7 +357,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         # not listed, or she claims to have done them (2.84.10: "Metin'e ilettim" in the chat)
         rules = persona.build([], fan=False, tv=False, messages=False,
                               extra=self.instructions)
-        rules += self.variety.note() + await self.reminders.followup_note()
+        rules += (self.diary.note("Metin", private=True) + self.variety.note()
+                  + await self.reminders.followup_note())
         out = await chat.answer(self.openai_api_key, [self.memory_model, self.backend_model],
                                 rules, self.memory, history, message,
                                 url=os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL),
@@ -370,6 +372,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                                 mood=self.mood)
         if out:
             self.variety.add([out["reply"]])
+            self.diary.chat_turn(message, out["reply"])
             logger.info("Chat with Metin in the app: answered, %d proposals, %d light commands",
                         len(out["proposals"]), len(out["lights"]))
         return out
@@ -533,6 +536,9 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         if name.split()[0] == "Metin" and not state.get("unlocked"):
             state["metin_known"] = True  # her moods may show, but only in a real talk
             await self._send_note(live_ws, "mood", MOOD_WITHOUT_CODE + self.mood.voice_note())
+        past = self.diary.note(name, private=bool(state.get("unlocked")))
+        if past:
+            await self._send_note(live_ws, "diary", "Interne Notiz, nicht vorlesen." + past)
         if name.split()[0] == "Metin":  # how did his appointment go? (once per appointment)
             follow = await self.reminders.followup_note()
             if follow:
@@ -700,8 +706,9 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                     logger.info("Greeting requested")
                 return event
 
-    async def _reminder_loop(self) -> None:
-        """Appointment reminders (app/reminders.py), checked every minute."""
+    async def _minute_loop(self) -> None:
+        """Every minute: appointment reminders (app/reminders.py) and the diary entry of a chat
+        that has paused (app/diary.py)."""
         while True:
             await asyncio.sleep(60)
             if self.reminders.available:
@@ -709,6 +716,15 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                     await self.reminders.tick()
                 except Exception as e:
                     logger.warning("Reminders: %s", e)
+            chat_talk = self.diary.chat_due()
+            if chat_talk and self.openai_api_key:
+                try:
+                    await self.diary.write(chat_talk, "Metin", "chat", self.openai_api_key,
+                                           [self.memory_model, self.backend_model],
+                                           os.environ.get("OPENAI_RESPONSES_URL",
+                                                          memory.RESPONSES_URL))
+                except Exception as e:
+                    logger.warning("Diary of the chat: %s", e)
 
     async def _converse(self, prompt: str) -> bool:
         """Bring something up in a conversation: in the running one, or Leyla starts a
@@ -1207,6 +1223,10 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         if reason != "no_speech" and any(sp == "user" for sp, _ in state.get("dialog", [])):
             self.variety.add([t for sp, t in state.get("dialog", []) if sp == "bot"])
         try:
+            self._schedule_diary(state, reason)
+        except Exception as e:
+            logger.warning("Could not start the diary entry: %s", e)
+        try:
             self._schedule_rude_report(state)
         except Exception as e:
             logger.warning("Could not start the rudeness report: %s", e)
@@ -1358,7 +1378,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             self._in_background(self.todo_sync.run())
         if self.enable_memory and self.openai_api_key:
             self._in_background(self._cleanup_loop())
-        self._in_background(self._reminder_loop())
+        self._in_background(self._minute_loop())
         if self.enable_memory:
             try:
                 await memory_web.start_http(self.memory, self.todo_sync,
@@ -1367,7 +1387,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                                             rules=self._readable_rules, chat=self._chat,
                                             voice=self._chat_voice, mailer=self.mailer,
                                             google=self.google, inbox=self.inbox,
-                                            mood=self.mood, reminders=self.reminders)
+                                            mood=self.mood, reminders=self.reminders,
+                                            diary=self.diary)
             except Exception as e:
                 logger.warning("Memory page could not start: %s", e)
         if self.messages.available:

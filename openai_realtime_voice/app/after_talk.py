@@ -54,6 +54,21 @@ class AfterTalkMixin:
         self._memory_tasks.add(task)
         task.add_done_callback(self._memory_tasks.discard)
 
+    def _schedule_diary(self, state: dict, reason: str = "") -> None:
+        """A diary entry of the talk (app/diary.py), for the person who talked."""
+        dialog = [d for d in state.get("dialog", []) if d[1].strip()]
+        said = sum(len(t) for s, t in dialog if s == "user")
+        if (not self.enable_memory or not self.openai_api_key or reason == "no_speech"
+                or said < 15 or not any(s == "bot" for s, _ in dialog)):
+            return
+        known = sorted(state.get("identified") or [])
+        who = "Metin" if state.get("unlocked") else (known[0] if len(known) == 1 else "")
+        task = asyncio.create_task(self.diary.write(
+            dialog, who, "stimme", self.openai_api_key, [self.memory_model, self.backend_model],
+            os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL)))
+        self._memory_tasks.add(task)
+        task.add_done_callback(self._memory_tasks.discard)
+
     def _schedule_rude_report(self, state: dict) -> None:
         """Leyla said she would tell Metin: after the talk she does, in her own words."""
         dialog = [d for d in state.get("dialog", []) if d[1].strip()]
