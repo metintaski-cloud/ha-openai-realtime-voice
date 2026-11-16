@@ -28,6 +28,7 @@ KEEP_S = 30 * DAY
 FADE = ((3 * DAY, "lang"), (14 * DAY, "mittel"), (KEEP_S, "kurz"))
 MAX_NOTE = 5000         # characters she gets at most; the oldest are dropped first
 MAX_ENTRIES = 300
+MAX_PINNED = 20         # entries Metin keeps for good (🔑, 2.96.0): never fade, never deleted
 RECENT_S = 12 * 3600     # the last chat turns stay word for word this long (2.94.6)
 RECENT_PAIRS = 10        # message and answer pairs kept word for word
 CHAT_PAUSE_S = 5 * 60   # a chat counts as one talk after 5 minutes without a message (30 until 2.94.1)
@@ -131,7 +132,9 @@ class Diary:
 
     def _save(self, items: list) -> None:
         cut = time.time() - KEEP_S
-        items = [e for e in items if e.get("t", 0) > cut][-MAX_ENTRIES:]
+        pinned = [e for e in items if e.get("fest")]
+        rest = [e for e in items if not e.get("fest") and e.get("t", 0) > cut][-MAX_ENTRIES:]
+        items = sorted(pinned + rest, key=lambda e: e.get("t", 0))
         os.makedirs(os.path.dirname(self.path) or ".", exist_ok=True)
         tmp = self.path + ".tmp"
         with open(tmp, "w", encoding="utf-8") as f:
@@ -159,6 +162,22 @@ class Diary:
             self._save(kept)
             logger.info("Diary: %d entries deleted in the app", len(items) - len(kept))
         return len(items) - len(kept)
+
+    def pin(self, stamp) -> dict:
+        """🔑 in the app: keep an entry for good, or let it fade again."""
+        try:
+            t = round(float(stamp), 3)
+        except (TypeError, ValueError):
+            return {"ok": False}
+        items = self.entries()
+        for e in items:
+            if round(float(e.get("t", 0)), 3) == t:
+                if not e.get("fest") and sum(1 for x in items if x.get("fest")) >= MAX_PINNED:
+                    return {"ok": False, "error": f"Höchstens {MAX_PINNED} festgehaltene Einträge."}
+                e["fest"] = not e.get("fest")
+                self._save(items)
+                return {"ok": True, "fest": e["fest"]}
+        return {"ok": False}
 
     # ---- writing an entry ----
     async def write(self, dialog: list, who, source: str, api_key: str, models: list,
@@ -257,8 +276,15 @@ class Diary:
     def note(self, who: str, private: bool = False, now: Optional[float] = None) -> str:
         now = now or time.time()
         me = _first(who)
-        lines = []
-        for e in sorted(self.entries(), key=lambda x: -x.get("t", 0)):  # newest first, oldest cut
+        lines, kept = [], []
+        mine = [e for e in self.entries() if (private or not e.get("privat"))
+                and _first(e.get("who", "")) in (me, "")]
+        for e in sorted((e for e in mine if e.get("fest")), key=lambda x: x.get("t", 0)):
+            day = time.strftime("%d.%m.%Y", time.localtime(e.get("t", 0)))
+            kept.append(f"• am {day}: {e.get('lang', '')}")
+        for e in sorted(mine, key=lambda x: -x.get("t", 0)):  # newest first, oldest cut
+            if e.get("fest"):
+                continue
             age = now - e.get("t", 0)
             key = _level(age)
             if not key or (e.get("privat") and not private):
@@ -266,12 +292,13 @@ class Diary:
             if _first(e.get("who", "")) not in (me, ""):
                 continue
             line = f"• {_age_label(age)}: {e.get(key, '')}"
-            if sum(len(x) for x in lines) + len(line) > MAX_NOTE:
+            if sum(len(x) for x in kept + lines) + len(line) > MAX_NOTE:
                 break
             lines.append(line)
+        fixed = ("\n\nFESTE ERINNERUNGEN (für immer, mit Datum)\n" + "\n".join(kept)) if kept else ""
         if not lines:
-            return ""
-        return ("\n\nDEIN TAGEBUCH DER LETZTEN WOCHEN (was du erlebt hast; je älter, desto "
+            return fixed
+        return fixed + ("\n\nDEIN TAGEBUCH DER LETZTEN WOCHEN (was du erlebt hast; je älter, desto "
                 "blasser)\n• Nutze es wie echte Erinnerung, natürlich und nur wenn es passt; "
                 "Älteres nur ungefähr ('vor ein paar Wochen hast du mal erzählt ...'). Bei "
                 "Widersprüchen gilt immer das Neueste: der letzte Eintrag hier schlägt ältere "

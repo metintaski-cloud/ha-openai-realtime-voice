@@ -183,3 +183,24 @@ def test_metin_deletes_single_entries(tmp_path):
     dy.add(e, "Metin", "chat", now=NOW - 5)
     t = dy.entries()[0]["t"]
     assert dy.delete([t, "x"]) == 1 and len(dy.entries()) == 1 and dy.delete([t]) == 0
+
+
+def test_pinned_entries_never_fade_and_have_a_limit(tmp_path, monkeypatch):
+    dy = diary.Diary(str(tmp_path / "d.json"))
+    e = {"wichtig": True, "lang": "Am ersten Abend hat Metin mir ein Lied vorgesungen.", "mittel": "m", "kurz": "k"}
+    old = NOW - 40 * DAY
+    monkeypatch.setattr(diary.time, "time", lambda: old)
+    dy.add(e, "Metin", "stimme")
+    t = dy.entries()[0]["t"]
+    assert dy.pin(t) == {"ok": True, "fest": True}
+    monkeypatch.setattr(diary.time, "time", lambda: NOW)
+    dy.add(dict(e, lang="neu"), "Metin", "chat")  # saving drops everything older than 30 days
+    assert any(x.get("fest") for x in dy.entries())
+    note = dy.note("Metin", now=NOW)
+    assert "FESTE ERINNERUNGEN" in note and "Lied vorgesungen" in note and "am " in note
+    assert "Lied" not in dy.note("Gülfikar", now=NOW)
+    assert dy.pin(t) == {"ok": True, "fest": False}
+    for i in range(diary.MAX_PINNED):
+        dy.add(dict(e, lang=f"x{i}"), "Metin", "chat", now=NOW + i + 1)
+        dy.pin(NOW + i + 1)
+    assert "error" in dy.pin(NOW)  # the 21st

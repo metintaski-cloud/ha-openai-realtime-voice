@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add on 2.96.0 (Metin's wish): 🔑 in the diary folder keeps an entry for good: it never fades, is never deleted after 30 days and goes to Leyla in full length with its date in its own section "FESTE ERINNERUNGEN" (at most 20, `Diary.pin`, `POST /api/diary/pin`); tapping the key again lets it fade normally.
+
 - Add on 2.95.10: the tick boxes in the diary folder sit on the left like in the other lists (Metin's wish).
 
 - Add on 2.95.9 (Metin's wish): in the app folder "Tagebuch" each entry has a tick box and "Markierte löschen" deletes the ticked ones at once (`Diary.delete`, `POST /api/diary/delete`, code word).

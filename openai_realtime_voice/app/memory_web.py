@@ -269,7 +269,7 @@ button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 #rules .top button{width:auto;font-size:26px;line-height:1;padding:6px 14px;box-shadow:none;background:#1b2a6b;border:1px solid #3b82f688}
 #rules p{margin:0 12px 8px;padding:12px 14px;background:#0d1750cc;border:1px solid #3b82f655;border-radius:12px;white-space:pre-wrap;word-break:break-word}
 #rules ul{margin:8px 0 0;padding-left:20px;white-space:normal}#rules li{margin:6px 0}
-#rules .dm{display:block;color:#9fb4ff;font-size:13px;margin-bottom:4px}#rules p.dy{position:relative;padding-left:50px}#rules .dyc{position:absolute;left:14px;top:14px;width:24px;height:24px;accent-color:#d946ef}#rules p.dy.sel{border-color:#d946ef;background:#2a0f45cc}#dydel{position:sticky;bottom:12px;display:block;margin:12px auto;width:calc(100% - 24px)}#dydel:disabled{opacity:.5}#rules .lead{background:none;border:0;color:#9fb4ff;padding:4px 16px}
+#rules .dm{display:block;color:#9fb4ff;font-size:13px;margin-bottom:4px}#rules p.dy{position:relative;padding-left:50px;padding-right:52px}#rules .dyk{position:absolute;right:10px;top:8px;width:auto;padding:4px 8px;font-size:18px;background:none;border:1px solid #47556988;box-shadow:none;filter:grayscale(1);opacity:.55}#rules .dyk.on{filter:none;opacity:1;border-color:#fbbf24;background:#3a2a0a}#rules .dyk.err{border-color:#f87171}#rules p.dy.fest{border-color:#fbbf2499}#rules .dyc{position:absolute;left:14px;top:14px;width:24px;height:24px;accent-color:#d946ef}#rules p.dy.sel{border-color:#d946ef;background:#2a0f45cc}#dydel{position:sticky;bottom:12px;display:block;margin:12px auto;width:calc(100% - 24px)}#dydel:disabled{opacity:.5}#rules .lead{background:none;border:0;color:#9fb4ff;padding:4px 16px}
 #splash{position:fixed;inset:0;z-index:100;background:#000;display:flex;align-items:center;justify-content:center;transition:opacity .45s}
 #splash.out{opacity:0;pointer-events:none}
 .sp{position:relative;width:220px;height:220px}
@@ -576,13 +576,15 @@ for(const q of box.querySelectorAll('p:not(.lead)')){const t=q.textContent,m='(D
  const el=document.getElementById('rules');el.style.display='block';el.scrollTop=0;rulesOpen=true;editing=true;history.pushState({r:1},'');snd.on();}
 async function openDiary(){let j=null;try{j=await (await post('/api/diary',{})).json();}catch(e){}
  if(!j||!j.ok)return;document.querySelector('#rules .top h1').textContent='Tagebuch';const box=document.getElementById('rtext');box.innerHTML='';
- const lead=document.createElement('p');lead.className='lead';lead.textContent='Was Leyla im Chat und zu Hause erlebt hat, die letzten 30 Tage. Sie selbst erinnert sich an Älteres nur noch ungefähr.';box.appendChild(lead);
+ const lead=document.createElement('p');lead.className='lead';lead.textContent='Was Leyla im Chat und zu Hause erlebt hat, die letzten 30 Tage. Sie selbst erinnert sich an Älteres nur noch ungefähr. Mit 🔑 hältst du einen Eintrag für immer fest ('+j.items.filter(x=>x.fest).length+' von 20).';box.appendChild(lead);
  if(!j.items.length){const e=document.createElement('p');e.textContent='Noch keine Einträge.';box.appendChild(e);}
  const dsel=new Set();const db=document.createElement('button');db.id='dydel';db.disabled=true;db.textContent='Markierte löschen';
  const dup=()=>{db.disabled=!dsel.size;db.textContent=dsel.size?dsel.size+' markierte löschen':'Markierte löschen';};
  db.onclick=async()=>{if(!dsel.size)return;let r={ok:false};try{r=await (await post('/api/diary/delete',{ids:[...dsel]})).json();}catch(_){}if(r.ok){snd.del();openDiaryRefresh();}};
  for(const x of j.items){const p=document.createElement('p');p.className='dy';const cb=document.createElement('input');cb.type='checkbox';cb.className='dyc';
-  cb.onchange=()=>{if(cb.checked)dsel.add(x.t);else dsel.delete(x.t);p.classList.toggle('sel',cb.checked);snd[cb.checked?'on':'off']();dup();};p.appendChild(cb);const m=document.createElement('span');m.className='dm';
+  cb.onchange=()=>{if(cb.checked)dsel.add(x.t);else dsel.delete(x.t);p.classList.toggle('sel',cb.checked);snd[cb.checked?'on':'off']();dup();};p.appendChild(cb);
+  const k=document.createElement('button');k.className='dyk'+(x.fest?' on':'');k.textContent='🔑';k.title=x.fest?'Festgehalten, tippen zum Lösen':'Für immer festhalten';
+  k.onclick=async()=>{let r={ok:false};try{r=await (await post('/api/diary/pin',{id:x.t})).json();}catch(_){}if(r.ok){snd[r.fest?'on':'off']();openDiary();}else if(r.error){k.title=r.error;k.classList.add('err');}};p.appendChild(k);if(x.fest)p.classList.add('fest');const m=document.createElement('span');m.className='dm';
   const d=new Date(x.t*1000);m.textContent=d.toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})+'  ·  '+(x.src==='chat'?'💬 Chat':'🏠 Zuhause')+'  ·  '+(x.who||'unbekannt')+(x.privat?'  ·  🔒':'');
   p.append(m,document.createTextNode(x.text));box.appendChild(p);}
  if(j.items.length)box.appendChild(db);
@@ -821,6 +823,9 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                 except Exception as e:
                     logger.warning("New chat: %s", e)
             await _respond(writer, "200 OK", "application/json", json.dumps({"ok": ok}))
+        elif method == "POST" and path == "/api/diary/pin":
+            out = diary.pin(d.get("id")) if (unlocked and diary) else {"ok": False}
+            await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
         elif method == "POST" and path == "/api/diary/delete":
             n = diary.delete(d.get("ids") or []) if (unlocked and diary) else 0
             await _respond(writer, "200 OK", "application/json", json.dumps({"ok": n > 0, "deleted": n}))
@@ -829,7 +834,8 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
             if unlocked and diary:
                 out = {"ok": True, "items": [
                     {"t": e.get("t", 0), "who": (e.get("who") or "").split(" ")[0], "src": e.get("src", ""),
-                     "privat": bool(e.get("privat")), "text": e.get("lang", "")}
+                     "privat": bool(e.get("privat")), "text": e.get("lang", ""),
+                     "fest": bool(e.get("fest"))}
                     for e in sorted(diary.entries(), key=lambda x: -x.get("t", 0))]}
             await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
         elif method == "POST" and path.startswith("/api/remind/"):
