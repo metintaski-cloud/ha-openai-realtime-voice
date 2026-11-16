@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add on 2.94.7: `GET /api/wakestats` on the memory page port (counts only, no content): per day the talks woken by the wake word and how many were false wakes (`metrics.wake_stats` from `session_end`, Leyla's own talks left out), plus the number of kept false wake recordings.
+
 - Add on 2.94.6 (Metin: two minutes after "Neuer Chat" she had forgotten; the log showed the diary entry was written at 15:00:57, but a short summary in the long rules did not carry the thread): the server now keeps the last 10 message pairs of the last 12 hours word for word (`Diary.with_last_chat`, `RECENT_PAIRS`, `RECENT_S`) and gives them to her as the real chat history, across "Neuer Chat"; the talk at home after the code word gets the same words (`chat_text`).
 
 - Add on 2.94.5: "Neuer Chat" starts at once without the browser question (Metin's wish; the chat goes into the diary anyway, nothing is lost).

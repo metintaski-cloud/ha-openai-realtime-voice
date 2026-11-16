@@ -796,6 +796,16 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                 elif path == "/api/mail/trash_discard" and inbox:
                     out = {"ok": inbox.discard(str(d.get("id", "")))}
             await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
+        elif method == "GET" and path == "/api/wakestats":
+            # only counts, no content: false wakes per day and the kept recordings
+            from app import metrics
+            folder = os.environ.get("FALSE_WAKE_DIR", "/data/false_wakes")
+            try:
+                files = len([f for f in os.listdir(folder) if f.endswith(".wav")])
+            except OSError:
+                files = 0
+            out = {"tage": metrics.wake_stats(metrics.load()), "aufnahmen": files}
+            await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
         elif method == "POST" and path == "/api/chat_new":
             ok = False
             if unlocked and chat_new:

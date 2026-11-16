@@ -63,3 +63,17 @@ def mic_summary(stats: dict | None) -> dict:
             out[f"mic_{key}_peak_max"] = max(p for _, p in rows)
             out[f"mic_{key}_windows"] = len(rows)
     return out
+
+
+def wake_stats(entries: list, days: int = 14) -> list:
+    """Per day (newest first): talks woken by the wake word and how many of them were false
+    wakes (ended with no_speech). Talks Leyla started herself (followup) do not count."""
+    by_day: dict = {}
+    for e in entries:
+        if e.get("event") != "session_end" or e.get("followup"):
+            continue
+        day = time.strftime("%Y-%m-%d", time.localtime(e.get("ts", 0)))
+        d = by_day.setdefault(day, {"tag": day, "geweckt": 0, "fehlstarts": 0})
+        d["geweckt"] += 1
+        d["fehlstarts"] += e.get("reason") == "no_speech"
+    return [by_day[k] for k in sorted(by_day, reverse=True)[:days]]

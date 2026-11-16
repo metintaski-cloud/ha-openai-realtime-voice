@@ -313,3 +313,14 @@ def test_diary_folder_needs_the_code_word_and_shows_chat_and_home(tmp_path, monk
     assert [x["src"] for x in out["items"]] == ["chat", "stimme"]  # newest first
     assert out["items"][1]["who"] == "Metin" and out["items"][0]["privat"] is True
     assert "openDiary" in memory_web.PAGE and "'Tagebuch'" in memory_web.PAGE
+
+
+def test_wake_stats_count_only_wake_word_talks():
+    from app import metrics
+    t = 1_800_000_000
+    rows = [{"event": "session_end", "ts": t, "reason": "no_speech"},
+            {"event": "session_end", "ts": t + 60, "reason": "goodbye"},
+            {"event": "session_end", "ts": t + 120, "reason": "no_speech", "followup": True},
+            {"event": "ready", "ts": t}]
+    day = metrics.wake_stats(rows)[0]
+    assert day["geweckt"] == 2 and day["fehlstarts"] == 1
