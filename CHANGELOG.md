@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.99.6
+
+- Greeting scene for the black look: she looks at her shoes, notices you, waves and keeps smiling.
+
 ## 2.99.5
 
 - Talking scenes: while her voice plays (voice replies, live talk) the stage shows `spricht` clips (`sprichttraurig` when she is low), then back to her mood.
