@@ -174,3 +174,12 @@ def test_what_unknown_people_said_goes_to_every_talk_for_a_day(tmp_path):
     note = dy.unknown_note(now=NOW)
     assert "Fuß tut weh" in note and "Auge" not in note and "Alt" not in note and "rate nie" in note
     assert diary.parse('{"eintraege": []}') == []
+
+
+def test_metin_deletes_single_entries(tmp_path):
+    dy = diary.Diary(str(tmp_path / "d.json"))
+    e = {"wichtig": True, "lang": "l", "mittel": "m", "kurz": "k"}
+    dy.add(e, "Metin", "stimme", now=NOW - 10.123456)
+    dy.add(e, "Metin", "chat", now=NOW - 5)
+    t = dy.entries()[0]["t"]
+    assert dy.delete([t, "x"]) == 1 and len(dy.entries()) == 1 and dy.delete([t]) == 0

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add on 2.95.9 (Metin's wish): in the app folder "Tagebuch" each entry has a tick box and "Markierte löschen" deletes the ticked ones at once (`Diary.delete`, `POST /api/diary/delete`, code word).
+
 - Add on 2.95.8 (Metin's test 17:19: an unknown speaker said his foot hurts, in the next talk the unknown speaker asked and she did not know, she only found it after he said who he was): what unknown speakers told her in the last 24 hours now goes into every talk at the start (`Diary.unknown_note`), written down as said but without guessing who; asked about it, she tells what she was told and asks whether it was them. An empty answer of the diary model counts as nothing to write instead of an error.
 
 - Add on 2.95.7 (memory test 17:01: asked "nerem ağrıyor" before she knew who it was, she answered "boğaz" from an old test entry in her own story, and only after asking who it was she knew it right): a recall question from a speaker not known yet now sends a note at once to ask who it is first and answer after (`phrases.RECALL_RE`, `RECALL_NUDGE`, `main._maybe_ask_who_before_recall`), and the memory summarizer no longer writes health, complaints, tests or games of single people into Leyla's own story.

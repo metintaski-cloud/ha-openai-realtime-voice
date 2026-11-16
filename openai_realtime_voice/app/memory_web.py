@@ -269,7 +269,7 @@ button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 #rules .top button{width:auto;font-size:26px;line-height:1;padding:6px 14px;box-shadow:none;background:#1b2a6b;border:1px solid #3b82f688}
 #rules p{margin:0 12px 8px;padding:12px 14px;background:#0d1750cc;border:1px solid #3b82f655;border-radius:12px;white-space:pre-wrap;word-break:break-word}
 #rules ul{margin:8px 0 0;padding-left:20px;white-space:normal}#rules li{margin:6px 0}
-#rules .dm{display:block;color:#9fb4ff;font-size:13px;margin-bottom:4px}#rules .lead{background:none;border:0;color:#9fb4ff;padding:4px 16px}
+#rules .dm{display:block;color:#9fb4ff;font-size:13px;margin-bottom:4px}#rules p.dy{position:relative;padding-right:46px}#rules .dyc{position:absolute;right:12px;top:12px;width:24px;height:24px;accent-color:#d946ef}#rules p.dy.sel{border-color:#d946ef;background:#2a0f45cc}#dydel{position:sticky;bottom:12px;display:block;margin:12px auto;width:calc(100% - 24px)}#dydel:disabled{opacity:.5}#rules .lead{background:none;border:0;color:#9fb4ff;padding:4px 16px}
 #splash{position:fixed;inset:0;z-index:100;background:#000;display:flex;align-items:center;justify-content:center;transition:opacity .45s}
 #splash.out{opacity:0;pointer-events:none}
 .sp{position:relative;width:220px;height:220px}
@@ -578,10 +578,16 @@ async function openDiary(){let j=null;try{j=await (await post('/api/diary',{})).
  if(!j||!j.ok)return;document.querySelector('#rules .top h1').textContent='Tagebuch';const box=document.getElementById('rtext');box.innerHTML='';
  const lead=document.createElement('p');lead.className='lead';lead.textContent='Was Leyla im Chat und zu Hause erlebt hat, die letzten 30 Tage. Sie selbst erinnert sich an Älteres nur noch ungefähr.';box.appendChild(lead);
  if(!j.items.length){const e=document.createElement('p');e.textContent='Noch keine Einträge.';box.appendChild(e);}
- for(const x of j.items){const p=document.createElement('p');p.className='dy';const m=document.createElement('span');m.className='dm';
+ const dsel=new Set();const db=document.createElement('button');db.id='dydel';db.disabled=true;db.textContent='Markierte löschen';
+ const dup=()=>{db.disabled=!dsel.size;db.textContent=dsel.size?dsel.size+' markierte löschen':'Markierte löschen';};
+ db.onclick=async()=>{if(!dsel.size)return;let r={ok:false};try{r=await (await post('/api/diary/delete',{ids:[...dsel]})).json();}catch(_){}if(r.ok){snd.del();openDiaryRefresh();}};
+ for(const x of j.items){const p=document.createElement('p');p.className='dy';const cb=document.createElement('input');cb.type='checkbox';cb.className='dyc';
+  cb.onchange=()=>{if(cb.checked)dsel.add(x.t);else dsel.delete(x.t);p.classList.toggle('sel',cb.checked);snd[cb.checked?'on':'off']();dup();};p.appendChild(cb);const m=document.createElement('span');m.className='dm';
   const d=new Date(x.t*1000);m.textContent=d.toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})+'  ·  '+(x.src==='chat'?'💬 Chat':'🏠 Zuhause')+'  ·  '+(x.who||'unbekannt')+(x.privat?'  ·  🔒':'');
   p.append(m,document.createTextNode(x.text));box.appendChild(p);}
- const el=document.getElementById('rules');el.style.display='block';el.scrollTop=0;rulesOpen=true;editing=true;history.pushState({r:1},'');snd.on();}
+ if(j.items.length)box.appendChild(db);
+ const el=document.getElementById('rules');if(el.style.display!=='block'){el.style.display='block';el.scrollTop=0;rulesOpen=true;editing=true;history.pushState({r:1},'');snd.on();}}
+function openDiaryRefresh(){openDiary();}
 function closeRules(){document.getElementById('rules').style.display='none';rulesOpen=false;editing=false;}
 document.getElementById('rback').onclick=()=>history.back();
 window.addEventListener('popstate',()=>{if(rulesOpen)closeRules();});
@@ -815,6 +821,9 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                 except Exception as e:
                     logger.warning("New chat: %s", e)
             await _respond(writer, "200 OK", "application/json", json.dumps({"ok": ok}))
+        elif method == "POST" and path == "/api/diary/delete":
+            n = diary.delete(d.get("ids") or []) if (unlocked and diary) else 0
+            await _respond(writer, "200 OK", "application/json", json.dumps({"ok": n > 0, "deleted": n}))
         elif method == "POST" and path == "/api/diary":
             out = {"ok": False}
             if unlocked and diary:

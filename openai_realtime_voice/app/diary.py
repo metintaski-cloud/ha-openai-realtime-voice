@@ -150,6 +150,16 @@ class Diary:
         logger.info("Diary: new entry (%s, %s)", source, _first(who) or "unknown")
         return True
 
+    def delete(self, stamps) -> int:
+        """Metin deletes entries in the app folder; an entry is named by its time stamp."""
+        wanted = {round(float(s), 3) for s in stamps if isinstance(s, (int, float))}
+        items = self.entries()
+        kept = [e for e in items if round(float(e.get("t", 0)), 3) not in wanted]
+        if len(kept) != len(items):
+            self._save(kept)
+            logger.info("Diary: %d entries deleted in the app", len(items) - len(kept))
+        return len(items) - len(kept)
+
     # ---- writing an entry ----
     async def write(self, dialog: list, who, source: str, api_key: str, models: list,
                     url: str) -> bool:
