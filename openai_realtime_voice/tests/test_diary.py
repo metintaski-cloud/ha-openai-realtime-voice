@@ -164,3 +164,13 @@ def test_each_statement_goes_to_the_person_who_said_it(tmp_path, monkeypatch):
     assert "Reise" in who["Ali"] and len(who) == 3
     metin = dy.note("Metin", now=dy.entries()[0]["t"])
     assert "Auge" in metin and "Knie" not in metin and "Reise" not in metin
+
+
+def test_what_unknown_people_said_goes_to_every_talk_for_a_day(tmp_path):
+    dy = diary.Diary(str(tmp_path / "d.json"))
+    dy.add({"wichtig": True, "lang": "l", "mittel": "Jemand sagte, sein Fuß tut weh.", "kurz": "k"}, "", "stimme", now=NOW - 600)
+    dy.add({"wichtig": True, "lang": "l", "mittel": "Metin: Auge", "kurz": "k"}, "Metin", "stimme", now=NOW - 500)
+    dy.add({"wichtig": True, "lang": "l", "mittel": "Alt", "kurz": "k"}, "", "stimme", now=NOW - 2 * DAY)
+    note = dy.unknown_note(now=NOW)
+    assert "Fuß tut weh" in note and "Auge" not in note and "Alt" not in note and "rate nie" in note
+    assert diary.parse('{"eintraege": []}') == []

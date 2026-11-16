@@ -320,7 +320,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             "session": {
                 "model": self.live_model,
                 "instructions": (self._instructions_with_memory() + live_extra
-                                 + self.variety.note() + extra),
+                                 + self.variety.note() + self.diary.unknown_note() + extra),
                 "audio": {
                     "format": {"type": "audio/pcm", "rate": SAMPLE_RATE},
                     "output": {"voice": self.voice},

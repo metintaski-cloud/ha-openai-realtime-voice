@@ -56,7 +56,8 @@ RECALL_NUDGE = (
     "Interne Notiz, nicht vorlesen: Die Person fragt nach etwas, das sie dir erzählt hat, und du "
     "weißt noch nicht sicher, wer spricht. Beantworte es jetzt noch nicht und rate nichts: Frag "
     "zuerst kurz und freundlich, wer da ist, in ihrer Sprache. Sobald du es weißt, bekommst du "
-    "deine Erinnerung an diese Person und antwortest dann.")
+    "deine Erinnerung an diese Person und antwortest dann. Sagt sie es nicht, darfst du "
+    "erzählen, was dir ein Unbekannter vorhin gesagt hat, und fragen, ob sie das war.")
 WHO_NUDGE = (
     "Interne Notiz, nicht vorlesen: Du weißt noch nicht, wer mit dir spricht, und hast noch "
     "nicht gefragt. Ist das, was die Person gerade sagt, kein kurzer Befehl, dann beantworte "
