@@ -9,6 +9,7 @@ still never deletes or changes anything by herself.
 """
 import json
 import logging
+import random
 import re
 from typing import Optional
 
@@ -119,6 +120,20 @@ def valid_proposals(raw, lists: dict) -> list[dict]:
 def no_dashes(text: str) -> str:
     """Metin reads dashes as machine written; the style rule alone did not stop them."""
     return re.sub(r"\s*[—–]\s*", ", ", text or "").replace(" ,", ",")
+
+
+# Now and then a question that jumps to another topic, like a person who suddenly remembers
+# something (Metin, 16 Nov 2026: he writes what he ate, she asks whether he made his appointment).
+SPONTANEOUS_CHANCE = 0.3
+SPONTANEOUS_NOTE = """
+
+PLÖTZLICHER EINFALL (nur diesmal)
+• Wenn du diesmal fragst, dann darf die Frage ruhig ein ganz anderes Thema aufgreifen als seine Nachricht, so wie einem Menschen mitten im Gespräch plötzlich etwas einfällt: ein Termin von heute, etwas aus deinem Tagebuch, ein offener Punkt aus seinem Profil oder etwas, das er früher erzählt hat (zum Beispiel er schreibt, was er gegessen hat, und du fragst: "Sag mal, hast du deinen Termin heute eigentlich geschafft?"). Geh erst kurz auf seine Nachricht ein, dann der Einfall, natürlich und nicht erzwungen. Nie bei etwas Ernstem oder Traurigem."""
+
+
+def spontaneous_note(history, rng=random) -> str:
+    """Sometimes, when her last answer did not ask, the next question may change the topic."""
+    return SPONTANEOUS_NOTE if not _asked_last(history) and rng.random() < SPONTANEOUS_CHANCE else ""
 
 
 def _asked_last(history) -> bool:

@@ -272,3 +272,36 @@ def test_no_counter_question_twice_in_a_row():
     assert c._asked_last([{"role": "user", "text": "hi"}, {"role": "leyla", "text": "Hey, alles gut?"}])
     assert not c._asked_last([{"role": "leyla", "text": "Schön."}, {"role": "user", "text": "ja"}])
     assert "nie zweimal hintereinander" in c.CHAT_STYLE
+
+
+def test_now_and_then_a_question_on_another_topic():
+    import random
+    from app import chat as c
+    asked = [{"role": "leyla", "text": "Und du?"}]
+    calm = [{"role": "leyla", "text": "Schön."}]
+    assert c.spontaneous_note(asked, random.Random(1)) == ""
+    hits = sum(bool(c.spontaneous_note(calm, random.Random(i))) for i in range(1000))
+    assert 250 < hits < 350 and "Termin" in c.SPONTANEOUS_NOTE
+
+
+def test_sudden_question_gets_todays_appointments():
+    import asyncio
+    from datetime import datetime
+    from app import main as m
+
+    class Ag:
+        available = True
+
+        @staticmethod
+        def tz():
+            from zoneinfo import ZoneInfo
+            return ZoneInfo("Europe/Berlin")
+
+        async def upcoming(self, t0, t1):
+            day = datetime.fromtimestamp(t0, self.tz()).date().isoformat()
+            return [{"titel": "Zahnarzt", "wann": "Mo 10:00", "start": {"dateTime": day + "T10:00:00+01:00"}},
+                    {"titel": "Morgen", "wann": "Di", "start": {"date": "2099-01-01"}}]
+    b = m.LiveVoiceBridge.__new__(m.LiveVoiceBridge)
+    b.agenda = Ag()
+    note = asyncio.run(b._today_agenda_note())
+    assert "Zahnarzt" in note and "Morgen" not in note

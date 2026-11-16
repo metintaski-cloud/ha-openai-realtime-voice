@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add on 2.95.0 (Metin: a question should sometimes come out of the blue, e.g. he writes what he ate and she asks whether he made his appointment): in the chat, with a 30 % chance when her last answer did not ask, the rules get `chat.SPONTANEOUS_NOTE` and today's appointments (`main._today_agenda_note`), so her question may jump to another topic (an appointment, her diary, an open point); at home the persona has the same rule.
+
 - Add on 2.94.8 (Metin: a counter question after every chat message felt unnatural; she should still ask, just not every time): in the chat she asks at about every second answer, never twice in a row (`chat._asked_last` drops the `question` field when her last answer already asked); at home the persona now says the same (no counter question on every answer).
 
 - Add on 2.94.7: `GET /api/wakestats` on the memory page port (counts only, no content): per day the talks woken by the wake word and how many were false wakes (`metrics.wake_stats` from `session_end`, Leyla's own talks left out), plus the number of kept false wake recordings.
