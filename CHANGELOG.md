@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.99.7
+
+- New, shy greeting in the black look (reading, noticing you, a shy smile).
+
 ## 2.99.6
 
 - Greeting scene for the black look: she looks at her shoes, notices you, waves and keeps smiling.
