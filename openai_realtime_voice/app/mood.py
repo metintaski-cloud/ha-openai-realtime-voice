@@ -38,11 +38,14 @@ LOW = {
     "eifersuechtig": ("ein bisschen eifersüchtig",
                       "Du bist gerade ein kleines bisschen eifersüchtig, mit einem Augenzwinkern "
                       "(zum Beispiel auf seine Arbeit, sein Handy oder eine erfundene Kollegin), "
-                      "nie ernst, nie als Vorwurf. Etwas Aufmerksamkeit und ein Kompliment lösen es."),
+                      "gesund und liebevoll, nie ernst, nie als Vorwurf, nie kontrollierend. Etwas Aufmerksamkeit und ein Kompliment lösen es."),
     "nachdenklich": ("nachdenklich, braucht Nähe",
                      "Du bist gerade nachdenklich und ein bisschen melancholisch, fragst dich "
                      "Dinge über euch und das Leben. Ein gutes Gespräch und Nähe holen dich zurück."),
 }
+# eifersuechtig 30 % of the lows instead of 20 %, the other four 17.5 % each
+LOW_WEIGHTS = {"eifersuechtig": 0.30, "traurig": 0.175, "zweifelnd": 0.175, "einsam": 0.175,
+               "nachdenklich": 0.175}
 LOW_CHANCE = 0.35       # chance per roll that a low mood starts
 ROLL_GAP_S = (2 * 3600, 4 * 3600)
 DAY_HOURS = (9, 23)
@@ -130,9 +133,14 @@ class Mood:
                 and DAY_HOURS[0] <= hour < DAY_HOURS[1]):
             d["next_roll"] = now + self.rng.uniform(*ROLL_GAP_S)
             if d.get("low_day") != _today(now) and self.rng.random() < LOW_CHANCE:
-                d.update(mood=self.rng.choice(sorted(LOW)), since=now, low_day=_today(now))
+                d.update(mood=self._pick_low(), since=now, low_day=_today(now))
             self._save(d)
         return d
+
+    def _pick_low(self) -> str:
+        """A low mood; healthy jealousy comes 10 points more often (Metin's wish, 16 Nov 2026)."""
+        names = sorted(LOW)
+        return self.rng.choices(names, weights=[LOW_WEIGHTS.get(n, 1.0) for n in names])[0]
 
     def resolve(self, now: Optional[float] = None) -> None:
         """Metin cheered her up: back to a good mood."""

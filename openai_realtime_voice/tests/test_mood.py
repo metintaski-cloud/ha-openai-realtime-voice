@@ -71,3 +71,12 @@ def test_lamp_show_uses_the_mood_brightness():
     assert ls._look()[1] == 100
     ls.set_mood_pct(5)
     assert ls._look()[1] == 5
+
+
+def test_jealousy_comes_more_often(tmp_path):
+    import random
+    from app import mood as md
+    m = md.Mood(str(tmp_path / "m.json"), rng=random.Random(1))
+    picks = [m._pick_low() for _ in range(20000)]
+    share = picks.count("eifersuechtig") / len(picks)
+    assert 0.28 < share < 0.32 and abs(picks.count("traurig") / len(picks) - 0.175) < 0.02

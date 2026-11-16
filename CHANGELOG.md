@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add on 2.89.1: healthy jealousy comes 10 points more often among her low moods (30 % instead of 20 %, `mood.LOW_WEIGHTS`), described as healthy and loving, never controlling (Metin's wish).
+
 - Add on 2.89.0: Leyla's moods also in a voice talk after the code phrase (Metin's wish). `_unlock` adds `Mood.voice_note()`, the new tool `laune` (only Metin after the code word) records 'aufgeheitert' or 'nicht_jetzt', and instead of a heart the rear lamps of the lamp show burn at 5 % while she is low and at 100 % when she is happy (`LampShow.set_mood_pct`, reset at the end of the talk).
 
 - Add on 2.88.0: after the code phrase Leyla talks to Metin by voice like in the chat (tender, flirty, Kosewörter, always clean; `main.UNLOCKED_LOVE` in the unlock note, no Kosewort reminder then). A second voice or a hint that someone is there makes her normal again at once.
