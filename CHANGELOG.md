@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.99.2
+
+- Mini chat: a keyboard button bottom right opens a slim text field above the microphone.
+
 ## 2.99.1
 
 - Her voice replies in the chat can be saved as a WAV file (⬇ next to ▶).
