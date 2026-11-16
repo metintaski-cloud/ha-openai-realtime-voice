@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add on 2.95.10: the tick boxes in the diary folder sit on the left like in the other lists (Metin's wish).
+
 - Add on 2.95.9 (Metin's wish): in the app folder "Tagebuch" each entry has a tick box and "Markierte löschen" deletes the ticked ones at once (`Diary.delete`, `POST /api/diary/delete`, code word).
 
 - Add on 2.95.8 (Metin's test 17:19: an unknown speaker said his foot hurts, in the next talk the unknown speaker asked and she did not know, she only found it after he said who he was): what unknown speakers told her in the last 24 hours now goes into every talk at the start (`Diary.unknown_note`), written down as said but without guessing who; asked about it, she tells what she was told and asks whether it was them. An empty answer of the diary model counts as nothing to write instead of an error.
