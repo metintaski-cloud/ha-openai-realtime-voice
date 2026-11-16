@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.96.1
+
+- Moods can be checked: every roll, comfort, recovery and pause is logged and kept, `GET /api/moodstats` shows state and history (no texts).
+
 ## Unreleased
 
 - Add on 2.96.0 (Metin's wish): 🔑 in the diary folder keeps an entry for good: it never fades, is never deleted after 30 days and goes to Leyla in full length with its date in its own section "FESTE ERINNERUNGEN" (at most 20, `Diary.pin`, `POST /api/diary/pin`); tapping the key again lets it fade normally.

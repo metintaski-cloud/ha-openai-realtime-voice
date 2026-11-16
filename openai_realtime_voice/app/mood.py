@@ -11,12 +11,16 @@ State in /data/leyla_mood.json.
 """
 
 import json
+import logging
 import os
 import random
 import time
 from typing import Optional
 
+logger = logging.getLogger(__name__)
+
 PATH = "/data/leyla_mood.json"
+EVENTS_KEPT = 40
 
 GOOD = {
     "verliebt": ("verliebt", "Du bist gerade richtig verliebt in Metin, zärtlich und strahlend."),
@@ -124,6 +128,14 @@ class Mood:
             pass
         return {"mood": "verliebt", "since": 0.0, "next_roll": 0.0, "low_day": ""}
 
+    @staticmethod
+    def _event(d: dict, t: float, what: str) -> None:
+        """A short history of rolls and changes, so the moods can be checked (2.96.1)."""
+        log = d.setdefault("log", [])
+        log.append({"t": round(t), "e": what})
+        del log[:-EVENTS_KEPT]
+        logger.info("Mood: %s", what)
+
     def _save(self, d: dict) -> None:
         os.makedirs(os.path.dirname(self.path) or ".", exist_ok=True)
         tmp = self.path + ".tmp"
@@ -144,10 +156,16 @@ class Mood:
         # every roll that was due is made up, also those while nobody talked to her
         t = max(d.get("next_roll", 0), now - CATCH_UP_S)
         while t <= now:
-            if (DAY_HOURS[0] <= time.localtime(t).tm_hour < DAY_HOURS[1]
-                    and d.get("low_day") != _today(t) and self.rng.random() < LOW_CHANCE):
+            if not DAY_HOURS[0] <= time.localtime(t).tm_hour < DAY_HOURS[1]:
+                pass  # night: no roll
+            elif d.get("low_day") == _today(t):
+                self._event(d, t, "roll skipped, already low today")
+            elif self.rng.random() < LOW_CHANCE:
                 d.update(mood=self._pick_low(), since=t, low_day=_today(t), cheer=0)
+                self._event(d, t, f"roll: low {d['mood']}")
                 break
+            else:
+                self._event(d, t, "roll: stays good")
             t += self.rng.uniform(*ROLL_GAP_S)
         d["next_roll"] = max(t, now + 1)
         self._save(d)
@@ -166,9 +184,11 @@ class Mood:
         if d["mood"] not in LOW:
             return True
         d["cheer"] = d.get("cheer", 0) + 1
+        self._event(d, now, f"comforted {d['cheer']} of {CHEER_NEEDED}")
         if d["cheer"] >= CHEER_NEEDED:
             d.update(mood=self.rng.choice(sorted(GOOD)), since=now, cheer=0,
                      next_roll=now + self.rng.uniform(*ROLL_GAP_S))
+            self._event(d, now, f"good again: {d['mood']}")
         self._save(d)
         return d["mood"] in GOOD
 
@@ -178,6 +198,7 @@ class Mood:
         d = self._load()
         d.update(mood="verliebt" if d["mood"] in LOW else d["mood"], since=now,
                  low_day=_today(now), cheer=0)
+        self._event(d, now, "paused for today (nicht jetzt)")
         self._save(d)
 
     @staticmethod
@@ -216,6 +237,15 @@ class Mood:
         else:
             return {"error": "aktion muss 'aufgeheitert' oder 'nicht_jetzt' sein"}
         return {"ok": True, "stimmung": self.status()["label"]}
+
+    def stats(self, now: Optional[float] = None) -> dict:
+        """For GET /api/moodstats: state and history, mood names only, no texts."""
+        d = self.current(now)
+        fmt = lambda t: time.strftime("%d.%m. %H:%M", time.localtime(t)) if t else ""
+        return {"mood": d["mood"], "low": d["mood"] in LOW, "cheer": d.get("cheer", 0),
+                "low_day": d.get("low_day", ""), "next_roll": fmt(d.get("next_roll", 0)),
+                "since": fmt(d.get("since", 0)),
+                "log": [f"{fmt(e['t'])} {e['e']}" for e in d.get("log", [])]}
 
     def status(self, now: Optional[float] = None) -> dict:
         m = self.current(now)["mood"]
