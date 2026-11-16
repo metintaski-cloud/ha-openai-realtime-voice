@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.99.5
+
+- Talking scenes: while her voice plays (voice replies, live talk) the stage shows `spricht` clips (`sprichttraurig` when she is low), then back to her mood.
+
 ## 2.99.4
 
 - Looks: every look has its own folder with still and scenes, each time the app opens Leyla wears another look than last time (red dress, black and gold dress); a greeting scene `begruessung` plays once when the app opens.

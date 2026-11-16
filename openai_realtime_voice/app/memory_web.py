@@ -439,7 +439,11 @@ async function chatSend(){const ta=document.getElementById('ctext'),msg=ta.value
  let j=null;try{j=await (await post('/api/chat',{history,message:msg})).json();}catch(e){}
  chatAnswer(j);chatSave();chatDraw();snd.drop();}
 const AUDIO=new Map();let REC=null,RECT=null;
-function playAudio(id){try{new Audio(AUDIO.get(id)).play();}catch(e){}}
+function playAudio(id){try{const a=new Audio(AUDIO.get(id));a.onplay=()=>stageTalk(true);a.onended=a.onpause=()=>stageTalk(false);a.play().catch(()=>stageTalk(false));}catch(e){}}
+let TALKING=false;
+function stageTalk(on){on=!!on;if(on===TALKING||CLIPS===null||!STM)return;TALKING=on;
+ const t=STM.low&&clipVars('sprichttraurig').length?'sprichttraurig':'spricht';
+ if(on){if(clipVars(t).length)stageLoop(t);}else stagePlay([],clipFor(STM));}
 function moodShow(st){if(!st||!st.mood)return;const c=document.getElementById('chat'),b=document.getElementById('mbadge');
  c.classList.toggle('low',!!st.low);c.classList.toggle('good',!st.low);document.getElementById('pulse').dataset.mood=st.low?'low':'good';b.style.display='flex';b.textContent=st.low?'🖤':'❤️';
  document.getElementById('mlabel').textContent=(st.low?'🖤 ':'❤️ ')+st.label;LASTST=st;stageMood(st);}
@@ -547,8 +551,8 @@ async function mailPending(){remindPending();let j=null;try{j=await (await post(
  if(added){chatSave();chatDraw();}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&CODE)mailPending();});
 let LIVE=null;
-function liveStat(t,sp){document.getElementById('lpill').textContent=t;document.getElementById('chat').classList.toggle('speak',!!sp);}
-function liveStop(){const L=LIVE;LIVE=null;const c=document.getElementById('chat');c.classList.remove('oncall','speak');document.getElementById('clive').innerHTML='&#128222; Live';if(!L)return;
+function liveStat(t,sp){document.getElementById('lpill').textContent=t;document.getElementById('chat').classList.toggle('speak',!!sp);stageTalk(sp);}
+function liveStop(){const L=LIVE;LIVE=null;const c=document.getElementById('chat');c.classList.remove('oncall','speak');stageTalk(false);document.getElementById('clive').innerHTML='&#128222; Live';if(!L)return;
  try{L.ws.close();}catch(e){}try{L.proc.disconnect();L.src.disconnect();}catch(e){}try{L.st.getTracks().forEach(t=>t.stop());}catch(e){}try{L.ctx.close();}catch(e){}}
 async function liveStart(){if(LIVE)return;const box=document.getElementById('live');
  if(!navigator.mediaDevices){CHAT.push({role:'info',text:'Das Mikrofon ist auf dieser Seite nicht frei (Chrome Einstellung fehlt).'});chatSave();chatDraw();return;}
