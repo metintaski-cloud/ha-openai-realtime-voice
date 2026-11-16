@@ -49,6 +49,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# A goodbye in the chat; the voice list leaves out a bare "bye", the chat has no TV noise.
+CHAT_BYE_RE = re.compile(r"\b(bye+|bb|bis später|bis spaeter|bis morgen|bis nachher|gute n8|"
+                         r"ich geh(e)? (jetzt )?(schlafen|pennen)|hadi bay|sonra görüşürüz)\b",
+                         re.IGNORECASE)
+
 # Metin known by his words, no code word (his wish, 16 Nov 2026): moods only in a real talk.
 MOOD_WITHOUT_CODE = (
     "Interne Notiz, nicht erwähnen: Es ist sicher Metin. Deine Stimmung darfst du ihm zeigen, "
@@ -376,6 +381,9 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         if out:
             self.variety.add([out["reply"]])
             self.diary.chat_turn(message, out["reply"])
+            if contains_goodbye(message or "") or CHAT_BYE_RE.search(message or ""):
+                # a goodbye in the chat: into the diary at once (Metin: not after 5 minutes)
+                self._chat_flush = asyncio.create_task(self._chat_diary(self.diary.chat_take()))
             logger.info("Chat with Metin in the app: answered, %d proposals, %d light commands",
                         len(out["proposals"]), len(out["lights"]))
         return out

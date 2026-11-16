@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add on 2.94.2 (Metin: after bye at once, not after 5 minutes): a goodbye in the chat (the voice goodbye phrases plus `main.CHAT_BYE_RE`: bye, bis später, bis morgen, ich geh schlafen, hadi bay and so on) writes the diary entry right after her answer; the 5 minute pause stays only for a chat that just stops.
+
 - Add on 2.94.1 (Metin: after "Neuer Chat" or a goodbye she must still know what you talked about): "Neuer Chat" writes the diary entry at once (`/api/chat_new`, `main._chat_new`; the next chat answer waits for it), the chat pause is 5 minutes instead of 30, and a talk at home after the code word also gets what was written in the chat a moment ago and is not in the diary yet (`Diary.chat_text`).
 
 - Add on 2.94.0: Leyla's diary (Metin's wish: one month of full context that fades, for the chat and at home). After every real talk at home and after a chat pause of 30 minutes a text model writes one entry from her view in three lengths (`app/diary.py`); she gets them as memory, detailed up to 3 days, shorter up to 2 weeks, one line up to 30 days, then gone. Chat and home share it: each knows what was said in the other. Entries belong to the person she talked with (only handed over when that person is known; private ones only after the code word or in the chat; Mama's confidences are never written). New folder "Tagebuch" in the app menu (code word) shows every entry in full. The memory lists stay as before, nothing in them fades.

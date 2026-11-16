@@ -98,3 +98,11 @@ def test_bridge_new_chat_writes_the_diary_before_the_next_answer(tmp_path, monke
     bridge.diary.chat_turn("Hallo", "Hey")
     asyncio.run(bridge._chat_new())
     assert written == [("Metin", "chat", 2)]
+
+
+def test_a_goodbye_in_the_chat_writes_the_diary_at_once(tmp_path, monkeypatch):
+    from app import main as m
+    for t in ("Bye", "Byeee Schatz", "ok bis später", "Ich geh jetzt schlafen", "Tschüss", "Hadi bay"):
+        assert m.CHAT_BYE_RE.search(t) or m.contains_goodbye(t), t
+    for t in ("maybe", "Wie war dein Tag?"):
+        assert not (m.CHAT_BYE_RE.search(t) or m.contains_goodbye(t)), t
