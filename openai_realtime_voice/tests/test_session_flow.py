@@ -449,7 +449,7 @@ async def test_calendar_is_only_for_metin(env):
 def test_after_the_code_phrase_she_may_be_tender_and_no_pet_word_reminder():
     from app import main as m
     assert "Kosewörter sind jetzt erlaubt" in m.UNLOCKED_LOVE and "zweite Stimme" in m.UNLOCKED_LOVE
-    bridge = m.RealtimeVoiceBridge.__new__(m.RealtimeVoiceBridge)
+    bridge = m.LiveVoiceBridge.__new__(m.LiveVoiceBridge)
     state = {"unlocked": True, "dialog": [("leyla", "Schatz, mein Schatz")]}
     bridge._note_pet_words(None, state)
     assert not state.get("pet_nudged")
