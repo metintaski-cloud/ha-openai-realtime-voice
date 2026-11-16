@@ -51,7 +51,7 @@ def test_parse_and_write(tmp_path, monkeypatch):
     assert diary.parse("blabla") is None
     assert diary.parse('{"wichtig": true, "lang": "a"}') is None
     good = json.dumps(entry())
-    assert diary.parse("Antwort: " + good)["wichtig"]
+    assert diary.parse("Antwort: " + good)[0]["wichtig"]
     seen = {}
 
     async def ask(prompt, *a, **k):
@@ -140,3 +140,27 @@ def test_a_new_chat_goes_on_with_the_last_turns(tmp_path):
     assert len(dy.with_last_chat([], now=NOW + 300)) == 2 * diary.RECENT_PAIRS
     assert dy.with_last_chat([], now=NOW + 300 + diary.RECENT_S) == []
     assert "Zahnarzt" not in dy.chat_text(now=NOW + 300)  # pushed out by newer turns
+
+
+def test_each_statement_goes_to_the_person_who_said_it(tmp_path, monkeypatch):
+    import json as js
+    answer = js.dumps({"eintraege": [
+        {"wer": "Gülfikar", "wichtig": True, "lang": "Anne sagte, ihr Knie tut weh.", "mittel": "Knie", "kurz": "Knie"},
+        {"wer": "Metin", "wichtig": True, "lang": "Metin sagte, sein Auge tut weh.", "mittel": "Auge", "kurz": "Auge"},
+        {"wer": "Ali", "wichtig": True, "lang": "Ali, ein Gast, erzählte von seiner Reise.", "mittel": "Reise", "kurz": "Reise"},
+        {"wer": "unbekannt", "wichtig": False}]})
+    seen = {}
+
+    async def ask(prompt, *a, **k):
+        seen["p"] = prompt
+        return answer
+    monkeypatch.setattr(diary.textmodel, "ask", ask)
+    dy = diary.Diary(str(tmp_path / "d.json"))
+    ok = asyncio.run(dy.write([("user", "Ben Metin, gözüm ağrıyor"), ("bot", "Geçmiş olsun")],
+                              ["Gülfikar Taskiran", "Metin Taskiran"], "stimme", "k", ["m"], "u"))
+    assert ok and "Gülfikar Taskiran, Metin Taskiran" in seen["p"]
+    who = {e["who"]: e["lang"] for e in dy.entries()}
+    assert who["Metin Taskiran"].endswith("Auge tut weh.") and "Knie" in who["Gülfikar Taskiran"]
+    assert "Reise" in who["Ali"] and len(who) == 3
+    metin = dy.note("Metin", now=dy.entries()[0]["t"])
+    assert "Auge" in metin and "Knie" not in metin and "Reise" not in metin

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add on 2.95.6 (Metin: a fixed logic for everyone, not only for him): the diary now writes one entry per person in a talk and puts every statement into the entry of the person who said it (`Diary.write` gets all names known in the talk, the model answers with `eintraege` and `wer`; a guest who gave a name gets an entry under that name, unclear parts only neutral as "unbekannt"). Whoever says who they are, also later in the talk, gets what they said before.
+
 - Add on 2.95.5 (Metin's memory test at 16:39: he said his eye hurts as a test, in the next talk she said throat): the log showed three causes. The diary wrote no entry for the eye talk (the model rated a test as not important; now anything a person says about themselves is important, also in a test, and a skipped entry is logged), she answered before she knew who was talking, so she had no diary yet and took an older throat entry from her own story (new persona rule: asked about something told before, she first asks who is there), and the diary note now says the newest entry wins over older ones and her story.
 
 - Add on 2.95.4 (Metin, 16:26: "Leyla, das Gespräch beenden", she said "Alles klar, bis gleich" and stayed open until the idle timeout): asking to end the talk now counts as a goodbye (`phrases.END_TALK_RE`, also in the order the transcript gives it, "beenden, das Gespräch", and Turkish "konuşmayı bitir"), and "bis gleich" from the user too.

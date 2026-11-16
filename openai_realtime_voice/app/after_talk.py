@@ -61,8 +61,9 @@ class AfterTalkMixin:
         if (not self.enable_memory or not self.openai_api_key or reason == "no_speech"
                 or said < 15 or not any(s == "bot" for s, _ in dialog)):
             return
-        known = sorted(state.get("identified") or [])
-        who = "Metin" if state.get("unlocked") else (known[0] if len(known) == 1 else "")
+        who = sorted(state.get("identified") or [])  # everyone known in this talk
+        if state.get("unlocked") and not any(n.split()[0] == "Metin" for n in who):
+            who.append("Metin")
         task = asyncio.create_task(self.diary.write(
             dialog, who, "stimme", self.openai_api_key, [self.memory_model, self.backend_model],
             os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL)))

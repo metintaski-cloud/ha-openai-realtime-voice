@@ -91,7 +91,7 @@ async def test_session_updates_memory_and_next_session_uses_it(tmp_path):
         saved = json.loads((tmp_path / "memory.json").read_text(encoding="utf-8"))
         assert saved["family"] == ["Metin trinkt gern Tee."]
         assert saved["private"] == ["X"]  # no code phrase configured: nothing is locked
-        memory_calls = [r for r in _Handler.requests if "Tagebucheintrag" not in str(r["input"])]
+        memory_calls = [r for r in _Handler.requests if "Tagebuch" not in str(r["input"])]
         assert [r["model"] for r in memory_calls][:2] == ["bad-model", "gpt-5.6-luna"]
 
         fake2 = FakeLive(respond_after=10**6)
