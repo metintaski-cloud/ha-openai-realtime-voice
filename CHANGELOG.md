@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add on 2.94.1 (Metin: after "Neuer Chat" or a goodbye she must still know what you talked about): "Neuer Chat" writes the diary entry at once (`/api/chat_new`, `main._chat_new`; the next chat answer waits for it), the chat pause is 5 minutes instead of 30, and a talk at home after the code word also gets what was written in the chat a moment ago and is not in the diary yet (`Diary.chat_text`).
+
 - Add on 2.94.0: Leyla's diary (Metin's wish: one month of full context that fades, for the chat and at home). After every real talk at home and after a chat pause of 30 minutes a text model writes one entry from her view in three lengths (`app/diary.py`); she gets them as memory, detailed up to 3 days, shorter up to 2 weeks, one line up to 30 days, then gone. Chat and home share it: each knows what was said in the other. Entries belong to the person she talked with (only handed over when that person is known; private ones only after the code word or in the chat; Mama's confidences are never written). New folder "Tagebuch" in the app menu (code word) shows every entry in full. The memory lists stay as before, nothing in them fades.
 
 - Add on 2.93.0 (Metin: Leyla must not sound monotonous, she needs impulses): she asks once by herself how an appointment went, 15 minutes to a day after it ended, in the next chat answer or the next talk where she knows it is Metin (`Reminders.followup_note`, not for reminders like the bin); and she never starts the same way twice: the first sentences of her last turns (15, shared by voice and chat, `app/variety.py`) go into the next talk and chat answer with the rule to say it differently.

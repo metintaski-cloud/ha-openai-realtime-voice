@@ -2,7 +2,8 @@
 
 Metin's wish (16 Nov 2026): she shall remember everything of the last month, and the memory
 shall fade bit by bit. After every real talk (and after a chat pause of CHAT_PAUSE_S) a text
-model writes one entry from her view in three lengths. Which length she gets depends on the
+model writes one entry from her view in three lengths; "Neuer Chat" in the app writes it at once
+(2.94.1, Metin: after a new chat she must not start from zero). Which length she gets depends on the
 age (FADE): detailed for 3 days, shorter up to 2 weeks, one line up to 30 days, then gone.
 
 Privacy: an entry belongs to the person she talked with. She gets only the entries of the
@@ -27,7 +28,7 @@ KEEP_S = 30 * DAY
 FADE = ((3 * DAY, "lang"), (14 * DAY, "mittel"), (KEEP_S, "kurz"))
 MAX_NOTE = 5000         # characters she gets at most; the oldest are dropped first
 MAX_ENTRIES = 300
-CHAT_PAUSE_S = 30 * 60  # a chat counts as one talk after half an hour without a message
+CHAT_PAUSE_S = 5 * 60   # a chat counts as one talk after 5 minutes without a message (30 until 2.94.1)
 LIMITS = {"lang": 400, "mittel": 160, "kurz": 70}
 
 PROMPT = """Du bist Leylas Gedächtnis. Schreib aus dem folgenden Gespräch einen Tagebucheintrag \
@@ -143,9 +144,18 @@ class Diary:
         now = now or time.time()
         if not self._chat or now - self._chat_last < CHAT_PAUSE_S:
             return []
+        return self.chat_take()
+
+    def chat_take(self) -> list:
+        """The chat so far as a dialog, now ("Neuer Chat"); the buffer is emptied."""
         dialog = [x for m, r in self._chat for x in (("user", m), ("bot", r))]
         self._chat = []
         return dialog
+
+    def chat_text(self, limit: int = 3000) -> str:
+        """What was written in the chat and is not in the diary yet, for a talk at home."""
+        text = "\n".join(f"Metin: {m}\nLeyla: {r}" for m, r in self._chat)
+        return text[-limit:]
 
     # ---- what she gets ----
     def note(self, who: str, private: bool = False, now: Optional[float] = None) -> str:

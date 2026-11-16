@@ -367,7 +367,7 @@ const KNAME={family:'Familie',friends:'Freunde',leyla:'Leylas Geschichte',privat
 let CDROP=0;try{CDROP=+localStorage.getItem('lcdrop')||0}catch(e){}
 const isTalk=m=>m.role==='user'||m.role==='leyla';
 function chatSave(){let k=0,cut=0;for(let i=CHAT.length-1;i>=0;i--){if(isTalk(CHAT[i])&&++k===20){cut=i;break;}}if(cut>0){CDROP+=CHAT.slice(0,cut).filter(isTalk).length;CHAT=CHAT.slice(cut);}try{localStorage.setItem('lchat',JSON.stringify(CHAT));localStorage.setItem('lcdrop',String(CDROP))}catch(e){}}
-function chatNew(){if(!confirm('Neuen Chat beginnen? Der bisherige Verlauf wird gelöscht, das Gedächtnis bleibt.'))return;CHAT=[];CDROP=0;chatSave();chatDraw();}
+function chatNew(){if(!confirm('Neuen Chat beginnen? Der Verlauf geht in Leylas Tagebuch, das Gedächtnis bleibt.'))return;CHAT=[];CDROP=0;chatSave();chatDraw();post('/api/chat_new',{}).catch(()=>{});}
 function chatDraw(wait){const log=document.getElementById('clog');log.innerHTML='';{const n=CDROP+CHAT.filter(isTalk).length,c=document.getElementById('ccount');const r=Math.max(0,20-n);c.textContent='Noch '+r+' von 20';c.className=r===0?'over':r<=3?'warn':'';}
  CHAT.forEach((m,i)=>{if(m.role==='prop'){if(m.done==='Gespeichert'||m.done==='Verworfen')return;return log.appendChild(propCard(m,i));}
   if(m.role==='info'){const n=document.createElement('div');n.className='wait';n.textContent=m.text;return log.appendChild(n);}
@@ -702,7 +702,7 @@ async def _lamp_api(lamp, method: str, path: str, body: bytes):
 
 async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "", rules=None,
                   chat=None, voice=None, mailer=None, google=None, inbox=None,
-                  mood=None, reminders=None, diary=None) -> None:
+                  mood=None, reminders=None, diary=None, chat_new=None) -> None:
     try:
         head = await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), timeout=10)
         lines = head.decode("latin-1").split("\r\n")
@@ -796,6 +796,15 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                 elif path == "/api/mail/trash_discard" and inbox:
                     out = {"ok": inbox.discard(str(d.get("id", "")))}
             await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
+        elif method == "POST" and path == "/api/chat_new":
+            ok = False
+            if unlocked and chat_new:
+                try:
+                    await chat_new()
+                    ok = True
+                except Exception as e:
+                    logger.warning("New chat: %s", e)
+            await _respond(writer, "200 OK", "application/json", json.dumps({"ok": ok}))
         elif method == "POST" and path == "/api/diary":
             out = {"ok": False}
             if unlocked and diary:
@@ -865,11 +874,11 @@ async def start_http(store: memory.MemoryStore, sync: Optional[object] = None,
                      host: str = "0.0.0.0", port: int = 8082, lamp: Optional[object] = None,
                      code_phrase: str = "", rules=None, chat=None, voice=None,
                      mailer=None, google=None, inbox=None, mood=None, reminders=None,
-                     diary=None):
+                     diary=None, chat_new=None):
     """`rules`: a function that returns Leyla's instructions without memory and without the
     code word; shown read only after the code word."""
     server = await asyncio.start_server(
         lambda r, w: _handle(store, sync, r, w, lamp, code_phrase, rules, chat, voice, mailer, google,
-                          inbox, mood, reminders, diary), host, port)
+                          inbox, mood, reminders, diary, chat_new), host, port)
     logger.info("Memory page on port %d", port)
     return server

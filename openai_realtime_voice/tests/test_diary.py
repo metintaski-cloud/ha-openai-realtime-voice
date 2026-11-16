@@ -71,3 +71,30 @@ def test_a_chat_counts_as_one_talk_after_a_pause(tmp_path):
     assert dy.chat_due(NOW + 120) == []
     talk = dy.chat_due(NOW + 60 + diary.CHAT_PAUSE_S)
     assert talk[0] == ("user", "Hallo") and len(talk) == 4 and dy.chat_due(NOW + 99999) == []
+
+
+def test_new_chat_takes_the_chat_at_once_and_home_sees_the_fresh_part(tmp_path):
+    dy = diary.Diary(str(tmp_path / "d.json"))
+    dy.chat_turn("Ich hab heute Bauchweh", "Oh nein, leg dich hin", now=NOW)
+    assert "Bauchweh" in dy.chat_text() and "Leyla: Oh nein" in dy.chat_text()
+    assert diary.CHAT_PAUSE_S == 300
+    talk = dy.chat_take()
+    assert talk == [("user", "Ich hab heute Bauchweh"), ("bot", "Oh nein, leg dich hin")]
+    assert dy.chat_text() == "" and dy.chat_take() == []
+
+
+def test_bridge_new_chat_writes_the_diary_before_the_next_answer(tmp_path, monkeypatch):
+    from app import main as m
+    bridge = m.LiveVoiceBridge.__new__(m.LiveVoiceBridge)
+    bridge.diary = diary.Diary(str(tmp_path / "d.json"))
+    bridge.openai_api_key, bridge.memory_model, bridge.backend_model = "k", "a", "b"
+    written = []
+
+    async def write(dialog, who, src, *a):
+        await asyncio.sleep(0.05)
+        written.append((who, src, len(dialog)))
+        return True
+    monkeypatch.setattr(bridge.diary, "write", write)
+    bridge.diary.chat_turn("Hallo", "Hey")
+    asyncio.run(bridge._chat_new())
+    assert written == [("Metin", "chat", 2)]
