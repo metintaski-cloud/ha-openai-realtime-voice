@@ -279,9 +279,9 @@ def test_now_and_then_a_question_on_another_topic():
     from app import chat as c
     asked = [{"role": "leyla", "text": "Und du?"}]
     calm = [{"role": "leyla", "text": "Schön."}]
-    assert c.spontaneous_note(asked, random.Random(1)) == ""
-    hits = sum(bool(c.spontaneous_note(calm, random.Random(i))) for i in range(1000))
-    assert 250 < hits < 350 and "Termin" in c.SPONTANEOUS_NOTE
+    assert not c.wants_idea(asked, random.Random(1))
+    hits = sum(c.wants_idea(calm, random.Random(i)) for i in range(1000))
+    assert 250 < hits < 350
 
 
 def test_sudden_question_gets_todays_appointments():

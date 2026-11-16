@@ -35,7 +35,7 @@ import dotenv
 import websockets
 
 from app.audio_recorder import AudioRecorder
-from app import agenda, diary, gcontacts, inbox, mail, memory, memory_web, mood, reminders, variety
+from app import agenda, diary, gcontacts, ideas, inbox, mail, memory, memory_web, mood, reminders, variety
 from app import context
 from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, pcm_level
 from app.live_link import END_CONVERSATION_TOOL
@@ -186,6 +186,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self.reminders = reminders.Reminders(self.agenda, converse=self._converse)
         self.variety = variety.Variety()  # her last openings, so she never sounds the same
         self.diary = diary.Diary()  # what she talked about in the last month, fading
+        self.ideas = ideas.Ideas()  # her sudden ideas in the chat, varied, open ones come back
         self.technik = technik.TechnikChecker(
             notify=self.messages.push if self.messages.available else None)
         self.technik.lamp_count = len(self.lights.entities)
@@ -366,9 +367,13 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         rules = persona.build([], fan=False, tv=False, messages=False,
                               extra=self.instructions)
         history = self.diary.with_last_chat(history)  # a new chat goes on from the last one
-        idea = chat.spontaneous_note(history)  # now and then a question on another topic
-        if idea:
-            rules += idea + await self._today_agenda_note()
+        kind = ""
+        if chat.wants_idea(history):  # now and then a question on another topic
+            kind, idea = self.ideas.pick(low=self.mood.status()["low"],
+                                         agenda=self.agenda.available)
+            rules += idea + (await self._today_agenda_note() if kind == "termin" else "")
+        open_note = self.ideas.open_note()  # her open question comes back until answered
+        rules += open_note
         rules += (self.diary.note("Metin", private=True) + self.variety.note()
                   + await self.reminders.followup_note())
         live = self._live_talk_text()
@@ -389,6 +394,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         if out:
             self.variety.add([out["reply"]])
             self.diary.chat_turn(message, out["reply"])
+            self.ideas.after_answer(out["reply"], kind, open_noted=bool(open_note),
+                                    answered=out.pop("open_answered", False))
             if contains_goodbye(message or "") or CHAT_BYE_RE.search(message or ""):
                 # a goodbye in the chat: into the diary at once (Metin: not after 5 minutes)
                 self._chat_flush = asyncio.create_task(self._chat_diary(self.diary.chat_take()))

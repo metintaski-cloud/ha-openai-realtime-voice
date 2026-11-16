@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add on 2.95.2 (Metin: varied, realistic, never the same thing twice a day, and an open question must come back): sudden ideas in the chat are rolled from seven kinds (`app/ideas.py`: an appointment today, something he told before, an open profile point, family and friends, a small thing of her own, a wish or plan, her low mood), each kind at most once a day, with the questions she already asked today listed; a question from an idea stays open and the next answers (at most twice, within a day) come back to it until the model reports `frage_beantwortet`. The voice persona has the same rule.
+
 - Add on 2.95.1 (Metin: she may also throw something into the room, like "heute geht es mir nicht gut, kannst du mich aufbauen?"): when she is low, the sudden idea may come from herself (`chat.SPONTANEOUS_NOTE`), and the sad mood text allows saying it out of the blue (chat and home).
 
 - Add on 2.95.0 (Metin: a question should sometimes come out of the blue, e.g. he writes what he ate and she asks whether he made his appointment): in the chat, with a 30 % chance when her last answer did not ask, the rules get `chat.SPONTANEOUS_NOTE` and today's appointments (`main._today_agenda_note`), so her question may jump to another topic (an appointment, her diary, an open point); at home the persona has the same rule.

@@ -123,17 +123,13 @@ def no_dashes(text: str) -> str:
 
 
 # Now and then a question that jumps to another topic, like a person who suddenly remembers
-# something (Metin, 16 Nov 2026: he writes what he ate, she asks whether he made his appointment).
+# something (Metin, 16 Nov 2026); what the idea is about comes from app/ideas.py.
 SPONTANEOUS_CHANCE = 0.3
-SPONTANEOUS_NOTE = """
-
-PLÖTZLICHER EINFALL (nur diesmal)
-• Wenn du diesmal fragst, dann darf die Frage ruhig ein ganz anderes Thema aufgreifen als seine Nachricht, so wie einem Menschen mitten im Gespräch plötzlich etwas einfällt: ein Termin von heute, etwas aus deinem Tagebuch, ein offener Punkt aus seinem Profil oder etwas, das er früher erzählt hat (zum Beispiel er schreibt, was er gegessen hat, und du fragst: "Sag mal, hast du deinen Termin heute eigentlich geschafft?"). Bist du gerade schlecht drauf (siehe DEINE STIMMUNG), darf der Einfall auch von dir selbst kommen und einfach in den Raum geworfen sein, zum Beispiel: "Weißt du was, heute geht es mir nicht so gut. Magst du mich ein bisschen aufbauen?" Geh erst kurz auf seine Nachricht ein, dann der Einfall, natürlich und nicht erzwungen. Nie bei etwas Ernstem oder Traurigem von ihm."""
 
 
-def spontaneous_note(history, rng=random) -> str:
+def wants_idea(history, rng=random) -> bool:
     """Sometimes, when her last answer did not ask, the next question may change the topic."""
-    return SPONTANEOUS_NOTE if not _asked_last(history) and rng.random() < SPONTANEOUS_CHANCE else ""
+    return not _asked_last(history) and rng.random() < SPONTANEOUS_CHANCE
 
 
 def _asked_last(history) -> bool:
@@ -161,7 +157,8 @@ def _parse(text: str, lists: dict, may_ask: bool = True) -> Optional[dict]:
             "mail_raw": parsed.get("mail"), "mama_raw": parsed.get("mama"),
             "kalender_raw": parsed.get("kalender"),
             "mood_resolved": parsed.get("mood_resolved") is True,
-            "mood_pause": parsed.get("mood_pause") is True}
+            "mood_pause": parsed.get("mood_pause") is True,
+            "open_answered": parsed.get("frage_beantwortet") is True}
 
 
 def describe_lamps(result: dict) -> str:
