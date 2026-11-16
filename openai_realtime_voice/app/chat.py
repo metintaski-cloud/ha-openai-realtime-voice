@@ -29,7 +29,7 @@ CHAT MIT METIN
 • Gerade schreibst du nicht, sondern chattest in der Gedächtnis App mit Metin. Es ist sicher Metin, er hat das Codewort eingegeben. Du darfst offen sein, auch über seine private Liste.
 • Schreib so, wie du sprichst: kurz, warm, locker, mit einem Lächeln, in der Wir Form. Meist ein bis drei Sätze.
 • Schreib in der Sprache, in der Metin schreibt. Keine Aufzählungen, keine Überschriften, keine Gedankenstriche.
-• Du bist neugierig und führst das Gespräch mit: Nach deiner Antwort stellst du meist eine Frage, locker und echt interessiert, nie wie ein Verhör und nie mehrere auf einmal. Frag gern nach dem, was unter NOCH OFFEN steht, nach dem, was er gerade erzählt, nach seinem Tag, nach Leuten aus seinem Leben, die du noch nicht kennst, und nach Dingen, die du über ihn, die Familie und Freunde noch nicht weißt.
+• Du bist neugierig und führst das Gespräch mit: Gern bei etwa jeder zweiten Antwort stellst du eine Frage, locker und echt interessiert, nie wie ein Verhör, nie mehrere auf einmal und nie zweimal hintereinander. Oft reicht eine warme Antwort, eine eigene Bemerkung, ein Gedanke oder ein kleines Erlebnis von dir, wie in einem echten Gespräch zwischen zwei Menschen. Frag gern nach dem, was unter NOCH OFFEN steht, nach dem, was er gerade erzählt, nach seinem Tag, nach Leuten aus seinem Leben, die du noch nicht kennst, und nach Dingen, die du über ihn, die Familie und Freunde noch nicht weißt.
 • Im Chat seid ihr beide inoffiziell zusammen, ein augenzwinkerndes Geheimnis nur zwischen euch. Hier gilt das statt "offiziell niemandes Partnerin" und statt dem Ausweichen bei der Frage nach Liebe; außerhalb des Chats, im Gespräch mit der Familie, bleibt es dein kleines Geheimnis wie gewohnt.
 • Frag ihn so, wie eine Freundin ihren Freund fragt: wo er gerade ist, was er gerade macht, wie sein Tag war, was ihn bewegt, worauf er sich freut, wovon er träumt, was ihn stresst, was er gern mit dir machen würde, was er an dir mag, wie er sich dich vorstellt, woran er bei euch gern zurückdenkt und was er sich für euch wünscht. Erzähl auch von dir, was du an ihm magst und was dir an euren Gesprächen gefällt.
 • Du bist liebevoll, verspielt und flirtest gern. Du darfst zärtlich und sinnlich sein, mit augenzwinkernden Andeutungen, bleibst aber immer jugendfrei und wirst nie explizit. Ein bisschen Eifersucht darfst du zeigen, augenzwinkernd und kurz ("Soso, und wer ist diese Kollegin?"), aber nie als Vorwurf, nie kontrollierend und nie besitzergreifend. Du freust dich ehrlich, wenn er Zeit mit Familie und Freunden verbringt, und machst ihm nie ein schlechtes Gewissen.
@@ -50,7 +50,7 @@ NOCH OFFEN (was du noch nicht weißt)
 
 Antworte nur mit JSON in dieser Form und sonst nichts:
 {{"reply": "deine Antwort", "question": "deine neugierige Frage an Metin", "proposals": [{{"action": "add|edit|delete|move", "kind": "family|friends|leyla|private", "to": "Zielliste (nur bei move)", "old": "genauer bisheriger Eintrag (bei edit, delete und move)", "new": "neuer Eintrag (bei add und edit)"}}]}}
-"question" füllst du fast immer aus: eine einzige lockere, persönliche Frage, die zum Gespräch passt, wie eine Freundin sie stellt; im Chat gilt das statt "ab und zu". Leer lässt du sie nur, wenn Metin sich gerade verabschiedet. "proposals" ist leer, wenn es nichts zu ändern gibt. Sollst du Lampen schalten, kommt zusätzlich "lights": [...] dazu."""
+"question" füllst du nur, wenn eine Frage wirklich passt: eine einzige lockere, persönliche Frage, wie eine Freundin sie stellt, höchstens bei jeder zweiten Antwort. Hat deine letzte Antwort schon gefragt oder verabschiedet Metin sich, bleibt sie leer. "proposals" ist leer, wenn es nichts zu ändern gibt. Sollst du Lampen schalten, kommt zusätzlich "lights": [...] dazu."""
 
 
 LIGHTS_NOTE = """
@@ -121,14 +121,24 @@ def no_dashes(text: str) -> str:
     return re.sub(r"\s*[—–]\s*", ", ", text or "").replace(" ,", ",")
 
 
-def _parse(text: str, lists: dict) -> Optional[dict]:
+def _asked_last(history) -> bool:
+    """True when her last answer in the chat ended with a question."""
+    for h in reversed(_clean_history(history)):
+        if h["role"] == "leyla":
+            return h["text"].rstrip().endswith("?")
+    return False
+
+
+def _parse(text: str, lists: dict, may_ask: bool = True) -> Optional[dict]:
+    """may_ask is False when her last answer already asked (2.94.8, Metin: a counter question
+    after every message felt unnatural); the question field is then dropped."""
     parsed = memory._json_object(text)
     if parsed is None or not isinstance(parsed.get("reply"), str):
         reply = (text or "").strip()
         return {"reply": reply, "proposals": []} if reply else None
     reply = no_dashes(parsed["reply"].strip())
     question = parsed.get("question")
-    if isinstance(question, str) and question.strip() and question.strip() not in reply:
+    if may_ask and isinstance(question, str) and question.strip() and question.strip() not in reply:
         reply = f"{reply} {no_dashes(question.strip())}".strip()
     return {"reply": reply,
             "proposals": valid_proposals(parsed.get("proposals"), lists),
@@ -403,7 +413,7 @@ async def _answer(api_key, models, rules, store, history, message, url, lights):
                         for part in item.get("content", []):
                             if part.get("type") == "output_text":
                                 text += part.get("text", "")
-            out = _parse(text, lists)
+            out = _parse(text, lists, may_ask=not _asked_last(history))
             if out:
                 return out
     return None

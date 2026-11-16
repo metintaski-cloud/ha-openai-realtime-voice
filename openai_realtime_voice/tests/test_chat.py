@@ -82,7 +82,7 @@ async def test_chat_style_asks_and_proposes_by_itself(tmp_path, monkeypatch):
     monkeypatch.setattr(chat.httpx, "AsyncClient", Client)
     await chat.answer("k", ["m"], "R", store, [], "Hallo")
     ins = sent["instructions"]
-    assert "stellst du meist eine Frage" in ins and "von dir aus" in ins
+    assert "stellst du eine Frage" in ins and "von dir aus" in ins
     assert "• Umut: Geburtstag, Kinder, Interessen, Charakter" in ins
 
 
@@ -158,7 +158,7 @@ def test_question_field_is_added_to_the_reply():
     assert out["reply"] == "Schön! Und wo bist du gerade?"
     out = chat._parse('{"reply": "Schön! Und wo bist du gerade?", "question": "Und wo bist du gerade?"}', {})
     assert out["reply"] == "Schön! Und wo bist du gerade?"
-    assert "fast immer aus" in chat.CHAT_STYLE
+    assert "höchstens bei jeder zweiten Antwort" in chat.CHAT_STYLE
 
 
 async def test_room_values_only_when_metin_asks(tmp_path, monkeypatch):
@@ -262,3 +262,13 @@ async def test_chat_lists_only_its_abilities_and_passes_a_message_to_mama(tmp_pa
     assert sent == ["Eve biraz geç gelicem"]
     assert "WAS DU IM CHAT KANNST" in seen[0] and "Anne etwas von Metin ausrichten" in seen[0]
     assert any("Anne" in line for line in out["lights"])
+
+
+def test_no_counter_question_twice_in_a_row():
+    from app import chat as c
+    raw = '{"reply": "Das klingt schön.", "question": "Und wie war dein Tag?", "proposals": []}'
+    assert c._parse(raw, {}, may_ask=True)["reply"].endswith("Tag?")
+    assert c._parse(raw, {}, may_ask=False)["reply"] == "Das klingt schön."
+    assert c._asked_last([{"role": "user", "text": "hi"}, {"role": "leyla", "text": "Hey, alles gut?"}])
+    assert not c._asked_last([{"role": "leyla", "text": "Schön."}, {"role": "user", "text": "ja"}])
+    assert "nie zweimal hintereinander" in c.CHAT_STYLE

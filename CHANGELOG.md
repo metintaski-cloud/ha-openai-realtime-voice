@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add on 2.94.8 (Metin: a counter question after every chat message felt unnatural; she should still ask, just not every time): in the chat she asks at about every second answer, never twice in a row (`chat._asked_last` drops the `question` field when her last answer already asked); at home the persona now says the same (no counter question on every answer).
+
 - Add on 2.94.7: `GET /api/wakestats` on the memory page port (counts only, no content): per day the talks woken by the wake word and how many were false wakes (`metrics.wake_stats` from `session_end`, Leyla's own talks left out), plus the number of kept false wake recordings.
 
 - Add on 2.94.6 (Metin: two minutes after "Neuer Chat" she had forgotten; the log showed the diary entry was written at 15:00:57, but a short summary in the long rules did not carry the thread): the server now keeps the last 10 message pairs of the last 12 hours word for word (`Diary.with_last_chat`, `RECENT_PAIRS`, `RECENT_S`) and gives them to her as the real chat history, across "Neuer Chat"; the talk at home after the code word gets the same words (`chat_text`).
