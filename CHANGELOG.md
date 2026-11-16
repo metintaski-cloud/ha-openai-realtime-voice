@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.98.2
+
+- First stage clip: Leyla moving like on a stage (`gluecklich`), shown whenever she is in a good mood, as a seamless loop.
+
 ## 2.98.1
 
 - Neuer Chat moved to the bottom left next to the microphone, it no longer covers Leyla's head.
