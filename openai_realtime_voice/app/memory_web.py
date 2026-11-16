@@ -286,9 +286,9 @@ button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 @media (prefers-reduced-motion:reduce){.rg{animation-duration:.1s}.sp img{animation:none}}
 #chat{position:relative;margin:0 6px 8px;padding:0;border:none;border-radius:16px;background:#000;overflow:hidden;height:calc(100vh - 16px);font-size:15px}
 #stage{display:none;position:absolute;left:0;right:0;top:60px;bottom:66px;z-index:0;overflow:hidden}
-#stage::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,#0009,#0003 40%,transparent 60%),linear-gradient(#000,transparent 6%,transparent 94%,#000)}
+#stage::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,#000 3%,#0008 12%,#0003 40%,transparent 60%,transparent 88%,#000 97%),linear-gradient(#000 3%,transparent 7%,transparent 93%,#000 97%)}
 #stage .fig{position:absolute;inset:0;transform-origin:50% 100%;animation:lsway 8s ease-in-out infinite}
-#stage img,#stage video{position:absolute;inset:0;height:100%;width:100%;object-fit:cover;object-position:8% 50%;display:block}
+#stage img,#stage video{position:absolute;inset:0;height:100%;width:100%;object-fit:cover;object-position:8% 50%;display:block;transform:scale(.93);transform-origin:50% 50%}
 #stage video{opacity:0;transition:opacity .8s}#stage video.on{opacity:1}
 #stage.vid .fig{opacity:0;animation:none}
 #stage.low .fig{animation-duration:12s}#stage.low img{filter:saturate(.55) brightness(.75)}

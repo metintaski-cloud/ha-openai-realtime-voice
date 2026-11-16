@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.99.8
+
+- Leyla a little smaller on the stage, head and feet fully in view.
+
 ## 2.99.7
 
 - New, shy greeting in the black look (reading, noticing you, a shy smile).
