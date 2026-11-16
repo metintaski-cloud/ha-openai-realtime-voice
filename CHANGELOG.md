@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.99.0
+
+- Stage clips play forward only (no more backwards loop) and crossfade over 0.8 s into the next scene; clips cut at the frame closest to the start pose (`tools/mkclip.py`).
+
 ## 2.98.8
 
 - Her voice follows her mood: sad, lonely or doubting means quieter and slower without a smile, jealous a little pouty, happy moods with a smile; at home, in the app live talk and in chat voice replies.
