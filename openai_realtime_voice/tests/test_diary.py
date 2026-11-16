@@ -115,3 +115,12 @@ def test_the_chat_sees_a_running_talk_with_metin_at_home():
     assert bridge._live_talk_text() == ""  # nobody known: nothing
     bridge._live_sessions[1][1]["metin_known"] = True
     assert bridge._live_talk_text() == "Metin: Ich bin müde\nLeyla: Ruh dich aus"
+
+
+def test_the_running_chat_survives_a_restart(tmp_path):
+    p = str(tmp_path / "d.json")
+    dy = diary.Diary(p)
+    dy.chat_turn("Ich hab heute Bauchweh", "Leg dich hin", now=NOW)
+    again = diary.Diary(p)  # the add on restarted
+    assert again.chat_due(NOW + diary.CHAT_PAUSE_S + 1) == [("user", "Ich hab heute Bauchweh"), ("bot", "Leg dich hin")]
+    assert diary.Diary(p).chat_take() == []

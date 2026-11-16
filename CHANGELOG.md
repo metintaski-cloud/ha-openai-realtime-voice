@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add on 2.94.4: the running chat that is not in the diary yet is kept in a file (`/data/leyla_diary.json.chat`), so an update or a power cut no longer loses it.
+
 - Add on 2.94.3 (Metin: in real time, also without bye): while Metin talks with her at home (code word or known), every chat answer gets that running talk as it is (`main._live_talk_text`); the other way a talk at home already got the running chat (`Diary.chat_text`). The diary summary stays for afterwards.
 
 - Add on 2.94.2 (Metin: after bye at once, not after 5 minutes): a goodbye in the chat (the voice goodbye phrases plus `main.CHAT_BYE_RE`: bye, bis später, bis morgen, ich geh schlafen, hadi bay and so on) writes the diary entry right after her answer; the 5 minute pause stays only for a chat that just stops.

@@ -89,8 +89,9 @@ def parse(text: str) -> Optional[dict]:
 class Diary:
     def __init__(self, path: Optional[str] = None) -> None:
         self.path = path or os.environ.get("LEYLA_DIARY_PATH", PATH)
-        self._chat: list = []        # (message, reply) of the running chat
-        self._chat_last = 0.0
+        # the running chat, also in a file so a restart loses nothing (2.94.4)
+        self.chat_path = self.path + ".chat"
+        self._chat, self._chat_last = self._load_chat()
 
     # ---- storage ----
     def entries(self) -> list:
@@ -134,10 +135,29 @@ class Diary:
         return self.add(parse(text or "") or {}, who, source)
 
     # ---- the chat counts as one talk until a pause ----
+    def _load_chat(self) -> tuple:
+        try:
+            with open(self.chat_path, encoding="utf-8") as f:
+                d = json.load(f) or {}
+            return [tuple(x) for x in d.get("turns", [])], float(d.get("last", 0.0))
+        except Exception:
+            return [], 0.0
+
+    def _save_chat(self) -> None:
+        try:
+            os.makedirs(os.path.dirname(self.chat_path) or ".", exist_ok=True)
+            tmp = self.chat_path + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump({"turns": self._chat, "last": self._chat_last}, f, ensure_ascii=False)
+            os.replace(tmp, self.chat_path)
+        except Exception as e:
+            logger.warning("Diary: running chat not saved: %s", e)
+
     def chat_turn(self, message: str, reply: str, now: Optional[float] = None) -> None:
         self._chat.append((str(message or ""), str(reply or "")))
         self._chat = self._chat[-40:]
         self._chat_last = now or time.time()
+        self._save_chat()
 
     def chat_due(self, now: Optional[float] = None) -> list:
         """The finished chat as a dialog when the pause is over, else []."""
@@ -150,6 +170,7 @@ class Diary:
         """The chat so far as a dialog, now ("Neuer Chat"); the buffer is emptied."""
         dialog = [x for m, r in self._chat for x in (("user", m), ("bot", r))]
         self._chat = []
+        self._save_chat()
         return dialog
 
     def chat_text(self, limit: int = 3000) -> str:
