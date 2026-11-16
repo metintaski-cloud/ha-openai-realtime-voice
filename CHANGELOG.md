@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.98.6
+
+- Third sad stage clip (`traurig3`).
+
 ## 2.98.5
 
 - Several clips per scene (`traurig`, `traurig2`, ...): the stage switches between them at random after each cycle.
