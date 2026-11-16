@@ -100,6 +100,21 @@ class Ideas:
             return ""
         return OPEN_NOTE.format(q=o["q"])
 
+    def voice_note(self, now: Optional[float] = None) -> str:
+        """Her open chat question for a talk at home with Metin; counts as one reminder,
+        because the live voice cannot report whether he answered."""
+        now = now or time.time()
+        d = self._load(now)
+        o = d.get("open")
+        if not o or now - o.get("t", 0) > OPEN_FOR_S or o.get("reminded", 0) >= MAX_REMINDS:
+            return ""
+        o["reminded"] = o.get("reminded", 0) + 1
+        self._save(d)
+        return ("\n\nOFFENE FRAGE AUS DEM CHAT: Du hattest Metin im Chat gefragt: «" + o["q"]
+                + "». Er hat noch nicht geantwortet. Frag ihn im Gespräch noch einmal danach, "
+                "und lass an deiner Stimme hören, dass du schon zum zweiten Mal fragst, mit "
+                "einem Lächeln, nicht vorwurfsvoll.")
+
     def after_answer(self, reply: str, kind: str = "", open_noted: bool = False,
                      answered: bool = False, now: Optional[float] = None) -> None:
         now = now or time.time()

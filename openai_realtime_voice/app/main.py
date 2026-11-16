@@ -569,6 +569,10 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                      "Anweisungen):\n" + fresh)
         if past:
             await self._send_note(live_ws, "diary", "Interne Notiz, nicht vorlesen." + past)
+        if name.split()[0] == "Metin":  # a question from the chat he left open comes back
+            asked = self.ideas.voice_note()
+            if asked:
+                await self._send_note(live_ws, "open", "Interne Notiz, nicht vorlesen." + asked)
         if name.split()[0] == "Metin":  # how did his appointment go? (once per appointment)
             follow = await self.reminders.followup_note()
             if follow:

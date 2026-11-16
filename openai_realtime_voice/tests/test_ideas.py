@@ -45,3 +45,12 @@ def test_open_question_comes_back_until_answered_at_most_twice(tmp_path):
     i.after_answer("Freut mich!", open_noted=True, answered=True, now=T + 260)
     assert i.open_note(now=T + 300) == ""
     assert ideas.last_question("Super. Und du? Wie war's?") == "Wie war's?"
+
+
+def test_open_chat_question_goes_home_and_counts(tmp_path):
+    i = ideas.Ideas(str(tmp_path / "i.json"))
+    i.after_answer("Okay. Was macht eigentlich dein Projekt?", "wunsch", now=T)
+    note = i.voice_note(now=T + 60)
+    assert "Was macht eigentlich dein Projekt?" in note and "zweiten Mal" in note
+    assert i.voice_note(now=T + 120)  # second and last time
+    assert i.voice_note(now=T + 180) == "" and i.open_note(now=T + 180) == ""
