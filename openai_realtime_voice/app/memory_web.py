@@ -35,7 +35,7 @@ MASKABLE_PATH = os.path.join(os.path.dirname(__file__), "memory_icon_maskable.pn
 AVATAR_PATH = os.path.join(os.path.dirname(__file__), "leyla_avatar.jpg")  # her picture in the chat
 BODY_PATH = os.path.join(os.path.dirname(__file__), "leyla_body.jpg")  # her full figure on the stage (2.97.0)
 CLIPS_DIR = os.environ.get("LEYLA_CLIPS_DIR", os.path.join(os.path.dirname(__file__), "clips"))
-CLIP_RE = re.compile(r"^/clips/([a-z]{2,20})\.mp4$")
+CLIP_RE = re.compile(r"^/clips/([a-z]{2,20}[0-9]?)\.mp4$")
 
 
 def check_code(typed, phrase: str, now: Optional[float] = None) -> bool:
@@ -443,7 +443,8 @@ function moodShow(st){if(!st||!st.mood)return;const c=document.getElementById('c
  document.getElementById('mlabel').textContent=(st.low?'🖤 ':'❤️ ')+st.label;LASTST=st;stageMood(st);}
 let CLIPS=null,LASTST=null,STM=null;
 async function clipsLoad(){try{CLIPS=(await (await fetch('/clips.json')).json()).clips||[];}catch(e){CLIPS=[];}if(LASTST)stageMood(LASTST);}
-function clipFor(st){if(CLIPS.includes(st.mood))return st.mood;const g=st.low?'traurig':'gluecklich';return CLIPS.includes(g)?g:null;}
+function clipVars(b){return CLIPS.filter(n=>n.replace(/[0-9]$/,'')===b);}
+function clipFor(st){if(clipVars(st.mood).length)return st.mood;const g=st.low?'traurig':'gluecklich';return clipVars(g).length?g:null;}
 let SV=0,STOK=0;
 function stageShow(name,loop,done){const s=document.getElementById('stage'),vs=[document.getElementById('svid'),document.getElementById('svid2')],a=vs[SV],b=vs[1-SV],tok=++STOK;
  if(!name){s.classList.remove('vid');vs.forEach(v=>{v.classList.remove('on');setTimeout(()=>{if(tok===STOK){v.pause();v.removeAttribute('src');v.load();}},600);});return;}
@@ -451,7 +452,9 @@ function stageShow(name,loop,done){const s=document.getElementById('stage'),vs=[
  b.onended=null;b.loop=!!loop;b.oncanplay=()=>{b.oncanplay=null;if(tok!==STOK)return;b.currentTime=0;b.play().catch(()=>{});b.classList.add('on');a.classList.remove('on');s.classList.add('vid');SV=1-SV;
   setTimeout(()=>{if(!a.classList.contains('on'))a.pause();},600);b.onended=()=>{if(tok===STOK&&done)done();};};
  b.src='/clips/'+name+'.mp4';b.load();}
-function stagePlay(once,loop){const q=once.filter(n=>CLIPS.includes(n));const next=()=>{const n=q.shift();if(n)stageShow(n,false,next);else stageShow(loop,true,null);};next();}
+function stageLoop(b){if(!b)return stageShow(null);const v=clipVars(b);if(v.length<2)return stageShow(v[0],true,null);
+ const cur=document.getElementById(SV?'svid2':'svid').src.split('/').pop().replace('.mp4','');const o=v.filter(n=>n!==cur);stageShow(o[Math.floor(Math.random()*o.length)],false,()=>stageLoop(b));}
+function stagePlay(once,loop){const q=once.filter(n=>CLIPS.includes(n));const next=()=>{const n=q.shift();if(n)stageShow(n,false,next);else stageLoop(loop);};next();}
 function stageMood(st){if(CLIPS===null)return;document.getElementById('stage').classList.toggle('low',!!st.low);let once=[];const o=STM;
  if(o){if(o.low&&!st.low)once=['uebergang','kuss'];else if(st.low&&o.low&&(st.cheer||0)>(o.cheer||0))once=['trost'];}
  const changed=!o||once.length||o.mood!==st.mood;STM=st;if(changed)stagePlay(once,clipFor(st));}
