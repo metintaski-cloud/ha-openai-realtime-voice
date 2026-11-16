@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.98.3
+
+- Stage clips crossfade softly instead of cutting, a newer mood change cancels an older one.
+
 ## 2.98.2
 
 - First stage clip: Leyla moving like on a stage (`gluecklich`), shown whenever she is in a good mood, as a seamless loop.
