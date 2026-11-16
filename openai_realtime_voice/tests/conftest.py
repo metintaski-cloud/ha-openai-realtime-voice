@@ -11,3 +11,4 @@ def _ticker_in_tmp(tmp_path, monkeypatch):
     monkeypatch.setattr(ticker, "PATH", str(tmp_path / "ticker.json"))
     monkeypatch.setenv("LEYLA_MOOD_PATH", str(tmp_path / "mood.json"))
     monkeypatch.setenv("LEYLA_REMINDERS_PATH", str(tmp_path / "reminders.json"))
+    monkeypatch.setenv("LEYLA_SAID_PATH", str(tmp_path / "said.json"))

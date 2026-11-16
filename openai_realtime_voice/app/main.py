@@ -35,7 +35,7 @@ import dotenv
 import websockets
 
 from app.audio_recorder import AudioRecorder
-from app import agenda, gcontacts, inbox, mail, memory, memory_web, mood, reminders
+from app import agenda, gcontacts, inbox, mail, memory, memory_web, mood, reminders, variety
 from app import context
 from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, pcm_level
 from app.live_link import END_CONVERSATION_TOOL
@@ -179,6 +179,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self.agenda = agenda.Agenda(google=self.google)
         self.mood = mood.Mood()  # Leyla's ups and downs: app chat, and voice after the code word
         self.reminders = reminders.Reminders(self.agenda, converse=self._converse)
+        self.variety = variety.Variety()  # her last openings, so she never sounds the same
         self.technik = technik.TechnikChecker(
             notify=self.messages.push if self.messages.available else None)
         self.technik.lamp_count = len(self.lights.entities)
@@ -311,7 +312,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             "event_id": "event_start",
             "session": {
                 "model": self.live_model,
-                "instructions": self._instructions_with_memory() + live_extra + extra,
+                "instructions": (self._instructions_with_memory() + live_extra
+                                 + self.variety.note() + extra),
                 "audio": {
                     "format": {"type": "audio/pcm", "rate": SAMPLE_RATE},
                     "output": {"voice": self.voice},
@@ -354,6 +356,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         # not listed, or she claims to have done them (2.84.10: "Metin'e ilettim" in the chat)
         rules = persona.build([], fan=False, tv=False, messages=False,
                               extra=self.instructions)
+        rules += self.variety.note() + await self.reminders.followup_note()
         out = await chat.answer(self.openai_api_key, [self.memory_model, self.backend_model],
                                 rules, self.memory, history, message,
                                 url=os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL),
@@ -366,6 +369,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                                 mama=self.messages.from_metin if self.messages.available else None,
                                 mood=self.mood)
         if out:
+            self.variety.add([out["reply"]])
             logger.info("Chat with Metin in the app: answered, %d proposals, %d light commands",
                         len(out["proposals"]), len(out["lights"]))
         return out
@@ -529,6 +533,10 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         if name.split()[0] == "Metin" and not state.get("unlocked"):
             state["metin_known"] = True  # her moods may show, but only in a real talk
             await self._send_note(live_ws, "mood", MOOD_WITHOUT_CODE + self.mood.voice_note())
+        if name.split()[0] == "Metin":  # how did his appointment go? (once per appointment)
+            follow = await self.reminders.followup_note()
+            if follow:
+                await self._send_note(live_ws, "follow", "Interne Notiz, nicht erwähnen." + follow)
         if part:
             await self._send_note(live_ws, "known", (
                 f"Interne Notiz, nicht vorlesen und nicht erwähnen: Jetzt ist sicher, dass "
@@ -1196,6 +1204,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             self._schedule_memory_update(state, reason)
         except Exception as e:
             logger.warning("Could not start memory update: %s", e)
+        if reason != "no_speech" and any(sp == "user" for sp, _ in state.get("dialog", [])):
+            self.variety.add([t for sp, t in state.get("dialog", []) if sp == "bot"])
         try:
             self._schedule_rude_report(state)
         except Exception as e:
