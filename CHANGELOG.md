@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.97.0
+
+- Stage in the app: Leyla's full figure large above the chat, moving gently, ready for mood video clips (loop per mood, comfort, transition and kiss); chat header smaller.
+
 ## 2.96.1
 
 - Moods can be checked: every roll, comfort, recovery and pause is logged and kept, `GET /api/moodstats` shows state and history (no texts).

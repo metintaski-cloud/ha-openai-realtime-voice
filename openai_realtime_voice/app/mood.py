@@ -248,6 +248,7 @@ class Mood:
                 "log": [f"{fmt(e['t'])} {e['e']}" for e in d.get("log", [])]}
 
     def status(self, now: Optional[float] = None) -> dict:
-        m = self.current(now)["mood"]
+        d = self.current(now)
+        m = d["mood"]
         low = m in LOW
-        return {"mood": m, "low": low, "label": (LOW if low else GOOD)[m][0]}
+        return {"mood": m, "low": low, "label": (LOW if low else GOOD)[m][0], "cheer": d.get("cheer", 0)}

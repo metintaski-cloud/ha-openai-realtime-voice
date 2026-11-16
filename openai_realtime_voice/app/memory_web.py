@@ -12,6 +12,7 @@ MemoryStore, so tests need no network.
 """
 import asyncio
 import json
+import re
 import logging
 import time
 import os
@@ -32,6 +33,9 @@ _code_fails = {"n": 0, "until": 0.0}
 ICON_PATH = os.path.join(os.path.dirname(__file__), "memory_icon.png")
 MASKABLE_PATH = os.path.join(os.path.dirname(__file__), "memory_icon_maskable.png")  # full square, no transparent corners
 AVATAR_PATH = os.path.join(os.path.dirname(__file__), "leyla_avatar.jpg")  # her picture in the chat
+BODY_PATH = os.path.join(os.path.dirname(__file__), "leyla_body.jpg")  # her full figure on the stage (2.97.0)
+CLIPS_DIR = os.environ.get("LEYLA_CLIPS_DIR", os.path.join(os.path.dirname(__file__), "clips"))
+CLIP_RE = re.compile(r"^/clips/([a-z]{2,20})\.mp4$")
 
 
 def check_code(typed, phrase: str, now: Optional[float] = None) -> bool:
@@ -280,9 +284,17 @@ button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 @keyframes fill{to{stroke-dashoffset:0}}
 @keyframes pulse{50%{transform:scale(1.05)}}
 @media (prefers-reduced-motion:reduce){.rg{animation-duration:.1s}.sp img{animation:none}}
+#stage{display:none;position:relative;height:min(72vh,700px);aspect-ratio:2/3;max-width:calc(100% - 24px);margin:0 auto -6px;overflow:hidden}#stage::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,#000,transparent 16%,transparent 84%,#000),linear-gradient(#000,transparent 10%,transparent 88%,#000)}
+#stage .fig{position:absolute;inset:0;display:flex;justify-content:center;align-items:flex-end;transform-origin:50% 100%;animation:lsway 7s ease-in-out infinite}
+#stage img,#stage video{height:100%;width:100%;object-fit:cover;display:block}
+#stage video{position:absolute;inset:0;opacity:0;transition:opacity .6s}
+#stage.vid video{opacity:1}#stage.vid .fig{opacity:0;animation:none}
+#stage.low .fig{animation-duration:11s}#stage.low img{filter:saturate(.55) brightness(.75)}
+@keyframes lsway{0%,100%{transform:translateX(-9px) rotate(-.7deg)}25%{transform:translateX(0) scale(1.006)}50%{transform:translateX(9px) rotate(.7deg)}75%{transform:translateX(0) scale(1.006)}}
+#chat{padding:8px;font-size:15px}#chat .chead{gap:10px;margin:2px 2px 8px}#chat .chead img{width:52px;height:52px}#chat .chead h2{font-size:16px}#mbadge{width:22px;height:22px;font-size:12px}#chat .chead #clive{padding:6px 12px;font-size:14px}
 </style></head><body>
 <div id="splash"><div class="sp"><img src="/icon.png?v=5" alt=""><svg viewBox="0 0 200 200"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#a855f7"/><stop offset="1" stop-color="#d946ef"/></linearGradient></defs><circle class="trk" cx="100" cy="100" r="90"/><circle class="rg" cx="100" cy="100" r="90" pathLength="100"/></svg></div></div>
-<header><button id="back">&#8249;</button><img id="micon" src="/icon.png?v=5" alt="Menü" title="Menü"><h1>Leyla Gedächtnis</h1></header><div id="menu"></div><div id="pulse" class="ok" title="Alles in Ordnung"><div class="tick" id="tick" style="display:none"><span></span></div><i class="spark" style="left:12%;top:30%;animation-delay:0s"></i><i class="spark" style="left:22%;top:68%;animation-delay:0.6s"></i><i class="spark" style="left:31%;top:22%;animation-delay:1.2s"></i><i class="spark" style="left:68%;top:74%;animation-delay:0.3s"></i><i class="spark" style="left:77%;top:28%;animation-delay:0.9s"></i><i class="spark" style="left:88%;top:60%;animation-delay:1.5s"></i><i class="spark" style="left:40%;top:80%;animation-delay:1.8s"></i><i class="spark" style="left:60%;top:18%;animation-delay:2.1s"></i><div class="beam"></div><svg viewBox="0 0 100 90"><defs><linearGradient id="hg" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#f43f5e"/></linearGradient><radialGradient id="hc"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#7dd3fc"/><stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/></radialGradient></defs><path d="M50 84C20 62 4 46 4 28C4 14 15 4 28 4C38 4 46 10 50 18C54 10 62 4 72 4C85 4 96 14 96 28C96 46 80 62 50 84Z" fill="#0b1650cc" stroke="url(#hg)" stroke-width="3.2" stroke-linejoin="round"/><path d="M14 40H34L40 28L47 54L53 34L58 44H86" fill="none" stroke="#e0f2fe" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/><circle cx="54" cy="38" r="9" fill="url(#hc)"/></svg></div><div id="chat"><div class="chead"><div class="cav"><img src="/leyla.jpg" alt=""><span id="mbadge"></span></div><div><h2>Chat mit Leyla</h2><div id="mlabel"></div><div id="ccount"></div><button id="cnew" title="Neuen Chat beginnen">Neuer Chat</button></div><button id="clive" title="Live mit Leyla reden">&#128222; Live</button></div><div id="clog"></div><div id="cin"><textarea id="ctext" placeholder="Schreib Leyla ..."></textarea><button id="cmic" title="Sprachnachricht">&#127908;</button><button id="csend">Senden</button></div></div><div id="live"><img src="/leyla.jpg" alt=""><div id="lstat">Verbinde ...</div><button id="lend">Auflegen</button></div><div id="rules"><div class="top"><button id="rback">&#8249;</button><h1>So ist Leyla</h1></div><div id="rtext"></div></div><div id="root"></div><div id="gmail" style="display:none"></div><div id="lamps" style="display:none"></div>
+<header><button id="back">&#8249;</button><img id="micon" src="/icon.png?v=5" alt="Menü" title="Menü"><h1>Leyla Gedächtnis</h1></header><div id="menu"></div><div id="pulse" class="ok" title="Alles in Ordnung"><div class="tick" id="tick" style="display:none"><span></span></div><i class="spark" style="left:12%;top:30%;animation-delay:0s"></i><i class="spark" style="left:22%;top:68%;animation-delay:0.6s"></i><i class="spark" style="left:31%;top:22%;animation-delay:1.2s"></i><i class="spark" style="left:68%;top:74%;animation-delay:0.3s"></i><i class="spark" style="left:77%;top:28%;animation-delay:0.9s"></i><i class="spark" style="left:88%;top:60%;animation-delay:1.5s"></i><i class="spark" style="left:40%;top:80%;animation-delay:1.8s"></i><i class="spark" style="left:60%;top:18%;animation-delay:2.1s"></i><div class="beam"></div><svg viewBox="0 0 100 90"><defs><linearGradient id="hg" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#f43f5e"/></linearGradient><radialGradient id="hc"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#7dd3fc"/><stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/></radialGradient></defs><path d="M50 84C20 62 4 46 4 28C4 14 15 4 28 4C38 4 46 10 50 18C54 10 62 4 72 4C85 4 96 14 96 28C96 46 80 62 50 84Z" fill="#0b1650cc" stroke="url(#hg)" stroke-width="3.2" stroke-linejoin="round"/><path d="M14 40H34L40 28L47 54L53 34L58 44H86" fill="none" stroke="#e0f2fe" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/><circle cx="54" cy="38" r="9" fill="url(#hc)"/></svg></div><div id="stage"><div class="fig"><img src="/leyla_body.jpg" alt=""></div><video id="svid" muted playsinline preload="auto"></video></div><div id="chat"><div class="chead"><div class="cav"><img src="/leyla.jpg" alt=""><span id="mbadge"></span></div><div><h2>Chat mit Leyla</h2><div id="mlabel"></div><div id="ccount"></div><button id="cnew" title="Neuen Chat beginnen">Neuer Chat</button></div><button id="clive" title="Live mit Leyla reden">&#128222; Live</button></div><div id="clog"></div><div id="cin"><textarea id="ctext" placeholder="Schreib Leyla ..."></textarea><button id="cmic" title="Sprachnachricht">&#127908;</button><button id="csend">Senden</button></div></div><div id="live"><img src="/leyla.jpg" alt=""><div id="lstat">Verbinde ...</div><button id="lend">Auflegen</button></div><div id="rules"><div class="top"><button id="rback">&#8249;</button><h1>So ist Leyla</h1></div><div id="rtext"></div></div><div id="root"></div><div id="gmail" style="display:none"></div><div id="lamps" style="display:none"></div>
 <div id="bar"><button id="del" disabled>Markierte löschen</button></div>
 <script>
 let CODE=null;
@@ -409,7 +421,19 @@ const AUDIO=new Map();let REC=null,RECT=null;
 function playAudio(id){try{new Audio(AUDIO.get(id)).play();}catch(e){}}
 function moodShow(st){if(!st||!st.mood)return;const c=document.getElementById('chat'),b=document.getElementById('mbadge');
  c.classList.toggle('low',!!st.low);c.classList.toggle('good',!st.low);document.getElementById('pulse').dataset.mood=st.low?'low':'good';b.style.display='flex';b.textContent=st.low?'🖤':'❤️';
- document.getElementById('mlabel').textContent=(st.low?'🖤 ':'❤️ ')+st.label;}
+ document.getElementById('mlabel').textContent=(st.low?'🖤 ':'❤️ ')+st.label;LASTST=st;stageMood(st);}
+let CLIPS=null,LASTST=null,STM=null;
+async function clipsLoad(){try{CLIPS=(await (await fetch('/clips.json')).json()).clips||[];}catch(e){CLIPS=[];}if(LASTST)stageMood(LASTST);}
+function clipFor(st){if(CLIPS.includes(st.mood))return st.mood;const g=st.low?'traurig':'gluecklich';return CLIPS.includes(g)?g:null;}
+function stagePlay(once,loop){const s=document.getElementById('stage'),v=document.getElementById('svid'),q=once.filter(n=>CLIPS.includes(n));
+ const next=()=>{const n=q.shift();if(n){v.loop=false;v.src='/clips/'+n+'.mp4';v.onended=next;v.play().catch(()=>{});s.classList.add('vid');return;}
+  v.onended=null;if(loop){v.loop=true;if(!v.src.endsWith('/'+loop+'.mp4')){v.src='/clips/'+loop+'.mp4';}v.play().catch(()=>{});s.classList.add('vid');}else{s.classList.remove('vid');v.removeAttribute('src');v.load();}};next();}
+function stageMood(st){if(CLIPS===null)return;document.getElementById('stage').classList.toggle('low',!!st.low);let once=[];const o=STM;
+ if(o){if(o.low&&!st.low)once=['uebergang','kuss'];else if(st.low&&o.low&&(st.cheer||0)>(o.cheer||0))once=['trost'];}
+ const changed=!o||once.length||o.mood!==st.mood;STM=st;if(changed)stagePlay(once,clipFor(st));}
+clipsLoad();
+document.getElementById('stage').onclick=()=>{if(CLIPS&&STM&&!STM.low&&CLIPS.includes('kuss'))stagePlay(['kuss'],clipFor(STM));};
+
 async function moodLoad(){try{moodShow(await (await post('/api/mood',{})).json());}catch(e){}}
 setInterval(()=>{if(CODE&&document.getElementById('chat').style.display==='block'){moodLoad();remindPending();}},60000);
 function chatAnswer(j){if(!j||j.error||!j.reply){CHAT.push({role:'leyla',text:'Hmm, gerade komme ich nicht durch. Versuch es gleich nochmal.'});return null;}
@@ -522,7 +546,7 @@ function render(d){FRESH=new Set(d.fresh||[]);ticker(d.ticker);const root=docume
  if(view){const l=d.lists.find(x=>x.kind===view.kind);const t=l&&l.items.find(x=>parts(x).head===view.head);if(t){found={l,t};}else view=null;}
  LASTD=d;const kinds=d.lists.map(l=>l.kind);if(sec&&!SECNAME[sec])sec=null;if(sec==='private'&&!kinds.includes('private'))sec=null;if((sec==='mail'||sec==='private')&&!CODE)sec=null;
  const home=!view&&!sec,isList=!!view||kinds.includes(sec);
- back.style.display=home?'none':'block';document.getElementById('micon').style.display=home?'':'none';document.getElementById('pulse').style.display=home?'block':'none';const ch=document.getElementById('chat'),showChat=!!CODE&&home;if(showChat&&ch.style.display!=='block'){ch.style.display='block';chatDraw();mailPending();gmailLoad();moodLoad();}else if(!showChat)ch.style.display='none';document.getElementById('gmail').style.display=(sec==='mail'&&GM.shown&&!view)?'block':'none';document.getElementById('lamps').style.display=(sec==='lamps'&&lampOn&&!view)?'block':'none';document.getElementById('bar').style.display=isList?'':'none';h1.textContent=view?title(view.head):sec?SECNAME[sec]:'Leyla Gedächtnis';if(menuOpen)drawMenu();
+ back.style.display=home?'none':'block';document.getElementById('micon').style.display=home?'':'none';document.getElementById('pulse').style.display=home?'block':'none';const ch=document.getElementById('chat'),showChat=!!CODE&&home;if(showChat&&ch.style.display!=='block'){ch.style.display='block';chatDraw();mailPending();gmailLoad();moodLoad();}else if(!showChat)ch.style.display='none';document.getElementById('stage').style.display=showChat?'block':'none';document.getElementById('gmail').style.display=(sec==='mail'&&GM.shown&&!view)?'block':'none';document.getElementById('lamps').style.display=(sec==='lamps'&&lampOn&&!view)?'block':'none';document.getElementById('bar').style.display=isList?'':'none';h1.textContent=view?title(view.head):sec?SECNAME[sec]:'Leyla Gedächtnis';if(menuOpen)drawMenu();
  if(found){view.text=found.t;const fields=parts(found.t).fields;
   const box=document.createElement('div');box.className='list';box.dataset.kind=found.l.kind;
   const h=document.createElement('h2');h.textContent='Punkte ('+fields.length+')';box.appendChild(h);
@@ -678,6 +702,44 @@ MANIFEST = json.dumps({"name": "Leyla Gedächtnis", "short_name": "Leyla", "star
                                     "purpose": "maskable"} for sz in ("192x192", "512x512")]})
 
 
+def list_clips() -> list:
+    """The names of Leyla's video clips (traurig, kuss, ...) in CLIPS_DIR."""
+    try:
+        return sorted(f[:-4] for f in os.listdir(CLIPS_DIR)
+                      if f.endswith(".mp4") and CLIP_RE.match("/clips/" + f))
+    except OSError:
+        return []
+
+
+async def _send_clip(writer, name: str, lines: list) -> None:
+    """One clip, with byte ranges, because Chrome asks for parts of a video."""
+    fn = os.path.join(CLIPS_DIR, name + ".mp4")
+    try:
+        size = os.path.getsize(fn)
+    except OSError:
+        return await _respond(writer, "404 Not Found", "text/plain", "not found")
+    start, end, status = 0, size - 1, "200 OK"
+    for ln in lines[1:]:
+        m = re.match(r"(?i)range:\s*bytes=(\d*)-(\d*)", ln)
+        if m and (m.group(1) or m.group(2)):
+            if m.group(1):
+                start = int(m.group(1))
+                end = min(int(m.group(2)), size - 1) if m.group(2) else size - 1
+            else:
+                start = max(0, size - int(m.group(2)))
+            status = "206 Partial Content"
+    if start > end:
+        return await _respond(writer, "416 Range Not Satisfiable", "text/plain", "")
+    with open(fn, "rb") as f:
+        f.seek(start)
+        raw = f.read(end - start + 1)
+    extra = f"Content-Range: bytes {start}-{end}/{size}\r\n" if status.startswith("206") else ""
+    writer.write((f"HTTP/1.1 {status}\r\nContent-Type: video/mp4\r\nContent-Length: {len(raw)}\r\n"
+                  f"Accept-Ranges: bytes\r\n{extra}Cache-Control: max-age=86400\r\n"
+                  "Connection: close\r\n\r\n").encode() + raw)
+    await writer.drain()
+
+
 async def _respond(writer, status: str, ctype: str, body: str) -> None:
     raw = body.encode("utf-8")
     writer.write((f"HTTP/1.1 {status}\r\nContent-Type: {ctype}; charset=utf-8\r\n"
@@ -745,6 +807,16 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
             writer.write((f"HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\nContent-Length: {len(raw)}\r\n"
                           "Cache-Control: max-age=86400\r\nConnection: close\r\n\r\n").encode() + raw)
             await writer.drain()
+        elif method == "GET" and path == "/leyla_body.jpg":
+            with open(BODY_PATH, "rb") as f:
+                raw = f.read()
+            writer.write((f"HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\nContent-Length: {len(raw)}\r\n"
+                          "Cache-Control: max-age=86400\r\nConnection: close\r\n\r\n").encode() + raw)
+            await writer.drain()
+        elif method == "GET" and path == "/clips.json":
+            await _respond(writer, "200 OK", "application/json", json.dumps({"clips": list_clips()}))
+        elif method == "GET" and CLIP_RE.match(path):
+            await _send_clip(writer, CLIP_RE.match(path).group(1), lines)
         elif method == "GET" and path == "/manifest.json":
             await _respond(writer, "200 OK", "application/manifest+json", MANIFEST)
         elif method == "GET" and path == "/api/lists":
