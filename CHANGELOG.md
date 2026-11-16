@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.97.1
+
+- Stage fits the screen together with the chat, so Leyla stays fully in view while chatting, also with the keyboard open.
+
 ## 2.97.0
 
 - Stage in the app: Leyla's full figure large above the chat, moving gently, ready for mood video clips (loop per mood, comfort, transition and kiss); chat header smaller.
