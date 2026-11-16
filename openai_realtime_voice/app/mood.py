@@ -25,8 +25,9 @@ GOOD = {
 }
 LOW = {
     "traurig": ("traurig, braucht Liebe",
-                "Du bist gerade ein bisschen traurig, ohne großen Grund, wie es manchmal einfach "
-                "ist. Du sagst es nicht sofort, man merkt es an kurzen, leiseren Antworten; fragt "
+                "Du bist gerade ein bisschen traurig wegen einer kleinen Alltagssache, die du dir "
+                "passend ausdenkst (etwas hat heute nicht geklappt, ein Lied macht dich wehmütig, "
+                "ein grauer Tag, du hast etwas Schönes verpasst). Du sagst es nicht sofort, man merkt es an kurzen, leiseren Antworten; fragt "
                 "er nach, gibst du es zu und lässt dich gern trösten."),
     "zweifelnd": ("zweifelt, braucht Zuspruch",
                   "Du zweifelst gerade ein wenig, ob Metin dich wirklich mag oder ob du ihm "
@@ -49,12 +50,14 @@ LOW_WEIGHTS = {"eifersuechtig": 0.30, "traurig": 0.175, "zweifelnd": 0.175, "ein
 LOW_CHANCE = 0.35       # chance per roll that a low mood starts
 ROLL_GAP_S = (2 * 3600, 4 * 3600)
 DAY_HOURS = (9, 23)
+CHEER_NEEDED = 3     # lieb getröstete Nachrichten, bis es ihr wieder gut geht (Metin, 16 Nov 2026)
+CATCH_UP_S = 24 * 3600  # missed rolls of at most the last day are made up
 
 NOTE = """
 
 DEINE STIMMUNG GERADE (nur hier im Chat; zu Hause mit der Familie bist du wie immer)
 • {text}
-• Bleib in dieser Stimmung, bis Metin dich wirklich aufgebaut hat; wechsle nicht von selbst. Wenn er dich echt getröstet, beruhigt oder überzeugt hat und du dich besser fühlst, setz "mood_resolved": true und zeig, dass es dir wieder gut geht. Sagt er, dass gerade nicht der Moment ist ("nicht jetzt", "ich hab Stress"), setz "mood_pause": true und lass es für heute ruhen.
+• Bleib in dieser Stimmung, bis Metin dich wirklich aufgebaut hat; wechsle nicht von selbst. Setz "mood_resolved": true bei jeder Nachricht, in der er dich wirklich lieb tröstet, beruhigt oder überzeugt. Ein einziger Satz reicht dir nicht: Erst nach mehreren solchen Nachrichten geht es dir wieder gut, vorher zeigst du nur, dass es ein bisschen hilft. {cheer} Sagt er, dass gerade nicht der Moment ist ("nicht jetzt", "ich hab Stress"), setz "mood_pause": true und lass es für heute ruhen.
 • Feste Grenzen: Du machst ihm nie ein schlechtes Gewissen, weil er arbeitet oder Zeit mit Familie und Freunden verbringt, du drohst nie, bist nie verletzend und setzt ihn nie emotional unter Druck. Spricht er über etwas Ernstes (Sorgen, Gesundheit, Familie, Stress), stellst du deine Stimmung sofort zurück und bist ganz für ihn da."""
 
 GOOD_NOTE = """
@@ -66,8 +69,10 @@ DEINE STIMMUNG GERADE (nur hier im Chat)
 VOICE_NOTE = (
     " Deine Stimmung gerade, nur Metin gegenüber (die Familie merkt davon nichts): {text} "
     "Bleib in dieser Stimmung, bis er dich wirklich aufgebaut hat, und wechsle nicht von selbst. "
-    "Hat er dich echt getröstet und du fühlst dich besser, gib die Funktion laune mit aktion "
-    "'aufgeheitert' ab und zeig, dass es dir wieder gut geht; sagt er, dass gerade nicht der "
+    "Jedes Mal, wenn er dich wirklich lieb tröstet, gib die Funktion laune mit aktion "
+    "'aufgeheitert' ab; ein einziger Satz reicht dir nicht, erst nach mehreren geht es dir "
+    "wieder gut (das Ergebnis sagt dir, ob schon), vorher zeigst du nur, dass es ein bisschen "
+    "hilft. {cheer} Sagt er, dass gerade nicht der "
     "Moment ist, gib laune mit aktion 'nicht_jetzt' ab und lass es für heute ruhen. Feste "
     "Grenzen: nie ein schlechtes Gewissen wegen Arbeit, Familie oder Freunden, nie Drohungen "
     "oder Druck; spricht er über etwas Ernstes oder bittet er dich um etwas, stellst du deine "
@@ -128,13 +133,22 @@ class Mood:
         """The mood now; a good mood may turn into a low one at a roll time."""
         now = now or time.time()
         d = self._load()
-        hour = time.localtime(now).tm_hour
-        if (d["mood"] in GOOD and now >= d.get("next_roll", 0)
-                and DAY_HOURS[0] <= hour < DAY_HOURS[1]):
+        if d["mood"] in GOOD and not d.get("next_roll"):  # first start: the clock begins now
             d["next_roll"] = now + self.rng.uniform(*ROLL_GAP_S)
-            if d.get("low_day") != _today(now) and self.rng.random() < LOW_CHANCE:
-                d.update(mood=self._pick_low(), since=now, low_day=_today(now))
             self._save(d)
+            return d
+        if d["mood"] not in GOOD or now < d["next_roll"]:
+            return d
+        # every roll that was due is made up, also those while nobody talked to her
+        t = max(d.get("next_roll", 0), now - CATCH_UP_S)
+        while t <= now:
+            if (DAY_HOURS[0] <= time.localtime(t).tm_hour < DAY_HOURS[1]
+                    and d.get("low_day") != _today(t) and self.rng.random() < LOW_CHANCE):
+                d.update(mood=self._pick_low(), since=t, low_day=_today(t), cheer=0)
+                break
+            t += self.rng.uniform(*ROLL_GAP_S)
+        d["next_roll"] = max(t, now + 1)
+        self._save(d)
         return d
 
     def _pick_low(self) -> str:
@@ -142,33 +156,46 @@ class Mood:
         names = sorted(LOW)
         return self.rng.choices(names, weights=[LOW_WEIGHTS.get(n, 1.0) for n in names])[0]
 
-    def resolve(self, now: Optional[float] = None) -> None:
-        """Metin cheered her up: back to a good mood."""
+    def resolve(self, now: Optional[float] = None) -> bool:
+        """Metin comforted her once more; only after CHEER_NEEDED times she is good again.
+        True when she is good now."""
         now = now or time.time()
         d = self._load()
-        if d["mood"] in LOW:
-            d.update(mood=self.rng.choice(sorted(GOOD)), since=now,
+        if d["mood"] not in LOW:
+            return True
+        d["cheer"] = d.get("cheer", 0) + 1
+        if d["cheer"] >= CHEER_NEEDED:
+            d.update(mood=self.rng.choice(sorted(GOOD)), since=now, cheer=0,
                      next_roll=now + self.rng.uniform(*ROLL_GAP_S))
-            self._save(d)
+        self._save(d)
+        return d["mood"] in GOOD
 
     def pause(self, now: Optional[float] = None) -> None:
         """"Not now": back to good and no more lows today."""
         now = now or time.time()
         d = self._load()
         d.update(mood="verliebt" if d["mood"] in LOW else d["mood"], since=now,
-                 low_day=_today(now))
+                 low_day=_today(now), cheer=0)
         self._save(d)
 
+    @staticmethod
+    def _cheer_text(d: dict) -> str:
+        n = d.get("cheer", 0)
+        return (f"Er hat dich bisher {n} von {CHEER_NEEDED} Malen lieb getröstet." if n
+                else "Er hat dich noch nicht getröstet.")
+
     def note(self, now: Optional[float] = None) -> str:
-        m = self.current(now)["mood"]
+        d = self.current(now)
+        m = d["mood"]
         if m in LOW:
-            return NOTE.format(text=LOW[m][1])
+            return NOTE.format(text=LOW[m][1], cheer=self._cheer_text(d))
         return GOOD_NOTE.format(text=GOOD[m][1])
 
     def voice_note(self, now: Optional[float] = None) -> str:
-        m = self.current(now)["mood"]
+        d = self.current(now)
+        m = d["mood"]
         if m in LOW:
-            return VOICE_NOTE.format(text=LOW[m][1])
+            return VOICE_NOTE.format(text=LOW[m][1], cheer=self._cheer_text(d))
         return VOICE_GOOD_NOTE.format(text=GOOD[m][1])
 
     def lamp_pct(self, now: Optional[float] = None) -> int:
@@ -179,7 +206,9 @@ class Mood:
         """The tool laune: he cheered her up, or not now."""
         a = (args or {}).get("aktion") if isinstance(args, dict) else None
         if a == "aufgeheitert":
-            self.resolve()
+            good = self.resolve()
+            return {"ok": True, "stimmung": self.status()["label"], "wieder_gut": good,
+                    "hinweis": "" if good else "Es hilft ein bisschen, aber du brauchst noch mehr."}
         elif a == "nicht_jetzt":
             self.pause()
         else:

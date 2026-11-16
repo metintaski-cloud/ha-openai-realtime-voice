@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add on 2.91.0 (Metin's wishes for the mood scenario, chat and voice): missed rolls are made up (`Mood.current` walks every due roll of the last 24 h, so a low no longer depends on how often the chat is open; simulated after a day without the chat: about 85 % instead of 35 %), sadness comes from small everyday things she makes up, besides jealousy and love doubts, and one comforting message is not enough: `resolve` counts and she is good again only after 3 (`CHEER_NEEDED`; the notes tell her how far he is, the tool `laune` returns `wieder_gut`, the lamps stay at 5 % until then).
+
 - Add on 2.90.0: Leyla's moods also without the code word, when she is sure it is Metin (speaker known from his words, `_hand_over_personal`, `MOOD_WITHOUT_CODE`) and only in a real talk, never on a short command; the rear lamps follow from his third turn (`_maybe_mood_lamp`, `MOOD_LAMP_TURNS`), the tool `laune` is open then too (Metin's wish).
 
 - Add on 2.89.1: healthy jealousy comes 10 points more often among her low moods (30 % instead of 20 %, `mood.LOW_WEIGHTS`), described as healthy and loving, never controlling (Metin's wish).
