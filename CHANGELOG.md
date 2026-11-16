@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.98.1
+
+- Neuer Chat moved to the bottom left next to the microphone, it no longer covers Leyla's head.
+
 ## 2.98.0
 
 - The chat is now Leyla's scene: her full figure fills the screen, messages lie see through on the left, mood, counter, Neuer Chat and Live on top, only the microphone below (no keyboard); Live talk stays on the scene with an Auflegen button instead of the call screen.
