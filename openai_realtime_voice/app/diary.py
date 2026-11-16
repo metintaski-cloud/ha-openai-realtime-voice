@@ -28,6 +28,8 @@ KEEP_S = 30 * DAY
 FADE = ((3 * DAY, "lang"), (14 * DAY, "mittel"), (KEEP_S, "kurz"))
 MAX_NOTE = 5000         # characters she gets at most; the oldest are dropped first
 MAX_ENTRIES = 300
+RECENT_S = 12 * 3600     # the last chat turns stay word for word this long (2.94.6)
+RECENT_PAIRS = 10        # message and answer pairs kept word for word
 CHAT_PAUSE_S = 5 * 60   # a chat counts as one talk after 5 minutes without a message (30 until 2.94.1)
 LIMITS = {"lang": 400, "mittel": 160, "kurz": 70}
 
@@ -91,7 +93,7 @@ class Diary:
         self.path = path or os.environ.get("LEYLA_DIARY_PATH", PATH)
         # the running chat, also in a file so a restart loses nothing (2.94.4)
         self.chat_path = self.path + ".chat"
-        self._chat, self._chat_last = self._load_chat()
+        self._chat, self._chat_last, self._recent = self._load_chat()
 
     # ---- storage ----
     def entries(self) -> list:
@@ -139,16 +141,18 @@ class Diary:
         try:
             with open(self.chat_path, encoding="utf-8") as f:
                 d = json.load(f) or {}
-            return [tuple(x) for x in d.get("turns", [])], float(d.get("last", 0.0))
+            return ([tuple(x) for x in d.get("turns", [])], float(d.get("last", 0.0)),
+                    [list(x) for x in d.get("recent", [])])
         except Exception:
-            return [], 0.0
+            return [], 0.0, []
 
     def _save_chat(self) -> None:
         try:
             os.makedirs(os.path.dirname(self.chat_path) or ".", exist_ok=True)
             tmp = self.chat_path + ".tmp"
             with open(tmp, "w", encoding="utf-8") as f:
-                json.dump({"turns": self._chat, "last": self._chat_last}, f, ensure_ascii=False)
+                json.dump({"turns": self._chat, "last": self._chat_last, "recent": self._recent},
+                          f, ensure_ascii=False)
             os.replace(tmp, self.chat_path)
         except Exception as e:
             logger.warning("Diary: running chat not saved: %s", e)
@@ -157,6 +161,7 @@ class Diary:
         self._chat.append((str(message or ""), str(reply or "")))
         self._chat = self._chat[-40:]
         self._chat_last = now or time.time()
+        self._recent = (self._recent + [[str(message or ""), str(reply or ""), self._chat_last]])[-RECENT_PAIRS:]
         self._save_chat()
 
     def chat_due(self, now: Optional[float] = None) -> list:
@@ -173,10 +178,23 @@ class Diary:
         self._save_chat()
         return dialog
 
-    def chat_text(self, limit: int = 3000) -> str:
-        """What was written in the chat and is not in the diary yet, for a talk at home."""
-        text = "\n".join(f"Metin: {m}\nLeyla: {r}" for m, r in self._chat)
+    def _fresh(self, now: Optional[float] = None) -> list:
+        now = now or time.time()
+        return [(m, r) for m, r, t in self._recent if now - t < RECENT_S]
+
+    def chat_text(self, limit: int = 3000, now: Optional[float] = None) -> str:
+        """The last chat turns word for word (12 h), for a talk at home."""
+        text = "\n".join(f"Metin: {m}\nLeyla: {r}" for m, r in self._fresh(now))
         return text[-limit:]
+
+    def with_last_chat(self, history, now: Optional[float] = None) -> list:
+        """The chat history for her answer: the last 10 message pairs of the last 12 hours as
+        the server kept them, across "Neuer Chat" (Metin, 2.94.6: after a new chat she must
+        not start from zero). Only when the server has none yet, the page's history counts."""
+        fresh = self._fresh(now)
+        if not fresh:
+            return history if isinstance(history, list) else []
+        return [x for m, r in fresh for x in ({"role": "user", "text": m}, {"role": "leyla", "text": r})]
 
     # ---- what she gets ----
     def note(self, who: str, private: bool = False, now: Optional[float] = None) -> str:

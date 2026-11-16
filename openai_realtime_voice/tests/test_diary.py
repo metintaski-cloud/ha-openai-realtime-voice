@@ -80,7 +80,7 @@ def test_new_chat_takes_the_chat_at_once_and_home_sees_the_fresh_part(tmp_path):
     assert diary.CHAT_PAUSE_S == 300
     talk = dy.chat_take()
     assert talk == [("user", "Ich hab heute Bauchweh"), ("bot", "Oh nein, leg dich hin")]
-    assert dy.chat_text() == "" and dy.chat_take() == []
+    assert dy.chat_take() == [] and "Bauchweh" in dy.chat_text()  # the words stay 12 h
 
 
 def test_bridge_new_chat_writes_the_diary_before_the_next_answer(tmp_path, monkeypatch):
@@ -124,3 +124,19 @@ def test_the_running_chat_survives_a_restart(tmp_path):
     again = diary.Diary(p)  # the add on restarted
     assert again.chat_due(NOW + diary.CHAT_PAUSE_S + 1) == [("user", "Ich hab heute Bauchweh"), ("bot", "Leg dich hin")]
     assert diary.Diary(p).chat_take() == []
+
+
+def test_a_new_chat_goes_on_with_the_last_turns(tmp_path):
+    dy = diary.Diary(str(tmp_path / "d.json"))
+    assert dy.with_last_chat([{"role": "user", "text": "alt"}], now=NOW) == [{"role": "user", "text": "alt"}]
+    dy.chat_turn("Ich war beim Zahnarzt", "Und, wie war's?", now=NOW)
+    dy.chat_take()  # "Neuer Chat": the diary entry is written, the words stay
+    h = dy.with_last_chat([], now=NOW + 120)
+    assert h == [{"role": "user", "text": "Ich war beim Zahnarzt"}, {"role": "leyla", "text": "Und, wie war's?"}]
+    dy.chat_turn("Weißt du noch?", "Ja, der Zahnarzt!", now=NOW + 130)
+    assert len(dy.with_last_chat([{"role": "user", "text": "x"}] * 2, now=NOW + 140)) == 4  # second message too
+    for i in range(15):
+        dy.chat_turn(f"m{i}", f"r{i}", now=NOW + 200 + i)
+    assert len(dy.with_last_chat([], now=NOW + 300)) == 2 * diary.RECENT_PAIRS
+    assert dy.with_last_chat([], now=NOW + 300 + diary.RECENT_S) == []
+    assert "Zahnarzt" not in dy.chat_text(now=NOW + 300)  # pushed out by newer turns

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add on 2.94.6 (Metin: two minutes after "Neuer Chat" she had forgotten; the log showed the diary entry was written at 15:00:57, but a short summary in the long rules did not carry the thread): the server now keeps the last 10 message pairs of the last 12 hours word for word (`Diary.with_last_chat`, `RECENT_PAIRS`, `RECENT_S`) and gives them to her as the real chat history, across "Neuer Chat"; the talk at home after the code word gets the same words (`chat_text`).
+
 - Add on 2.94.5: "Neuer Chat" starts at once without the browser question (Metin's wish; the chat goes into the diary anyway, nothing is lost).
 
 - Add on 2.94.4: the running chat that is not in the diary yet is kept in a file (`/data/leyla_diary.json.chat`), so an update or a power cut no longer loses it.
