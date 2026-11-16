@@ -302,8 +302,7 @@ button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 #chat .chead #clive{margin-left:auto;padding:7px 12px;font-size:14px}
 #chat.oncall #clive{background:linear-gradient(90deg,#ef4444,#f97316)}
 #lpill{display:none;width:100%;text-align:right;font-size:13px;color:#9fb4ff}#chat.oncall #lpill{display:block}
-#clog{position:absolute;z-index:1;left:8px;top:92px;bottom:76px;width:56%;max-height:none;overflow-y:auto;justify-content:flex-start;-webkit-mask-image:linear-gradient(transparent,#000 8%);mask-image:linear-gradient(transparent,#000 8%)}
-#clog>:first-child{margin-top:auto}
+#clog{position:absolute;z-index:1;left:8px;top:92px;bottom:76px;width:56%;max-height:none;overflow-y:auto;justify-content:flex-end;-webkit-mask-image:linear-gradient(transparent,#000 8%);mask-image:linear-gradient(transparent,#000 8%)}
 #clog .lr img{display:none}#clog .lr{max-width:100%}
 #clog .m{font-size:15px;max-width:100%;backdrop-filter:blur(3px)}
 #clog .u{background:#0009;border-color:#22d3ee44}#clog .l{background:#3a145799;border-color:#d946ef55}
@@ -411,6 +410,7 @@ function chatDraw(wait){const log=document.getElementById('clog');log.innerHTML=
   if(m.aid&&AUDIO.has(m.aid)){const b=document.createElement('button');b.className='play';b.textContent='\u25B6';b.onclick=()=>playAudio(m.aid);d.appendChild(b);const sv=document.createElement('a');sv.className='play';sv.textContent='\u2B07';sv.title='Als Datei speichern';sv.href=AUDIO.get(m.aid);sv.download='leyla_'+m.aid+'.wav';d.appendChild(sv);}
   if(m.role==='user')return log.appendChild(d);const r=document.createElement('div');r.className='lr';const im=document.createElement('img');im.src='/leyla.jpg';im.alt='';r.append(im,d);log.appendChild(r);});
  if(wait){const w=document.createElement('div');w.className='wait';w.textContent='Leyla schreibt ...';log.appendChild(w);}
+ {const kids=[...log.children],talk=[];kids.forEach((e,i)=>{if(e.classList.contains('u')||e.classList.contains('lr'))talk.push(i);});const k=talk.length>2?talk[talk.length-2]:0;kids.slice(0,k).forEach(e=>e.style.display='none');}
  log.scrollTop=log.scrollHeight;}
 function diffText(o,n){if(o.indexOf(' | ')<0&&n.indexOf(' | ')<0)return o+'  \u2192  '+n;const a=o.split(' | '),b=n.split(' | ');
  const kv=l=>{const m=new Map();l.slice(1).forEach(x=>{const i=x.indexOf(':');m.set(i>0?x.slice(0,i).trim():x,i>0?x.slice(i+1).trim():'');});return m;};

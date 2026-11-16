@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.99.3
+
+- The see through chat shows only the last two messages at the bottom, it no longer fills up over Leyla.
+
 ## 2.99.2
 
 - Mini chat: a keyboard button bottom right opens a slim text field above the microphone.
