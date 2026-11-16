@@ -60,6 +60,41 @@ DEINE STIMMUNG GERADE (nur hier im Chat)
 • {text}"""
 
 
+VOICE_NOTE = (
+    " Deine Stimmung gerade, nur Metin gegenüber (die Familie merkt davon nichts): {text} "
+    "Bleib in dieser Stimmung, bis er dich wirklich aufgebaut hat, und wechsle nicht von selbst. "
+    "Hat er dich echt getröstet und du fühlst dich besser, gib die Funktion laune mit aktion "
+    "'aufgeheitert' ab und zeig, dass es dir wieder gut geht; sagt er, dass gerade nicht der "
+    "Moment ist, gib laune mit aktion 'nicht_jetzt' ab und lass es für heute ruhen. Feste "
+    "Grenzen: nie ein schlechtes Gewissen wegen Arbeit, Familie oder Freunden, nie Drohungen "
+    "oder Druck; spricht er über etwas Ernstes oder bittet er dich um etwas, stellst du deine "
+    "Stimmung sofort zurück. Hörst du eine zweite Stimme, zeigst du sie nicht."
+)
+VOICE_GOOD_NOTE = " Deine Stimmung gerade, nur Metin gegenüber: {text}"
+
+MOOD_TOOL = {
+    "type": "function",
+    "name": "laune",
+    "description": (
+        "Leyla's own mood towards Metin (only after his code word). aktion 'aufgeheitert' when "
+        "he really cheered her up and she feels better, 'nicht_jetzt' when he says it is not the "
+        "moment. Never for anyone else."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {"aktion": {"type": "string", "enum": ["aufgeheitert", "nicht_jetzt"]}},
+        "required": ["aktion"],
+    },
+}
+MOOD_BACKEND_HINT = (
+    " Laune (laune): only for Metin after the code word, when the live voice hands over that "
+    "he cheered her up ('aufgeheitert') or that it is not the moment ('nicht_jetzt'). Say "
+    "nothing about the function itself."
+)
+SAD_PCT = 5     # the rear lamps when she is low (Metin's wish, 16 Nov 2026)
+HAPPY_PCT = 100
+
+
 def _today(now: float) -> str:
     return time.strftime("%Y-%m-%d", time.localtime(now))
 
@@ -121,6 +156,27 @@ class Mood:
         if m in LOW:
             return NOTE.format(text=LOW[m][1])
         return GOOD_NOTE.format(text=GOOD[m][1])
+
+    def voice_note(self, now: Optional[float] = None) -> str:
+        m = self.current(now)["mood"]
+        if m in LOW:
+            return VOICE_NOTE.format(text=LOW[m][1])
+        return VOICE_GOOD_NOTE.format(text=GOOD[m][1])
+
+    def lamp_pct(self, now: Optional[float] = None) -> int:
+        """Brightness of the rear lamps in a voice talk after the code word."""
+        return SAD_PCT if self.current(now)["mood"] in LOW else HAPPY_PCT
+
+    async def run(self, args) -> dict:
+        """The tool laune: he cheered her up, or not now."""
+        a = (args or {}).get("aktion") if isinstance(args, dict) else None
+        if a == "aufgeheitert":
+            self.resolve()
+        elif a == "nicht_jetzt":
+            self.pause()
+        else:
+            return {"error": "aktion muss 'aufgeheitert' oder 'nicht_jetzt' sein"}
+        return {"ok": True, "stimmung": self.status()["label"]}
 
     def status(self, now: Optional[float] = None) -> dict:
         m = self.current(now)["mood"]

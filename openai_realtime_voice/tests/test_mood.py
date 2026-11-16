@@ -49,3 +49,25 @@ async def test_chat_applies_resolved_and_returns_the_mood(tmp_path, monkeypatch)
     out = await chat.answer("k", ["m"], "R", store, [], "Natürlich mag ich dich!", mood=m)
     assert "zweifelst" in seen[0]
     assert out["mood"]["low"] is False
+
+
+def test_voice_mood_note_tool_and_lamp_brightness(tmp_path):
+    import asyncio
+    from app import mood as md
+    m = md.Mood(str(tmp_path / "m.json"))
+    d = m._load()
+    d.update(mood="traurig", low_day="x")
+    m._save(d)
+    assert "laune" in m.voice_note() and "traurig" in m.voice_note() and m.lamp_pct() == 5
+    assert asyncio.run(m.run({"aktion": "aufgeheitert"}))["ok"] and m.lamp_pct() == 100
+    assert "laune" not in m.voice_note()
+    assert "error" in asyncio.run(m.run({"aktion": "x"}))
+
+
+def test_lamp_show_uses_the_mood_brightness():
+    from app import lamp_show
+    ls = lamp_show.LampShow(["light.a"], memory_path="/tmp/ls_test.json")
+    ls._mode = "listen"
+    assert ls._look()[1] == 100
+    ls.set_mood_pct(5)
+    assert ls._look()[1] == 5

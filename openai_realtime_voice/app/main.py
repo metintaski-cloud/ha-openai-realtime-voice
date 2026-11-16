@@ -169,7 +169,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self.mailer = mail.Mailer(google=self.google)
         self.inbox = inbox.Inbox(google=self.google)
         self.agenda = agenda.Agenda(google=self.google)
-        self.mood = mood.Mood()  # Leyla's ups and downs, only in the app chat
+        self.mood = mood.Mood()  # Leyla's ups and downs: app chat, and voice after the code word
         self.technik = technik.TechnikChecker(
             notify=self.messages.push if self.messages.available else None)
         self.technik.lamp_count = len(self.lights.entities)
@@ -276,8 +276,10 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
              "Löschen bestätigt er in der App)"),
             (self.agenda.available and bool(self.code_phrase), agenda.AGENDA_TOOL,
              agenda.AGENDA_BACKEND_HINT,
-             "Metins Kalender verwalten (Termine ansehen, eintragen, ändern; nur für Metin selbst "
-             "nach seinem Codewort; Löschen bestätigt er in der App)"),
+             "Metins Kalender verwalten (Termine ansehen, eintragen, ändern, löschen; nur für "
+             "Metin selbst nach seinem Codewort)"),
+            (bool(self.code_phrase), mood.MOOD_TOOL, mood.MOOD_BACKEND_HINT,
+             "deine eigene Laune Metin gegenüber festhalten (nur nach seinem Codewort)"),
         ]
 
     def _session_start(self, extra: str = "") -> dict:
@@ -394,10 +396,12 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                              family_block=block, code_phrase=self.code_phrase,
                              private_listing=listing, extra=self.instructions)
 
-    async def _unlock(self, live_ws, state: dict) -> None:
+    async def _unlock(self, live_ws, state: dict, app: bool = False) -> None:
         """The code phrase was heard: hand Leyla her memory for this conversation."""
         state["unlocked"] = True
         logger.info("Code phrase heard: memory unlocked for this conversation")
+        if not app:  # the rear lamps show her mood: dim when she is low, full when happy
+            self.lamp.set_mood_pct(self.mood.lamp_pct())
         private = self.memory.load(memory.PRIVATE) if self.enable_memory else []
         family = (self.memory.load(memory.FAMILY) + self.memory.load(memory.FRIENDS)
                   if self.enable_memory else [])
@@ -411,7 +415,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                             "es ist Metin. Ab jetzt weichst du nicht mehr aus und bist ganz "
                             "offen. Falls du noch nicht mit 'Habibi' geantwortet hast, tu es "
                             "kurz, sonst mach normal weiter. "
-                            + UNLOCKED_LOVE +
+                            + UNLOCKED_LOVE + self.mood.voice_note() +
                             " Du hast die offenen Listen "
                             f"Familie und Freunde mit {len(family)} Einträgen (kennst du schon) und "
                             f"Metins private Liste mit {len(private)} Einträgen (unten). Wenn er "
@@ -1227,7 +1231,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             await client_ws.send(json.dumps({"type": "ready"}))
             logger.info("Sent ready signal to client")
             if app:  # the code word was typed in the app: it is Metin
-                await self._unlock(live_ws, state)
+                await self._unlock(live_ws, state, app=True)
             metrics.record("ready", client=client_id, live_open_s=live_open_s,
                            connect_to_ready_s=time.monotonic() - start_time)
             state["input_clock"] = time.monotonic()

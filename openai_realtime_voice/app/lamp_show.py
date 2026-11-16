@@ -128,6 +128,7 @@ class LampShow:
     def __init__(self, entities: list[str], api_url: Optional[str] = None, token: Optional[str] = None,
                  memory_path: str = "/data/lamp_show.json") -> None:
         self.entities = entities
+        self.mood_pct: Optional[int] = None
         self.memory_path = memory_path
         self.colors_path = os.path.join(os.path.dirname(memory_path) or ".", "lamp_colors.json")
         self.colors: dict = self._load_colors()
@@ -333,6 +334,10 @@ class LampShow:
         self._mode, self._level, self._sent = "listen", 0.0, None
         self._worker = asyncio.create_task(self._run())
 
+    def set_mood_pct(self, pct: Optional[int]) -> None:
+        """Leyla's mood after the code word: every look uses this brightness (None = normal)."""
+        self.mood_pct = pct
+
     def phase(self, name: str) -> None:
         if self._worker is None:
             return
@@ -367,6 +372,7 @@ class LampShow:
         self._active -= 1
         if self._active > 0:
             return
+        self.mood_pct = None
         worker, self._worker = self._worker, None
         if worker:
             worker.cancel()
@@ -437,6 +443,10 @@ class LampShow:
 
     # ---- The breathing ----
     def _look(self) -> tuple[tuple, int]:
+        rgb, pct = self._base_look()
+        return rgb, (self.mood_pct if self.mood_pct is not None else pct)
+
+    def _base_look(self) -> tuple[tuple, int]:
         if self._mode == "speak" and time.monotonic() - self._last_audio > SPEECH_HOLD_S:
             self._mode = "listen"
         if self._mode == "speak":
