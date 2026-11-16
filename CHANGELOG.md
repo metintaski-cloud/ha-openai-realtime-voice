@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.98.4
+
+- Stage clip `traurig`, shown whenever she is low.
+
 ## 2.98.3
 
 - Stage clips crossfade softly instead of cutting, a newer mood change cancels an older one.
