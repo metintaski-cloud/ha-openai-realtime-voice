@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.99.1
+
+- Her voice replies in the chat can be saved as a WAV file (⬇ next to ▶).
+
 ## 2.99.0
 
 - Stage clips play forward only (no more backwards loop) and crossfade over 0.8 s into the next scene; clips cut at the frame closest to the start pose (`tools/mkclip.py`).

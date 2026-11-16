@@ -232,7 +232,7 @@ body{margin:0;background:#000;color:#e8ecff;font:17px/1.4 system-ui,sans-serif;p
 #cin button{width:auto;padding:0 16px}
 #cmic{padding:0 14px!important;font-size:20px}#cmic.rec{background:linear-gradient(90deg,#ef4444,#f97316);animation:recp 1s infinite}
 @keyframes recp{50%{opacity:.6}}
-.m .play{display:inline-block;margin-left:8px;width:auto;padding:2px 10px;font-size:14px}
+.m .play{display:inline-block;margin-left:8px;width:auto;padding:2px 10px;font-size:14px}a.play{color:#fff;text-decoration:none;border:1px solid #d946ef88;border-radius:8px}
 header{display:flex;align-items:center;justify-content:center;gap:12px;padding:18px 16px 6px;position:relative}
 header img{width:44px;height:44px;border-radius:11px;box-shadow:0 0 14px #3b82f688}
 h1{font-size:21px;margin:0;background:linear-gradient(90deg,var(--cy),var(--vi),var(--mg));-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -406,7 +406,7 @@ function chatDraw(wait){const log=document.getElementById('clog');log.innerHTML=
   if(m.role==='trash')return log.appendChild(trashCard(m,i));
   if(m.role==='remind')return log.appendChild(remindCard(m,i));
   const d=document.createElement('div');d.className='m '+(m.role==='user'?'u':'l');d.textContent=m.text;
-  if(m.aid&&AUDIO.has(m.aid)){const b=document.createElement('button');b.className='play';b.textContent='\u25B6';b.onclick=()=>playAudio(m.aid);d.appendChild(b);}
+  if(m.aid&&AUDIO.has(m.aid)){const b=document.createElement('button');b.className='play';b.textContent='\u25B6';b.onclick=()=>playAudio(m.aid);d.appendChild(b);const sv=document.createElement('a');sv.className='play';sv.textContent='\u2B07';sv.title='Als Datei speichern';sv.href=AUDIO.get(m.aid);sv.download='leyla_'+m.aid+'.wav';d.appendChild(sv);}
   if(m.role==='user')return log.appendChild(d);const r=document.createElement('div');r.className='lr';const im=document.createElement('img');im.src='/leyla.jpg';im.alt='';r.append(im,d);log.appendChild(r);});
  if(wait){const w=document.createElement('div');w.className='wait';w.textContent='Leyla schreibt ...';log.appendChild(w);}
  log.scrollTop=log.scrollHeight;}
