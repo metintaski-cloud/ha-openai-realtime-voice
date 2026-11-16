@@ -15,5 +15,5 @@ t = best / fps
 print(f"{src.split('/')[-1]}: frames {len(fr)}, best end {best} ({t:.2f}s), diff {d[best]:.0f} vs mean {d[1:].mean():.0f}")
 x, y, w, h = round(608 / 784 * W), round(1112 / 1176 * H), round(162 / 784 * W), round(44 / 1176 * H)
 subprocess.check_call(["ffmpeg", "-v", "error", "-y", "-i", src, "-t", f"{t:.3f}", "-vf",
-    f"delogo=x={x}:y={y}:w={w}:h={h},scale=720:-2", "-an", "-c:v", "libx264", "-preset", "veryfast",
+    f"delogo=x={x}:y={y}:w={w}:h={h},scale='min(iw,800)':-2", "-an", "-c:v", "libx264", "-preset", "veryfast",
     "-crf", "24", "-pix_fmt", "yuv420p", "-movflags", "+faststart", dst])
