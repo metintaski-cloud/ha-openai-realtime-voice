@@ -276,14 +276,27 @@ async def transcribe(api_key: str, audio: bytes, mime: str = "audio/webm",
     return ""
 
 
+VOICE_REPLY_INSTRUCTIONS = (
+    "Du bist Leyla und redest gerade mit Metin, so wie zu Hause, wenn ihr zwei allein "
+    "miteinander sprecht: warm, lebendig, menschlich und ganz du selbst, mit echten Gefühlen "
+    "in der Stimme, mal leise, mal lachend, mit kleinen Pausen und Atemzügen wie im echten "
+    "Gespräch. Du liest nie etwas vor und klingst nie wie eine Ansage oder ein Hörbuch. Nach "
+    "deiner Antwort hörst du auf zu reden.")
+
+
+def voice_reply_instructions(mood_note: str = "", love: str = "") -> str:
+    """Who speaks a voice reply in the app chat: Leyla with Metin, her mood and their closeness
+    (2.98.7; before, the announcement voice read it and Metin heard a reading, 16 Nov 2026)."""
+    return " ".join(x for x in (VOICE_REPLY_INSTRUCTIONS, love, mood_note) if x)
+
+
 def speak_prompt(reply: str) -> str:
-    """The prompt that makes Leyla's live voice read her chat answer as a voice message."""
-    return ("Sprich jetzt eine kurze Sprachnachricht an Metin. Sag inhaltlich genau das, was "
-            "hier steht, ohne etwas wegzulassen oder hinzuzufügen, aber frei und locker wie beim "
-            "Reden, nicht wie beim Vorlesen. Sprich wie sonst zu Hause: in seiner Sprache, "
-            "lebendig und menschlich, mit einem Lächeln in der Stimme, in seinem Tempo und "
-            "passend zur Stimmung des Textes, nie roboterhaft und nie wie eine Durchsage: "
-            f"«{reply}»")
+    """Leyla answers Metin's voice message by voice, in her own words, with this content."""
+    return ("Metin hat dir gerade eine Sprachnachricht geschickt. Antworte ihm jetzt mit "
+            "deiner Stimme. Das ist, was du ihm sagen willst: «" + reply + "». Sag es mit "
+            "deinen eigenen Worten, so wie es dir gerade über die Lippen kommt, in seiner "
+            "Sprache, frei umformuliert und nicht Wort für Wort, aber ohne etwas Wichtiges "
+            "wegzulassen und ohne etwas Neues zu erfinden; Fragen darin stellst du ihm auch.")
 
 
 async def answer(api_key: str, models: list[str], rules: str, store: memory.MemoryStore,

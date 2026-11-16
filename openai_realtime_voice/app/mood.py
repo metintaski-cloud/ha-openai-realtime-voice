@@ -221,6 +221,12 @@ class Mood:
             return VOICE_NOTE.format(text=LOW[m][1], cheer=self._cheer_text(d))
         return VOICE_GOOD_NOTE.format(text=GOOD[m][1])
 
+    def feeling(self, now: Optional[float] = None) -> str:
+        """Only how she feels, for a voice reply in the app chat (no tool hints)."""
+        d = self.current(now)
+        m = d["mood"]
+        return "Deine Stimmung gerade: " + (LOW if m in LOW else GOOD)[m][1] + " Lass das in deiner Stimme hören."
+
     def lamp_pct(self, now: Optional[float] = None) -> int:
         """Brightness of the rear lamps in a voice talk after the code word."""
         return SAD_PCT if self.current(now)["mood"] in LOW else HAPPY_PCT

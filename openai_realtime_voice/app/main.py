@@ -418,7 +418,9 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             return {"heard": heard}
         out["heard"] = heard
         try:
-            pcm = await self._speak_once(chat.speak_prompt(out["reply"]), max_s=60.0)
+            pcm = await self._speak_once(
+                chat.speak_prompt(out["reply"]), max_s=60.0,
+                instructions=chat.voice_reply_instructions(self.mood.feeling(), UNLOCKED_LOVE))
             if pcm:
                 out["audio"] = base64.b64encode(messages.pcm_to_wav(pcm)).decode("ascii")
         except Exception as e:

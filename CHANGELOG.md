@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.98.7
+
+- Voice replies in the app chat sound like Leyla talking to Metin again: own speaking setup with their closeness and her mood instead of the announcement voice, content in her own words.
+
 ## 2.98.6
 
 - Third sad stage clip (`traurig3`).

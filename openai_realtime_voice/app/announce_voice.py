@@ -27,13 +27,13 @@ SPEECH_END_GAP_S = 1.2  # GPT Live keeps sending silence after the speech: stop 
 
 
 class AnnounceVoiceMixin:
-    def _announce_session_start(self) -> dict:
+    def _announce_session_start(self, instructions: str = SPEAK_INSTRUCTIONS) -> dict:
         return {
             "type": "session.start",
             "event_id": "event_announce",
             "session": {
                 "model": self.live_model,
-                "instructions": SPEAK_INSTRUCTIONS,
+                "instructions": instructions,
                 "audio": {"format": {"type": "audio/pcm", "rate": SAMPLE_RATE},
                           "output": {"voice": self.voice}},
                 "delegation": {"type": "responses", "responses": {
@@ -52,12 +52,13 @@ class AnnounceVoiceMixin:
             await ws.send(json.dumps({"type": "session.input_audio.append", "audio": chunk}))
             await asyncio.sleep(0.1)
 
-    async def _collect_speech(self, ws, prompt: str, max_s: float) -> bytes:
+    async def _collect_speech(self, ws, prompt: str, max_s: float,
+                              instructions: str = SPEAK_INSTRUCTIONS) -> bytes:
         """Start the speaking session on ws, send the prompt and collect the speech (PCM)."""
         pcm = bytearray()
         feeder = None
         try:
-            await ws.send(json.dumps(self._announce_session_start()))
+            await ws.send(json.dumps(self._announce_session_start(instructions)))
             loop = asyncio.get_event_loop()
             end = loop.time() + max_s
             started = False
@@ -104,11 +105,14 @@ class AnnounceVoiceMixin:
                 feeder.cancel()
         return bytes(pcm[:loud_end + BYTES_PER_SEC // 4])  # drop trailing silence
 
-    async def _speak_once(self, prompt: str, max_s: float = 40.0) -> bytes:
-        """Let GPT Live speak one announcement without a listener; return 24 kHz PCM."""
+    async def _speak_once(self, prompt: str, max_s: float = 40.0,
+                          instructions: str = SPEAK_INSTRUCTIONS) -> bytes:
+        """Let GPT Live speak one announcement without a listener; return 24 kHz PCM.
+        `instructions`: who speaks; the default is the announcement voice, a voice reply in
+        the app chat passes Leyla talking to Metin (2.98.7)."""
         ws, _ = await self._take_live()
         try:
-            pcm = await self._collect_speech(ws, prompt, max_s)
+            pcm = await self._collect_speech(ws, prompt, max_s, instructions)
         finally:
             await ws.close()
         logger.info("Announcement audio: %.1f s", len(pcm) / BYTES_PER_SEC)
