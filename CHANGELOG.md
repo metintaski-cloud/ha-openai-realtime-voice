@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.102.8
+
+- Second dance scene with oriental music for the short dress.
+
 ## 2.102.7
 
 - Second rose scene with sound for the short dress.
