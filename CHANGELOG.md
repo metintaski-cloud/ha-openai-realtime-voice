@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.100.4
+
+- Fifth greeting for the long dress (ends with a blown kiss).
+
 ## 2.100.3
 
 - Fourth greeting for the long dress (a small open wave).
