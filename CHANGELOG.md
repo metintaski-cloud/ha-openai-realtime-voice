@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.101.11
+
+- Second sad scene for the long dress.
+
 ## 2.101.10
 
 - First sad scene for the long dress.
