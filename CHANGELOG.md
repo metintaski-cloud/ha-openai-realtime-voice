@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.103.11
+
+- Scenes may now have more than nine variants; long dress gets a tenth happy scene and a fourth kiss scene.
+
 ## 2.103.10
 
 - Long dress: another kiss scene, two dances and a happy scene.

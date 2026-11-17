@@ -35,7 +35,7 @@ MASKABLE_PATH = os.path.join(os.path.dirname(__file__), "memory_icon_maskable.pn
 AVATAR_PATH = os.path.join(os.path.dirname(__file__), "leyla_avatar.jpg")  # her picture in the chat
 BODY_PATH = os.path.join(os.path.dirname(__file__), "leyla_body.jpg")  # her full figure on the stage (2.97.0)
 CLIPS_DIR = os.environ.get("LEYLA_CLIPS_DIR", os.path.join(os.path.dirname(__file__), "clips"))
-CLIP_RE = re.compile(r"^/clips/([a-z0-9]{2,20})/([a-z]{2,20}[0-9]?)\.(mp4|jpg|m4a)$")  # look/scene (2.99.4), musik/<mood>.m4a (2.103.0)
+CLIP_RE = re.compile(r"^/clips/([a-z0-9]{2,20})/([a-z]{2,20}[0-9]{0,2})\.(mp4|jpg|m4a)$")  # look/scene (2.99.4), musik/<mood>.m4a (2.103.0)
 
 
 def check_code(typed, phrase: str, now: Optional[float] = None) -> bool:
@@ -464,7 +464,7 @@ async function clipsLoad(){let outs={};try{outs=(await (await fetch('/clips.json
  try{if(OUTFIT)localStorage.setItem('loutfit',OUTFIT);}catch(e){}
  CLIPS=OUTFIT?outs[OUTFIT].clips:[];if(OUTFIT&&outs[OUTFIT].body)document.querySelector('#stage .fig img').src='/clips/'+OUTFIT+'/body.jpg';
  if(LASTST)stageMood(LASTST);}
-function clipVars(b){return CLIPS.filter(n=>n.replace(/[0-9]$/,'')===b);}
+function clipVars(b){return CLIPS.filter(n=>n.replace(/[0-9]+$/,'')===b);}
 function clipFor(st){if(clipVars(st.mood).length)return st.mood;const g=st.low?'traurig':'gluecklich';return clipVars(g).length?g:null;}
 let SV=0,STOK=0;
 function stageShow(name,loop,done,snd){const s=document.getElementById('stage'),vs=[document.getElementById('svid'),document.getElementById('svid2')],a=vs[SV],b=vs[1-SV],tok=++STOK;
