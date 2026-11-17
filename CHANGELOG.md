@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.100.8
+
+- Second good mood loop for the long dress: she walks and turns with the book and laughs.
+
 ## 2.100.7
 
 - Short dress taken out until its clips are remade in portrait format; only the long dress for now.
