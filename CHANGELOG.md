@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.99.11
+
+- Loop for the long black dress: she opens the book and reads, so she keeps moving after the greeting.
+
 ## 2.99.10
 
 - Red look removed, the app now picks between the long and the short black dress.
