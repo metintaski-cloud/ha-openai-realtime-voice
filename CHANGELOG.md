@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.99.13
+
+- Short dress greeting starts one second later (she no longer looks into the camera at once) and keeps more of the side mist.
+
 ## 2.99.12
 
 - Short dress greeting cut to 2:3, so she looks the same size as in the long dress.
