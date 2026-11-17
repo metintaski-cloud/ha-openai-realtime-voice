@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.100.2
+
+- Third greeting for the long dress.
+
 ## 2.100.1
 
 - Several greetings per look, one picked at random when the app opens; second shy greeting for the long dress.
