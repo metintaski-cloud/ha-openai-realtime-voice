@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.103.1
+
+- Metin's song is the background music in a loop; its clip is a sixth dance scene.
+
 ## 2.103.0
 
 - Background music on the stage by her mood: oriental music in a seamless loop while she is happy, quieter while she speaks, off during live talk and with Ton aus. A sad track can be added as musik/traurig.m4a.
