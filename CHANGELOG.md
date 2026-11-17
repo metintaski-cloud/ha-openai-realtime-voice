@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.100.0
+
+- The stage animates the mist itself: cyan and violet glows drift and pulse, the floor shimmers; clips are made with a still background from now on.
+
 ## 2.99.13
 
 - Short dress greeting starts one second later (she no longer looks into the camera at once) and keeps more of the side mist.
