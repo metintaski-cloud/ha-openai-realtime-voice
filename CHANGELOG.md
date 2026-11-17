@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.103.10
+
+- Long dress: another kiss scene, two dances and a happy scene.
+
 ## 2.103.9
 
 - Long dress: fourth dance and three more happy scenes.
