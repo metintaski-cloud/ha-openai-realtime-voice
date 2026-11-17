@@ -476,7 +476,7 @@ function stageShow(name,loop,done){const s=document.getElementById('stage'),vs=[
  b.src='/clips/'+OUTFIT+'/'+name+'.mp4';b.load();}
 function stageLoop(b){if(!b)return stageShow(null);const v=clipVars(b);if(v.length<2)return stageShow(v[0],false,()=>stageLoop(b));
  const cur=document.getElementById(SV?'svid2':'svid').src.split('/').pop().replace('.mp4','');const o=v.filter(n=>n!==cur);stageShow(o[Math.floor(Math.random()*o.length)],false,()=>stageLoop(b));}
-function stagePlay(once,loop){const q=once.filter(n=>CLIPS.includes(n));const next=()=>{const n=q.shift();if(n)stageShow(n,false,next);else stageLoop(loop);};next();}
+function stagePlay(once,loop){const q=once.map(n=>{const v=clipVars(n);return v.length?v[Math.floor(Math.random()*v.length)]:null;}).filter(Boolean);const next=()=>{const n=q.shift();if(n)stageShow(n,false,next);else stageLoop(loop);};next();}
 function stageMood(st){if(CLIPS===null)return;document.getElementById('stage').classList.toggle('low',!!st.low);let once=[];const o=STM;
  if(!o)once=['begruessung'];if(o){if(o.low&&!st.low)once=['uebergang','kuss'];else if(st.low&&o.low&&(st.cheer||0)>(o.cheer||0))once=['trost'];}
  const changed=!o||once.length||o.mood!==st.mood;STM=st;if(changed)stagePlay(once,clipFor(st));}

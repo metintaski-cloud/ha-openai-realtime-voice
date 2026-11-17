@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.100.1
+
+- Several greetings per look, one picked at random when the app opens; second shy greeting for the long dress.
+
 ## 2.100.0
 
 - The stage animates the mist itself: cyan and violet glows drift and pulse, the floor shimmers; clips are made with a still background from now on.
