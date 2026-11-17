@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.100.12
+
+- Short dress: two more good mood loops and a third greeting.
+
 ## 2.100.11
 
 - Third good mood loop for the short dress (she smooths her dress and poses).
