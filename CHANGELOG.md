@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.101.7
+
+- The crouching clip of the short dress moved from good mood to jealous scenes.
+
 ## 2.101.6
 
 - A short dress clip moved from greetings to jealous scenes (she pouts while reading).
