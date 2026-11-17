@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.101.8
+
+- Fourth jealous scene for the long dress.
+
 ## 2.101.7
 
 - The crouching clip of the short dress moved from good mood to jealous scenes.
