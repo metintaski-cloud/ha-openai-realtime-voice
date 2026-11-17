@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.102.1
+
+- I love you scene for the long dress; special scenes come more often (40 % after a loop).
+
 ## 2.102.0
 
 - Leyla is low less often (20 % per roll instead of 35 %), and when she is, jealousy is half of the lows and sadness rarer.
