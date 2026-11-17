@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.103.6
+
+- First dance scene for the long dress.
+
 ## 2.103.5
 
 - The stage always shows the whole clip (head to feet), also on short screens.
