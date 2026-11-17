@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.102.6
+
+- The dance scene plays real oriental music ("Belly Dance" by AliveTunesMusic, Pixabay) instead of the generated tune.
+
 ## 2.102.5
 
 - Dance scene for the short dress with an oriental tune.
