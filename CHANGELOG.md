@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.100.10
+
+- Two good mood loops for the short dress (an elegant full turn, posing and a shy giggle).
+
 ## 2.100.9
 
 - Short dress back with two new portrait greetings and the same stage and mist as the long dress.
