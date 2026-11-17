@@ -89,7 +89,7 @@ def test_jealousy_comes_more_often(tmp_path):
     m = md.Mood(str(tmp_path / "m.json"), rng=random.Random(1))
     picks = [m._pick_low() for _ in range(20000)]
     share = picks.count("eifersuechtig") / len(picks)
-    assert 0.28 < share < 0.32 and abs(picks.count("traurig") / len(picks) - 0.175) < 0.02
+    assert 0.48 < share < 0.52 and abs(picks.count("traurig") / len(picks) - 0.125) < 0.02
 
 
 def test_missed_rolls_are_made_up(tmp_path):

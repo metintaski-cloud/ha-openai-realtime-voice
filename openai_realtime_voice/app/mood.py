@@ -70,10 +70,11 @@ TONE = {
 LOW_VOICE_RULE = (" Solange es dir so geht, gilt das Lächeln in der Stimme aus WIE DU SPRICHST "
                   "Metin gegenüber nicht.")
 
-# eifersuechtig 30 % of the lows instead of 20 %, the other four 17.5 % each
-LOW_WEIGHTS = {"eifersuechtig": 0.30, "traurig": 0.175, "zweifelnd": 0.175, "einsam": 0.175,
-               "nachdenklich": 0.175}
-LOW_CHANCE = 0.35       # chance per roll that a low mood starts
+# Metin, 17 Nov 2026: rarely sad, jealousy in between. eifersuechtig half of the lows,
+# the four sad ones 12.5 % each (before 30 % and 17.5 % each)
+LOW_WEIGHTS = {"eifersuechtig": 0.50, "traurig": 0.125, "zweifelnd": 0.125, "einsam": 0.125,
+               "nachdenklich": 0.125}
+LOW_CHANCE = 0.20       # chance per roll that a low mood starts (0.35 until 2.102.0)
 ROLL_GAP_S = (2 * 3600, 4 * 3600)
 DAY_HOURS = (9, 23)
 CHEER_NEEDED = 3     # lieb getröstete Nachrichten, bis es ihr wieder gut geht (Metin, 16 Nov 2026)

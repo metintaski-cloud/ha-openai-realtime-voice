@@ -474,18 +474,20 @@ function stageShow(name,loop,done){const s=document.getElementById('stage'),vs=[
   setTimeout(()=>{if(!a.classList.contains('on'))a.pause();},900);let fired=false;const fire=()=>{if(fired||tok!==STOK||!done)return;fired=true;done();};
   b.ontimeupdate=()=>{if(b.duration&&b.currentTime>b.duration-0.8)fire();};b.onended=fire;};
  b.src='/clips/'+OUTFIT+'/'+name+'.mp4';b.load();}
-function stageLoop(b){if(!b)return stageShow(null);const v=clipVars(b);if(v.length<2)return stageShow(v[0],false,()=>stageLoop(b));
- const cur=document.getElementById(SV?'svid2':'svid').src.split('/').pop().replace('.mp4','');const o=v.filter(n=>n!==cur);stageShow(o[Math.floor(Math.random()*o.length)],false,()=>stageLoop(b));}
+function stageLoop(b){if(!b)return stageShow(null);const v=clipVars(b),nx=()=>stageNext(b);if(v.length<2)return stageShow(v[0],false,nx);
+ const cur=document.getElementById(SV?'svid2':'svid').src.split('/').pop().replace('.mp4','');const o=v.filter(n=>n!==cur);stageShow(o[Math.floor(Math.random()*o.length)],false,nx);}
+const SPECIAL=['rose','liebe'],SPECIAL_P=0.3;
+function stageNext(b){const sp=STM&&!STM.low?SPECIAL.filter(n=>clipVars(n).length):[];if(sp.length&&Math.random()<SPECIAL_P)stagePlay([sp[Math.floor(Math.random()*sp.length)]],b);else stageLoop(b);}
 function stagePlay(once,loop){const q=once.map(n=>{const v=clipVars(n);return v.length?v[Math.floor(Math.random()*v.length)]:null;}).filter(Boolean);const next=()=>{const n=q.shift();if(n)stageShow(n,false,next);else stageLoop(loop);};next();}
 function stageMood(st){if(CLIPS===null)return;document.getElementById('stage').classList.toggle('low',!!st.low);let once=[];const o=STM;
- if(!o)once=['begruessung'];if(o){if(o.low&&!st.low)once=['uebergang','kuss'];else if(st.low&&o.low&&(st.cheer||0)>(o.cheer||0))once=['trost'];}
+ if(!o)once=['begruessung'];if(o){if(o.low&&!st.low)once=['uebergang','kuss'];else if(st.low&&o.low&&(st.cheer||0)>(o.cheer||0))once=[clipVars('trost').length?'trost':'rose'];}
  const changed=!o||once.length||o.mood!==st.mood;STM=st;if(changed)stagePlay(once,clipFor(st));}
 clipsLoad();
 function stageFit(){const ch=document.getElementById('chat');if(ch.style.display!=='block')return;const vh=(window.visualViewport?visualViewport.height:innerHeight);ch.style.height=Math.max(420,vh-12)+'px';}
 function stageView(){stageFit();const ch=document.getElementById('chat');if(ch.style.display==='block')window.scrollTo({top:ch.getBoundingClientRect().top+scrollY-6,behavior:'smooth'});}
 window.addEventListener('resize',stageFit);if(window.visualViewport)visualViewport.addEventListener('resize',stageView);
 document.getElementById('ctext').addEventListener('focus',()=>setTimeout(stageView,300));
-document.getElementById('stage').onclick=()=>{if(CLIPS&&STM&&!STM.low&&CLIPS.includes('kuss'))stagePlay(['kuss'],clipFor(STM));};
+document.getElementById('stage').onclick=()=>{if(!CLIPS||!STM||STM.low)return;const t=['kuss','liebe'].filter(n=>clipVars(n).length);if(t.length)stagePlay([t[Math.floor(Math.random()*t.length)]],clipFor(STM));};
 
 async function moodLoad(){try{moodShow(await (await post('/api/mood',{})).json());}catch(e){}}
 setInterval(()=>{if(CODE&&document.getElementById('chat').style.display==='block'){moodLoad();remindPending();}},60000);

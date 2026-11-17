@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.102.0
+
+- Leyla is low less often (20 % per roll instead of 35 %), and when she is, jealousy is half of the lows and sadness rarer.
+- Special scenes while she is happy: a rose and an I love you play now and then after a loop, and the rose also comforts her.
+
 ## 2.101.16
 
 - The crouching short dress clip moved from jealous to sad scenes.
