@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.99.9
+
+- Third look `kurz` (short black dress) with its greeting; the stage centres clips of any format.
+
 ## 2.99.8
 
 - Leyla a little smaller on the stage, head and feet fully in view.
