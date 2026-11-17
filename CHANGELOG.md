@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.102.7
+
+- Second rose scene with sound for the short dress.
+
 ## 2.102.6
 
 - The dance scene plays real oriental music ("Belly Dance" by AliveTunesMusic, Pixabay) instead of the generated tune.
