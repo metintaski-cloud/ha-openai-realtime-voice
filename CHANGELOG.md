@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.103.2
+
+- Second song joins the background loop; its clip is a seventh dance scene.
+
 ## 2.103.1
 
 - Metin's song is the background music in a loop; its clip is a sixth dance scene.
