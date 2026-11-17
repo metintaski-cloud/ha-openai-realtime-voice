@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.101.16
+
+- The crouching short dress clip moved from jealous to sad scenes.
+
 ## 2.101.15
 
 - Three sad scenes for the short dress.
