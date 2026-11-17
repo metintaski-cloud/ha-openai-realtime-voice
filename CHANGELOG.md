@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.101.9
+
+- Another short dress clip moved from greetings to jealous scenes.
+
 ## 2.101.8
 
 - Fourth jealous scene for the long dress.
