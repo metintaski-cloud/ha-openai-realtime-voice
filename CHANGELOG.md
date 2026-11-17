@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.101.3
+
+- First jealous scene for the long dress (she ignores you behind her book).
+
 ## 2.101.2
 
 - Third jealous scene for the short dress.
