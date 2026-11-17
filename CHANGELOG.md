@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.101.6
+
+- A short dress clip moved from greetings to jealous scenes (she pouts while reading).
+
 ## 2.101.5
 
 - Third jealous scene for the long dress.
