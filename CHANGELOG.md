@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.103.3
+
+- The rose scene starts with a sad face, so it now plays only when she is comforted or turns from sad to happy, no longer at random while she is happy.
+
 ## 2.103.2
 
 - Second song joins the background loop; its clip is a seventh dance scene.
