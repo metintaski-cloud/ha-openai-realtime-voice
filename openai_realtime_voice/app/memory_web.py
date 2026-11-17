@@ -35,7 +35,7 @@ MASKABLE_PATH = os.path.join(os.path.dirname(__file__), "memory_icon_maskable.pn
 AVATAR_PATH = os.path.join(os.path.dirname(__file__), "leyla_avatar.jpg")  # her picture in the chat
 BODY_PATH = os.path.join(os.path.dirname(__file__), "leyla_body.jpg")  # her full figure on the stage (2.97.0)
 CLIPS_DIR = os.environ.get("LEYLA_CLIPS_DIR", os.path.join(os.path.dirname(__file__), "clips"))
-CLIP_RE = re.compile(r"^/clips/([a-z0-9]{2,20})/([a-z]{2,20}[0-9]?)\.(mp4|jpg)$")  # look/scene (2.99.4)
+CLIP_RE = re.compile(r"^/clips/([a-z0-9]{2,20})/([a-z]{2,20}[0-9]?)\.(mp4|jpg|m4a)$")  # look/scene (2.99.4), musik/<mood>.m4a (2.103.0)
 
 
 def check_code(typed, phrase: str, now: Optional[float] = None) -> bool:
@@ -483,6 +483,14 @@ function stageMood(st){if(CLIPS===null)return;document.getElementById('stage').c
  if(!o)once=['begruessung'];if(o){if(o.low&&!st.low)once=['uebergang','kuss'];else if(st.low&&o.low&&(st.cheer||0)>(o.cheer||0))once=[clipVars('trost').length?'trost':'rose'];}
  const changed=!o||once.length||o.mood!==st.mood;STM=st;if(changed)stagePlay(once,clipFor(st));}
 clipsLoad();
+let MUSIC=[],BGM=null,BGMN='';
+function bgmTick(){const c=document.getElementById('chat');let n='';if(STM&&MUSIC.length){n=MUSIC.includes(STM.mood)?STM.mood:(STM.low?'traurig':'gut');if(!MUSIC.includes(n))n='';}
+ const on=n&&soundOn&&c.style.display==='block'&&!c.classList.contains('oncall')&&!document.hidden;
+ if(!on){if(BGM)BGM.pause();return;}
+ if(n!==BGMN){if(BGM)BGM.pause();BGM=new Audio('/clips/musik/'+n+'.m4a');BGM.loop=true;BGMN=n;}
+ BGM.volume=TALKING?.05:.22;if(BGM.paused)BGM.play().catch(()=>{});}
+fetch('/clips.json').then(r=>r.json()).then(o=>{MUSIC=o.music||[];bgmTick();}).catch(()=>{});
+setInterval(bgmTick,1000);document.addEventListener('pointerdown',bgmTick);document.addEventListener('visibilitychange',bgmTick);
 function stageFit(){const ch=document.getElementById('chat');if(ch.style.display!=='block')return;const vh=(window.visualViewport?visualViewport.height:innerHeight);ch.style.height=Math.max(420,vh-12)+'px';}
 function stageView(){stageFit();const ch=document.getElementById('chat');if(ch.style.display==='block')window.scrollTo({top:ch.getBoundingClientRect().top+scrollY-6,behavior:'smooth'});}
 window.addEventListener('resize',stageFit);if(window.visualViewport)visualViewport.addEventListener('resize',stageView);
@@ -779,6 +787,16 @@ def list_outfits() -> dict:
     return out
 
 
+def list_music() -> list:
+    """Background music of the stage (2.103.0): clips/musik/<mood>.m4a, or gut.m4a and traurig.m4a for
+    every good or low mood."""
+    try:
+        return sorted(f[:-4] for f in os.listdir(os.path.join(CLIPS_DIR, "musik"))
+                      if f.endswith(".m4a") and CLIP_RE.match(f"/clips/musik/{f}"))
+    except OSError:
+        return []
+
+
 async def _send_clip(writer, look: str, name: str, ext: str, lines: list) -> None:
     """One clip or still of a look, with byte ranges, because Chrome asks for parts of a video."""
     fn = os.path.join(CLIPS_DIR, look, f"{name}.{ext}")
@@ -802,7 +820,7 @@ async def _send_clip(writer, look: str, name: str, ext: str, lines: list) -> Non
         f.seek(start)
         raw = f.read(end - start + 1)
     extra = f"Content-Range: bytes {start}-{end}/{size}\r\n" if status.startswith("206") else ""
-    ctype = "video/mp4" if ext == "mp4" else "image/jpeg"
+    ctype = {"mp4": "video/mp4", "m4a": "audio/mp4"}.get(ext, "image/jpeg")
     writer.write((f"HTTP/1.1 {status}\r\nContent-Type: {ctype}\r\nContent-Length: {len(raw)}\r\n"
                   f"Accept-Ranges: bytes\r\n{extra}Cache-Control: max-age=86400\r\n"
                   "Connection: close\r\n\r\n").encode() + raw)
@@ -883,7 +901,7 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                           "Cache-Control: max-age=86400\r\nConnection: close\r\n\r\n").encode() + raw)
             await writer.drain()
         elif method == "GET" and path == "/clips.json":
-            await _respond(writer, "200 OK", "application/json", json.dumps({"outfits": list_outfits()}))
+            await _respond(writer, "200 OK", "application/json", json.dumps({"outfits": list_outfits(), "music": list_music()}))
         elif method == "GET" and CLIP_RE.match(path):
             m = CLIP_RE.match(path)
             await _send_clip(writer, m.group(1), m.group(2), m.group(3), lines)

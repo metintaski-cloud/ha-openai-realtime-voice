@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.103.0
+
+- Background music on the stage by her mood: oriental music in a seamless loop while she is happy, quieter while she speaks, off during live talk and with Ton aus. A sad track can be added as musik/traurig.m4a.
+- The dance scenes keep their own sound of steps and breath instead of a music cut.
+
 ## 2.102.11
 
 - Fifth dance scene with oriental music for the short dress.
