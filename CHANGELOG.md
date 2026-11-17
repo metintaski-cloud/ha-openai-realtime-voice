@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.100.11
+
+- Third good mood loop for the short dress (she smooths her dress and poses).
+
 ## 2.100.10
 
 - Two good mood loops for the short dress (an elegant full turn, posing and a shy giggle).
