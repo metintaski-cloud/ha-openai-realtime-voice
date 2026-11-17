@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.100.7
+
+- Short dress taken out until its clips are remade in portrait format; only the long dress for now.
+
 ## 2.100.6
 
 - Seventh greeting for the long dress, with more movement (she walks a few steps while reading).
