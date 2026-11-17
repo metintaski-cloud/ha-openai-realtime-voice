@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.100.6
+
+- Seventh greeting for the long dress, with more movement (she walks a few steps while reading).
+
 ## 2.100.5
 
 - Sixth greeting for the long dress.
