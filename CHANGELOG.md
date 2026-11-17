@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.101.0
+
+- Third look: the sleeveless leather mini dress, with three greetings, a good mood loop and the first jealous scenes.
+
 ## 2.100.12
 
 - Short dress: two more good mood loops and a third greeting.
