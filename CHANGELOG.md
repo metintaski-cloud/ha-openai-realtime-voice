@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.102.5
+
+- Dance scene for the short dress with an oriental tune.
+
 ## 2.102.4
 
 - Third I love you scene for the short dress.
