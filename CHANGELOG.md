@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.103.7
+
+- Long dress: leopard walk I love you scene and three more happy scenes.
+
 ## 2.103.6
 
 - First dance scene for the long dress.
