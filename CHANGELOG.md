@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.99.10
+
+- Red look removed, the app now picks between the long and the short black dress.
+
 ## 2.99.9
 
 - Third look `kurz` (short black dress) with its greeting; the stage centres clips of any format.
