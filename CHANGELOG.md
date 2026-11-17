@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.103.12
+
+- Short dress: leopard walk, a dance and two happy scenes.
+
 ## 2.103.11
 
 - Scenes may now have more than nine variants; long dress gets a tenth happy scene and a fourth kiss scene.
