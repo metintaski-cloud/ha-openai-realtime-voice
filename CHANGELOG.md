@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.103.4
+
+- The long dress I love you scene starts with a sad face, so it now plays only when she turns from sad to happy.
+
 ## 2.103.3
 
 - The rose scene starts with a sad face, so it now plays only when she is comforted or turns from sad to happy, no longer at random while she is happy.
