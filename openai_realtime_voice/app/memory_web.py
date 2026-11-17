@@ -467,10 +467,10 @@ async function clipsLoad(){let outs={};try{outs=(await (await fetch('/clips.json
 function clipVars(b){return CLIPS.filter(n=>n.replace(/[0-9]$/,'')===b);}
 function clipFor(st){if(clipVars(st.mood).length)return st.mood;const g=st.low?'traurig':'gluecklich';return clipVars(g).length?g:null;}
 let SV=0,STOK=0;
-function stageShow(name,loop,done){const s=document.getElementById('stage'),vs=[document.getElementById('svid'),document.getElementById('svid2')],a=vs[SV],b=vs[1-SV],tok=++STOK;
+function stageShow(name,loop,done,snd){const s=document.getElementById('stage'),vs=[document.getElementById('svid'),document.getElementById('svid2')],a=vs[SV],b=vs[1-SV],tok=++STOK;
  if(!name){s.classList.remove('vid');vs.forEach(v=>{v.classList.remove('on');setTimeout(()=>{if(tok===STOK){v.pause();v.removeAttribute('src');v.load();}},600);});return;}
  if(loop&&a.loop&&a.classList.contains('on')&&a.src.endsWith('/'+name+'.mp4'))return;
- b.onended=null;b.ontimeupdate=null;b.loop=!!loop;b.oncanplay=()=>{b.oncanplay=null;if(tok!==STOK)return;b.currentTime=0;b.play().catch(()=>{});b.classList.add('on');a.classList.remove('on');s.classList.add('vid');SV=1-SV;
+ b.onended=null;b.ontimeupdate=null;b.loop=!!loop;b.muted=!snd||document.getElementById('chat').classList.contains('oncall');b.volume=.7;b.oncanplay=()=>{b.oncanplay=null;if(tok!==STOK)return;b.currentTime=0;b.play().catch(()=>{b.muted=true;b.play().catch(()=>{});});b.classList.add('on');a.classList.remove('on');s.classList.add('vid');SV=1-SV;
   setTimeout(()=>{if(!a.classList.contains('on'))a.pause();},900);let fired=false;const fire=()=>{if(fired||tok!==STOK||!done)return;fired=true;done();};
   b.ontimeupdate=()=>{if(b.duration&&b.currentTime>b.duration-0.8)fire();};b.onended=fire;};
  b.src='/clips/'+OUTFIT+'/'+name+'.mp4';b.load();}
@@ -478,7 +478,7 @@ function stageLoop(b){if(!b)return stageShow(null);const v=clipVars(b),nx=()=>st
  const cur=document.getElementById(SV?'svid2':'svid').src.split('/').pop().replace('.mp4','');const o=v.filter(n=>n!==cur);stageShow(o[Math.floor(Math.random()*o.length)],false,nx);}
 const SPECIAL=['rose','liebe'],SPECIAL_P=0.4;
 function stageNext(b){const sp=STM&&!STM.low?SPECIAL.filter(n=>clipVars(n).length):[];if(sp.length&&Math.random()<SPECIAL_P)stagePlay([sp[Math.floor(Math.random()*sp.length)]],b);else stageLoop(b);}
-function stagePlay(once,loop){const q=once.map(n=>{const v=clipVars(n);return v.length?v[Math.floor(Math.random()*v.length)]:null;}).filter(Boolean);const next=()=>{const n=q.shift();if(n)stageShow(n,false,next);else stageLoop(loop);};next();}
+function stagePlay(once,loop){const q=once.map(n=>{const v=clipVars(n);return v.length?v[Math.floor(Math.random()*v.length)]:null;}).filter(Boolean);const next=()=>{const n=q.shift();if(n)stageShow(n,false,next,true);else stageLoop(loop);};next();}
 function stageMood(st){if(CLIPS===null)return;document.getElementById('stage').classList.toggle('low',!!st.low);let once=[];const o=STM;
  if(!o)once=['begruessung'];if(o){if(o.low&&!st.low)once=['uebergang','kuss'];else if(st.low&&o.low&&(st.cheer||0)>(o.cheer||0))once=[clipVars('trost').length?'trost':'rose'];}
  const changed=!o||once.length||o.mood!==st.mood;STM=st;if(changed)stagePlay(once,clipFor(st));}

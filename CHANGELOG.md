@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.102.2
+
+- Rose and I love you scenes for the short dress, the rose with its sound; one shot scenes now play their sound (not during live talk).
+
 ## 2.102.1
 
 - I love you scene for the long dress; special scenes come more often (40 % after a loop).
