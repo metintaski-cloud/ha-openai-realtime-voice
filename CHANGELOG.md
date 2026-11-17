@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.101.1
+
+- The leather dress clips belong to the short dress instead of a separate look.
+
 ## 2.101.0
 
 - Third look: the sleeveless leather mini dress, with three greetings, a good mood loop and the first jealous scenes.
