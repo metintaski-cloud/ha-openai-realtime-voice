@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.102.10
+
+- Fourth dance scene with oriental music for the short dress.
+
 ## 2.102.9
 
 - Third dance scene with oriental music for the short dress.
