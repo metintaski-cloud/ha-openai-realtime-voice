@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.101.2
+
+- Third jealous scene for the short dress.
+
 ## 2.101.1
 
 - The leather dress clips belong to the short dress instead of a separate look.
