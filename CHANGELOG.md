@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.100.9
+
+- Short dress back with two new portrait greetings and the same stage and mist as the long dress.
+
 ## 2.100.8
 
 - Second good mood loop for the long dress: she walks and turns with the book and laughs.
