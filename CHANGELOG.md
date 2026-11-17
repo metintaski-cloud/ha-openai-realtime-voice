@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.103.5
+
+- The stage always shows the whole clip (head to feet), also on short screens.
+
 ## 2.103.4
 
 - The long dress I love you scene starts with a sad face, so it now plays only when she turns from sad to happy.

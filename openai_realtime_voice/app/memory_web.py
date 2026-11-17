@@ -288,7 +288,7 @@ button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 #stage{display:none;position:absolute;left:0;right:0;top:60px;bottom:66px;z-index:0;overflow:hidden}
 #stage::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:2;background:linear-gradient(90deg,#000 1.5%,#0005 7%,#0002 35%,transparent 55%,transparent 93%,#000 98.5%),linear-gradient(#000 3%,transparent 7%,transparent 93%,#000 97%)}
 #stage .fig{position:absolute;inset:0;transform-origin:50% 100%;animation:lsway 8s ease-in-out infinite}
-#stage img,#stage video{position:absolute;inset:0;height:100%;width:100%;object-fit:cover;object-position:50% 50%;display:block;transform:scale(.93);transform-origin:50% 50%}
+#stage img,#stage video{position:absolute;inset:0;height:100%;width:100%;object-fit:contain;object-position:50% 50%;display:block;transform:scale(.97);transform-origin:50% 50%}
 #stage video{opacity:0;transition:opacity .8s}
 #stage .fog{position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;z-index:1}
 #stage .fog i{position:absolute;border-radius:50%;filter:blur(26px);opacity:.6}
