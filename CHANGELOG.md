@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.99.12
+
+- Short dress greeting cut to 2:3, so she looks the same size as in the long dress.
+
 ## 2.99.11
 
 - Loop for the long black dress: she opens the book and reads, so she keeps moving after the greeting.
