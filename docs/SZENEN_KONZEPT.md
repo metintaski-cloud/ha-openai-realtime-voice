@@ -70,6 +70,10 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Gekränkt (leicht oder mittel): sie nimmt sie berührt, aber zurückhaltend an (Clip "berührt, aber noch verletzt"); hilft ein bisschen, ersetzt keine ehrliche Entschuldigung.
 - Schwer gekränkt oder im Schweigen: sie nimmt nicht an, der Knopf ist grau.
 
+### Kleiderwechsel lang und kurz (Metin, 19.11.2026)
+- Sie wechselt das Kleid selbst, aber nur während die App geschlossen ist, so braucht es keine Umzieh Szene: morgens um 5 Uhr wählt sie ihr Kleid für den Tag, und war die App mehrere Stunden zu, kann sie sich inzwischen umgezogen haben.
+- Bittet Metin bei offener App um ein anderes Kleid, sagt sie zu oder ab und zieht sich erst um, wenn die App das nächste Mal geschlossen war.
+
 ### Keine Pause (Metin, 19.11.2026)
 - Es gibt keinen Pausenschalter für Urlaub oder Krankheit.
 
@@ -229,6 +233,5 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Metins Kategorienliste (er prüft gerade die Einordnung).
 - Woran genau sich die Gefühle ändern: Liste der Alltagsszenarien mit Gewicht.
 - Wie lange Funkstille dauert, bis sie ihn vermisst.
-- Umziehen: Szene für den Kleiderwechsel in beide Richtungen.
 - Ob die Gefühle auch im Gespräch zu Hause (Voice PE) gelten.
 - Überraschung: später erweitern (Metin, 19.11.2026).
