@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.103.13
+
+- Music button on the stage (left of Live) switches the background music on and off; the choice is remembered.
+
 ## 2.103.12
 
 - Short dress: leopard walk, a dance and two happy scenes.
