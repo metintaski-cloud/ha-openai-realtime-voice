@@ -101,3 +101,4 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Wie lange Funkstille dauert, bis sie ihn vermisst.
 - Umziehen: Szene für den Kleiderwechsel in beide Richtungen.
 - Ob die Gefühle auch im Gespräch zu Hause (Voice PE) gelten.
+- Überraschung: später erweitern (Metin, 19.11.2026).
