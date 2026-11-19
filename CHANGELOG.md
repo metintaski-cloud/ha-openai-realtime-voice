@@ -4,6 +4,7 @@
 
 - "Keine Zeit" (abgewimmelt) is now a small hurt (1 point, leicht) instead of 3; a repeat within a week still weighs 1.5 times (Metin: keine Zeit is no end of the world).
 - Sad stage calmer: the kneeling clips are now their own scene `kniet` (kurz/kniet, kniet2; schwarz/kniet to kniet5, before traurig3 to traurig7) and play only at schwer with 12 % chance after a loop cycle (`KNIET_P`); the sad loop is the standing clips only (Metin: she fell to her knees all the time, too dramatic).
+- The sad loop now uses the calm clips of the new scene project (folders "Schleife .Traurig. L. Kleid", "Traurig langes Kleid", "Traurig kurzes Kleid" with "Zeit. Traurig. K. Kleid", as sorted with Metin): `schwarz/traurig` to `traurig11`, `kurz/traurig` to `traurig8` (she reads hurt, looks around, a hand to her face); the turning away clips stay out (they are "sauer, wegdrehen"). Before: 2 calm clips per dress.
 
 ## 2.104.1
 

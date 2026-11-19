@@ -135,7 +135,7 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 
 ### Traurig in drei Stufen
 - Die unglückliche Schleife wird nach Stärke geteilt: leicht, mittel, schwer. Leyla nimmt die Schleife, die zu ihrem Gefühl passt.
-- Beispiele: leicht = liest gedankenverloren, schaut kurz traurig; mittel = seufzt, schaut ins Leere, lässt das Buch sinken; schwer = kniet, Hand vors Gesicht oder aufs Herz. Umgesetzt in 2.104.2: die Knie Clips heißen `kniet` und kommen nur bei schwer, selten (12 %); die Schleife bei traurig sind nur stehende Clips. Fehlen noch: ruhige Schleifen (verletzt im Buch lesen, hin und her schauen, ab und zu leise weinen), nicht zu dramatisch.
+- Beispiele: leicht = liest gedankenverloren, schaut kurz traurig; mittel = seufzt, schaut ins Leere, lässt das Buch sinken; schwer = kniet, Hand vors Gesicht oder aufs Herz. Umgesetzt in 2.104.2: die Knie Clips heißen `kniet` und kommen nur bei schwer, selten (12 %); die Schleife bei traurig sind nur stehende Clips. Ruhige Schleifen aus dem neuen Projekt sind drin: langes Kleid 11, kurzes Kleid 8 (verletzt lesen, umschauen, Hand vors Gesicht).
 - Die Stufe folgt aus dem Gewicht der Kränkung und wird mit jeder echten Wiedergutmachung leichter, bis sie wieder glücklich ist.
 - Metin sortiert seine Ordner "Schleife. Traurig" dafür in drei Unterordner.
 
