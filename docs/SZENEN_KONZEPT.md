@@ -130,6 +130,10 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Langes Kleid: 20261117_035904238, 20261117_040750859, 20261117_041940260 = Überraschung. 20261117_053846581 = Überraschung, die von Kling erfundenen Lichter bleiben drin (Metin: nicht gewollt, hat aber was). 20261117_102526211 (Leopardengang) = Komm her / I love you.
 - Kurzes Kleid: die 7 Clips (20261117_045942097 ist doppelt) bleiben vorerst Überraschung, sind aber nur ein Platzhalter und werden später durch deutlichere Überraschungen ersetzt.
 
+### Ordner "Kuss", Einordnung (mit Metin bestätigt, 19.11.2026)
+- Alle Clips sind Kuss, glücklich: 20261117_122438371 (geht auf die Knie und gibt unten einen Kuss), 20261117_121801018 (dezenter Kuss), die übrigen werfen einen Kuss zu.
+- Ausnahme: 20261117_102739819 (lacht über eine Seite im Buch, liegt auch in "Zeit. Glück") = neue Szene "Lachen".
+
 ## Noch offen
 - Metins Kategorienliste (er prüft gerade die Einordnung).
 - Woran genau sich die Gefühle ändern: Liste der Alltagsszenarien mit Gewicht.
