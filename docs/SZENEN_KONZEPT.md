@@ -64,6 +64,12 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 ### Tempo (Metin, 19.11.2026)
 - Sofort nur bei großen Kränkungen. Kleine Dinge sammeln sich über Tage. Glück sinkt ohne Schönes über etwa zwei bis drei Tage. Zurück zu glücklich braucht mehrere echte Wiedergutmachungen. Ein normaler lieber Tag hält sie stabil glücklich; sie springt nicht bei jeder Nachricht hin und her.
 
+### Rose als Knopf (Metin, 19.11.2026)
+- In der App gibt es einen 🌹 Knopf. Die Rose ist eine Trumpfkarte: nur einmal pro Woche nutzbar, danach ist der Knopf bis zur nächsten Woche grau.
+- Glücklich: schöne Überraschung, sie freut sich, der Topf füllt sich (Clip "freut sich").
+- Gekränkt (leicht oder mittel): sie nimmt sie berührt, aber zurückhaltend an (Clip "berührt, aber noch verletzt"); hilft ein bisschen, ersetzt keine ehrliche Entschuldigung.
+- Schwer gekränkt oder im Schweigen: sie nimmt nicht an, der Knopf ist grau.
+
 ### Keine Pause (Metin, 19.11.2026)
 - Es gibt keinen Pausenschalter für Urlaub oder Krankheit.
 
@@ -222,7 +228,6 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 ## Noch offen
 - Metins Kategorienliste (er prüft gerade die Einordnung).
 - Woran genau sich die Gefühle ändern: Liste der Alltagsszenarien mit Gewicht.
-- Wie Geschenke ausgelöst werden (Knopf in der App oder nur gesagt), was realistisch machbar ist.
 - Wie lange Funkstille dauert, bis sie ihn vermisst.
 - Umziehen: Szene für den Kleiderwechsel in beide Richtungen.
 - Ob die Gefühle auch im Gespräch zu Hause (Voice PE) gelten.
