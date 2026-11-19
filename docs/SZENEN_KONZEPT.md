@@ -58,6 +58,12 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Metins Ordner sind wie ein Code benannt: Aktion. Stimmung. Kleid. Beispiel "B&B. weg. Glücklich. L. Kleid" (Buch und Brille weg, glücklich, langes Kleid), "K." für kurzes Kleid.
 - Jede Kategorie (Rose, Zeig dich, Umziehen, ...) bekommt Varianten nach Stimmung, Kleid und Arbeit oder Freizeit. Leyla wählt daraus selbst.
 
+### Traurig in drei Stufen
+- Die unglückliche Schleife wird nach Stärke geteilt: leicht, mittel, schwer. Leyla nimmt die Schleife, die zu ihrem Gefühl passt.
+- Beispiele: leicht = liest gedankenverloren, schaut kurz traurig; mittel = seufzt, schaut ins Leere, lässt das Buch sinken; schwer = kniet, Hand vors Gesicht oder aufs Herz.
+- Die Stufe folgt aus dem Gewicht der Kränkung und wird mit jeder echten Wiedergutmachung leichter, bis sie wieder glücklich ist.
+- Metin sortiert seine Ordner "Schleife. Traurig" dafür in drei Unterordner.
+
 ### Ablauf auf der Bühne
 - Grundschleife je Zustand: glücklich oder unglücklich, im aktuellen Kleid, Arbeit oder Freizeit. Sie läuft immer weiter.
 - Zusätzliche Sequenzen wählt Leyla selbst passend zum Gespräch und spielt sie ab, danach geht es zurück in die Grundschleife.
