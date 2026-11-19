@@ -45,6 +45,7 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Wechsel von Arbeit ins Nacht Outfit (4df2e0df, kurzes Kleid) und von Freizeit ins Nacht Outfit (dc1fab95, kurzes Kleid). Metin hat pro Ordner mehrere Clips mit kleinen Unterschieden, damit Leylas Wahl nicht eintönig wird.
 - Langes Kleid: "Bett von Freizeit" vorhanden (4 Clips), "Bett von Arbeit" fehlt. Lösung ohne neuen Clip: die App spielt zwei Szenen hintereinander, erst "Buch und Brille weg", dann "Bett von Freizeit". Das gilt allgemein: fehlt ein direkter Wechsel, geht sie über einen Zwischenzustand.
 - Alle Szenen im Nacht Outfit brauchen dessen Endbild als Start und Endbild.
+- Im Nacht Outfit gibt es zusätzlich die Blickrichtung: F = vorne (Gesicht zur Kamera), H = hinten (Rücken zur Kamera). Ordner wie "Tanzen. F. Nach. H" heißen: beginnt vorne, endet hinten. Die App darf nach einem Clip, der hinten endet, nur einen Clip abspielen, der hinten beginnt (bestätigt von Metin, 19.11.2026).
 - Zurück zu Arbeit um 5 Uhr morgens wie oben.
 
 ### Begrüßung (Ordner "Hallo")
@@ -103,6 +104,11 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 ### Ablauf auf der Bühne
 - Grundschleife je Zustand: glücklich oder unglücklich, im aktuellen Kleid, Arbeit oder Freizeit. Sie läuft immer weiter.
 - Zusätzliche Sequenzen wählt Leyla selbst passend zum Gespräch und spielt sie ab, danach geht es zurück in die Grundschleife.
+
+## Bestand (Desktop, Ordner "Orner Leyla Szenen", geprüft 19.11.2026)
+- 192 Videos in 43 Ordnern, alle Hochformat (Nacht Outfit Clips 1176x1760 statt 1176x1764, nicht sichtbar).
+- 20 Dateien sind exakt doppelt (meist mit "(1)" oder "(2)" im Namen), 7 Ordner sind leer. Es wird nichts ohne Metin verschoben oder gelöscht.
+- Unklare Einordnungen werden mit Metin besprochen, nicht selbst entschieden.
 
 ## Noch offen
 - Metins Kategorienliste (er prüft gerade die Einordnung).
