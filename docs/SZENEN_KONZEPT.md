@@ -44,8 +44,8 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Zurück zu Arbeit um 5 Uhr morgens wie oben.
 
 ### Begrüßung (Ordner "Hallo")
-- Beim Öffnen der App: sie merkt, dass Metin da ist, und winkt (glücklich, langes Kleid, vorhanden; kurzes Kleid ebenso, die bisherigen Begrüßungen).
-- Die Begrüßung richtet sich nach Zustand und Gefühl. Offen: wie sie grüßt, wenn sie gekränkt ist, und Begrüßungen für Freizeit und Nacht Outfit.
+- Beim Öffnen der App gibt es keine Begrüßung mehr, sondern sofort die Schleife ihres Zustands (glücklich oder unglücklich).
+- Die Begrüßung (sie merkt, dass Metin da ist, und winkt; glücklich, beide Kleider vorhanden) wählt Leyla selbst, wenn Metin ihr schreibt, eine Sprachnachricht schickt oder anruft und sie Hallo sagt. Ist sie gekränkt, lässt sie die Szene weg.
 
 ### Zustände im Überblick
 - Kleid: lang oder kurz.
