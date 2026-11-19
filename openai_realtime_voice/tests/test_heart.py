@@ -240,3 +240,33 @@ def test_show_sit_and_surprise_follow_her_heart(h):
     assert h.scene("setzen", t + 60) == "setzen" and h.scene("ueberraschung", t + 60) == ""
     h.apply(["beleidigt"], t + 120)
     assert h.scene("setzen", t + 120) == ""
+
+
+def test_rose_button_once_a_week(h):
+    t = at(*THU, 15)
+    h.contact(t)
+    assert h.status(t)["rose"] == "ready"
+    r = h.give_rose(t)
+    assert r["ok"] and r["scene"] == "rosefroh" and r["mood"]["rose"] == "used"
+    assert not h.give_rose(t + 60)["ok"]
+    # a new calendar week starts on Monday
+    assert heart.Heart._week(at(2026, 11, 22, 23)) == heart.Heart._week(t)
+    assert heart.Heart._week(at(2026, 11, 23, 0, 1)) != heart.Heart._week(t)
+
+
+def test_rose_helps_a_little_when_hurt_and_is_refused_when_badly_hurt(h):
+    t = at(*THU, 15)
+    h.contact(t)
+    h.apply(["unfreundlich"], t)
+    r = h.give_rose(t + 60)
+    assert r["ok"] and r["scene"] == "rose" and h.stats(t + 60)["points"] == pytest.approx(2)
+
+
+def test_rose_not_taken_when_silent_and_not_used_up(tmp_path):
+    h = heart.Heart(str(tmp_path / "x.json"))
+    t = at(*THU, 15)
+    h.contact(t)
+    h.apply(["beleidigt"], t)
+    r = h.give_rose(t + 60)
+    assert not r["ok"] and r["rose"] == "blocked"
+    assert "rose" not in heart.EVENTS

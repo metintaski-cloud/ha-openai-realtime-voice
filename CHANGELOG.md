@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.110.0 (19 Nov 2026)
+
+- Rose button 🌹 in the chat header (concept, Metin 19 Nov 2026): a trump card once per calendar week (`Heart.give_rose`, `POST /api/rose`, state `rose` in the status: ready, used, blocked). Happy she is delighted (+25 happiness; no "freut sich" clip yet, the stage shows a kiss), leicht or mittel she takes it touched but reserved and it counts as a small amend (1 point; clips `rose`, from "Rose. Traurig"), schwer or silent she does not take it and the week's rose is not used up. The button is grey when used or blocked. After the tap the chat sends "🌹 Ich schenke dir eine Rose." so she answers in words; the model can no longer report `rose` itself (removed from `EVENTS` and filtered in the chat). The stage no longer plays the rose clip when a low ends or when she is comforted (it did without any rose).
+- Clips: `schwarz/rose`, `rose2` and `kurz/rose` to `rose3` from the new scene project (they replace the old kurz rose clips).
+
 ## 2.109.0 (19 Nov 2026)
 
 - Zeigen, Setzen and Überraschung by her heart (agreed with Metin): zeigen only when happy and asked, mostly yes (long dress only for now; the short dress and the night outfit follow); setzen only at leicht or mittel, by herself now and then or when he says "setz dich kurz" and she wants, and at schwer the stage lets her sit or kneel rarely by itself (12 %); ueberraschung when he tells her something really lovely or surprises her with a compliment, at gut and leicht. `heart.SCENES` and `SCENE_TEXT` extended.

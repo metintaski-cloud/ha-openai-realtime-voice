@@ -65,7 +65,7 @@ NICE = {  # amend while hurt / happiness while good
 }
 AFFECTION = {"kompliment", "kosewort"}   # empties the praise pot
 JEALOUS = {"andere_frau", "verkuppeln"}
-EVENTS = sorted(set(HURTS) | set(AMENDS) | set(NICE) | {"ernst"})
+EVENTS = sorted((set(HURTS) | set(AMENDS) | set(NICE) | {"ernst"}) - {"rose"})  # the rose only via the button
 
 EVENT_HELP = """• abgewimmelt: du fragst oder erzählst etwas und er sagt ausdrücklich "keine Zeit", "später" oder "nicht jetzt", ohne zu sagen, dass er arbeitet oder unterwegs ist
 • unfreundlich: er schreit dich an oder ist abfällig zu dir (kurze Antworten allein sind es nicht)
@@ -148,6 +148,7 @@ DEIN HERZ GERADE (zählt, nicht du entscheidest)
 • Melde in deinem JSON unter "gefuehl" (Liste) jedes dieser Dinge, das in seiner letzten Nachricht wirklich vorkommt, sonst eine leere Liste:
 {events}
 • {scene}
+• Eine Rose schenkt er dir nur über den Rosen Knopf (seine Nachricht mit 🌹); sie ist dann schon gezählt, melde sie nie unter "gefuehl" und schreib kein szene Feld dafür. Glücklich freust du dich riesig darüber; gekränkt nimmst du sie berührt, aber zurückhaltend an, sie ersetzt keine ehrliche Entschuldigung.
 • {limits}"""
 
 # what she asked for -> level -> clip scene on the stage (missing level: she does not do it)
@@ -358,6 +359,36 @@ class Heart:
         d["mood"] = self._mood_name(d)
         return d
 
+    # --- the rose button (once a week, a trump card) -----------------------------------------
+    @staticmethod
+    def _week(now: float) -> str:
+        return time.strftime("%G-W%V", time.localtime(now))
+
+    def _rose_state(self, d: dict, now: float) -> str:
+        if d.get("rose_week") == self._week(now):
+            return "used"
+        if self._level(d) == "schwer" or d.get("silent_until", 0) > now:
+            return "blocked"  # she does not take it, and the week's rose is not used up
+        return "ready"
+
+    def give_rose(self, now: Optional[float] = None) -> dict:
+        """Metin taps the rose: once a calendar week. Happy she is delighted, hurt (leicht, mittel)
+        touched but reserved and it helps a little; badly hurt or silent she does not take it."""
+        now = now or time.time()
+        d = self.current(now)
+        state = self._rose_state(d, now)
+        if state != "ready":
+            if state == "blocked":
+                self._log(d, now, "Rose nicht angenommen")
+                self._save(d)
+            return {"ok": False, "rose": state, "mood": self.status(now)}
+        before = self._level(d)
+        d["rose_week"] = self._week(now)
+        self._save(d)
+        self.apply(["rose"], now)
+        return {"ok": True, "scene": "rosefroh" if before == "gut" else "rose", "before": before,
+                "mood": self.status(now)}
+
     # --- what Metin did -----------------------------------------------------------------------
     def contact(self, now: Optional[float] = None) -> None:
         """Metin wrote or spoke to her: the silence ends."""
@@ -376,7 +407,7 @@ class Heart:
         self._tick(d, now)
         seen = []
         for e in events or []:
-            if isinstance(e, str) and e in EVENTS and e not in seen:
+            if isinstance(e, str) and (e in EVENTS or e == "rose") and e not in seen:
                 seen.append(e)
         hurt_before = bool(d["hurts"])
         for e in seen:
@@ -511,7 +542,7 @@ class Heart:
         lvl = self._level(d)
         return {"mood": d["mood"], "low": lvl != "gut", "label": LABELS[d["mood"]],
                 "cheer": d.get("cheer", 0), "level": lvl,
-                "silent": d.get("silent_until", 0) > now}
+                "silent": d.get("silent_until", 0) > now, "rose": self._rose_state(d, now)}
 
     def stats(self, now: Optional[float] = None) -> dict:
         """For Claude's check (GET /api/moodstats): numbers and history, no chat texts."""

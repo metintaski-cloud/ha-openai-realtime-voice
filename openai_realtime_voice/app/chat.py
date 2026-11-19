@@ -370,7 +370,7 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
         out.pop("kalender_raw", None)
         out.setdefault("lights", [])
         resolved, paused = out.pop("mood_resolved", False), out.pop("mood_pause", False)
-        events = [e for e in out.pop("gefuehl", []) if isinstance(e, str)]
+        events = [e for e in out.pop("gefuehl", []) if isinstance(e, str) and e != "rose"]  # rose: button only
         if mood and hasattr(mood, "apply"):  # scene concept 2.0: the counter decides, not the model
             mood.contact()
             st = mood.apply(events)
