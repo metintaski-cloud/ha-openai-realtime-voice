@@ -152,6 +152,10 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Dasselbe gilt für Zeigen, Love you und Komm her, die als Glieder in eine Kette passen.
 - Länge: ein Tanz dauert etwa 60 Sekunden (4 Clips à 15 Sekunden). Bittet Metin um mehr, tanzt sie weiter, wenn sie Lust hat.
 
+### Freizeit vorerst (Metin, 19.11.2026)
+- Freizeit bleibt offen, obwohl es dort noch keine Szenen gibt: sie kann von Arbeit zu Freizeit und von Freizeit ins Nacht Outfit wechseln, die Wechsel passen.
+- Solange es keine Freizeit Schleifen gibt, zeigt die Bühne in Freizeit das letzte Bild des Wechsels als Standbild (mit dem animierten Nebel der App).
+
 ### Was noch fehlt (Stand 19.11.2026)
 - Freizeit (ohne Buch und Brille): außer dem Wechsel noch keine einzige Szene, weder Schleifen noch Zeigen, Tanzen, Kuss. Offen, wie viel davon Metin will.
 - Sorry: noch kein Clip, beide Kleider.
