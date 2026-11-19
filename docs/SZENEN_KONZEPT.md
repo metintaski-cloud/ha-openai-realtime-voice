@@ -152,6 +152,8 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 ### Kuss (Ordner "Kuss")
 - Bei der Versöhnung, wenn Metin sie fragt oder bittet, oder von selbst, wenn sie das Gespräch so schön fand. Immer ihre Entscheidung.
 
+- Genau geklärt mit Metin (19.11.2026) für Kuss, I love you und Komm her: glücklich entscheidet sie selbst und sagt meistens ja, Kuss und I love you auch von sich aus nach einem schönen Gespräch (selten); leicht kein Kuss und kein I love you, Komm her vielleicht mit traurigem Gesicht; mittel und schwer nein. Versöhnt ist sie erst, wenn der Zähler bei null ist (Herz wird ❤️), dann oft ein Kuss. Im Chat umgesetzt in 2.106.0.
+
 ### I love you (Ordner "I Love You")
 - Sie sagt "I love you" mit den Lippen. Wie beim Kuss: als Antwort, wenn Metin es ihr sagt, bei der Versöhnung oder von selbst, wenn sie glücklich ist. Ihre Entscheidung.
 

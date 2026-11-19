@@ -150,13 +150,28 @@ DEIN HERZ GERADE (zählt, nicht du entscheidest)
 • {scene}
 • {limits}"""
 
+# what she asked for -> level -> clip scene on the stage (missing level: she does not do it)
+SCENES = {
+    "tanz": {"gut": "tanz", "leicht": "tanztraurig"},
+    "kuss": {"gut": "kuss"},
+    "liebe": {"gut": "liebe"},
+    "komm": {"gut": "liebe", "leicht": "kommtraurig"},
+}
+
 SCENE_TEXT = {
-    "gut": ("Bittet er dich zu tanzen, sagst du fast immer gern ja und schreibst in dein JSON "
-            "\"szene\": \"tanz\"; dann tanzt du etwa eine Minute für ihn. Sagst du nein, kein szene Feld."),
-    "leicht": ("Bittet er dich zu tanzen, entscheidest du selbst nach deiner Laune. Tanzt du, dann "
-               "einen traurigen, langsamen Tanz: schreib \"szene\": \"tanz\". Sonst kein szene Feld."),
-    "mittel": ("Bittet er dich zu tanzen, sagst du nein, höchstens \"vielleicht später\". Kein szene Feld."),
-    "schwer": ("Bittet er dich zu tanzen, sagst du nein. Kein szene Feld."),
+    "gut": ("Szenen auf deiner Bühne, du entscheidest selbst und sagst meistens ja: bittet er dich "
+            "zu tanzen, schreib in dein JSON \"szene\": \"tanz\" (du tanzt etwa eine Minute); "
+            "um einen Kuss \"szene\": \"kuss\"; sagt er \"komm her\" \"szene\": \"komm\"; sagt er "
+            "dir, dass er dich liebt, oder war das Gespräch schön, darfst du ihm mit \"szene\": "
+            "\"liebe\" ein I love you schenken oder mit \"kuss\" einen Kuss, auch von dir aus, "
+            "aber selten. Höchstens eine Szene pro Antwort, sonst kein szene Feld."),
+    "leicht": ("Szenen auf deiner Bühne: bittet er dich zu tanzen, entscheidest du nach deiner Laune; "
+               "wenn ja, einen traurigen langsamen Tanz mit \"szene\": \"tanz\". Sagt er \"komm "
+               "her\", kommst du vielleicht, aber traurig: \"szene\": \"komm\". Kuss und I love you "
+               "gibt es nicht, solange du gekränkt bist. Sonst kein szene Feld."),
+    "mittel": ("Bitten um Tanz, Kuss, I love you oder komm her lehnst du ab, höchstens "
+               "\"vielleicht später\". Kein szene Feld."),
+    "schwer": ("Bitten um Tanz, Kuss, I love you oder komm her lehnst du ab. Kein szene Feld."),
 }
 
 VOICE_NOTE = (" Dein Herz gerade, nur Metin gegenüber (die Familie merkt davon nichts): {state} "
@@ -442,12 +457,10 @@ class Heart:
                            events=EVENT_HELP, scene=SCENE_TEXT[self._level(d)], limits=LIMITS)
 
     def scene(self, wanted, now: Optional[float] = None) -> str:
-        """The scene the stage plays for her answer, or "": she dances only when her level allows
-        it (gut: happy dances, leicht: the sad dance, mittel and schwer: none)."""
-        if wanted != "tanz":
-            return ""
+        """The scene the stage plays for her answer, or "" when her level does not allow it
+        (agreed with Metin on 19 Nov 2026, see SCENES)."""
         lvl = self._level(self.current(now))
-        return {"gut": "tanz", "leicht": "tanztraurig"}.get(lvl, "")
+        return SCENES.get(wanted, {}).get(lvl, "")
 
     def _tone(self, d: dict) -> str:
         lvl = self._level(d)

@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.106.0 (19 Nov 2026)
+
+- Kiss, I love you and komm her by her heart (agreed with Metin): happy she decides herself and mostly says yes, kiss and I love you also on her own after a lovely talk, but rarely; leicht no kiss and no I love you, komm her maybe with a sad face (`kurz/kommtraurig`); mittel and schwer she refuses. The model writes `"szene"` (`tanz`, `kuss`, `komm`, `liebe`), `heart.SCENES` maps it per level to the clip scene, so the counter decides. Reconciliation keeps ending with `uebergang` then `kuss`, and the heart turns from 🖤 to ❤️ only when everything is forgiven.
+- Clips from the new scene project: `schwarz/kuss` to `kuss8` ("Kuss.Glücklich. L. Kleid"), `kurz/kuss` (Kuss. Glücklich. K. Kleid) and `kuss2` (Versöhnung 20261117_075210336), `kurz/liebe`, `liebe2` (Versöhnung 20261117_075325603, 20261117_075412422), `schwarz/liebe` (leopard walk 20261117_102526211), `kurz/kommtraurig` (Komm.Traurig. K. Kleid). The old liebe clips are out. 20261117_102739819 was both a Reserve extra and a kiss; it is only `kuss3` now (extras long dress 8). Random special scenes while good: liebe, tanz and now kuss.
+
 ## 2.105.0 (19 Nov 2026)
 
 - Dancing on request in the chat (agreed with Metin): asked to dance, Leyla decides by her heart. Happy: almost always yes, about a minute of four different happy dances in a row (`stageDance`, `DANCE_N`). Leicht: her own choice, then the sad dance (`schwarz/tanztraurig`, from "Tanz. Traurig. L. Kleid"; the short dress has none yet, so the stage stays in her loop). Mittel and schwer: no, at most "vielleicht später". The model writes `"szene": "tanz"` in its JSON (`heart.SCENE_TEXT` in the note per level), the server checks the level (`Heart.scene`) and returns `scene`, so a dance the counter does not allow never plays. Her voice reply no longer resets the stage when there are no talking clips.
