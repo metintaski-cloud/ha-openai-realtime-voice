@@ -152,6 +152,16 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Dasselbe gilt für Zeigen, Love you und Komm her, die als Glieder in eine Kette passen.
 - Länge: ein Tanz dauert etwa 60 Sekunden (4 Clips à 15 Sekunden). Bittet Metin um mehr, tanzt sie weiter, wenn sie Lust hat.
 
+### Was noch fehlt (Stand 19.11.2026)
+- Freizeit (ohne Buch und Brille): außer dem Wechsel noch keine einzige Szene, weder Schleifen noch Zeigen, Tanzen, Kuss. Offen, wie viel davon Metin will.
+- Sorry: noch kein Clip, beide Kleider.
+- Hallo im kurzen Kleid, Lachen im kurzen Kleid, Zeigen im kurzen Kleid.
+- Tanzen traurig im kurzen Kleid (lang hat 1).
+- Glückliche Grundschleife im kurzen Kleid: nur 3, 3 bis 5 mehr.
+- Endlich da (erleichtert und schmollend) und Gute Nacht im Nacht Outfit.
+- Nacht Outfit hat nur glückliche Szenen; falls sie dort traurig wird, fehlen traurige Schleifen.
+- Überraschung im kurzen Kleid: nur Platzhalter.
+
 ## Noch offen
 - Metins Kategorienliste (er prüft gerade die Einordnung).
 - Woran genau sich die Gefühle ändern: Liste der Alltagsszenarien mit Gewicht.
