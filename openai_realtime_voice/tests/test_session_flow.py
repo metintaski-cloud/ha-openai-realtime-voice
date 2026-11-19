@@ -459,18 +459,18 @@ def test_after_the_code_phrase_she_may_be_tender_and_no_pet_word_reminder():
 async def test_mood_tool_is_only_for_metin_and_sets_the_lamps(env, tmp_path):
     bridge = m.LiveVoiceBridge()
     bridge.mood.path = str(tmp_path / "mood.json")
-    blocked = (await call(bridge, "laune", {"aktion": "aufgeheitert"}, {}))[0].result()
+    blocked = (await call(bridge, "laune", {"aktion": "kompliment"}, {}))[0].result()
     assert "Nicht erlaubt" in blocked["error"]
     bridge.lamp.set_mood_pct(5)
-    done = (await call(bridge, "laune", {"aktion": "aufgeheitert"}, {"unlocked": True}))[0].result()
+    done = (await call(bridge, "laune", {"aktion": "kompliment"}, {"unlocked": True}))[0].result()
     assert done["ok"] and bridge.lamp.mood_pct == 100
 
 
 async def test_moods_without_code_only_for_known_metin_and_lamps_only_in_a_real_talk(env, tmp_path):
     bridge = m.LiveVoiceBridge()
     bridge.mood.path = str(tmp_path / "mood.json")
-    assert "Nicht erlaubt" in (await call(bridge, "laune", {"aktion": "nicht_jetzt"}, {}))[0].result()["error"]
-    assert (await call(bridge, "laune", {"aktion": "nicht_jetzt"}, {"metin_known": True}))[0].result()["ok"]
+    assert "Nicht erlaubt" in (await call(bridge, "laune", {"aktion": "erzaehlt"}, {}))[0].result()["error"]
+    assert (await call(bridge, "laune", {"aktion": "erzaehlt"}, {"metin_known": True}))[0].result()["ok"]
     state = {"metin_known": True, "dialog": [("user", "Licht an")]}
     bridge._maybe_mood_lamp(state)
     assert bridge.lamp.mood_pct is None

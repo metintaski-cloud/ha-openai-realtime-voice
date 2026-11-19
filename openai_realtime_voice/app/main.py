@@ -35,7 +35,11 @@ import dotenv
 import websockets
 
 from app.audio_recorder import AudioRecorder
-from app import agenda, diary, gcontacts, ideas, inbox, mail, memory, memory_web, mood, reminders, variety
+from app import agenda, diary, gcontacts, heart, ideas, inbox, mail, memory, memory_web, mood, reminders, variety
+
+# Scene concept 2.0 (2.104.0): her feelings come from what really happens (app/heart.py); env
+# LEYLA_HEART=0 brings back the old dice of app/mood.py as a safety net.
+FEELINGS = heart if os.environ.get("LEYLA_HEART", "1") != "0" else mood
 from app import context
 from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, pcm_level
 from app.live_link import END_CONVERSATION_TOOL
@@ -182,7 +186,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self.mailer = mail.Mailer(google=self.google)
         self.inbox = inbox.Inbox(google=self.google)
         self.agenda = agenda.Agenda(google=self.google)
-        self.mood = mood.Mood()  # Leyla's ups and downs: app chat, and voice after the code word
+        self.mood = heart.Heart() if FEELINGS is heart else mood.Mood()  # her feelings
         self.reminders = reminders.Reminders(self.agenda, converse=self._converse)
         self.variety = variety.Variety()  # her last openings, so she never sounds the same
         self.diary = diary.Diary()  # what she talked about in the last month, fading
@@ -297,7 +301,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
              "Metin selbst nach seinem Codewort)"),
             (self.reminders.available, reminders.OK_TOOL, reminders.OK_BACKEND_HINT,
              "Termin Erinnerungen beenden, wenn Metin OK sagt"),
-            (bool(self.code_phrase), mood.MOOD_TOOL, mood.MOOD_BACKEND_HINT,
+            (bool(self.code_phrase), FEELINGS.MOOD_TOOL, FEELINGS.MOOD_BACKEND_HINT,
              "deine eigene Laune Metin gegenüber festhalten (nur nach seinem Codewort)"),
         ]
 
@@ -392,8 +396,9 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                                 mama=self.messages.from_metin if self.messages.available else None,
                                 mood=self.mood)
         if out:
-            self.variety.add([out["reply"]])
-            self.diary.chat_turn(message, out["reply"])
+            if out["reply"]:
+                self.variety.add([out["reply"]])
+            self.diary.chat_turn(message, out["reply"] or "(Leyla schweigt)")
             self.ideas.after_answer(out["reply"], kind, open_noted=bool(open_note),
                                     answered=out.pop("open_answered", False))
             if contains_goodbye(message or "") or CHAT_BYE_RE.search(message or ""):
@@ -417,6 +422,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         if not out:
             return {"heard": heard}
         out["heard"] = heard
+        if not out.get("reply"):
+            return out  # she is silent: no voice either
         try:
             pcm = await self._speak_once(
                 chat.speak_prompt(out["reply"]), max_s=60.0,
@@ -446,6 +453,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         """The code phrase was heard: hand Leyla her memory for this conversation."""
         state["unlocked"] = True
         logger.info("Code phrase heard: memory unlocked for this conversation")
+        if hasattr(self.mood, "contact"):
+            self.mood.contact()  # Metin talks to her: no silence
         if not app:  # the rear lamps show her mood: dim when she is low, full when happy
             self.lamp.set_mood_pct(self.mood.lamp_pct())
         private = self.memory.load(memory.PRIVATE) if self.enable_memory else []
@@ -563,6 +572,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                     name.split()[0], len(part))
         if name.split()[0] == "Metin" and not state.get("unlocked"):
             state["metin_known"] = True  # her moods may show, but only in a real talk
+            if hasattr(self.mood, "contact"):
+                self.mood.contact()
             await self._send_note(live_ws, "mood", MOOD_WITHOUT_CODE + self.mood.voice_note())
         past = self.diary.note(name, private=bool(state.get("unlocked")))
         fresh = self.diary.chat_text() if state.get("unlocked") else ""

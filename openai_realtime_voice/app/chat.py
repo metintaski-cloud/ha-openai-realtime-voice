@@ -158,6 +158,7 @@ def _parse(text: str, lists: dict, may_ask: bool = True) -> Optional[dict]:
             "kalender_raw": parsed.get("kalender"),
             "mood_resolved": parsed.get("mood_resolved") is True,
             "mood_pause": parsed.get("mood_pause") is True,
+            "gefuehl": parsed.get("gefuehl") if isinstance(parsed.get("gefuehl"), list) else [],
             "open_answered": parsed.get("frage_beantwortet") is True}
 
 
@@ -368,7 +369,15 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
         out.pop("kalender_raw", None)
         out.setdefault("lights", [])
         resolved, paused = out.pop("mood_resolved", False), out.pop("mood_pause", False)
-        if mood:
+        events = [e for e in out.pop("gefuehl", []) if isinstance(e, str)]
+        if mood and hasattr(mood, "apply"):  # scene concept 2.0: the counter decides, not the model
+            mood.contact()
+            st = mood.apply(events)
+            if st.get("silent") and "ernst" not in events:
+                out["reply"] = ""  # she is silent, but she read it
+                out["silent"] = True
+            out["mood"] = mood.status()
+        elif mood:
             if paused:
                 mood.pause()
             elif resolved:

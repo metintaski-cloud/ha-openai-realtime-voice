@@ -90,7 +90,10 @@ class Reminders:
         return d
 
     def _save(self, d: dict) -> None:
-        cut = time.time() - 2 * 86400  # forget old appointments
+        # forget old appointments; measured from the newest entry when that is older than the
+        # clock (a test with a fixed date), so nothing just written is dropped at once
+        stamps = list(d["acked"].values()) + list(d["asked"].values())
+        cut = min(time.time(), max(stamps, default=time.time())) - 2 * 86400
         d["acked"] = {k: v for k, v in d["acked"].items() if v > cut}
         d["sent"] = {k: v for k, v in d["sent"].items() if v.get("start", 0) > cut}
         d["asked"] = {k: v for k, v in d["asked"].items() if v > cut}

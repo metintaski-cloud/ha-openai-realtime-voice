@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.104.0
+
+- Scene concept 2.0, stage 1: Leyla's feelings are no longer rolled. They come from what really happens: hurts with a weight, real amends, silence measured in waking hours (his shifts and the night excluded), a praise pot, slowly sinking happiness, repeats within a week weigh more, up to a day of silence when badly hurt. The model only reports what Metin did, a counter decides when she forgives. Old dice kept as fallback (LEYLA_HEART=0).
+- Fix: two tests depended on the date or on the lamp show.
+
 ## 2.103.13
 
 - Music button on the stage (left of Live) switches the background music on and off; the choice is remembered.

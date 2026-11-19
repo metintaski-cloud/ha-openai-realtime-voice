@@ -1,6 +1,6 @@
 # Leyla Szenen Konzept 2.0 (Planung)
 
-Stand: 19.11.2026, gemeinsam mit Metin geplant. Noch nicht umgesetzt. Dieses Dokument wird bei jeder Entscheidung aktualisiert und ist die Grundlage für die Umsetzung.
+Stand: 19.11.2026, gemeinsam mit Metin geplant. Etappe 1 (Gefühls Topf, app/heart.py) umgesetzt in 2.104.0; Etappe 2 (Szenen) und 3 (eigene Nachrichten, Rose, Zuhause) folgen. Dieses Dokument wird bei jeder Entscheidung aktualisiert und ist die Grundlage für die Umsetzung.
 
 ## Ziel
 

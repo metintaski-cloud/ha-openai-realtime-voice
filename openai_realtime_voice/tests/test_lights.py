@@ -109,6 +109,7 @@ async def test_bridge_answers_light_tool_call():
     os.environ["HA_API_URL"] = "http://127.0.0.1:19997/api"
     os.environ["LIGHT_ENTITIES"] = ", ".join(ENTS)
     os.environ["ENABLE_CONTEXT"] = "false"
+    os.environ["LAMP_SHOW"] = "false"  # the lamp show would send its own turn_on first
     try:
         class LightLive(FakeLive):
             outputs: list = []
