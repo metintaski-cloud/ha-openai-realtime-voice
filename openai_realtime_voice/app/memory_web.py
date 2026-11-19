@@ -466,7 +466,8 @@ async function clipsLoad(){let outs={};try{outs=(await (await fetch('/clips.json
  CLIPS=OUTFIT?outs[OUTFIT].clips:[];if(OUTFIT&&outs[OUTFIT].body)document.querySelector('#stage .fig img').src='/clips/'+OUTFIT+'/body.jpg';
  if(LASTST)stageMood(LASTST);}
 function clipVars(b){return CLIPS.filter(n=>n.replace(/[0-9]+$/,'')===b);}
-function clipFor(st){if(clipVars(st.mood).length)return st.mood;const g=st.low?'traurig':'gluecklich';return clipVars(g).length?g:null;}
+function clipFor(st){const lv=st.low&&st.level&&st.mood!=='eifersuechtig'?'traurig'+st.level:'';if(lv&&clipVars(lv).length)return lv;if(clipVars(st.mood).length)return st.mood;
+ const g=(st.low?['traurigleicht','traurig']:['gluecklich']).filter(n=>clipVars(n).length);return g.length?g[0]:null;}
 let SV=0,STOK=0;
 function stageShow(name,loop,done,snd){const s=document.getElementById('stage'),vs=[document.getElementById('svid'),document.getElementById('svid2')],a=vs[SV],b=vs[1-SV],tok=++STOK;
  if(!name){s.classList.remove('vid');vs.forEach(v=>{v.classList.remove('on');setTimeout(()=>{if(tok===STOK){v.pause();v.removeAttribute('src');v.load();}},600);});return;}
@@ -484,7 +485,7 @@ function stageNext(b){const sp=STM&&!STM.low?SPECIAL.filter(n=>clipVars(n).lengt
 function stagePlay(once,loop){const q=once.map(n=>{const v=clipVars(n);return v.length?v[Math.floor(Math.random()*v.length)]:null;}).filter(Boolean);const next=()=>{const n=q.shift();if(n)stageShow(n,false,next,true);else stageLoop(loop);};next();}
 function stageMood(st){if(CLIPS===null)return;document.getElementById('stage').classList.toggle('low',!!st.low);let once=[];const o=STM;
  if(!o)once=['begruessung'];if(o){if(o.low&&!st.low)once=[clipVars('uebergang').length?'uebergang':'rose','kuss'];else if(st.low&&o.low&&(st.cheer||0)>(o.cheer||0))once=[clipVars('trost').length?'trost':'rose'];}
- const changed=!o||once.length||o.mood!==st.mood;STM=st;if(changed)stagePlay(once,clipFor(st));}
+ const changed=!o||once.length||o.mood!==st.mood||o.level!==st.level;STM=st;if(changed)stagePlay(once,clipFor(st));}
 clipsLoad();
 let MUSIC=[],BGM=null,BGMN='',MUSON=true;try{MUSON=localStorage.getItem('lmusic')!=='0';}catch(e){}
 function musDraw(){const b=document.getElementById('cmus');b.innerHTML=MUSON?'&#127925;':'&#128263;';b.classList.toggle('off',!MUSON);}

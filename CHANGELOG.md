@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.104.4 (19 Nov 2026)
+
+- Sad loop by level, two clips each, chosen by Metin (his folder "Leyla Stufen Vorschlag" on the Desktop): `traurigleicht`, `traurigmittel`, `traurigschwer` plus a `2` variant per dress (`clipFor` takes `traurig<level>`, jealousy keeps `eifersuechtig`); the stage switches the loop when the level changes, not only the mood. The other calm clips of 2.104.3 are out again (Metin: not too many), they can come back later as rare extras. Long dress: leicht 20261118_195846290 and 20261118_172906603 (turns away), mittel 20261117_051317148 and 20261118_195812723, schwer 20261117_053750540 and 20261117_051509027. Short dress: leicht 20261118_104146955 and 20261117_052654125, mittel 20261117_052407528 and 20261117_052339527, schwer 20261118_164614017 and 20261118_170730371 (both turn away). Kneeling stays rare at schwer.
+
 ## 2.104.3 (19 Nov 2026)
 
 - Calm sad loops from the new scene project, see below (same evening).
