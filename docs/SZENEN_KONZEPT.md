@@ -126,6 +126,10 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - 20261118_152554766 = glückliche Grundschleife.
 - 20261118_211122294 = Fehlversuch von Kling, wird nicht verwendet.
 
+### Ordner "Überraschung", Einordnung (mit Metin bestätigt, 19.11.2026)
+- Langes Kleid: 20261117_035904238, 20261117_040750859, 20261117_041940260 = Überraschung. 20261117_053846581 = Überraschung, die von Kling erfundenen Lichter bleiben drin (Metin: nicht gewollt, hat aber was). 20261117_102526211 (Leopardengang) = Komm her / I love you.
+- Kurzes Kleid: die 7 Clips (20261117_045942097 ist doppelt) bleiben vorerst Überraschung, sind aber nur ein Platzhalter und werden später durch deutlichere Überraschungen ersetzt.
+
 ## Noch offen
 - Metins Kategorienliste (er prüft gerade die Einordnung).
 - Woran genau sich die Gefühle ändern: Liste der Alltagsszenarien mit Gewicht.
