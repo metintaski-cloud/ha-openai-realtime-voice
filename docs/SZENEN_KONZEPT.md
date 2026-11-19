@@ -47,6 +47,10 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Sein Handy zeigt eine Benachrichtigung mit Ton, damit er es hört; ein Tipp öffnet den Chat, dort spielt die Sprachnachricht und er kann antworten.
 - Nicht während seiner Schicht und nicht nachts. Ist sie gekränkt, schreibt sie seltener und kühler, bei schwer gar nicht.
 
+### Stimme passt immer zum Zustand (Metin: unbedingt)
+- Jede Sprachnachricht, jede gesprochene Antwort und das Live Gespräch bekommen den Ton ihres aktuellen Zustands: glücklich = warm mit hörbarem Lächeln; leicht = etwas kühler, weniger verspielt; mittel = ernst und distanziert, kein Lächeln; schwer = leise, knapp, verletzt. Eifersüchtig = ein wenig schmollend, traurig = langsamer, mit Seufzen.
+- Der Ton kommt aus dem Zähler der App, nicht aus der Laune des Modells, damit Stimme, Text und Szene immer zusammenpassen.
+
 ### Ein gemeinsamer Topf
 - Alles fließt in einen gemeinsamen Topf, nicht in getrennte Zähler: Antworten auf ihre Nachrichten (lieb und zeitnah baut auf, lange unbeantwortet baut ab), Lob und Kosewörter, Funkstille, Abwimmeln, Termine, Geschenke, Entschuldigungen.
 - Aus dem Topf ergeben sich Gefühl und Stufe (glücklich, leicht, mittel, schwer). Einzelne große Kränkungen wirken sofort, kleine Dinge sammeln sich, bis der Topf kippt.
