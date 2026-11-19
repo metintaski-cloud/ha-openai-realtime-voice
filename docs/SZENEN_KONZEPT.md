@@ -114,6 +114,11 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - "Zeit. Glück" = glückliche Grundschleife (liest, lächelt, posiert leicht), "Schleife" bzw. "Zeit. Traurig" = traurige Grundschleife. Sie laufen, wenn nichts Besonderes passiert (bestätigt von Metin).
 - Bestand glücklich: langes Kleid 11 verschiedene, kurzes Kleid 3 verschiedene (zu wenig, 3 bis 5 mehr wären gut). Zu viele können für andere Kategorien genutzt werden.
 
+### Traurige Clips, Einordnung (mit Metin bestätigt, 19.11.2026)
+- Langes Kleid: alle Clips aus "Schleife .Traurig. L. Kleid" und "Traurig langes Kleid" sind traurige Grundschleifen (11 verschiedene), außer 20261118_172906603 (dreht sich weg) = "sauer, wegdrehen".
+- Kurzes Kleid: die ruhigen Clips aus "Traurig kurzes Kleid" und "Zeit. Traurig. K. Kleid" sind traurige Grundschleifen. 20261118_164614017, 20261118_165441215, 20261118_170730371 (dreht sich weg, wirft die Haare zurück) = "sauer, wegdrehen". 20261117_053920645 ist derselbe Clip wie in "Setzen". 20261118_104219278 zeigt das lange Kleid und liegt falsch im Ordner des kurzen Kleids.
+- Stufen: ruhige Schleifen = leicht bis mittel, die knienden Clips aus "Setzen" = schwer.
+
 ## Noch offen
 - Metins Kategorienliste (er prüft gerade die Einordnung).
 - Woran genau sich die Gefühle ändern: Liste der Alltagsszenarien mit Gewicht.
