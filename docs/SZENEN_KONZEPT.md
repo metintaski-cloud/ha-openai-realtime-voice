@@ -138,6 +138,19 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Alle 17 Tanz Clips (kurz 10, lang 6, traurig lang 1) sind echte Tänze und passen.
 - Rose traurig, kurzes Kleid: alle 3 Clips werden genommen. Dass die Rose danach verschwindet, ist für Metin in Ordnung; später können bessere Szenen sie ersetzen.
 
+### Nacht Outfit: Blickrichtung aller Clips (Anfang und Ende geprüft, 19.11.2026)
+- Alle Ordnernamen stimmen mit den Clips überein.
+- Vorne nach vorne (F nach F): I Love You F nach F (6), Komm F (4), Tanzen F nach F (12), Zeigen Glücklich (21), dazu die Umzieh Szenen ins Nacht Outfit.
+- Vorne nach hinten (F nach H): Glücklich Tanzen (2), Tanzen F nach H (2).
+- Hinten nach vorne (H nach F): Love you H nach F (4), Tanzen H nach F (7), Zeig dich (5).
+- Hinten nach hinten (H nach H): Tanzen H nach H (5), Zeig dich 20261119_010336043 und 20261119_010426004 (2).
+- "Bett. Zeig dich" beginnt immer hinten, "Bett. Zeigen. Glücklich" vorne.
+
+### Tanz als Kette (Metins Idee)
+- Ein Tanz besteht aus mehreren Clips hintereinander, damit er nicht zu kurz ausfällt und jedes Mal anders ist. Die App setzt die Kette nach der Blickrichtung zusammen: das Ende eines Clips muss zum Anfang des nächsten passen.
+- Beispiel: vorne nach hinten, hinten nach hinten, hinten nach vorne, vorne nach vorne. Weil es genug Clips mit "hinten nach vorne" gibt, kommt jede Kette am Ende wieder zur Kamera zurück.
+- Dasselbe gilt für Zeigen, Love you und Komm her, die als Glieder in eine Kette passen.
+
 ## Noch offen
 - Metins Kategorienliste (er prüft gerade die Einordnung).
 - Woran genau sich die Gefühle ändern: Liste der Alltagsszenarien mit Gewicht.
