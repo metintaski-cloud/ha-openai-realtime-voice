@@ -180,6 +180,7 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 
 ### Grundschleifen
 - "Zeit. Glück" = glückliche Grundschleife (liest, lächelt, posiert leicht), "Schleife" bzw. "Zeit. Traurig" = traurige Grundschleife. Sie laufen, wenn nichts Besonderes passiert (bestätigt von Metin).
+- Seit 2.104.5 läuft die glückliche Schleife mit 2 Clips pro Kleid, von Metin ausgesucht (Ordner "Leyla Glücklich Vorschlag" mit Reserve).
 - Bestand glücklich: langes Kleid 11 verschiedene, kurzes Kleid 3 verschiedene (zu wenig, 3 bis 5 mehr wären gut). Zu viele können für andere Kategorien genutzt werden.
 
 ### Traurige Clips, Einordnung (mit Metin bestätigt, 19.11.2026)
