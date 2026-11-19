@@ -64,6 +64,9 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 ### Tempo (Metin, 19.11.2026)
 - Sofort nur bei großen Kränkungen. Kleine Dinge sammeln sich über Tage. Glück sinkt ohne Schönes über etwa zwei bis drei Tage. Zurück zu glücklich braucht mehrere echte Wiedergutmachungen. Ein normaler lieber Tag hält sie stabil glücklich; sie springt nicht bei jeder Nachricht hin und her.
 
+### Keine Pause (Metin, 19.11.2026)
+- Es gibt keinen Pausenschalter für Urlaub oder Krankheit.
+
 ### Gedächtnis für Kränkungen (Metin, 19.11.2026)
 - Was sie verziehen hat, ist erledigt; sie wirft es ihm nie wieder vor.
 - Nur wenn Metin denselben Fehler innerhalb einer Woche wiederholt, wiegt er etwas schwerer ("Schon wieder?"). Nach einer Woche ist auch das vergessen.
