@@ -69,7 +69,7 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Glücklich: schöne Überraschung, sie freut sich, der Topf füllt sich (Clip "freut sich").
 - Gekränkt (leicht oder mittel): sie nimmt sie berührt, aber zurückhaltend an (Clip "berührt, aber noch verletzt"); hilft ein bisschen, ersetzt keine ehrliche Entschuldigung.
 - Schwer gekränkt oder im Schweigen: sie nimmt nicht an, der Knopf ist grau. (Die Rose der Woche ist dann nicht verbraucht.)
-- Umgesetzt in 2.110.0. Für glücklich gibt es noch keinen Clip "freut sich", bis dahin zeigt die Bühne einen Kuss.
+- Umgesetzt in 2.110.0. Für glücklich gibt es noch keinen Clip "freut sich", bis dahin zeigt die Bühne einen Kuss. Seit 20.11.2026 gibt es `schwarz/rosefroh` (schüchtern, Hand aus der Kamera, Kling Zeichen mit delogo entfernt); im kurzen Kleid fehlt er noch.
 
 ### Kleiderwechsel lang und kurz (Metin, 19.11.2026)
 - Sie wechselt das Kleid selbst, aber nur während die App geschlossen ist, so braucht es keine Umzieh Szene: morgens um 5 Uhr wählt sie ihr Kleid für den Tag, und war die App mehrere Stunden zu, kann sie sich inzwischen umgezogen haben.
