@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.104.6 (19 Nov 2026)
+
+- Rare happy extras: the Reserve clips of "Leyla Glücklich Vorschlag" are `gluecklichextra` (long dress 9, short dress 2); while she is good, after a loop cycle without a special scene one of them plays with 25 % chance (`EXTRA_P`), so about every seventh cycle, then the loop goes on (Metin's wish).
+
 ## 2.104.5 (19 Nov 2026)
 
 - Happy loop: two clips per dress from the new scene project, picked by Metin (Desktop folder "Leyla Glücklich Vorschlag", the rest kept there under Reserve): long dress 20261117_103335117 and 20261117_030953125 ("Zeit.Glück. L. Kleid"), short dress "Kurz glücklich A" and 20261117_112740119 ("Zeit. Glück. K. Kleid"). The old `gluecklich` clips (long 10, short 7) are out.
