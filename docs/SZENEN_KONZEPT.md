@@ -134,6 +134,10 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Alle Clips sind Kuss, glücklich: 20261117_122438371 (geht auf die Knie und gibt unten einen Kuss), 20261117_121801018 (dezenter Kuss), die übrigen werfen einen Kuss zu.
 - Ausnahme: 20261117_102739819 (lacht über eine Seite im Buch, liegt auch in "Zeit. Glück") = neue Szene "Lachen".
 
+### Tanzen und Rose (geprüft 19.11.2026)
+- Alle 17 Tanz Clips (kurz 10, lang 6, traurig lang 1) sind echte Tänze und passen.
+- Rose traurig, kurzes Kleid: alle 3 Clips werden genommen. Dass die Rose danach verschwindet, ist für Metin in Ordnung; später können bessere Szenen sie ersetzen.
+
 ## Noch offen
 - Metins Kategorienliste (er prüft gerade die Einordnung).
 - Woran genau sich die Gefühle ändern: Liste der Alltagsszenarien mit Gewicht.
