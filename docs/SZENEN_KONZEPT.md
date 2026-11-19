@@ -119,6 +119,13 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Kurzes Kleid: die ruhigen Clips aus "Traurig kurzes Kleid" und "Zeit. Traurig. K. Kleid" sind traurige Grundschleifen. 20261118_164614017, 20261118_165441215, 20261118_170730371 (dreht sich weg, wirft die Haare zurück) = "sauer, wegdrehen". 20261117_053920645 ist derselbe Clip wie in "Setzen". 20261118_104219278 zeigt das lange Kleid und liegt falsch im Ordner des kurzen Kleids.
 - Stufen: ruhige Schleifen = leicht bis mittel, die knienden Clips aus "Setzen" = schwer.
 
+### Ordner "Versöhnung. K. Kleid", Einordnung (mit Metin bestätigt, 19.11.2026)
+- 20261117_075210336 = Kuss (wirft einen Kuss, geht zurück).
+- 20261117_075325603, 20261117_075412422 = Komm her / I love you (kommt ganz nah).
+- 20261118_114707289 = sauer, wegdrehen (verschränkt die Arme mit dem Buch).
+- 20261118_152554766 = glückliche Grundschleife.
+- 20261118_211122294 = Fehlversuch von Kling, wird nicht verwendet.
+
 ## Noch offen
 - Metins Kategorienliste (er prüft gerade die Einordnung).
 - Woran genau sich die Gefühle ändern: Liste der Alltagsszenarien mit Gewicht.
