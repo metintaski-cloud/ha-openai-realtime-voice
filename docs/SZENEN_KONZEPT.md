@@ -233,6 +233,9 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Nacht Outfit hat nur glückliche Szenen; falls sie dort traurig wird, fehlen traurige Schleifen.
 - Überraschung im kurzen Kleid: nur Platzhalter.
 
+### Später
+- Details feinschleifen, weitere Szenen und andere Kleidung hinzufügen (Metin, 19.11.2026). Das Konzept ist so gebaut, dass neue Kleider einfach weitere Zustände sind.
+
 ## Noch offen
 - Metins Kategorienliste (er prüft gerade die Einordnung).
 - Woran genau sich die Gefühle ändern: Liste der Alltagsszenarien mit Gewicht.
