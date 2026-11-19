@@ -43,6 +43,10 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Alle Szenen im Nacht Outfit brauchen dessen Endbild als Start und Endbild.
 - Zurück zu Arbeit um 5 Uhr morgens wie oben.
 
+### Begrüßung (Ordner "Hallo")
+- Beim Öffnen der App: sie merkt, dass Metin da ist, und winkt (glücklich, langes Kleid, vorhanden; kurzes Kleid ebenso, die bisherigen Begrüßungen).
+- Die Begrüßung richtet sich nach Zustand und Gefühl. Offen: wie sie grüßt, wenn sie gekränkt ist, und Begrüßungen für Freizeit und Nacht Outfit.
+
 ### Zustände im Überblick
 - Kleid: lang oder kurz.
 - Aufzug: Arbeit (Buch und Brille), Freizeit (ohne), Nacht Outfit.
