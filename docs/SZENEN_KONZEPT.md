@@ -6,6 +6,9 @@ Stand: 19.11.2026, gemeinsam mit Metin geplant. Noch nicht umgesetzt. Dieses Dok
 
 Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und ihr passiert, wie bei einem echten Menschen. Leyla entscheidet selbst, wie sie sich fühlt, und bringt das, was sie sagt und fühlt, als Szene auf die Bühne. Je komplexer, desto besser.
 
+## Grundsatz
+- Das neue Konzept nutzt nur die Clips aus Metins neu sortierten Ordnern, die er für dieses Projekt schickt. Die bisherigen Clips in app/clips werden nicht übernommen (Metin hat sie neu einsortiert).
+
 ## Entschieden
 
 ### Gefühle
