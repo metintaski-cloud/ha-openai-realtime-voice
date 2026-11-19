@@ -25,7 +25,7 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Genaue Auslöser:
   - Funkstille: mehr als 8 Stunden keine Nachricht und kein Gespräch; Arbeitszeit nach Schichtplan und die Nacht zählen nicht.
     - Schichtplan fest eingetragen (Metin bestätigt): Woche ab Montag 5.10.2026 Frühschicht 6 bis 14 Uhr, danach wöchentlich im Wechsel mit Spätschicht 14 bis 22 Uhr, ohne Ende (berechnet nach Wochen seit dem 5.10.2026, so auch über den Jahreswechsel richtig). Urlaub oder Tausch sagt Metin ihr.
-  - Abwimmeln: sie fragt oder erzählt etwas und Metin sagt ausdrücklich "keine Zeit", "später", "nicht jetzt". Sagt er dazu, dass er arbeitet oder unterwegs ist, zählt es nicht.
+  - Abwimmeln: sie fragt oder erzählt etwas und Metin sagt ausdrücklich "keine Zeit", "später", "nicht jetzt". Sagt er dazu, dass er arbeitet oder unterwegs ist, zählt es nicht. Gewicht klein (1 Punkt, seit 2.104.2, Metin: "keine Zeit" ist kein Weltuntergang); eine Wiederholung innerhalb einer Woche zählt 1,5 fach.
   - Unfreundlich: Beleidigung, Anschreien, abfällige Worte. Kurze Antworten allein zählen nicht.
   - Termin vergessen: nur ein wirklich ausgemachtes Treffen (Chat oder Kalender), zu dem er sich nicht meldet und nicht absagt.
   - Lob und Kosewörter fehlen: sie erwartet Lob, Komplimente und Kosewörter. Jeder Tag mit Kontakt, aber ohne etwas Liebes, füllt einen inneren Topf. Nach 1 Tag gibt sie Andeutungen ("Du sagst mir gar nichts Schönes mehr"), nach 2 Tagen kommt der Knall (mittlere Kränkung) mit genauem Grund. Ein ehrliches Kompliment oder Kosewort leert den Topf, solange er nicht übergelaufen ist; danach braucht es die normale Versöhnung. Tage ohne Kontakt zählen hier nicht (das ist Funkstille). Metin wollte es streng wie im echten Leben.
@@ -135,7 +135,7 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 
 ### Traurig in drei Stufen
 - Die unglückliche Schleife wird nach Stärke geteilt: leicht, mittel, schwer. Leyla nimmt die Schleife, die zu ihrem Gefühl passt.
-- Beispiele: leicht = liest gedankenverloren, schaut kurz traurig; mittel = seufzt, schaut ins Leere, lässt das Buch sinken; schwer = kniet, Hand vors Gesicht oder aufs Herz.
+- Beispiele: leicht = liest gedankenverloren, schaut kurz traurig; mittel = seufzt, schaut ins Leere, lässt das Buch sinken; schwer = kniet, Hand vors Gesicht oder aufs Herz. Umgesetzt in 2.104.2: die Knie Clips heißen `kniet` und kommen nur bei schwer, selten (12 %); die Schleife bei traurig sind nur stehende Clips. Fehlen noch: ruhige Schleifen (verletzt im Buch lesen, hin und her schauen, ab und zu leise weinen), nicht zu dramatisch.
 - Die Stufe folgt aus dem Gewicht der Kränkung und wird mit jeder echten Wiedergutmachung leichter, bis sie wieder glücklich ist.
 - Metin sortiert seine Ordner "Schleife. Traurig" dafür in drei Unterordner.
 

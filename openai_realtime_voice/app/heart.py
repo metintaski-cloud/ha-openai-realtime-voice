@@ -36,7 +36,7 @@ LOG_KEPT = 60
 # kind "hurt" adds points, "amend" takes points away (and adds happiness), "nice" only adds
 # happiness (and amends a little while she is hurt), "jealous" is a small hurt of its own.
 HURTS = {
-    "abgewimmelt": (3, "er hat dich abgewimmelt (keine Zeit, später, nicht jetzt)"),
+    "abgewimmelt": (1, "er hat dich abgewimmelt (keine Zeit, später, nicht jetzt)"),
     "unfreundlich": (3, "er war unfreundlich zu dir"),
     "beleidigt": (6, "er hat dich beleidigt oder lächerlich gemacht"),
     "verabredung_geplatzt": (6, "er hat eure Verabredung platzen lassen"),

@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.104.2 (19 Nov 2026)
+
+- "Keine Zeit" (abgewimmelt) is now a small hurt (1 point, leicht) instead of 3; a repeat within a week still weighs 1.5 times (Metin: keine Zeit is no end of the world).
+- Sad stage calmer: the kneeling clips are now their own scene `kniet` (kurz/kniet, kniet2; schwarz/kniet to kniet5, before traurig3 to traurig7) and play only at schwer with 12 % chance after a loop cycle (`KNIET_P`); the sad loop is the standing clips only (Metin: she fell to her knees all the time, too dramatic).
+
 ## 2.104.1
 
 - While she is still hurt she no longer says she is not sad anymore; she may say it is getting better (first test with Metin: the counter was right, her words were not).

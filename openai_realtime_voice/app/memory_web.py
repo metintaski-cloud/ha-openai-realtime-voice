@@ -478,7 +478,9 @@ function stageShow(name,loop,done,snd){const s=document.getElementById('stage'),
 function stageLoop(b){if(!b)return stageShow(null);const v=clipVars(b),nx=()=>stageNext(b);if(v.length<2)return stageShow(v[0],false,nx);
  const cur=document.getElementById(SV?'svid2':'svid').src.split('/').pop().replace('.mp4','');const o=v.filter(n=>n!==cur);stageShow(o[Math.floor(Math.random()*o.length)],false,nx);}
 const SPECIAL=['liebe','tanz'],SPECIAL_P=0.4;
-function stageNext(b){const sp=STM&&!STM.low?SPECIAL.filter(n=>clipVars(n).length):[];if(sp.length&&Math.random()<SPECIAL_P)stagePlay([sp[Math.floor(Math.random()*sp.length)]],b);else stageLoop(b);}
+const KNIET_P=0.12;
+function stageNext(b){const sp=STM&&!STM.low?SPECIAL.filter(n=>clipVars(n).length):[];if(sp.length&&Math.random()<SPECIAL_P)stagePlay([sp[Math.floor(Math.random()*sp.length)]],b);
+ else if(STM&&STM.low&&STM.level==='schwer'&&clipVars('kniet').length&&Math.random()<KNIET_P)stagePlay(['kniet'],b);else stageLoop(b);}
 function stagePlay(once,loop){const q=once.map(n=>{const v=clipVars(n);return v.length?v[Math.floor(Math.random()*v.length)]:null;}).filter(Boolean);const next=()=>{const n=q.shift();if(n)stageShow(n,false,next,true);else stageLoop(loop);};next();}
 function stageMood(st){if(CLIPS===null)return;document.getElementById('stage').classList.toggle('low',!!st.low);let once=[];const o=STM;
  if(!o)once=['begruessung'];if(o){if(o.low&&!st.low)once=[clipVars('uebergang').length?'uebergang':'rose','kuss'];else if(st.low&&o.low&&(st.cheer||0)>(o.cheer||0))once=[clipVars('trost').length?'trost':'rose'];}

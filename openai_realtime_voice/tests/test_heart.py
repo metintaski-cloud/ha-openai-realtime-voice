@@ -43,7 +43,7 @@ def test_starts_happy_and_a_nice_message_keeps_her_happy(h):
 def test_one_sweet_sentence_does_not_end_a_medium_hurt(h):
     t = at(*THU, 15)
     h.contact(t)
-    st = h.apply(["abgewimmelt"], t)
+    st = h.apply(["unfreundlich"], t)
     assert st["low"] and st["level"] == "mittel"
     st = h.apply(["kompliment"], t + 60)
     assert st["low"], "a compliment alone must not be enough"
@@ -84,11 +84,11 @@ def test_rose_not_taken_when_badly_hurt(h):
 def test_repeat_within_a_week_weighs_more(h):
     t = at(*THU, 15)
     h.contact(t)
-    h.apply(["abgewimmelt"], t)
+    h.apply(["unfreundlich"], t)
     for e in ["entschuldigung", "zeit_genommen", "versprechen_gehalten"]:
         h.apply([e], t + 60)
     assert h.stats(t + 60)["points"] == 0
-    h.apply(["abgewimmelt"], t + 3600)
+    h.apply(["unfreundlich"], t + 3600)
     assert h.stats(t + 3600)["points"] == pytest.approx(4.5)
     h2_t = t + 8 * 86400
     for k in range(1, 8 * 4):  # he keeps writing lovingly every few hours
@@ -96,7 +96,7 @@ def test_repeat_within_a_week_weighs_more(h):
         h.apply(["kosewort"], t + k * 6 * 3600)
     h.contact(h2_t)
     assert h.stats(h2_t)["points"] == 0
-    h.apply(["abgewimmelt"], h2_t + 60)
+    h.apply(["unfreundlich"], h2_t + 60)
     assert h.stats(h2_t + 60)["points"] == pytest.approx(3)
 
 
@@ -193,8 +193,17 @@ async def test_tool_laune(h):
 def test_she_never_says_all_is_well_while_hurt(h):
     t = at(*THU, 15)
     h.contact(t)
-    h.apply(["abgewimmelt"], t)
+    h.apply(["unfreundlich"], t)
     h.apply(["entschuldigung"], t + 60)
     n = h.note(t + 60)
     assert "Sag nie, dass alles wieder gut ist" in n and "ein bisschen besser" in n
     assert "Sag nie" in h.feeling(t + 60) and "Sag nie" in h.voice_note(t + 60)
+
+
+def test_keine_zeit_is_only_a_small_hurt(h):
+    t = at(*THU, 15)
+    h.contact(t)
+    st = h.apply(["abgewimmelt"], t)
+    assert st["level"] == "leicht"
+    st = h.apply(["entschuldigung"], t + 60)
+    assert not st["low"]
