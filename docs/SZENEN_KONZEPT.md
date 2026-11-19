@@ -150,6 +150,7 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Ein Tanz besteht aus mehreren Clips hintereinander, damit er nicht zu kurz ausfällt und jedes Mal anders ist. Die App setzt die Kette nach der Blickrichtung zusammen: das Ende eines Clips muss zum Anfang des nächsten passen.
 - Beispiel: vorne nach hinten, hinten nach hinten, hinten nach vorne, vorne nach vorne. Weil es genug Clips mit "hinten nach vorne" gibt, kommt jede Kette am Ende wieder zur Kamera zurück.
 - Dasselbe gilt für Zeigen, Love you und Komm her, die als Glieder in eine Kette passen.
+- Länge: ein Tanz dauert etwa 60 Sekunden (4 Clips à 15 Sekunden). Bittet Metin um mehr, tanzt sie weiter, wenn sie Lust hat.
 
 ## Noch offen
 - Metins Kategorienliste (er prüft gerade die Einordnung).
