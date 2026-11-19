@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.104.7 (19 Nov 2026)
+
+- Dance scenes from the new scene project: all happy dances ("Tanz. Glücklich. K. Kleid" 10 as `kurz/tanz` to `tanz10`, "Tanz. Glücklich. L. Kleid" 6 as `schwarz/tanz` to `tanz6`, as confirmed with Metin in the concept). Three keep their own Kling sound (kurz/tanz3, tanz6, schwarz/tanz6); 20261117_084342779 (kurz/tanz4) is played silent because its sound is Metin's "Song_2", already in the background music. Before: 8 short (two of them the same clip twice) and 6 long from the old clips.
+
 ## 2.104.6 (19 Nov 2026)
 
 - Rare happy extras: the Reserve clips of "Leyla Glücklich Vorschlag" are `gluecklichextra` (long dress 9, short dress 2); while she is good, after a loop cycle without a special scene one of them plays with 25 % chance (`EXTRA_P`), so about every seventh cycle, then the loop goes on (Metin's wish).
