@@ -501,7 +501,7 @@ function stageShow(name,loop,done,snd){const s=document.getElementById('stage'),
  b.src='/clips/'+OUTFIT+'/'+name+'.mp4';b.load();}
 function stageLoop(b){DANCING=false;if(!b)return stageShow(null);const v=clipVars(b),nx=()=>stageNext(b);if(v.length<2)return stageShow(v[0],false,nx);
  const cur=document.getElementById(SV?'svid2':'svid').src.split('/').pop().replace('.mp4','');const o=v.filter(n=>n!==cur);stageShow(o[Math.floor(Math.random()*o.length)],false,nx);}
-const SPECIAL=['liebe','tanz','kuss'],SPECIAL_P=0.4;
+const SPECIAL=['tanz'],SPECIAL_P=0.3;
 const KNIET_P=0.12,EXTRA_P=0.25;
 function stageNext(b){const sp=STM&&!STM.low?SPECIAL.filter(n=>clipVars(n).length):[];if(sp.length&&Math.random()<SPECIAL_P)stagePlay([sp[Math.floor(Math.random()*sp.length)]],b);
  else if(STM&&!STM.low&&clipVars('gluecklichextra').length&&Math.random()<EXTRA_P)stagePlay(['gluecklichextra'],b);

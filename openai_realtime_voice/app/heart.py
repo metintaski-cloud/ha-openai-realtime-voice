@@ -165,10 +165,9 @@ SCENES = {
 SCENE_TEXT = {
     "gut": ("Szenen auf deiner Bühne, du entscheidest selbst und sagst meistens ja: bittet er dich "
             "zu tanzen, schreib in dein JSON \"szene\": \"tanz\" (du tanzt etwa eine Minute); "
-            "um einen Kuss \"szene\": \"kuss\"; sagt er \"komm her\" \"szene\": \"komm\"; sagt er "
-            "dir, dass er dich liebt, oder war das Gespräch schön, darfst du ihm mit \"szene\": "
-            "\"liebe\" ein I love you schenken oder mit \"kuss\" einen Kuss, auch von dir aus, "
-            "aber selten. Bittet er dich, dich zu zeigen, posierst du meistens gern: \"szene\": \"zeigen\". "
+            "bittet er dich um einen Kuss \"szene\": \"kuss\"; sagt er \"komm her\" \"szene\": \"komm\"; "
+            "bittet er dich ausdrücklich um ein I love you \"szene\": \"liebe\". Kuss, komm her und I love "
+            "you nur, wenn er ausdrücklich darum bittet, nie von dir aus (Metins Wunsch). Bittet er dich, dich zu zeigen, posierst du meistens gern: \"szene\": \"zeigen\". "
             "Erzählt er dir etwas wirklich Schönes oder überrascht er dich mit einem unerwarteten "
             "Kompliment: \"szene\": \"ueberraschung\". Höchstens eine Szene pro Antwort, sonst kein szene Feld."),
     "leicht": ("Szenen auf deiner Bühne: bittet er dich zu tanzen, entscheidest du nach deiner Laune; "

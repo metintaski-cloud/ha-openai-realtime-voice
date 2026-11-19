@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.110.1 (19 Nov 2026)
+
+- Scenes where she comes to the camera only on request (Metin: she did it too often): I love you, komm her and kiss are no longer random special scenes and the model may choose them only when Metin asks explicitly, never by herself. The random special scene while she is good is now only a dance, with 30 % chance after a loop cycle (40 % before, when liebe and kuss were in it). A tap on her and the kiss at the end of a reconciliation stay.
+
 ## 2.110.0 (19 Nov 2026)
 
 - Rose button 🌹 in the chat header (concept, Metin 19 Nov 2026): a trump card once per calendar week (`Heart.give_rose`, `POST /api/rose`, state `rose` in the status: ready, used, blocked). Happy she is delighted (+25 happiness; no "freut sich" clip yet, the stage shows a kiss), leicht or mittel she takes it touched but reserved and it counts as a small amend (1 point; clips `rose`, from "Rose. Traurig"), schwer or silent she does not take it and the week's rose is not used up. The button is grey when used or blocked. After the tap the chat sends "🌹 Ich schenke dir eine Rose." so she answers in words; the model can no longer report `rose` itself (removed from `EVENTS` and filtered in the chat). The stage no longer plays the rose clip when a low ends or when she is comforted (it did without any rose).
