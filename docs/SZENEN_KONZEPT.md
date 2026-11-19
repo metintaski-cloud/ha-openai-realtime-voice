@@ -39,6 +39,7 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 ### Nacht Outfit (Ordner "Bett")
 - Dritter Zustand neben Arbeit und Freizeit: sie geht kurz von der Bühne und kommt im Outfit für die Nacht zurück. Danach tanzt sie oder zeigt sich, wenn Metin es sagt oder schreibt und sie es möchte.
 - Wechsel von Arbeit ins Nacht Outfit (4df2e0df, kurzes Kleid) und von Freizeit ins Nacht Outfit (dc1fab95, kurzes Kleid). Metin hat pro Ordner mehrere Clips mit kleinen Unterschieden, damit Leylas Wahl nicht eintönig wird.
+- Langes Kleid: "Bett von Freizeit" vorhanden (4 Clips), "Bett von Arbeit" fehlt. Lösung ohne neuen Clip: die App spielt zwei Szenen hintereinander, erst "Buch und Brille weg", dann "Bett von Freizeit". Das gilt allgemein: fehlt ein direkter Wechsel, geht sie über einen Zwischenzustand.
 - Alle Szenen im Nacht Outfit brauchen dessen Endbild als Start und Endbild.
 - Zurück zu Arbeit um 5 Uhr morgens wie oben.
 
