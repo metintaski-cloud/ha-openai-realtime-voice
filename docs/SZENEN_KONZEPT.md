@@ -78,6 +78,9 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 ### Komm her (Ordner "Komm her")
 - Metin sagt "komm her", sie kommt ganz nah zur Kamera. Glücklich oder traurig, je nach Gefühl, oder sie lässt es.
 
+### Kuss (Ordner "Kuss")
+- Bei der Versöhnung, wenn Metin sie fragt oder bittet, oder von selbst, wenn sie das Gespräch so schön fand. Immer ihre Entscheidung.
+
 ### Setzen (Ordner "Setzten. Traurig")
 - Sie setzt sich hin, wenn sie traurig ist, von selbst oder wenn Metin sagt "setz dich kurz". Ob sie es macht, entscheidet sie. Langes Kleid 9 Clips, kurzes Kleid ebenso.
 
