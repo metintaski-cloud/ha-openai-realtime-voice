@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.107.0 (19 Nov 2026)
+
+- Clips from the Home Assistant media folder (scene concept 2.0, step one of the move): the add on maps `media` read only, and `memory_web.clips_dir()` takes `/media/leyla` as soon as one look folder there holds a clip, else the clips built into the add on (checked per request, no restart needed after copying). Metin copies the folder `leyla` (schwarz, kurz, musik) to `\\192.168.2.240\media`. When the app shows the clips from there, the next version drops the built in clips (293 MB) so updates get small again.
+
 ## 2.106.0 (19 Nov 2026)
 
 - Kiss, I love you and komm her by her heart (agreed with Metin): happy she decides herself and mostly says yes, kiss and I love you also on her own after a lovely talk, but rarely; leicht no kiss and no I love you, komm her maybe with a sad face (`kurz/kommtraurig`); mittel and schwer she refuses. The model writes `"szene"` (`tanz`, `kuss`, `komm`, `liebe`), `heart.SCENES` maps it per level to the clip scene, so the counter decides. Reconciliation keeps ending with `uebergang` then `kuss`, and the heart turns from 🖤 to ❤️ only when everything is forgiven.

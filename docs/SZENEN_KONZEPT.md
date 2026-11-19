@@ -239,7 +239,7 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Überraschung im kurzen Kleid: nur Platzhalter.
 
 ### Speicherort der Clips (19.11.2026)
-- Die Clips kommen nicht mehr ins Add on (das würde mit allen Clips etwa 600 MB groß und jedes Update langsam), sondern in den Medienordner von Home Assistant; die App lädt sie von dort. Neue Clips brauchen dann kein Update.
+- Die Clips kommen nicht mehr ins Add on (das würde mit allen Clips etwa 600 MB groß und jedes Update langsam), sondern in den Medienordner von Home Assistant; die App lädt sie von dort. Neue Clips brauchen dann kein Update. Umgesetzt ab 2.107.0: das Add on liest `/media/leyla/<Kleid>/`, sobald dort Clips liegen.
 - Samba share ist installiert und läuft, Metin erreicht den Ordner am PC unter \\192.168.2.240\media (Benutzer 192.168.2.240\Metin).
 - Claude bereitet die Clips auf Metins PC vor (verkleinert, ohne Ton bei Schleifen, sinnvoll benannt) in einem eigenen Ordner, den Metin dann in den Medienordner kopiert.
 

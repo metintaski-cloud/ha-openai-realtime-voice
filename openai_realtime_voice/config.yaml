@@ -1,5 +1,5 @@
 name: GPT Live Voice
-version: "2.106.0"
+version: "2.107.0"
 slug: openai_realtime_voice
 description: WebSocket bridge from Voice PE to OpenAI GPT Live (natural voice conversation with web search)
 url: https://github.com/metintaski-cloud/ha-openai-realtime-voice
@@ -11,6 +11,9 @@ startup: application
 boot: auto
 host_network: true
 homeassistant_api: true
+map:
+  - type: media
+    read_only: true
 options:
   openai_api_key: ""
   websocket_port: 8080

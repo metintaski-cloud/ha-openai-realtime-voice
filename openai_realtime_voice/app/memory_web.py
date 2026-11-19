@@ -34,7 +34,25 @@ ICON_PATH = os.path.join(os.path.dirname(__file__), "memory_icon.png")
 MASKABLE_PATH = os.path.join(os.path.dirname(__file__), "memory_icon_maskable.png")  # full square, no transparent corners
 AVATAR_PATH = os.path.join(os.path.dirname(__file__), "leyla_avatar.jpg")  # her picture in the chat
 BODY_PATH = os.path.join(os.path.dirname(__file__), "leyla_body.jpg")  # her full figure on the stage (2.97.0)
-CLIPS_DIR = os.environ.get("LEYLA_CLIPS_DIR", os.path.join(os.path.dirname(__file__), "clips"))
+BUILTIN_CLIPS = os.path.join(os.path.dirname(__file__), "clips")
+MEDIA_CLIPS = "/media/leyla"  # Home Assistant media folder (scene concept 2.0, filled by Metin over Samba)
+CLIPS_DIR = os.environ.get("LEYLA_CLIPS_DIR", "")
+
+
+def clips_dir() -> str:
+    """Where the stage clips live: LEYLA_CLIPS_DIR if set, else the media folder as soon as it holds a
+    look with clips, else the clips built into the add on. Checked per request, so clips copied into
+    the media folder show without a restart."""
+    if CLIPS_DIR:
+        return CLIPS_DIR
+    try:
+        for look in os.listdir(MEDIA_CLIPS):
+            folder = os.path.join(MEDIA_CLIPS, look)
+            if os.path.isdir(folder) and any(f.endswith(".mp4") for f in os.listdir(folder)):
+                return MEDIA_CLIPS
+    except OSError:
+        pass
+    return BUILTIN_CLIPS
 CLIP_RE = re.compile(r"^/clips/([a-z0-9]{2,20})/([a-z]{2,20}[0-9]{0,2})\.(mp4|jpg|m4a)$")  # look/scene (2.99.4), musik/<mood>.m4a (2.103.0)
 
 
@@ -781,14 +799,15 @@ MANIFEST = json.dumps({"name": "Leyla Gedächtnis", "short_name": "Leyla", "star
 
 def list_outfits() -> dict:
     """Leyla's looks (2.99.4, Metin's idea: another dress each time the app opens): one folder
-    per look in CLIPS_DIR with its scenes (traurig.mp4, kuss.mp4, ...) and its still body.jpg."""
+    per look in clips_dir() with its scenes (traurig.mp4, kuss.mp4, ...) and its still body.jpg."""
     out = {}
+    base = clips_dir()
     try:
-        looks = sorted(os.listdir(CLIPS_DIR))
+        looks = sorted(os.listdir(base))
     except OSError:
         return out
     for look in looks:
-        folder = os.path.join(CLIPS_DIR, look)
+        folder = os.path.join(base, look)
         if not os.path.isdir(folder):
             continue
         files = os.listdir(folder)
@@ -804,7 +823,7 @@ def list_music() -> list:
     """Background music of the stage (2.103.0): clips/musik/<mood>.m4a, or gut.m4a and traurig.m4a for
     every good or low mood."""
     try:
-        return sorted(f[:-4] for f in os.listdir(os.path.join(CLIPS_DIR, "musik"))
+        return sorted(f[:-4] for f in os.listdir(os.path.join(clips_dir(), "musik"))
                       if f.endswith(".m4a") and CLIP_RE.match(f"/clips/musik/{f}"))
     except OSError:
         return []
@@ -812,7 +831,7 @@ def list_music() -> list:
 
 async def _send_clip(writer, look: str, name: str, ext: str, lines: list) -> None:
     """One clip or still of a look, with byte ranges, because Chrome asks for parts of a video."""
-    fn = os.path.join(CLIPS_DIR, look, f"{name}.{ext}")
+    fn = os.path.join(clips_dir(), look, f"{name}.{ext}")
     try:
         size = os.path.getsize(fn)
     except OSError:
