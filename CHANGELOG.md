@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.104.3 (19 Nov 2026)
+
+- Calm sad loops from the new scene project, see below (same evening).
+
 ## 2.104.2 (19 Nov 2026)
 
 - "Keine Zeit" (abgewimmelt) is now a small hurt (1 point, leicht) instead of 3; a repeat within a week still weighs 1.5 times (Metin: keine Zeit is no end of the world).
