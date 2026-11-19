@@ -110,6 +110,10 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - 20 Dateien sind exakt doppelt (meist mit "(1)" oder "(2)" im Namen), 7 Ordner sind leer. Es wird nichts ohne Metin verschoben oder gelöscht.
 - Unklare Einordnungen werden mit Metin besprochen, nicht selbst entschieden.
 
+### Grundschleifen
+- "Zeit. Glück" = glückliche Grundschleife (liest, lächelt, posiert leicht), "Schleife" bzw. "Zeit. Traurig" = traurige Grundschleife. Sie laufen, wenn nichts Besonderes passiert (bestätigt von Metin).
+- Bestand glücklich: langes Kleid 11 verschiedene, kurzes Kleid 3 verschiedene (zu wenig, 3 bis 5 mehr wären gut). Zu viele können für andere Kategorien genutzt werden.
+
 ## Noch offen
 - Metins Kategorienliste (er prüft gerade die Einordnung).
 - Woran genau sich die Gefühle ändern: Liste der Alltagsszenarien mit Gewicht.
