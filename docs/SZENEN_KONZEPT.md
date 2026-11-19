@@ -144,6 +144,7 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 
 ### Tanzen (Ordner "Tanzen. Glücklich" und "Tanzen. Traurig")
 - Wie Zeigen: Metin bittet sie zu tanzen, sie entscheidet. Es gibt eine glückliche und eine traurige Variante, sie tanzt so, wie sie sich fühlt. Die Hintergrundmusik läuft dazu weiter.
+- Genau geklärt mit Metin (19.11.2026): glücklich und gefragt "magst du tanzen?": fast immer ja, etwa eine Minute mehrere fröhliche Tänze hintereinander. Leicht traurig: sie entscheidet selbst, wenn sie tanzt, dann den traurigen Tanz. Mittel und schwer: nein, höchstens "vielleicht später". Im Chat umgesetzt in 2.105.0; per Stimme in der App und am Voice PE folgt mit Stufe 2.
 
 ### Komm her (Ordner "Komm her")
 - Metin sagt "komm her", sie kommt ganz nah zur Kamera. Glücklich oder traurig, je nach Gefühl, oder sie lässt es.

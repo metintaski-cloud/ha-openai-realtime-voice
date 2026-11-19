@@ -207,3 +207,14 @@ def test_keine_zeit_is_only_a_small_hurt(h):
     assert st["level"] == "leicht"
     st = h.apply(["entschuldigung"], t + 60)
     assert not st["low"]
+
+
+def test_she_dances_only_when_her_heart_allows(h):
+    t = at(*THU, 15)
+    h.contact(t)
+    assert h.scene("tanz", t) == "tanz" and h.scene("quatsch", t) == ""
+    assert '"szene": "tanz"' in h.note(t)
+    h.apply(["kurz_angebunden"], t)
+    assert h.scene("tanz", t) == "tanztraurig"
+    h.apply(["unfreundlich"], t + 60)
+    assert h.scene("tanz", t + 60) == "" and "sagst du nein" in h.note(t + 60)

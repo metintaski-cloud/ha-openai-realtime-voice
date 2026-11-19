@@ -147,7 +147,17 @@ DEIN HERZ GERADE (zählt, nicht du entscheidest)
 {reasons}• Du wechselst nicht von selbst: ob du ihm verzeihst, entscheidet allein, was er wirklich tut. Ein netter Satz reicht nicht, nur echte Wiedergutmachung.
 • Melde in deinem JSON unter "gefuehl" (Liste) jedes dieser Dinge, das in seiner letzten Nachricht wirklich vorkommt, sonst eine leere Liste:
 {events}
+• {scene}
 • {limits}"""
+
+SCENE_TEXT = {
+    "gut": ("Bittet er dich zu tanzen, sagst du fast immer gern ja und schreibst in dein JSON "
+            "\"szene\": \"tanz\"; dann tanzt du etwa eine Minute für ihn. Sagst du nein, kein szene Feld."),
+    "leicht": ("Bittet er dich zu tanzen, entscheidest du selbst nach deiner Laune. Tanzt du, dann "
+               "einen traurigen, langsamen Tanz: schreib \"szene\": \"tanz\". Sonst kein szene Feld."),
+    "mittel": ("Bittet er dich zu tanzen, sagst du nein, höchstens \"vielleicht später\". Kein szene Feld."),
+    "schwer": ("Bittet er dich zu tanzen, sagst du nein. Kein szene Feld."),
+}
 
 VOICE_NOTE = (" Dein Herz gerade, nur Metin gegenüber (die Familie merkt davon nichts): {state} "
               "{reasons}Ob du ihm verzeihst, entscheidet allein, was er wirklich tut, nicht ein "
@@ -429,7 +439,15 @@ class Heart:
         now = now or time.time()
         d = self.current(now)
         return NOTE.format(state=self._state_text(d, now), reasons=self._reasons(d),
-                           events=EVENT_HELP, limits=LIMITS)
+                           events=EVENT_HELP, scene=SCENE_TEXT[self._level(d)], limits=LIMITS)
+
+    def scene(self, wanted, now: Optional[float] = None) -> str:
+        """The scene the stage plays for her answer, or "": she dances only when her level allows
+        it (gut: happy dances, leicht: the sad dance, mittel and schwer: none)."""
+        if wanted != "tanz":
+            return ""
+        lvl = self._level(self.current(now))
+        return {"gut": "tanz", "leicht": "tanztraurig"}.get(lvl, "")
 
     def _tone(self, d: dict) -> str:
         lvl = self._level(d)

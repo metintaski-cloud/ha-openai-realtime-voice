@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.105.0 (19 Nov 2026)
+
+- Dancing on request in the chat (agreed with Metin): asked to dance, Leyla decides by her heart. Happy: almost always yes, about a minute of four different happy dances in a row (`stageDance`, `DANCE_N`). Leicht: her own choice, then the sad dance (`schwarz/tanztraurig`, from "Tanz. Traurig. L. Kleid"; the short dress has none yet, so the stage stays in her loop). Mittel and schwer: no, at most "vielleicht später". The model writes `"szene": "tanz"` in its JSON (`heart.SCENE_TEXT` in the note per level), the server checks the level (`Heart.scene`) and returns `scene`, so a dance the counter does not allow never plays. Her voice reply no longer resets the stage when there are no talking clips.
+
 ## 2.104.7 (19 Nov 2026)
 
 - Dance scenes from the new scene project: all happy dances ("Tanz. Glücklich. K. Kleid" 10 as `kurz/tanz` to `tanz10`, "Tanz. Glücklich. L. Kleid" 6 as `schwarz/tanz` to `tanz6`, as confirmed with Metin in the concept). Three keep their own Kling sound (kurz/tanz3, tanz6, schwarz/tanz6); 20261117_084342779 (kurz/tanz4) is played silent because its sound is Metin's "Song_2", already in the background music. Before: 8 short (two of them the same clip twice) and 6 long from the old clips.

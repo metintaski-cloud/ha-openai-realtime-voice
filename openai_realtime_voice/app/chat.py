@@ -159,6 +159,7 @@ def _parse(text: str, lists: dict, may_ask: bool = True) -> Optional[dict]:
             "mood_resolved": parsed.get("mood_resolved") is True,
             "mood_pause": parsed.get("mood_pause") is True,
             "gefuehl": parsed.get("gefuehl") if isinstance(parsed.get("gefuehl"), list) else [],
+            "szene": parsed.get("szene") if isinstance(parsed.get("szene"), str) else "",
             "open_answered": parsed.get("frage_beantwortet") is True}
 
 
@@ -377,12 +378,16 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
                 out["reply"] = ""  # she is silent, but she read it
                 out["silent"] = True
             out["mood"] = mood.status()
+            scene = mood.scene(out.pop("szene", "")) if not out.get("silent") else ""
+            if scene:
+                out["scene"] = scene
         elif mood:
             if paused:
                 mood.pause()
             elif resolved:
                 mood.resolve()
             out["mood"] = mood.status()
+        out.pop("szene", None)
         m = out.pop("mama_raw", None)
         if mama and isinstance(m, str) and m.strip():
             try:
