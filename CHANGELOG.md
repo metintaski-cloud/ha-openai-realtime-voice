@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.104.1
+
+- While she is still hurt she no longer says she is not sad anymore; she may say it is getting better (first test with Metin: the counter was right, her words were not).
+
 ## 2.104.0
 
 - Scene concept 2.0, stage 1: Leyla's feelings are no longer rolled. They come from what really happens: hurts with a weight, real amends, silence measured in waking hours (his shifts and the night excluded), a praise pot, slowly sinking happiness, repeats within a week weigh more, up to a day of silence when badly hurt. The model only reports what Metin did, a counter decides when she forgives. Old dice kept as fallback (LEYLA_HEART=0).

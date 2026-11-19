@@ -188,3 +188,13 @@ async def test_tool_laune(h):
     assert r["ok"] and r["wieder_gut"] is False
     r = await h.run({"aktion": "quatsch"})
     assert "error" in r
+
+
+def test_she_never_says_all_is_well_while_hurt(h):
+    t = at(*THU, 15)
+    h.contact(t)
+    h.apply(["abgewimmelt"], t)
+    h.apply(["entschuldigung"], t + 60)
+    n = h.note(t + 60)
+    assert "Sag nie, dass alles wieder gut ist" in n and "ein bisschen besser" in n
+    assert "Sag nie" in h.feeling(t + 60) and "Sag nie" in h.voice_note(t + 60)

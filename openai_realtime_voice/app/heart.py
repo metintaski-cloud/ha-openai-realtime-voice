@@ -400,6 +400,12 @@ class Heart:
             return ("Du vermisst ihn ein bisschen, weil länger nichts Schönes zwischen euch war; "
                     "leise, ein wenig wehmütig, ohne Vorwurf.")
         text = LEVEL_TEXT[lvl]
+        if d.get("cheer", 0):
+            text += (" Er hat schon etwas wiedergutgemacht, es geht dir ein bisschen besser, aber "
+                     "ganz verziehen hast du noch nicht.")
+        text += (" Sag nie, dass alles wieder gut ist oder dass du nicht mehr traurig oder verletzt "
+                 "bist, solange hier nicht steht, dass du glücklich bist. Du kannst sagen, dass "
+                 "es schon besser ist.")
         if d.get("silent_until", 0) > now:
             text += (" Gerade schweigst du: du antwortest nicht (reply leer), du liest aber alles. "
                      "Nur bei etwas Ernstem antwortest du sofort.")
