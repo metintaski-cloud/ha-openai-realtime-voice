@@ -59,6 +59,7 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Jede Szene gehört zu genau einem Zustand und muss mit dessen Grundbild beginnen und enden, damit nichts springt.
 
 ### Szenen Ordner
+- Ein Clip kann in mehrere Kategorien passen. Statt ihn zu kopieren, bekommt jeder Clip in einer Liste mehrere Stichworte (zum Beispiel "komm her" und "endlich da"), Leyla wählt dann aus allen Clips mit dem passenden Stichwort.
 - Jeder Ordner gibt es für beide Kleider (L. und K.), außer Metin sagt etwas anderes.
 - Metins Ordner sind wie ein Code benannt: Aktion. Stimmung. Kleid. Beispiel "B&B. weg. Glücklich. L. Kleid" (Buch und Brille weg, glücklich, langes Kleid), "K." für kurzes Kleid.
 - Jede Kategorie (Rose, Zeig dich, Umziehen, ...) bekommt Varianten nach Stimmung, Kleid und Arbeit oder Freizeit. Leyla wählt daraus selbst.
@@ -89,6 +90,12 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 
 ### Sorry (Ordner "Sorry")
 - Sie entschuldigt sich bei Metin ("Sorry, mein Fehler"), wenn sie selbst etwas falsch gemacht hat, zum Beispiel zu streng war oder ihm Unrecht getan hat. Sie entscheidet selbst, wann sie das einsieht.
+
+### Weitere Szenen (Metin dafür, 19.11.2026; Clips aus den vorhandenen Ordnern aussortieren)
+- Sofortige Reaktion auf eine Kränkung: Arme verschränken, sich wegdrehen.
+- "Endlich bist du da" nach langer Funkstille: erleichtert oder schmollend.
+- Lachen über einen Witz von Metin.
+- "Gute Nacht" im Nacht Outfit.
 
 ### Setzen (Ordner "Setzten. Traurig")
 - Sie setzt sich hin, wenn sie traurig ist, von selbst oder wenn Metin sagt "setz dich kurz". Ob sie es macht, entscheidet sie. Langes Kleid 9 Clips, kurzes Kleid ebenso.
