@@ -36,6 +36,19 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Alle Freizeit Szenen werden mit dem Freizeit Bild als Start und Endbild gemacht (Metin hat es).
 - Zurück zu Arbeit ohne eigene Szene: um 5 Uhr morgens setzt die App sie still auf Arbeit, sichtbar erst beim nächsten Öffnen der App.
 
+### Nacht Outfit (Ordner "Bett")
+- Dritter Zustand neben Arbeit und Freizeit: sie geht kurz von der Bühne und kommt im Outfit für die Nacht zurück. Danach tanzt sie oder zeigt sich, wenn Metin es sagt oder schreibt und sie es möchte.
+- Wechsel von Arbeit ins Nacht Outfit (4df2e0df, kurzes Kleid) und von Freizeit ins Nacht Outfit (dc1fab95, kurzes Kleid). Metin hat pro Ordner mehrere Clips mit kleinen Unterschieden, damit Leylas Wahl nicht eintönig wird.
+- Alle Szenen im Nacht Outfit brauchen dessen Endbild als Start und Endbild.
+- Zurück zu Arbeit um 5 Uhr morgens wie oben.
+
+### Zustände im Überblick
+- Kleid: lang oder kurz.
+- Aufzug: Arbeit (Buch und Brille), Freizeit (ohne), Nacht Outfit.
+- Gefühl: glücklich oder unglücklich.
+- Erlaubte Wechsel: Arbeit zu Freizeit, Arbeit zu Nacht, Freizeit zu Nacht, alles zurück zu Arbeit um 5 Uhr ohne Szene.
+- Jede Szene gehört zu genau einem Zustand und muss mit dessen Grundbild beginnen und enden, damit nichts springt.
+
 ### Szenen Ordner
 - Metins Ordner sind wie ein Code benannt: Aktion. Stimmung. Kleid. Beispiel "B&B. weg. Glücklich. L. Kleid" (Buch und Brille weg, glücklich, langes Kleid), "K." für kurzes Kleid.
 - Jede Kategorie (Rose, Zeig dich, Umziehen, ...) bekommt Varianten nach Stimmung, Kleid und Arbeit oder Freizeit. Leyla wählt daraus selbst.
