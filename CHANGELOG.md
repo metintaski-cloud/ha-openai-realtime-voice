@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.108.0 (19 Nov 2026)
+
+- The clips are no longer built into the add on (293 MB less): they live only in the Home Assistant media folder `/media/leyla` (kurz, schwarz, musik; copied by Metin over Samba, 90 files checked through the media browser). New or changed clips go there, no add on update is needed for them. `app/clips` stays as an empty fallback.
+
 ## 2.107.0 (19 Nov 2026)
 
 - Clips from the Home Assistant media folder (scene concept 2.0, step one of the move): the add on maps `media` read only, and `memory_web.clips_dir()` takes `/media/leyla` as soon as one look folder there holds a clip, else the clips built into the add on (checked per request, no restart needed after copying). Metin copies the folder `leyla` (schwarz, kurz, musik) to `\\192.168.2.240\media`. When the app shows the clips from there, the next version drops the built in clips (293 MB) so updates get small again.
