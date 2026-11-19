@@ -67,6 +67,9 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Die Stufe folgt aus dem Gewicht der Kränkung und wird mit jeder echten Wiedergutmachung leichter, bis sie wieder glücklich ist.
 - Metin sortiert seine Ordner "Schleife. Traurig" dafür in drei Unterordner.
 
+### Setzen (Ordner "Setzten. Traurig")
+- Sie setzt sich hin, wenn sie traurig ist, von selbst oder wenn Metin sagt "setz dich kurz". Ob sie es macht, entscheidet sie. Langes Kleid 9 Clips, kurzes Kleid ebenso.
+
 ### Ablauf auf der Bühne
 - Grundschleife je Zustand: glücklich oder unglücklich, im aktuellen Kleid, Arbeit oder Freizeit. Sie läuft immer weiter.
 - Zusätzliche Sequenzen wählt Leyla selbst passend zum Gespräch und spielt sie ab, danach geht es zurück in die Grundschleife.
