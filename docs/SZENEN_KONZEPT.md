@@ -87,6 +87,9 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 ### Überraschung (Ordner "Überraschung")
 - Sie ist überrascht über etwas, das Metin sagt oder tut (eine schöne Neuigkeit, ein Geschenk, ein unerwartetes Kompliment). Nur positive Überraschungen. Sie wählt die Szene selbst, wenn das Gespräch sie freudig überrascht.
 
+### Sorry (Ordner "Sorry")
+- Sie entschuldigt sich bei Metin ("Sorry, mein Fehler"), wenn sie selbst etwas falsch gemacht hat, zum Beispiel zu streng war oder ihm Unrecht getan hat. Sie entscheidet selbst, wann sie das einsieht.
+
 ### Setzen (Ordner "Setzten. Traurig")
 - Sie setzt sich hin, wenn sie traurig ist, von selbst oder wenn Metin sagt "setz dich kurz". Ob sie es macht, entscheidet sie. Langes Kleid 9 Clips, kurzes Kleid ebenso.
 
