@@ -228,3 +228,15 @@ def test_kiss_and_come_here_follow_her_heart(h):
     assert h.scene("kuss", t) == "" and h.scene("liebe", t) == "" and h.scene("komm", t) == "kommtraurig"
     h.apply(["unfreundlich"], t + 60)
     assert h.scene("komm", t + 60) == ""
+
+
+def test_show_sit_and_surprise_follow_her_heart(h):
+    t = at(*THU, 15)
+    h.contact(t)
+    assert h.scene("zeigen", t) == "zeigen" and h.scene("setzen", t) == "" and h.scene("ueberraschung", t) == "ueberraschung"
+    h.apply(["kurz_angebunden"], t)
+    assert h.scene("zeigen", t) == "" and h.scene("setzen", t) == "setzen" and h.scene("ueberraschung", t) == "ueberraschung"
+    h.apply(["unfreundlich"], t + 60)
+    assert h.scene("setzen", t + 60) == "setzen" and h.scene("ueberraschung", t + 60) == ""
+    h.apply(["beleidigt"], t + 120)
+    assert h.scene("setzen", t + 120) == ""

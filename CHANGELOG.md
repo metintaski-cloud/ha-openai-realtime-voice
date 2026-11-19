@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.109.0 (19 Nov 2026)
+
+- Zeigen, Setzen and Überraschung by her heart (agreed with Metin): zeigen only when happy and asked, mostly yes (long dress only for now; the short dress and the night outfit follow); setzen only at leicht or mittel, by herself now and then or when he says "setz dich kurz" and she wants, and at schwer the stage lets her sit or kneel rarely by itself (12 %); ueberraschung when he tells her something really lovely or surprises her with a compliment, at gut and leicht. `heart.SCENES` and `SCENE_TEXT` extended.
+- Clips (new scene project, in the media folder): `schwarz/zeigen`, `zeigen2`; `schwarz/setzen` to `setzen8` and `kurz/setzen`, `setzen2` (from the Setzen folders, they replace the old `kniet` clips, which are no longer used); `schwarz/ueberraschung` to `ueberraschung4`, `kurz/ueberraschung` to `ueberraschung6` (the short dress ones are placeholders until clearer surprises exist).
+
 ## 2.108.0 (19 Nov 2026)
 
 - The clips are no longer built into the add on (293 MB less): they live only in the Home Assistant media folder `/media/leyla` (kurz, schwarz, musik; copied by Metin over Samba, 90 files checked through the media browser). New or changed clips go there, no add on update is needed for them. `app/clips` stays as an empty fallback.

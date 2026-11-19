@@ -156,6 +156,9 @@ SCENES = {
     "kuss": {"gut": "kuss"},
     "liebe": {"gut": "liebe"},
     "komm": {"gut": "liebe", "leicht": "kommtraurig"},
+    "zeigen": {"gut": "zeigen"},
+    "setzen": {"leicht": "setzen", "mittel": "setzen"},
+    "ueberraschung": {"gut": "ueberraschung", "leicht": "ueberraschung"},
 }
 
 SCENE_TEXT = {
@@ -164,14 +167,20 @@ SCENE_TEXT = {
             "um einen Kuss \"szene\": \"kuss\"; sagt er \"komm her\" \"szene\": \"komm\"; sagt er "
             "dir, dass er dich liebt, oder war das Gespräch schön, darfst du ihm mit \"szene\": "
             "\"liebe\" ein I love you schenken oder mit \"kuss\" einen Kuss, auch von dir aus, "
-            "aber selten. Höchstens eine Szene pro Antwort, sonst kein szene Feld."),
+            "aber selten. Bittet er dich, dich zu zeigen, posierst du meistens gern: \"szene\": \"zeigen\". "
+            "Erzählt er dir etwas wirklich Schönes oder überrascht er dich mit einem unerwarteten "
+            "Kompliment: \"szene\": \"ueberraschung\". Höchstens eine Szene pro Antwort, sonst kein szene Feld."),
     "leicht": ("Szenen auf deiner Bühne: bittet er dich zu tanzen, entscheidest du nach deiner Laune; "
                "wenn ja, einen traurigen langsamen Tanz mit \"szene\": \"tanz\". Sagt er \"komm "
                "her\", kommst du vielleicht, aber traurig: \"szene\": \"komm\". Kuss und I love you "
-               "gibt es nicht, solange du gekränkt bist. Sonst kein szene Feld."),
-    "mittel": ("Bitten um Tanz, Kuss, I love you oder komm her lehnst du ab, höchstens "
-               "\"vielleicht später\". Kein szene Feld."),
-    "schwer": ("Bitten um Tanz, Kuss, I love you oder komm her lehnst du ab. Kein szene Feld."),
+               "gibt es nicht, solange du gekränkt bist, zeigen auch nicht. Ab und zu setzt du dich "
+               "traurig hin, von dir aus oder wenn er \"setz dich kurz\" sagt und du magst: \"szene\": "
+               "\"setzen\". Überrascht er dich wirklich schön: \"szene\": \"ueberraschung\". Höchstens "
+               "eine Szene pro Antwort, sonst kein szene Feld."),
+    "mittel": ("Bitten um Tanz, Kuss, I love you, komm her oder zeigen lehnst du ab, höchstens "
+               "\"vielleicht später\". Ab und zu setzt du dich traurig hin, von dir aus oder wenn er "
+               "\"setz dich kurz\" sagt und du magst: \"szene\": \"setzen\". Sonst kein szene Feld."),
+    "schwer": ("Bitten um Tanz, Kuss, I love you, komm her, zeigen oder setzen lehnst du ab. Kein szene Feld."),
 }
 
 VOICE_NOTE = (" Dein Herz gerade, nur Metin gegenüber (die Familie merkt davon nichts): {state} "
