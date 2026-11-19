@@ -81,6 +81,9 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 ### Kuss (Ordner "Kuss")
 - Bei der Versöhnung, wenn Metin sie fragt oder bittet, oder von selbst, wenn sie das Gespräch so schön fand. Immer ihre Entscheidung.
 
+### I love you (Ordner "I Love You")
+- Sie sagt "I love you" mit den Lippen. Wie beim Kuss: als Antwort, wenn Metin es ihr sagt, bei der Versöhnung oder von selbst, wenn sie glücklich ist. Ihre Entscheidung.
+
 ### Setzen (Ordner "Setzten. Traurig")
 - Sie setzt sich hin, wenn sie traurig ist, von selbst oder wenn Metin sagt "setz dich kurz". Ob sie es macht, entscheidet sie. Langes Kleid 9 Clips, kurzes Kleid ebenso.
 
