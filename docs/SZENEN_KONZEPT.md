@@ -75,6 +75,9 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 ### Tanzen (Ordner "Tanzen. Glücklich" und "Tanzen. Traurig")
 - Wie Zeigen: Metin bittet sie zu tanzen, sie entscheidet. Es gibt eine glückliche und eine traurige Variante, sie tanzt so, wie sie sich fühlt. Die Hintergrundmusik läuft dazu weiter.
 
+### Komm her (Ordner "Komm her")
+- Metin sagt "komm her", sie kommt ganz nah zur Kamera. Glücklich oder traurig, je nach Gefühl, oder sie lässt es.
+
 ### Setzen (Ordner "Setzten. Traurig")
 - Sie setzt sich hin, wenn sie traurig ist, von selbst oder wenn Metin sagt "setz dich kurz". Ob sie es macht, entscheidet sie. Langes Kleid 9 Clips, kurzes Kleid ebenso.
 
