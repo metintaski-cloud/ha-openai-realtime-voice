@@ -58,6 +58,7 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Jede Szene gehört zu genau einem Zustand und muss mit dessen Grundbild beginnen und enden, damit nichts springt.
 
 ### Szenen Ordner
+- Jeder Ordner gibt es für beide Kleider (L. und K.), außer Metin sagt etwas anderes.
 - Metins Ordner sind wie ein Code benannt: Aktion. Stimmung. Kleid. Beispiel "B&B. weg. Glücklich. L. Kleid" (Buch und Brille weg, glücklich, langes Kleid), "K." für kurzes Kleid.
 - Jede Kategorie (Rose, Zeig dich, Umziehen, ...) bekommt Varianten nach Stimmung, Kleid und Arbeit oder Freizeit. Leyla wählt daraus selbst.
 
