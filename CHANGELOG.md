@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.112.2 (20 Nov 2026)
+
+- The mood label ("verliebt" and so on) is gone from the chat header too (Metin: he notices her mood without it); her mood still shows on the stage and in her words.
+
 ## 2.112.1 (20 Nov 2026)
 
 - The round profile picture with its heart badge is gone from the chat header (Metin: it took space and covered her face); the mood label stays.
