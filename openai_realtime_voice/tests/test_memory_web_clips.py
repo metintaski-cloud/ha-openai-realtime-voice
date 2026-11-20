@@ -12,6 +12,9 @@ def test_clips_dir_prefers_media_folder(tmp_path, monkeypatch):
     assert memory_web.clips_dir() == memory_web.BUILTIN_CLIPS  # empty look does not count yet
     (tmp_path / "media" / "schwarz" / "gluecklich.mp4").write_bytes(b"x")
     assert memory_web.clips_dir() == str(tmp_path / "media")
-    assert memory_web.list_outfits() == {"schwarz": {"clips": ["gluecklich"], "body": False}}
+    outs = memory_web.list_outfits()
+    assert outs["schwarz"]["v"] > 0
+    del outs["schwarz"]["v"]
+    assert outs == {"schwarz": {"clips": ["gluecklich"], "body": False}}
     monkeypatch.setattr(memory_web, "CLIPS_DIR", "/elsewhere")
     assert memory_web.clips_dir() == "/elsewhere"

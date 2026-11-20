@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.117.8 (20 Nov 2026)
+
+- Clips, body images and music carry `?v=<newest file time>` (clips.json sends `v` per look and `music_v` per track), so the phone loads a replaced or trimmed file at once instead of keeping its cached copy for up to 24 hours (Metin still heard the old song after 2.117.6).
+
 ## 2.117.7 (20 Nov 2026)
 
 - The music pauses while Metin records a voice message (she understood him badly with music behind him) and goes on afterwards at the same spot.

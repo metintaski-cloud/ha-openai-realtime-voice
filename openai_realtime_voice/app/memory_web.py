@@ -502,12 +502,12 @@ function moodShow(st){if(!st||!st.mood)return;const c=document.getElementById('c
  c.classList.toggle('low',!!st.low);c.classList.toggle('good',!st.low);document.getElementById('pulse').dataset.mood=st.low?'low':'good';b.style.display='flex';b.textContent=st.low?'🖤':'❤️';
  document.getElementById('mlabel').textContent=(st.low?'🖤 ':'❤️ ')+st.label;LASTST=st;const rb=document.getElementById('crose');if(rb)rb.classList.toggle('off',st.rose!=='ready');stageMood(st);}
 let CLIPS=null,LASTST=null,STM=null;
-let OUTFIT='',NIGHT=[],NIGHTBODY=false,LOOKBODY='';const CHANGE=['umziehen','bettvonarbeit','bettvonfreizeit'];
+let CVER={},MUSV={};let OUTFIT='',NIGHT=[],NIGHTBODY=false,LOOKBODY='';const CHANGE=['umziehen','bettvonarbeit','bettvonfreizeit'];
 async function clipsLoad(){let outs={};try{outs=(await (await fetch('/clips.json')).json()).outfits||{};}catch(e){}
- NIGHT=outs.nacht?outs.nacht.clips:[];NIGHTBODY=!!(outs.nacht&&outs.nacht.body);delete outs.nacht;const names=Object.keys(outs);let last='';try{last=localStorage.getItem('loutfit')||'';}catch(e){}
+ for(const k in outs)CVER[k]=outs[k].v||0;NIGHT=outs.nacht?outs.nacht.clips:[];NIGHTBODY=!!(outs.nacht&&outs.nacht.body);delete outs.nacht;const names=Object.keys(outs);let last='';try{last=localStorage.getItem('loutfit')||'';}catch(e){}
  const cand=names.length>1?names.filter(n=>n!==last):names;OUTFIT=cand.length?cand[Math.floor(Math.random()*cand.length)]:'';
  try{if(OUTFIT)localStorage.setItem('loutfit',OUTFIT);}catch(e){}
- CLIPS=OUTFIT?outs[OUTFIT].clips:[];if(OUTFIT&&outs[OUTFIT].body){LOOKBODY='/clips/'+OUTFIT+'/body.jpg';document.querySelector('#stage .fig img').src=LOOKBODY;}
+ CLIPS=OUTFIT?outs[OUTFIT].clips:[];if(OUTFIT&&outs[OUTFIT].body){LOOKBODY='/clips/'+OUTFIT+'/body.jpg?v='+(CVER[OUTFIT]||0);document.querySelector('#stage .fig img').src=LOOKBODY;}
  if(LASTST)stageMood(LASTST);}
 function clipVars(b){const o=STM&&!CHANGE.includes(b)?STM.outfit:'';if(o==='nacht')return NIGHT.filter(n=>n.replace(/[0-9]+$/,'')===b).map(n=>'nacht/'+n);
  const k=o==='freizeit'?'freizeit'+b:b;return CLIPS.filter(n=>n.replace(/[0-9]+$/,'')===k);}  // Freizeit: freizeit<name> clips (2.113.0), night: folder nacht (2.114.0)
@@ -516,15 +516,15 @@ function clipFor(st){const lv=st.low&&st.level&&st.mood!=='eifersuechtig'?'traur
 let SV=0,STOK=0,CONT=false,SWAP=0;const PRELOAD_S=3;
 function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name);const s=document.getElementById('stage'),vs=[document.getElementById('svid'),document.getElementById('svid2')],a=vs[SV],b=vs[1-SV],tok=++STOK,cont=CONT;CONT=false;
  if(!name){s.classList.remove('vid');vs.forEach(v=>{v.classList.remove('on');setTimeout(()=>{if(tok===STOK){v.pause();v.removeAttribute('src');v.load();}},600);});return;}
- if(loop&&a.loop&&a.classList.contains('on')&&a.src.endsWith('/'+name+'.mp4'))return;
+ if(loop&&a.loop&&a.classList.contains('on')&&a.src.split('?')[0].endsWith('/'+name+'.mp4'))return;
  b.onended=null;b.ontimeupdate=null;b.loop=!!loop;b.muted=!snd||document.getElementById('chat').classList.contains('oncall');b.volume=.7;b.oncanplay=()=>{b.oncanplay=null;if(tok!==STOK)return;
   if(cont&&a.classList.contains('on')&&a.duration&&!a.ended){const w=(a.duration-0.8-a.currentTime)*1000;if(w>30){SWAP=tok;setTimeout(()=>{if(tok===STOK)go();},w);return;}}go();};
  const go=()=>{b.currentTime=0;b.play().catch(()=>{b.muted=true;b.play().catch(()=>{});});b.style.zIndex=1;a.style.zIndex=0;b.classList.add('on');s.classList.add('vid');SV=1-SV;
   setTimeout(()=>{if(tok===STOK)a.classList.remove('on');},850);setTimeout(()=>{if(!a.classList.contains('on'))a.pause();},1000);let fired=false;const fire=()=>{if(fired||tok!==STOK||!done)return;fired=true;CONT=true;done();CONT=false;};
   b.ontimeupdate=()=>{if(b.duration&&b.currentTime>b.duration-PRELOAD_S)fire();};b.onended=fire;};
- b.src='/clips/'+(name.includes('/')?name:OUTFIT+'/'+name)+'.mp4';b.load();}
+ {const pth=name.includes('/')?name:OUTFIT+'/'+name;b.src='/clips/'+pth+'.mp4?v='+(CVER[pth.split('/')[0]]||0);}b.load();}
 function stageLoop(b){if(ZPEND){const f=ZPEND;ZPEND=null;return f();}ZBUSY=0;DANCING=false;if(!b)return stageShow(null);const v=clipVars(b),nx=()=>stageNext(b);if(v.length<2)return stageShow(v[0],false,nx);
- const cur=document.getElementById(SV?'svid2':'svid').src.split('/').pop().replace('.mp4','');const o=v.filter(n=>n.split('/').pop()!==cur);stageShow(o[Math.floor(Math.random()*o.length)],false,nx);}
+ const cur=document.getElementById(SV?'svid2':'svid').src.split('?')[0].split('/').pop().replace('.mp4','');const o=v.filter(n=>n.split('/').pop()!==cur);stageShow(o[Math.floor(Math.random()*o.length)],false,nx);}
 const SPECIAL=[],SPECIAL_P=0;  // since 2.111.2 no dance by herself, only when Metin asks (Metin)
 const KNIET_P=0.12,EXTRA_P=0.25;const SND_RE=/(^|[/])(kuss|rose|komm|liebe)/;
 function stageNext(b){if(ZPEND){const f=ZPEND;ZPEND=null;return f();}const sp=STM&&!STM.low?SPECIAL.filter(n=>clipVars(n).length):[];if(sp.length&&Math.random()<SPECIAL_P)stagePlay([sp[Math.floor(Math.random()*sp.length)]],b);
@@ -533,15 +533,15 @@ function stageNext(b){if(ZPEND){const f=ZPEND;ZPEND=null;return f();}const sp=ST
 var SLAST={};function stagePlay(once,loop){DANCING=false;const q=once.map(n=>{let v=clipVars(n);if(v.length>1&&SLAST[n])v=v.filter(x=>x!==SLAST[n]);const c=v.length?v[Math.floor(Math.random()*v.length)]:null;if(c)SLAST[n]=c;return c;}).filter(Boolean);/* never the same variant twice in a row (2.116.4) */const next=()=>{const n=q.shift();if(n)stageShow(n,false,next,true);else stageLoop(loop);};next();}
 function stageMood(st){if(CLIPS===null)return;document.getElementById('stage').classList.toggle('low',!!st.low);let once=[];const o=STM;
  if(!o)once=['begruessung'];if(o){if(o.low&&!st.low)once=['uebergang','kuss'];else if(st.low&&o.low&&(st.cheer||0)>(o.cheer||0))once=['trost'];}
- const changed=!o||once.length||o.mood!==st.mood||o.level!==st.level;/* an outfit change waits for its change scene or the next hand over (2.116.0) */STM=st;if(!o||o.outfit!==st.outfit){const im=document.querySelector('#stage .fig img'),nb=st.outfit==='nacht'&&NIGHTBODY?'/clips/nacht/body.jpg':LOOKBODY;if(nb&&!im.src.endsWith(nb))im.src=nb;}if(changed&&(!o||!(Date.now()<ZBUSY||ZPEND||DANCING)))stagePlay(once,clipFor(st));}
+ const changed=!o||once.length||o.mood!==st.mood||o.level!==st.level;/* an outfit change waits for its change scene or the next hand over (2.116.0) */STM=st;if(!o||o.outfit!==st.outfit){const im=document.querySelector('#stage .fig img'),nb=st.outfit==='nacht'&&NIGHTBODY?'/clips/nacht/body.jpg?v='+(CVER.nacht||0):LOOKBODY;if(nb&&!im.src.endsWith(nb))im.src=nb;}if(changed&&(!o||!(Date.now()<ZBUSY||ZPEND||DANCING)))stagePlay(once,clipFor(st));}
 clipsLoad();
 function stageHello(){if(CLIPS&&STM&&!DANCING)stagePlay(['begruessung'],clipFor(STM));}  // hallo on every open (2.113.1, Metin)
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&document.getElementById('chat').style.display==='block')stageHello();});
 let MUSIC=[],BGMN='',MUSON=true,BGCTX=null,BGSRC=null,BGGAIN=null,BGLOAD='',BGEL=null;const BGBUF={},BGLONG={};try{MUSON=localStorage.getItem('lmusic')!=='0';}catch(e){}
 function musDraw(){const b=document.getElementById('cmus');b.innerHTML=MUSON?'&#127925;':'&#128263;';b.classList.toggle('off',!MUSON);}
 musDraw();document.getElementById('cmus').onclick=e=>{e.stopPropagation();MUSON=!MUSON;try{localStorage.setItem('lmusic',MUSON?'1':'0');}catch(e){}musDraw();bgmTick();};
-async function bgmIsLong(n){if(n in BGLONG)return BGLONG[n];let L=false;try{const r=await fetch('/clips/musik/'+n+'.m4a',{headers:{Range:'bytes=0-0'}});const m=(r.headers.get('Content-Range')||'').match(/[/]([0-9]+)/);L=m?+m[1]>4e6:false;}catch(e){}BGLONG[n]=L;return L;}  /* a long track (over 4 MB) streams through an audio element; a short loop is decoded for a gapless loop (2.117.6) */
-async function bgmBuf(n){if(BGBUF[n])return BGBUF[n];const b=await BGCTX.decodeAudioData(await (await fetch('/clips/musik/'+n+'.m4a')).arrayBuffer());
+async function bgmIsLong(n){if(n in BGLONG)return BGLONG[n];let L=false;try{const r=await fetch('/clips/musik/'+n+'.m4a?v='+(MUSV[n]||0),{headers:{Range:'bytes=0-0'}});const m=(r.headers.get('Content-Range')||'').match(/[/]([0-9]+)/);L=m?+m[1]>4e6:false;}catch(e){}BGLONG[n]=L;return L;}  /* a long track (over 4 MB) streams through an audio element; a short loop is decoded for a gapless loop (2.117.6) */
+async function bgmBuf(n){if(BGBUF[n])return BGBUF[n];const b=await BGCTX.decodeAudioData(await (await fetch('/clips/musik/'+n+'.m4a?v='+(MUSV[n]||0))).arrayBuffer());
  const d=b.getChannelData(0);let a=0,e=d.length-1;while(a<e&&Math.abs(d[a])<1e-4)a++;while(e>a&&Math.abs(d[e])<1e-4)e--;b.ls=a/b.sampleRate;b.le=(e+1)/b.sampleRate;BGBUF[n]=b;return b;}
 function bgmTick(){const c=document.getElementById('chat');let n='';if(STM&&MUSIC.length){n=MUSIC.includes(STM.mood)?STM.mood:(STM.low?'traurig':'gut');if(!MUSIC.includes(n))n='';}  /* gapless loop through Web Audio, the audio element paused at its loop point (2.117.5, Metin) */
  const on=n&&MUSON&&soundOn&&CODE&&!REC&&!c.classList.contains('oncall')&&!document.hidden;  /* keeps playing in the menu and list pages, silent while he records (2.117.7, Metin) */
@@ -550,9 +550,9 @@ function bgmTick(){const c=document.getElementById('chat');let n='';if(STM&&MUSI
  if(!BGCTX){try{BGCTX=new (window.AudioContext||window.webkitAudioContext)();BGGAIN=BGCTX.createGain();BGGAIN.connect(BGCTX.destination);}catch(e){return;}}
  if(BGCTX.state==='suspended')BGCTX.resume().catch(()=>{});
  BGGAIN.gain.setTargetAtTime(TALKING?.05:.22,BGCTX.currentTime,.3);
- if(n!==BGMN&&BGLOAD!==n){BGLOAD=n;bgmIsLong(n).then(L=>{if(L){BGLOAD='';if(BGSRC){try{BGSRC.stop();}catch(e){}BGSRC=null;}if(BGEL)BGEL.pause();BGEL=new Audio('/clips/musik/'+n+'.m4a');BGEL.loop=true;BGEL.volume=TALKING?.05:.22;BGEL.play().catch(()=>{});BGMN=n;return;}
+ if(n!==BGMN&&BGLOAD!==n){BGLOAD=n;bgmIsLong(n).then(L=>{if(L){BGLOAD='';if(BGSRC){try{BGSRC.stop();}catch(e){}BGSRC=null;}if(BGEL)BGEL.pause();BGEL=new Audio('/clips/musik/'+n+'.m4a?v='+(MUSV[n]||0));BGEL.loop=true;BGEL.volume=TALKING?.05:.22;BGEL.play().catch(()=>{});BGMN=n;return;}
  bgmBuf(n).then(b=>{BGLOAD='';if(BGEL){BGEL.pause();BGEL=null;}if(BGSRC){try{BGSRC.stop();}catch(e){}}const s=BGCTX.createBufferSource();s.buffer=b;s.loop=true;s.loopStart=b.ls;s.loopEnd=b.le;s.connect(BGGAIN);s.start(0,b.ls);BGSRC=s;BGMN=n;}).catch(()=>{BGLOAD='';});});}}
-fetch('/clips.json').then(r=>r.json()).then(o=>{MUSIC=o.music||[];bgmTick();}).catch(()=>{});
+fetch('/clips.json').then(r=>r.json()).then(o=>{MUSIC=o.music||[];MUSV=o.music_v||{};bgmTick();}).catch(()=>{});
 setInterval(bgmTick,1000);document.addEventListener('pointerdown',bgmTick);document.addEventListener('visibilitychange',bgmTick);
 function stageFit(){const ch=document.getElementById('chat');if(ch.style.display!=='block')return;const vh=(window.visualViewport?visualViewport.height:innerHeight);ch.style.height=Math.max(420,vh-12)+'px';}
 function stageView(){stageFit();const ch=document.getElementById('chat');if(ch.style.display==='block')window.scrollTo({top:ch.getBoundingClientRect().top+scrollY-6,behavior:'smooth'});}
@@ -881,7 +881,24 @@ def list_outfits() -> dict:
                        if f.endswith(".mp4") and CLIP_RE.match(f"/clips/{look}/{f}"))
         body = "body.jpg" in files
         if clips or body:
-            out[look] = {"clips": clips, "body": body}
+            # v: newest change in the folder, the page adds it to every clip address so a phone
+            # never plays a cached old version after a clip was replaced (2.117.8)
+            try:
+                v = int(max(os.path.getmtime(os.path.join(folder, f)) for f in files))
+            except (OSError, ValueError):
+                v = 0
+            out[look] = {"clips": clips, "body": body, "v": v}
+    return out
+
+
+def music_versions() -> dict:
+    folder = os.path.join(clips_dir(), "musik")
+    out = {}
+    for name in list_music():
+        try:
+            out[name] = int(os.path.getmtime(os.path.join(folder, name + ".m4a")))
+        except OSError:
+            out[name] = 0
     return out
 
 
@@ -999,7 +1016,7 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                           "Cache-Control: max-age=86400\r\nConnection: close\r\n\r\n").encode() + raw)
             await writer.drain()
         elif method == "GET" and path == "/clips.json":
-            await _respond(writer, "200 OK", "application/json", json.dumps({"outfits": list_outfits(), "music": list_music()}))
+            await _respond(writer, "200 OK", "application/json", json.dumps({"outfits": list_outfits(), "music": list_music(), "music_v": music_versions()}))
         elif method == "GET" and CLIP_RE.match(path):
             m = CLIP_RE.match(path)
             await _send_clip(writer, m.group(1), m.group(2), m.group(3), lines)
