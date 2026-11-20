@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.111.2 (20 Nov 2026)
+
+- No dance by herself any more, only when Metin asks (`SPECIAL` empty, Metin: in the short dress she danced without being asked). Dance clips without their Kling sound (kurz/tanz3, kurz/tanz6, schwarz/tanz6 re-muxed without audio, in the Desktop folder "leyla neu" for the media folder); the background music stays.
+
 ## 2.111.1 (20 Nov 2026)
 
 - A long press on Leyla no longer opens the phone's menu for the video or picture (Metin): `#stage` has `-webkit-touch-callout: none`, no text selection and no tap highlight, and its context menu is blocked.
