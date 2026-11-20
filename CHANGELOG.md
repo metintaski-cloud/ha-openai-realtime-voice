@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.117.4 (20 Nov 2026)
+
+- Three night clips that mix belly and bottom reactions (Metin) play for a touch on either spot: `nacht/mix` to `mix3` (`ZEXTRA`: po also takes `povorne` and `mix`, bauch takes `mix`; no turn first).
+
 ## 2.117.3 (20 Nov 2026)
 
 - More bottom touch clips (Metin's 10 s clips of 20 Nov 2026, still frames trimmed): Freizeit `schwarz/freizeitpo`, `freizeitpo2`, `kurz/freizeitpo` to `freizeitpo3`, and at night `nacht/povorne`, `povorne2`, which start facing him, so the page plays them without turning her away first (`ZPRE` only for the back start `po` clips).
