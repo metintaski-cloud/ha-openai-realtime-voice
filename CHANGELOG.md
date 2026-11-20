@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.119.1 (20 Nov 2026)
+
+- Zeig dich at night by tempo (Metin: tempo, rhythm and choreography must fit): clips `nacht/zeigen<tempo>` (front poses), `zeigen<tempo>hh` (back to back) and `zeigen<tempo>hf` (back to front) with tempo ruhig, mittel or schnell, measured as body motion per frame. `zeigenChain` picks one tempo and plays three clips: pose, `hinten`, turn back, or `hinten`, pose from behind, turn back; schnell has no back clips and plays three front poses. Replaces the 2.118.1 chain.
+
 ## 2.119.0 (20 Nov 2026)
 
 - Leyla knows where Metin touches her (his wish): every touch on the stage goes to `POST /api/chat_touch` (code word, `main._chat_touch`) as a stage note through the normal chat (`chat.touch_message`), so it stays in her thread and diary. Her one sentence reply appears when the touch clip starts; while she is in love (`verliebt`) 30 % of them come as a voice message (`chat.TOUCH_VOICE_P`). At most one reaction every 25 s (`TOUCH_GAP`), so touches do not push the real chat out of her thread.
