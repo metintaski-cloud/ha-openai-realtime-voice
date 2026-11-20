@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.116.4 (20 Nov 2026)
+
+- One shot scenes never play the same variant twice in a row (`SLAST` in `stagePlay`), so the rose (night `rosefroh` to `rosefroh3`, Metin's clips of 20 Nov 2026, two of the four he sent were the same file), kisses and greetings change every time.
+
 ## 2.116.3 (20 Nov 2026)
 
 - Work dress dances cut cleanly too: the still frames at start and end are trimmed (short dress up to 3 s, long dress up to 1.7 s; new files `kurz/tanz` to `tanz10`, `schwarz/tanz` to `tanz6`, `schwarz/tanztraurig`, made again from the originals in "Orner Leyla Szenen"), and a dance only joins measured matching clips (`DNEXTW`, `workChain`, least used first; the short dress poses vary more, so its threshold is 6).
