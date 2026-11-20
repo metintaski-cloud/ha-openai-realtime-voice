@@ -473,7 +473,7 @@ const AUDIO=new Map();let REC=null,RECT=null;
 function playAudio(id){try{const a=new Audio(AUDIO.get(id));a.onplay=()=>stageTalk(true);a.onended=a.onpause=()=>stageTalk(false);a.play().catch(()=>stageTalk(false));}catch(e){}}
 let TALKING=false,DANCING=false;
 const DANCE_N=4;
-function stageScene(n){if(!CLIPS||!STM)return;if(n==='komm'&&!clipVars('komm').length)n='liebe';const ok=n==='bettvonarbeit'?(clipVars(n).length||clipVars('umziehen').length):clipVars(n).length;if(!ok)return;
+function stageScene(n){if(!CLIPS||!STM)return;ZCOLNOW='';if(n==='komm'&&!clipVars('komm').length)n='liebe';const ok=n==='bettvonarbeit'?(clipVars(n).length||clipVars('umziehen').length):clipVars(n).length;if(!ok)return;
  ZBUSY=Date.now()+300000;if(!CONT&&document.getElementById('stage').classList.contains('vid')){const f=()=>stageSceneNow(n);if(SWAP&&SWAP===STOK){CONT=true;f();CONT=false;}else ZPEND=f;return;}  // her yes waits for the clean hand over, the dot shows it (2.116.0)
  stageSceneNow(n);}
 function stageSceneNow(n){if(n==='bettvonarbeit'&&!clipVars(n).length&&clipVars('umziehen').length)return stagePlay(['umziehen','bettvonfreizeit'],clipFor(STM));if(!clipVars(n).length)return;if(n.startsWith('tanz'))stageDance(n);else if(n==='zeigen'&&STM.outfit==='nacht'&&clipVars('hinten').length)stagePlay(['hinten'].concat(clipVars('zeigenhh').length?['zeigenhh']:[],['zeigen']),clipFor(STM));/* night show: she turns away, poses from behind, turns back to him (2.118.1, Metin: combine back and front, three clips) */else stagePlay([n],clipFor(STM));}
@@ -565,7 +565,7 @@ const ZONES=[['gesicht',.02,.16,.37,.63],['brust',.16,.31,.30,.70],['bauch',.31,
 function zoneAt(ev){const st=document.getElementById('stage').getBoundingClientRect(),ar=1176/1764;let w=st.width,h=w/ar;if(h<st.height){h=st.height;w=h*ar;}
  const x=(ev.clientX-st.left-(st.width-w)/2)/w,y=(ev.clientY-st.top-(st.height-h)/2)/h;const z=ZONES.find(z=>y>=z[1]&&y<z[2]&&x>=z[3]&&x<=z[4]);return z?z[0]:null;}
 var ZT=0,ZBUSY=0;  // one touch at a time: no other spot reacts until her clip is through (2.114.6, Metin)
-var ZKISS=false;const zDone=()=>{ZBUSY=0;if(ZKISS&&clipVars('kuss').length){ZKISS=false;return stagePlay(['kuss'],clipFor(STM));}ZKISS=false;stageLoop(clipFor(STM));};
+var ZKISS=false,ZCOLNOW='';const ZCOL={gesicht:'#c084fc',brust:'#ef4444',bauch:'#fb923c',po:'#3b82f6'};/* dot colour per touched zone, only Metin knows the meaning (2.119.0) */const zDone=()=>{ZBUSY=0;ZCOLNOW='';if(ZKISS&&clipVars('kuss').length){ZKISS=false;return stagePlay(['kuss'],clipFor(STM));}ZKISS=false;stageLoop(clipFor(STM));};
 var ZPEND=null,ZT_GREEN=()=>false,ZGOLD=0;
 const ZNAME={gesicht:'Gesicht',brust:'Brust',bauch:'Bauch',po:'Po'};
 async function zGame(z,miss){if(!miss)ZGOLD=Date.now()+1500;let j=null;try{j=await (await post('/api/game',{zone:z,miss:!!miss})).json();}catch(e){}if(!j||!j.ok)return;
@@ -574,17 +574,20 @@ async function zGame(z,miss){if(!miss)ZGOLD=Date.now()+1500;let j=null;try{j=awa
  if(j.mood)moodShow(j.mood);const n=(j.hits||[]).length;CHAT.push({role:'info',text:j.bonus?'🌹 Alle vier Stellen getroffen! Der Rosenknopf ist noch einmal frei.':'🎯 Treffer: '+ZNAME[z]+' ('+n+' von 4)'});chatDraw();}
 (function(){const c=document.getElementById('chat'),d=document.createElement('div');d.id='ztimer';  // clip timer: red ring = how far the running clip is, green = a touch starts now (2.114.8, Metin)
  d.innerHTML='<svg viewBox="0 0 30 30"><circle class="bg" cx="15" cy="15" r="12"/><circle class="fg" cx="15" cy="15" r="12" stroke-dasharray="75.4" stroke-dashoffset="75.4"/><circle class="dot" cx="15" cy="15" r="4"/></svg>';c.appendChild(d);
- const fg=d.querySelector('.fg');let last='',flash=0;ZT_GREEN=()=>Date.now()<flash;
+ const fg=d.querySelector('.fg'),dot=d.querySelector('.dot');let last='',flash=0;ZT_GREEN=()=>Date.now()<flash;
  setInterval(()=>{if(c.style.display!=='block')return;const v=document.getElementById(SV?'svid2':'svid'),on=document.getElementById('stage').classList.contains('vid')&&v.classList.contains('on');
   const src=on?v.getAttribute('src')||'':'';if(src!==last){if(last)flash=Date.now()+1000;last=src;}
   const free=!on||Date.now()<flash;let p=1;if(!free&&v.duration)p=Math.min(1,v.currentTime/Math.max(.1,v.duration-.8));
-  d.classList.toggle('go',free);d.classList.toggle('hit',!!ZPEND||Date.now()<ZBUSY);d.classList.toggle('gold',Date.now()<ZGOLD);fg.setAttribute('stroke-dashoffset',(75.4*(1-(free?1:p))).toFixed(1));},100);})();  // the touch is noted at once and plays when the running clip hands over, so the poses match (2.114.7, Metin)
+  d.classList.toggle('go',free);d.classList.toggle('hit',!!ZPEND||Date.now()<ZBUSY);d.classList.toggle('gold',Date.now()<ZGOLD);dot.style.fill=Date.now()<ZGOLD?'':ZCOLNOW;fg.setAttribute('stroke-dashoffset',(75.4*(1-(free?1:p))).toFixed(1));},100);})();  // the touch is noted at once and plays when the running clip hands over, so the poses match (2.114.7, Metin)
+let TOUCHT=0;function touchAsk(z){if(!CODE||Date.now()-TOUCHT<TOUCH_GAP)return null;TOUCHT=Date.now();return post('/api/chat_touch',{zone:z,history:CHAT.filter(m=>m.role==='user'||m.role==='leyla').slice(-20).map(m=>({role:m.role,text:m.text}))}).then(r=>r.json()).catch(()=>null);}
+const TOUCH_GAP=25000;/* she answers a touch at most every 25 s, so touches do not push the real chat out of her thread */
+function touchShow(j){if(!j||j.error||!j.reply)return;const m={role:'leyla',text:j.reply};if(j.audio){m.aid='a'+Date.now();AUDIO.set(m.aid,'data:audio/wav;base64,'+j.audio);}CHAT.push(m);if(j.mood)moodShow(j.mood);chatSave();chatDraw();if(m.aid)playAudio(m.aid);}  /* her written reaction to a touch appears when the touch clip starts (2.119.0, Metin) */
 function zRing(ev){const st=document.getElementById('stage'),r=st.getBoundingClientRect(),d=document.createElement('div');d.className='zring';d.style.left=(ev.clientX-r.left)+'px';d.style.top=(ev.clientY-r.top)+'px';st.appendChild(d);setTimeout(()=>d.remove(),900);}
-document.getElementById('stage').onpointerdown=ev=>{if(ev.button>0||Date.now()-ZT<700||ZPEND||Date.now()<ZBUSY)return;ZT=Date.now();if(!CLIPS||!STM||STM.low)return;const z=zoneAt(ev);if(!z)return;const v=clipVars(z).concat(...(ZEXTRA[z]||[]).map(clipVars));if(!v.length)return;ZBUSY=Date.now()+60000;zRing(ev);
+document.getElementById('stage').onpointerdown=ev=>{if(ev.button>0||Date.now()-ZT<700||ZPEND||Date.now()<ZBUSY)return;ZT=Date.now();if(!CLIPS||!STM||STM.low)return;const z=zoneAt(ev);if(!z)return;const v=clipVars(z).concat(...(ZEXTRA[z]||[]).map(clipVars));if(!v.length)return;ZBUSY=Date.now()+60000;zRing(ev);ZCOLNOW=ZCOL[z]||'';const tr=touchAsk(z);
  {const g=(STM&&STM.game)||{};if(!g.done){if(ZT_GREEN()){if(!(g.hits||[]).includes(z))zGame(z);}else if((g.hits||[]).length)zGame(z,true);}}
  const o=v.length>1?v.filter(n=>n!==ZLAST[z]):v,n=o[Math.floor(Math.random()*o.length)];ZLAST[z]=n;
  const pre=ZPRE[z]&&!/povorne|mix/.test(n)&&clipVars(ZPRE[z]),h=pre&&pre.length?pre[Math.floor(Math.random()*pre.length)]:'';  /* povorne clips start facing him, no turn first (2.117.3) */
- const go=()=>{DANCING=false;ZBUSY=Date.now()+40000;if(h)return stageShow(h,false,()=>stageShow(n,false,zDone,true),true);stageShow(n,false,zDone,true);};
+ const go=()=>{DANCING=false;ZBUSY=Date.now()+40000;if(tr)tr.then(touchShow);if(h)return stageShow(h,false,()=>stageShow(n,false,zDone,true),true);stageShow(n,false,zDone,true);};
  if(SWAP&&SWAP===STOK){CONT=true;go();CONT=false;}else if(document.getElementById('stage').classList.contains('vid'))ZPEND=go;else go();};  // a hand over already waiting: take its place
 
 document.getElementById('crose').onclick=async()=>{const st=LASTST||{};
@@ -1002,7 +1005,8 @@ async def _reach_api(reach, method: str, path: str, d: dict, unlocked: bool) -> 
 
 async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "", rules=None,
                   chat=None, voice=None, mailer=None, google=None, inbox=None,
-                  mood=None, reminders=None, diary=None, chat_new=None, reach=None) -> None:
+                  mood=None, reminders=None, diary=None, chat_new=None, reach=None,
+                  touch=None) -> None:
     try:
         head = await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), timeout=10)
         lines = head.decode("latin-1").split("\r\n")
@@ -1067,6 +1071,15 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                     out = await chat(d.get("history"), d.get("message"))
                 except Exception as e:
                     logger.warning("Chat failed: %s", e)
+            await _respond(writer, "200 OK", "application/json",
+                           json.dumps(out or {"error": True}, ensure_ascii=False))
+        elif method == "POST" and path == "/api/chat_touch":
+            out = None
+            if unlocked and touch:
+                try:
+                    out = await touch(d.get("history"), str(d.get("zone", "")))
+                except Exception as e:
+                    logger.warning("Touch reaction failed: %s", e)
             await _respond(writer, "200 OK", "application/json",
                            json.dumps(out or {"error": True}, ensure_ascii=False))
         elif method == "POST" and path == "/api/chat_voice":
@@ -1224,11 +1237,11 @@ async def start_http(store: memory.MemoryStore, sync: Optional[object] = None,
                      host: str = "0.0.0.0", port: int = 8082, lamp: Optional[object] = None,
                      code_phrase: str = "", rules=None, chat=None, voice=None,
                      mailer=None, google=None, inbox=None, mood=None, reminders=None,
-                     diary=None, chat_new=None, reach=None):
+                     diary=None, chat_new=None, reach=None, touch=None):
     """`rules`: a function that returns Leyla's instructions without memory and without the
     code word; shown read only after the code word."""
     server = await asyncio.start_server(
         lambda r, w: _handle(store, sync, r, w, lamp, code_phrase, rules, chat, voice, mailer, google,
-                          inbox, mood, reminders, diary, chat_new, reach), host, port)
+                          inbox, mood, reminders, diary, chat_new, reach, touch), host, port)
     logger.info("Memory page on port %d", port)
     return server

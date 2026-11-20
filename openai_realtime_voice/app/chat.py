@@ -117,6 +117,22 @@ def valid_proposals(raw, lists: dict) -> list[dict]:
     return out[:12]
 
 
+TOUCH_WHERE = {"gesicht": "im Gesicht", "brust": "an der Brust", "bauch": "am Bauch",
+               "po": "am Po"}
+TOUCH_VOICE_P = 0.3  # share of touch reactions spoken when she is in love (Metin: her voice)
+
+
+def touch_message(zone: str) -> str:
+    """The stage note for a touch (2.119.0); empty for an unknown zone."""
+    where = TOUCH_WHERE.get(zone)
+    if not where:
+        return ""
+    return (f"(Bühne: Metin berührt dich gerade zärtlich {where}. Er schreibt nichts dazu. "
+            "Reagiere mit einem einzigen kurzen Satz darauf, so wie du dich gerade fühlst und "
+            "passend zu der Stelle, verspielt und gern ein wenig sinnlich, aber nie explizit. "
+            "Keine Frage, kein szene Feld, keine Vorschläge.)")
+
+
 def no_dashes(text: str) -> str:
     """Metin reads dashes as machine written; the style rule alone did not stop them."""
     return re.sub(r"\s*[—–]\s*", ", ", text or "").replace(" ,", ",")

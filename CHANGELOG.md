@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.119.0 (20 Nov 2026)
+
+- Leyla knows where Metin touches her (his wish): every touch on the stage goes to `POST /api/chat_touch` (code word, `main._chat_touch`) as a stage note through the normal chat (`chat.touch_message`), so it stays in her thread and diary. Her one sentence reply appears when the touch clip starts; while she is in love (`verliebt`) 30 % of them come as a voice message (`chat.TOUCH_VOICE_P`). At most one reaction every 25 s (`TOUCH_GAP`), so touches do not push the real chat out of her thread.
+- The dot in the timer shows the touched spot in a colour only Metin knows (face violet, chest red, belly orange, bottom blue, `ZCOL`); white stays for scenes, gold for the game win.
+
 ## 2.118.1 (20 Nov 2026)
 
 - Zeig dich at night (Metin: combine back and front, three clips): she turns away (`nacht/hinten`), poses from behind (`nacht/zeigenhh`, `zeigenhh2`, back to back) and turns back to him while posing (`nacht/zeigen` to `zeigen4`, back to front). Six new clips of 18 and 19 Nov, still frames at start and end cut, silent.

@@ -23,6 +23,7 @@ import sys
 import asyncio
 import json
 import base64
+import random
 import logging
 import time
 import shutil
@@ -408,6 +409,33 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 self._chat_flush = asyncio.create_task(self._chat_diary(self.diary.chat_take()))
             logger.info("Chat with Metin in the app: answered, %d proposals, %d light commands",
                         len(out["proposals"]), len(out["lights"]))
+        return out
+
+    async def _chat_touch(self, history, zone) -> Optional[dict]:
+        """Metin touched her on the stage (2.119.0, his wish: she knows where and reacts in
+        sync). The touch goes through the normal chat as a stage note, so it stays in her
+        thread and diary; when she is in love, now and then she answers with her voice."""
+        msg = chat.touch_message(zone)
+        if not msg:
+            return None
+        out = await self._chat(history, msg)
+        if not out or not out.get("reply"):
+            return out
+        out.pop("scene", None)  # the page already plays the touch clip
+        out["proposals"], out["lights"] = [], []
+        st = self.mood.status()
+        if (st.get("level") == "gut" and st.get("mood") == "verliebt"
+                and random.random() < chat.TOUCH_VOICE_P):
+            try:
+                pcm = await self._speak_once(
+                    chat.speak_prompt(out["reply"]), max_s=30.0,
+                    instructions=chat.voice_reply_instructions(self.mood.feeling(), UNLOCKED_LOVE))
+                if pcm:
+                    out["audio"] = base64.b64encode(messages.pcm_to_wav(pcm)).decode("ascii")
+            except Exception as e:
+                logger.warning("Touch reply could not be spoken: %s", e)
+        logger.info("Touch on the stage: %s, reply audio %s", zone,
+                    "yes" if out.get("audio") else "no")
         return out
 
     async def _chat_voice(self, history, audio_b64, mime) -> Optional[dict]:
@@ -1491,7 +1519,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                                             google=self.google, inbox=self.inbox,
                                             mood=self.mood, reminders=self.reminders,
                                             diary=self.diary, chat_new=self._chat_new,
-                                            reach=self.reach)
+                                            reach=self.reach, touch=self._chat_touch)
             except Exception as e:
                 logger.warning("Memory page could not start: %s", e)
         if self.messages.available:

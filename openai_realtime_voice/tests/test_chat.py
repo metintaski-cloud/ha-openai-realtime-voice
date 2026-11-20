@@ -307,3 +307,10 @@ def test_sudden_question_gets_todays_appointments():
     b.agenda = Ag()
     note = asyncio.run(b._today_agenda_note())
     assert "Zahnarzt" in note and "Morgen" not in note
+
+
+def test_touch_message_names_the_spot_and_refuses_unknown():
+    from app import chat as c
+    assert "am Bauch" in c.touch_message("bauch")
+    assert "am Po" in c.touch_message("po")
+    assert c.touch_message("knie") == ""
