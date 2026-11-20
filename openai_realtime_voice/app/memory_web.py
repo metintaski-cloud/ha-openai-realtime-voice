@@ -1045,6 +1045,10 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                 files = 0
             out = {"tage": metrics.wake_stats(metrics.load()), "aufnahmen": files}
             await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
+        elif method == "POST" and path == "/api/game_reset":
+            out = mood.game_reset() if (mood and hasattr(mood, "game_reset")) else {"ok": False}
+            logger.info("Memory page: touch game reset")
+            await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
         elif method == "GET" and path == "/api/moodstats":
             # mood names and roll times only, no texts (2.96.1, to check that the moods run)
             out = mood.stats() if mood else {}

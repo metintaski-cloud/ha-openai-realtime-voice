@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.115.3 (20 Nov 2026)
+
+- `POST /api/game_reset` starts the touch game of the week again (hits and won bonus cleared), for tests with Metin; like `/api/moodstats` it needs no code word (home network and Tailscale only).
+
 ## 2.115.2 (20 Nov 2026)
 
 - Winning the touch game always gives a kiss (Metin): a random `kuss` variant of her current outfit plays right after the touch clip, at the clean hand over (`ZKISS`). In an outfit without kiss clips (Freizeit, night) nothing extra plays for now.

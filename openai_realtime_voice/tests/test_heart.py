@@ -351,3 +351,14 @@ def test_touch_game_miss_resets(tmp_path):
         r = h.game_hit(z, t + 10 + i)
     assert r["bonus"]
     assert h.game_hit("po", t + 20, miss=True)["mood"]["game"]["done"]  # won stays won
+
+
+def test_touch_game_reset(tmp_path):
+    import time as _t
+    h = heart.Heart(str(tmp_path / "h.json"))
+    t = _t.mktime((2026, 11, 20, 18, 0, 0, 0, 0, -1))
+    for z in ("gesicht", "brust", "bauch", "po"):
+        h.game_hit(z, t)
+    assert h.status(t + 1)["game"]["done"]
+    assert h.game_reset(t + 2)["game"] == {"hits": [], "done": False}
+    assert h.game_hit("po", t + 3)["hits"] == ["po"]

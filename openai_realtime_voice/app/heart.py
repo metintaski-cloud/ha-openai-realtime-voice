@@ -443,6 +443,17 @@ class Heart:
             self._save(d)
         return {"ok": True, "hits": list(hits), "bonus": new_bonus, "mood": self.status(now)}
 
+    def game_reset(self, now: Optional[float] = None) -> dict:
+        """Start the touch game of this week again (for Claude's tests with Metin): hits and the
+        won bonus are cleared; a bonus rose not given yet is gone."""
+        now = now or time.time()
+        d = self.current(now)
+        for k in ("game_week", "game_hits", "bonus_week", "bonus_used"):
+            d.pop(k, None)
+        self._log(d, now, "Spiel zurückgesetzt")
+        self._save(d)
+        return {"ok": True, "game": self._game(d, now)}
+
     def _game(self, d: dict, now: float) -> dict:
         wk = self._week(now)
         hits = d.get("game_hits", []) if d.get("game_week") == wk else []
