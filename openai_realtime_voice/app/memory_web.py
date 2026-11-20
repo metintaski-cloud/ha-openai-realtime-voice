@@ -536,11 +536,12 @@ const ZONES=[['gesicht',.02,.16,.37,.63],['brust',.16,.31,.30,.70],['bauch',.31,
 function zoneAt(ev){const st=document.getElementById('stage').getBoundingClientRect(),ar=1176/1764;let w=st.width,h=w/ar;if(h<st.height){h=st.height;w=h*ar;}
  const x=(ev.clientX-st.left-(st.width-w)/2)/w,y=(ev.clientY-st.top-(st.height-h)/2)/h;const z=ZONES.find(z=>y>=z[1]&&y<z[2]&&x>=z[3]&&x<=z[4]);return z?z[0]:null;}
 var ZT=0,ZBUSY=0;  // one touch at a time: no other spot reacts until her clip is through (2.114.6, Metin)
-const zDone=()=>{ZBUSY=0;stageLoop(clipFor(STM));};
+var ZKISS=false;const zDone=()=>{ZBUSY=0;if(ZKISS&&clipVars('kuss').length){ZKISS=false;return stagePlay(['kuss'],clipFor(STM));}ZKISS=false;stageLoop(clipFor(STM));};
 var ZPEND=null,ZT_GREEN=()=>false,ZGOLD=0;
 const ZNAME={gesicht:'Gesicht',brust:'Brust',bauch:'Bauch',po:'Po'};
 async function zGame(z,miss){if(!miss)ZGOLD=Date.now()+1500;let j=null;try{j=await (await post('/api/game',{zone:z,miss:!!miss})).json();}catch(e){}if(!j||!j.ok)return;
  if(miss){if(j.mood)moodShow(j.mood);CHAT.push({role:'info',text:'❌ Daneben, deine Treffer sind weg.'});chatDraw();return;}  // touch game: hit while the timer is green (2.115.0, Metin)
+ if(j.bonus){if(Date.now()<ZBUSY)ZKISS=true;else if(!ZPEND)ZPEND=()=>stagePlay(['kuss'],clipFor(STM));}  // won: a kiss, a random variant, at the next clean hand over (2.115.2)
  if(j.mood)moodShow(j.mood);const n=(j.hits||[]).length;CHAT.push({role:'info',text:j.bonus?'🌹 Alle vier Stellen getroffen! Der Rosenknopf ist noch einmal frei.':'🎯 Treffer: '+ZNAME[z]+' ('+n+' von 4)'});chatDraw();}
 (function(){const c=document.getElementById('chat'),d=document.createElement('div');d.id='ztimer';  // clip timer: red ring = how far the running clip is, green = a touch starts now (2.114.8, Metin)
  d.innerHTML='<svg viewBox="0 0 30 30"><circle class="bg" cx="15" cy="15" r="12"/><circle class="fg" cx="15" cy="15" r="12" stroke-dasharray="75.4" stroke-dashoffset="75.4"/><circle class="dot" cx="15" cy="15" r="4"/></svg>';c.appendChild(d);

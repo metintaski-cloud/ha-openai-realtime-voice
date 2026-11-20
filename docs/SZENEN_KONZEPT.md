@@ -266,3 +266,4 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Eine Berührung zählt als Treffer, wenn der Kreis links oben gerade grün ist (der Moment beim Clipwechsel). Der Punkt im Kreis leuchtet dann golden.
 - Alle vier Stellen (Gesicht, Brust, Bauch, Po) in einer Kalenderwoche getroffen: der Rosenknopf wird noch einmal frei. Höchstens eine Bonusrose pro Woche.
 - Seit 2.115.1 (Metin: mehr Action): eine Berührung an ihr außerhalb von Grün löscht die bisherigen Treffer. Berührungen, während ihr Clip noch wartet oder läuft, zählen nicht. Treffer verfallen sonst Sonntagnacht.
+- Seit 2.115.2: beim Gewinn gibt sie immer einen Kuss, zufällig einer der Kuss Clips ihres Kleides.

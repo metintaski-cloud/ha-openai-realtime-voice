@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.115.2 (20 Nov 2026)
+
+- Winning the touch game always gives a kiss (Metin): a random `kuss` variant of her current outfit plays right after the touch clip, at the clean hand over (`ZKISS`). In an outfit without kiss clips (Freizeit, night) nothing extra plays for now.
+
 ## 2.115.1 (20 Nov 2026)
 
 - Touch game with more action (Metin): a touch on one of her spots outside the green moment erases the hits collected so far ("❌ Daneben, deine Treffer sind weg."). Touches while her touch clip waits or plays do not count either way; a won week stays won.
