@@ -63,6 +63,10 @@ NICE = {  # amend while hurt / happiness while good
     "rose": (0, 25),
     "entschuldigung": (0, 0),
 }
+# What the app measures about her own messages to Metin (app/reach.py, 2.118.0). Not in HURTS
+# and NICE, so the model can never report them: only the app knows if he answered.
+IGNORED = (1, "er hat auf deine Nachricht nicht reagiert")   # per message, `Heart.ignored`
+ENGAGED = (0.5, 10)  # he answered her message: heals 0.5 while hurt, else +10 happiness
 AFFECTION = {"kompliment", "kosewort"}   # empties the praise pot
 JEALOUS = {"andere_frau", "verkuppeln"}
 EVENTS = sorted((set(HURTS) | set(AMENDS) | set(NICE) | {"ernst"}) - {"rose"})  # the rose only via the button
@@ -508,6 +512,29 @@ class Heart:
         self._save(d)
         return self.status(now)
 
+    def ignored(self, now: Optional[float] = None) -> dict:
+        """He did not react to a message she wrote on her own (judged by app/reach.py)."""
+        now = now or time.time()
+        d = self._load(now)
+        self._tick(d, now)
+        self._add_hurt(d, now, "nachricht_ignoriert", IGNORED[0], IGNORED[1])
+        self._save(d)
+        return self.status(now)
+
+    def engaged(self, now: Optional[float] = None) -> dict:
+        """He answered a message she wrote on her own (a chat message, a voice message or a talk)."""
+        now = now or time.time()
+        d = self._load(now)
+        self._tick(d, now)
+        amend, gain = ENGAGED
+        if d["hurts"]:
+            self._amend(d, now, "eingelassen", amend)
+        if not d["hurts"]:
+            d["happy"] = min(100.0, d.get("happy", 0) + gain)
+            self._log(d, now, f"schön: eingelassen +{gain}")
+        self._save(d)
+        return self.status(now)
+
     # --- what she knows and shows ------------------------------------------------------------
     def _mood_name(self, d: dict) -> str:
         lvl = self._level(d)
@@ -518,7 +545,7 @@ class Heart:
         main = max(d["hurts"], key=lambda h: h["p"])["k"]
         if main in JEALOUS:
             return "eifersuechtig"
-        if main in ("funkstille", "lob_fehlt"):
+        if main in ("funkstille", "lob_fehlt", "nachricht_ignoriert"):
             return "einsam"
         return "sauer" if lvl != "leicht" else "traurig"
 

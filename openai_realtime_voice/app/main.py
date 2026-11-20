@@ -44,7 +44,7 @@ from app import context
 from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, pcm_level
 from app.live_link import END_CONVERSATION_TOOL
 from app.phrases import (END_TALK_RE, RECALL_NUDGE, RECALL_RE, NAME_NUDGE, NAME_NUDGE_AFTER_S, NAME_NUDGE_COOLDOWN_S, NAME_RE, PROMISE_NUDGE, PROMISE_NUDGE_AFTER_S, PROMISE_RE, NAME_SAID_RE, WHO_ASKED_RE, WHO_NUDGE, COUPLE_NUDGE, COUPLE_WORD_RE, PET_NUDGE, PET_WORD_RE, addressed_by_name, contains_goodbye, greeting_instruction, parse_greeting_words, pick_greeting)
-from app import (chat, lamp_show, metrics, output_link, session_end, tool_link, after_talk, announce_voice, live_link, night, cleanup, costs, fan, health, lights, messages, persona, purifier, rf, technik, todo_sync,
+from app import (reach_link, chat, lamp_show, metrics, output_link, session_end, tool_link, after_talk, announce_voice, live_link, night, cleanup, costs, fan, health, lights, messages, persona, purifier, rf, technik, todo_sync,
                  tv, vacuum)
 
 logging.basicConfig(
@@ -118,7 +118,7 @@ DEFAULT_BACKEND_INSTRUCTIONS = (
 
 class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.AfterTalkMixin,
                       announce_voice.AnnounceVoiceMixin, tool_link.ToolLinkMixin, session_end.SessionEndMixin,
-                      output_link.OutputMixin):
+                      output_link.OutputMixin, reach_link.ReachMixin):
     """Bridges ESP32 WebSocket to the OpenAI GPT Live API."""
 
     def __init__(self) -> None:
@@ -190,6 +190,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self.reminders = reminders.Reminders(self.agenda, converse=self._converse)
         self.variety = variety.Variety()  # her last openings, so she never sounds the same
         self.diary = diary.Diary()  # what she talked about in the last month, fading
+        self._init_reach(UNLOCKED_LOVE)  # she writes to Metin on her own (app/reach.py)
         self.ideas = ideas.Ideas()  # her sudden ideas in the chat, varied, open ones come back
         self.technik = technik.TechnikChecker(
             notify=self.messages.push if self.messages.available else None)
@@ -363,6 +364,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
 
     async def _chat(self, history, message) -> Optional[dict]:
         """A text message from Metin in the memory app (code word checked by the page)."""
+        self.reach.answered()  # he answers what she wrote on her own: a plus for her mood
         flush = getattr(self, "_chat_flush", None)
         if flush and not flush.done():  # "Neuer Chat" is still writing the diary entry
             await asyncio.gather(flush, return_exceptions=True)
@@ -455,6 +457,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         logger.info("Code phrase heard: memory unlocked for this conversation")
         if hasattr(self.mood, "contact"):
             self.mood.contact()  # Metin talks to her: no silence
+        self.reach.answered()  # a talk also answers a message she wrote on her own
         if not app:  # the rear lamps show her mood: dim when she is low, full when happy
             self.lamp.set_mood_pct(self.mood.lamp_pct())
         private = self.memory.load(memory.PRIVATE) if self.enable_memory else []
@@ -775,6 +778,10 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                     await self.reminders.tick()
                 except Exception as e:
                     logger.warning("Reminders: %s", e)
+            try:
+                await self._reach_tick()
+            except Exception as e:
+                logger.warning("Reach: %s", e)
             await self._chat_diary(self.diary.chat_due())
 
     async def _today_agenda_note(self) -> str:
@@ -1483,7 +1490,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                                             voice=self._chat_voice, mailer=self.mailer,
                                             google=self.google, inbox=self.inbox,
                                             mood=self.mood, reminders=self.reminders,
-                                            diary=self.diary, chat_new=self._chat_new)
+                                            diary=self.diary, chat_new=self._chat_new,
+                                            reach=self.reach)
             except Exception as e:
                 logger.warning("Memory page could not start: %s", e)
         if self.messages.available:

@@ -11,6 +11,7 @@ Plain asyncio HTTP, no extra dependency. Pure helpers (`snapshot`, `delete_items
 MemoryStore, so tests need no network.
 """
 import asyncio
+import base64
 import json
 import re
 import logging
@@ -437,6 +438,7 @@ function chatDraw(wait){const log=document.getElementById('clog');log.innerHTML=
   if(m.role==='remind')return log.appendChild(remindCard(m,i));
   const d=document.createElement('div');d.className='m '+(m.role==='user'?'u':'l');d.textContent=m.text;
   if(m.aid&&AUDIO.has(m.aid)){const b=document.createElement('button');b.className='play';b.textContent='\u25B6';b.onclick=()=>playAudio(m.aid);d.appendChild(b);const sv=document.createElement('a');sv.className='play';sv.textContent='\u2B07';sv.title='Als Datei speichern';sv.href=AUDIO.get(m.aid);sv.download='leyla_'+m.aid+'.wav';d.appendChild(sv);}
+  if(m.rid&&m.voice){const b=document.createElement('button');b.className='play';b.textContent='\u25B6';b.onclick=()=>reachPlay(m.rid);d.appendChild(b);}
   if(m.role==='user')return log.appendChild(d);const r=document.createElement('div');r.className='lr';const im=document.createElement('img');im.src='/leyla.jpg';im.alt='';r.append(im,d);log.appendChild(r);});
  if(wait){const w=document.createElement('div');w.className='wait';w.textContent='Leyla schreibt ...';log.appendChild(w);}
  {const kids=[...log.children],talk=[];kids.forEach((e,i)=>{if(e.classList.contains('u')||e.classList.contains('lr'))talk.push(i);});const k=talk.length>2?talk[talk.length-2]:0;kids.slice(0,k).forEach(e=>e.style.display='none');}
@@ -593,7 +595,7 @@ document.getElementById('crose').onclick=async()=>{const st=LASTST||{};
  moodShow(j.mood);const sc=clipVars(j.scene).length?j.scene:(j.scene==='rosefroh'?'kuss':'');if(sc)stageScene(sc);
  const ta=document.getElementById('ctext');ta.value='🌹 Ich schenke dir eine Rose.';chatSend();};
 async function moodLoad(){try{moodShow(await (await post('/api/mood',{})).json());}catch(e){}}
-setInterval(()=>{if(CODE&&document.getElementById('chat').style.display==='block'){moodLoad();remindPending();}},60000);
+setInterval(()=>{if(CODE&&document.getElementById('chat').style.display==='block'){moodLoad();remindPending();reachPending();}},60000);
 function chatAnswer(j){if(j&&j.silent){CHAT.push({role:'info',text:'🤐 Leyla antwortet gerade nicht.'});if(j.mood)moodShow(j.mood);return null;}
  if(!j||j.error||!j.reply){CHAT.push({role:'leyla',text:'Hmm, gerade komme ich nicht durch. Versuch es gleich nochmal.'});return null;}
  const m={role:'leyla',text:j.reply};if(j.audio){m.aid='a'+Date.now();AUDIO.set(m.aid,'data:audio/wav;base64,'+j.audio);}CHAT.push(m);
@@ -661,7 +663,13 @@ function remindCard(m,i){const c=document.createElement('div');c.className='mc r
 async function remindPending(){let j=null;try{j=await (await post('/api/remind/pending',{})).json();}catch(_){}
  if(!j||!j.ok)return;let added=false;(j.items||[]).forEach(r=>{if(!CHAT.some(m=>m.role==='remind'&&m.r.id===r.id)){CHAT.push({role:'remind',r});added=true;}});
  if(added){chatSave();chatDraw();}}
-async function mailPending(){remindPending();let j=null;try{j=await (await post('/api/mail/pending',{})).json();}catch(_){}
+async function reachPending(){let j=null;try{j=await (await post('/api/reach/pending',{})).json();}catch(_){}
+ if(!j||!j.ok||!(j.items||[]).length)return;const ids=[];
+ j.items.forEach(r=>{if(!CHAT.some(m=>m.rid===r.id))CHAT.push({role:'leyla',text:r.text,rid:r.id,voice:!!r.voice});ids.push(r.id);});
+ chatSave();chatDraw();try{await post('/api/reach/seen',{ids});}catch(_){}}
+async function reachPlay(id){let j=null;try{j=await (await post('/api/reach/audio',{id})).json();}catch(_){}
+ if(!j||!j.ok)return;if(!AUDIO.has('r'+id)){const bin=atob(j.audio),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);AUDIO.set('r'+id,URL.createObjectURL(new Blob([u],{type:'audio/wav'})));}playAudio('r'+id);}
+async function mailPending(){remindPending();reachPending();let j=null;try{j=await (await post('/api/mail/pending',{})).json();}catch(_){}
  if(!j||!j.ok)return;let added=false;(j.drafts||[]).forEach(e=>{if(!CHAT.some(m=>m.role==='mail'&&m.e.id===e.id)){CHAT.push({role:'mail',e});added=true;}});
  (j.trash||[]).forEach(t=>{if(!CHAT.some(m=>m.role==='trash'&&m.t.id===t.id)){CHAT.push({role:'trash',t});added=true;}});
  if(added){chatSave();chatDraw();}}
@@ -972,9 +980,29 @@ async def _lamp_api(lamp, method: str, path: str, body: bytes):
     return {"result": await lamp.reset()}
 
 
+async def _reach_api(reach, method: str, path: str, d: dict, unlocked: bool) -> dict:
+    """Her own messages (app/reach.py): the app asks for new ones, marks them seen, plays a
+    voice message. GET /api/reachstats (no code word) gives counts and states only."""
+    if reach is None:
+        return {"ok": False}
+    if method == "GET" and path == "/api/reachstats":
+        return reach.stats()
+    if method != "POST" or not unlocked:
+        return {"ok": False}
+    if path == "/api/reach/pending":
+        return {"ok": True, "items": reach.pending()}
+    if path == "/api/reach/seen":
+        ids = d.get("ids")
+        return {"ok": True, "seen": reach.seen(ids if isinstance(ids, list) else [])}
+    if path == "/api/reach/audio":
+        wav = reach.audio(str(d.get("id") or "")[:20])
+        return {"ok": bool(wav), "audio": base64.b64encode(wav).decode("ascii") if wav else ""}
+    return {"ok": False}
+
+
 async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "", rules=None,
                   chat=None, voice=None, mailer=None, google=None, inbox=None,
-                  mood=None, reminders=None, diary=None, chat_new=None) -> None:
+                  mood=None, reminders=None, diary=None, chat_new=None, reach=None) -> None:
     try:
         head = await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), timeout=10)
         lines = head.decode("latin-1").split("\r\n")
@@ -1129,6 +1157,9 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                 elif path == "/api/remind/ok":
                     out = {"ok": reminders.ack(str(d.get("id", ""))[:300]) > 0}
             await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
+        elif path.startswith("/api/reach"):
+            out = await _reach_api(reach, method, path, d, unlocked)
+            await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
         elif method == "POST" and path == "/api/rose":
             out = mood.give_rose() if (unlocked and mood and hasattr(mood, "give_rose")) else {"ok": False}
             if out.get("ok") or out.get("rose") == "blocked":
@@ -1193,11 +1224,11 @@ async def start_http(store: memory.MemoryStore, sync: Optional[object] = None,
                      host: str = "0.0.0.0", port: int = 8082, lamp: Optional[object] = None,
                      code_phrase: str = "", rules=None, chat=None, voice=None,
                      mailer=None, google=None, inbox=None, mood=None, reminders=None,
-                     diary=None, chat_new=None):
+                     diary=None, chat_new=None, reach=None):
     """`rules`: a function that returns Leyla's instructions without memory and without the
     code word; shown read only after the code word."""
     server = await asyncio.start_server(
         lambda r, w: _handle(store, sync, r, w, lamp, code_phrase, rules, chat, voice, mailer, google,
-                          inbox, mood, reminders, diary, chat_new), host, port)
+                          inbox, mood, reminders, diary, chat_new, reach), host, port)
     logger.info("Memory page on port %d", port)
     return server

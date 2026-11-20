@@ -157,11 +157,17 @@ class MessageCenter:
         if resp.status_code >= 300:
             raise RuntimeError(f"HA HTTP {resp.status_code}: {resp.text[:200]}")
 
-    async def push(self, title: str, message: str, reply: bool = False) -> None:
+    async def push(self, title: str, message: str, reply: bool = False,
+                   extra: Optional[dict] = None) -> None:
+        """`extra`: more fields for the Home Assistant app (sound channel, tap target ...)."""
         domain, _, service = self.notify_service.partition(".")
         data: dict = {"title": title, "message": message}
+        app_data: dict = {}
         if reply:
-            data["data"] = {"actions": [{"action": "REPLY", "title": "Antworten"}]}
+            app_data["actions"] = [{"action": "REPLY", "title": "Antworten"}]
+        app_data.update(extra or {})
+        if app_data:
+            data["data"] = app_data
         await self._service(domain, service, data)
         ticker.add(title, message)
 

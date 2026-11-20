@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.118.0 (20 Nov 2026)
+
+- Leyla writes to Metin's phone on her own (`app/reach.py`, `app/reach_link.py`, Metin: "mehr türkisch als deutsch"): up to 4 messages a day while she is fine, 2 when slightly hurt, 1 when really hurt, none when deeply hurt or silent; as text or (half of them) as a voice message in her own voice (GPT Live, `_speak_once`); about three quarters Turkish with German words between. She writes only while he is free (8 to 22 h, not in his shift, not the hour before it, not the half hour after, not while a talk runs or within 40 minutes of a contact) and one open message at a time. The push has its own sound channel (`leyla_nachricht`, high importance); a tap opens the app, where the message (a voice message with a play button) is put into the chat.
+- Mood: he answers in the chat, by voice message or in a live talk or at home: plus (`Heart.engaged`: a hurt gets a small amend, otherwise +10 happiness). He does not react within 2 waking hours (night and shift do not count): minus (`Heart.ignored`: 1 point, mood "einsam", at most 2 minus a day).
+- The server thread (`Diary.leyla_wrote`) holds her message, so his answer finds what she asked. `MessageCenter.push` takes extra data for the phone app. `GET /api/reachstats` gives counts and states without texts. 24 new tests (`tests/test_reach.py`), 413 in all.
+
 ## 2.117.8 (20 Nov 2026)
 
 - Clips, body images and music carry `?v=<newest file time>` (clips.json sends `v` per look and `music_v` per track), so the phone loads a replaced or trimmed file at once instead of keeping its cached copy for up to 24 hours (Metin still heard the old song after 2.117.6).

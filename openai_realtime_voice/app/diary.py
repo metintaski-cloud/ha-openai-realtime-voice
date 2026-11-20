@@ -227,6 +227,13 @@ class Diary:
         self._recent = (self._recent + [[str(message or ""), str(reply or ""), self._chat_last]])[-RECENT_PAIRS:]
         self._save_chat()
 
+    def leyla_wrote(self, text: str, now: Optional[float] = None) -> None:
+        """A message she wrote on her own (app/reach.py): it goes into the thread the server
+        keeps (an entry without a message of Metin's), so his answer finds what she asked. Not
+        into the buffer of the diary entry: nobody has talked yet."""
+        self._recent = (self._recent + [["", str(text or ""), now or time.time()]])[-RECENT_PAIRS:]
+        self._save_chat()
+
     def chat_due(self, now: Optional[float] = None) -> list:
         """The finished chat as a dialog when the pause is over, else []."""
         now = now or time.time()
@@ -247,7 +254,7 @@ class Diary:
 
     def chat_text(self, limit: int = 3000, now: Optional[float] = None) -> str:
         """The last chat turns word for word (12 h), for a talk at home."""
-        text = "\n".join(f"Metin: {m}\nLeyla: {r}" for m, r in self._fresh(now))
+        text = "\n".join((f"Metin: {m}\n" if m else "") + f"Leyla: {r}" for m, r in self._fresh(now))
         return text[-limit:]
 
     def with_last_chat(self, history, now: Optional[float] = None) -> list:
@@ -257,7 +264,8 @@ class Diary:
         fresh = self._fresh(now)
         if not fresh:
             return history if isinstance(history, list) else []
-        return [x for m, r in fresh for x in ({"role": "user", "text": m}, {"role": "leyla", "text": r})]
+        return [x for m, r in fresh for x in (({"role": "user", "text": m},) if m else ())
+                + ({"role": "leyla", "text": r},)]
 
     # ---- what she gets ----
     def unknown_note(self, now: Optional[float] = None, within_s: float = DAY) -> str:
