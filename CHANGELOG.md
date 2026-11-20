@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.114.4 (20 Nov 2026)
+
+- A long press on the stage or a chat bubble no longer selects a word and opens Chrome's search panel (`user-select: none` and no touch callout in the full screen chat; the text field stays selectable), Metin's screenshot of 20 Nov 2026.
+
 ## 2.114.3 (20 Nov 2026)
 
 - Tap zones aimed better: each zone has its own width (face narrow, chest, belly and bottom as wide as her body), measured on the night still and both dresses. Chat bubbles no longer catch taps (only their buttons and cards do), so a tap on her body through a bubble reaches her.
