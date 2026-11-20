@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.112.4 (20 Nov 2026)
+
+- The chat counter ("Noch 10 von 20") is hidden too (Metin's wish); the limit itself still works.
+
 ## 2.112.3 (20 Nov 2026)
 
 - Chat header: Live sits top right, the rose button below it, the music button below that (Metin's wish).
