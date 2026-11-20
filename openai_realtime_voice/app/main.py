@@ -36,7 +36,7 @@ import dotenv
 import websockets
 
 from app.audio_recorder import AudioRecorder
-from app import agenda, diary, gcontacts, heart, ideas, inbox, mail, memory, memory_web, mood, reminders, variety
+from app import agenda, day, diary, gcontacts, textmodel, heart, ideas, inbox, mail, memory, memory_web, mood, reminders, variety
 
 # Scene concept 2.0 (2.104.0): her feelings come from what really happens (app/heart.py); env
 # LEYLA_HEART=0 brings back the old dice of app/mood.py as a safety net.
@@ -191,6 +191,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self.reminders = reminders.Reminders(self.agenda, converse=self._converse)
         self.variety = variety.Variety()  # her last openings, so she never sounds the same
         self.diary = diary.Diary()  # what she talked about in the last month, fading
+        self.day = day.Day(self.diary, ask=self._day_ask, weather=self._day_weather)  # her own day
         self._init_reach(UNLOCKED_LOVE)  # she writes to Metin on her own (app/reach.py)
         self.ideas = ideas.Ideas()  # her sudden ideas in the chat, varied, open ones come back
         self.technik = technik.TechnikChecker(
@@ -384,7 +385,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         open_note = self.ideas.open_note()  # her open question comes back until answered
         rules += open_note
         rules += (self.diary.note("Metin", private=True) + self.variety.note()
-                  + self.diary.followup_note("Metin", private=True)
+                  + self.diary.followup_note("Metin", private=True) + self.day.note()
                   + await self.reminders.followup_note())
         live = self._live_talk_text()
         if live:  # Metin talks with her at home right now: the chat knows it at once
@@ -623,6 +624,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             asked = self.ideas.voice_note()
             if asked:
                 await self._send_note(live_ws, "open", "Interne Notiz, nicht vorlesen." + asked)
+        if name.split()[0] == "Metin" and self.day.note():  # her own day, to tell him about
+            await self._send_note(live_ws, "day", "Interne Notiz, nicht vorlesen." + self.day.note())
         mine = self.diary.followup_note(name, private=bool(state.get("unlocked")))
         if mine:  # a noted plan of this person is over: she asks how it went (2.121.0)
             await self._send_note(live_ws, "follow", "Interne Notiz, nicht erwähnen." + mine)
@@ -820,6 +823,22 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             except Exception as e:
                 logger.warning("Reach: %s", e)
             await self._chat_diary(self.diary.chat_due())
+            if self.enable_memory and self.openai_api_key:
+                try:
+                    await self.day.refresh()  # her own day (2.122.0)
+                except Exception as e:
+                    logger.warning("Day: %s", e)
+
+    async def _day_ask(self, prompt: str):
+        return await textmodel.ask(prompt, self.openai_api_key,
+                                   [self.memory_model, self.backend_model],
+                                   os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL),
+                                   "Day", check=lambda t: day.parse(t) is not None)
+
+    async def _day_weather(self) -> str:
+        if not getattr(self, "lights", None) or not self.lights.token:
+            return ""
+        return await day.weather_text(self.lights.api_url, self.lights.token)
 
     async def _today_agenda_note(self) -> str:
         """Today's appointments, so a sudden question can be about one (titles are data)."""

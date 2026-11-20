@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.122.0 (20 Nov 2026)
+
+- Leyla's own day (`app/day.py`, Metin: alive, with something of her own to tell, nothing invented): from 7 o'clock a text model builds her day from real things, the family's talks at home that day (diary entries of others, never private, never Metin's own, only harmless everyday things, never what Anne told her in confidence) and the Home Assistant weather, plus her inner life: a real book she reads for 4 to 9 days, a thought and a song. Built again when the family talked to her since (at most every 2 hours), 7 days kept so she knows yesterday. `Day.note` goes into the chat rules, the voice hand over for Metin and her own messages; she tells a piece only when it fits or he asks how her day was.
+
 ## 2.121.0 (20 Nov 2026)
 
 - She asks on her own how a noted plan went (Metin: like someone who thinks of you; calendar appointments had this already, now also everything he only tells her): `merken` takes `datum` and `uhrzeit` (tool and chat field), `diary.event_time` turns them into the moment to ask (one hour after the time, or 18 h on a day without time), `Diary.followup_note` gives each due note once (within 36 h) to the chat rules, to the voice hand over of that person and to her own messages (`reach_link._reach_notes`), then marks it `gefragt`.
