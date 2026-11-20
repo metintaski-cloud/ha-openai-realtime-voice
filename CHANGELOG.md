@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.117.6 (20 Nov 2026)
+
+- New happy background music: Metin's Persian trance track (the first 2 hours of his download, audio only, 44 MB, `musik/gut.m4a` in the media folder; his old song mix is in the git history before 2.108.0). A track over 4 MB streams through an audio element (`bgmIsLong` reads the size from a one byte range request), because decoding hours of music into memory would overload the phone; short loops still play gapless through Web Audio.
+
 ## 2.117.5 (20 Nov 2026)
 
 - Background music loops without the short stop (Metin): it plays through the Web Audio API as a looping buffer (`bgmBuf`, `BGSRC.loop`), with the silent padding the AAC encoder adds at start and end cut from the loop (`loopStart`, `loopEnd`); the `<audio loop>` element paused for a moment at every loop point. Pausing suspends the audio context, so the song goes on where it stopped.
