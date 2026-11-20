@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.116.5 (20 Nov 2026)
+
+- Night dance `nacht/tanz11` (Metin's oriental dance of 20 Nov 2026, front to front, tail trimmed), measured into `DNEXT`.
+
 ## 2.116.4 (20 Nov 2026)
 
 - One shot scenes never play the same variant twice in a row (`SLAST` in `stagePlay`), so the rose (night `rosefroh` to `rosefroh3`, Metin's clips of 20 Nov 2026, two of the four he sent were the same file), kisses and greetings change every time.
