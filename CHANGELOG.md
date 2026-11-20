@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.112.0 (20 Nov 2026)
+
+- Full screen stage (Metin: the clip must fill the screen, everything else lies on top, nothing may scroll): on the start page with the code word the chat is fixed over the whole screen (`body.chatfull`, `#chat` position fixed, page scrolling off), the clip fills it with `object-fit: cover` (on a phone only the misty sides are cut, her whole figure stays), no more 0.97 scale; the buttons, messages and microphone lie on top as before. A ☰ button in the chat header (`#cmenu`) opens the menu, which now floats above the chat. `zoneAt` maps taps through `cover`.
+- Clean hand over between clips (Metin: it flickered black for a moment): the new clip fades in on top of the old one, which stays fully visible until the fade is done (`z-index`, the old one leaves after 850 ms), so the background never shows through.
+
 ## 2.111.3 (20 Nov 2026)
 
 - No more freezing at the end of a clip (Metin: in the happy long dress she froze too long at the end of some clips): the next clip of a loop or chain now starts loading 3 s before the end (`PRELOAD_S`, was 0.8 s) and fades in exactly 0.8 s before the end (`CONT`, the swap waits for the right moment). Before, the next clip only started loading 0.8 s before the end; over the WLAN that was often too short, and the last frame stood still until the next clip could play. A tap or a scene from the chat still swaps at once.
