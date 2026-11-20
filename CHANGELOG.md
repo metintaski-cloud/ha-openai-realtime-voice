@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.116.2 (20 Nov 2026)
+
+- Night dances cut cleanly (Metin: the transitions looked badly cut): the still frames at start and end of 24 night clips are trimmed (0.1 to 1 s each, measured by frame difference; originals kept in the Desktop folder "Leyla aussortiert/nacht_vor_schnitt"), and a dance chain only joins clips whose end pose matches the next start pose (`DNEXT`, measured on the body area, mean difference up to 4.5); hinten3 and hinten4 never open a dance (start pose too far from her loop), tanzhf4 never ends it. Clips are picked least used first (`DUSED`, kept in the phone), so the clips that start with her back are spread evenly.
+
 ## 2.116.1 (20 Nov 2026)
 
 - The white dot now stays from her yes until the scene is through (a dance of four clips too), not only while it waits for the hand over (Metin did not see it); touches do not count meanwhile. `ZBUSY` is set by `stageScene` and cleared when the loop comes back (`stageLoop`).
