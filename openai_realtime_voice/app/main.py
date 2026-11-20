@@ -301,6 +301,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
              agenda.AGENDA_BACKEND_HINT,
              "Metins Kalender verwalten (Termine ansehen, eintragen, ändern, löschen; nur für "
              "Metin selbst nach seinem Codewort)"),
+            (self.enable_memory, diary.MERKEN_TOOL, diary.MERKEN_BACKEND_HINT,
+             "dir sofort merken, was dir jemand Wichtiges erzählt (Pläne, Termine, Wünsche)"),
             (self.reminders.available, reminders.OK_TOOL, reminders.OK_BACKEND_HINT,
              "Termin Erinnerungen beenden, wenn Metin OK sagt"),
             (bool(self.code_phrase), FEELINGS.MOOD_TOOL, FEELINGS.MOOD_BACKEND_HINT,
@@ -399,6 +401,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                                 mama=self.messages.from_metin if self.messages.available else None,
                                 mood=self.mood)
         if out:
+            for item in chat.notes_to_remember(out.pop("merken_raw", None)):
+                self.diary.remember(item["text"], "Metin", item["privat"])
             if out["reply"]:
                 self.variety.add([out["reply"]])
             self.diary.chat_turn(message, out["reply"] or "(Leyla schweigt)")

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.120.0 (20 Nov 2026)
+
+- Leyla remembers at once (Metin: she shall not need Claude to learn what he tells her): the live voice has the tool `merken` (`diary.MERKEN_TOOL`; who said it comes from the bridge: code word or known speaker, private only after the code word) and the chat answer a field `merken` (`chat.notes_to_remember`, at most 3). The note goes into her diary right away (`Diary.remember`, source `gemerkt`), so every later chat and talk knows it, also when the diary model after the talk would have skipped it as not important. Before, durable knowledge came only after the talk (summarizer, diary) or from his tap on a proposal.
+
 ## 2.119.1 (20 Nov 2026)
 
 - Zeig dich at night by tempo (Metin: tempo, rhythm and choreography must fit): clips `nacht/zeigen<tempo>` (front poses), `zeigen<tempo>hh` (back to back) and `zeigen<tempo>hf` (back to front) with tempo ruhig, mittel or schnell, measured as body motion per frame. `zeigenChain` picks one tempo and plays three clips: pose, `hinten`, turn back, or `hinten`, pose from behind, turn back; schnell has no back clips and plays three front poses. Replaces the 2.118.1 chain.

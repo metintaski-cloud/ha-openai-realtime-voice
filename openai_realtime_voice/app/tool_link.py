@@ -7,7 +7,7 @@ import asyncio
 import json
 import logging
 
-from app import agenda, cleanup, heart, mood, reminders, costs, fan, inbox, lights, mail, messages, purifier, technik, vacuum
+from app import agenda, cleanup, diary, heart, mood, reminders, costs, fan, inbox, lights, mail, messages, purifier, technik, vacuum
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +59,19 @@ class ToolLinkMixin:
         def mood_gate(args, state):  # code word, or Metin known by his words
             if not (self._only_metin(state) or state.get("metin_known")):
                 return metin_error("Laune")
+
+        def remember_gate(args, state):  # who said it: the bridge knows, not the model
+            names = sorted(state.get("identified") or [])
+            metin = next((n for n in names if n.split()[0] == "Metin"), "")
+            if not metin and (self._only_metin(state) or state.get("metin_known")):
+                metin = "Metin"
+            args["_wer"] = metin or (names[0] if len(names) == 1 else "")
+            args["_privat_ok"] = self._only_metin(state)  # private only after the code word
+
+        async def remember_run(args):
+            ok = self.diary.remember(args.get("text"), args.get("_wer", ""),
+                                     bool(args.get("privat")) and args.get("_privat_ok"))
+            return {"ok": ok}
 
         def mood_after(args, result):
             if self.lamp.mood_pct is not None:  # only in a voice talk after the code word
@@ -122,6 +135,10 @@ class ToolLinkMixin:
                 "label": "Mood", "timeout": 5.0, "run": self.mood.run, "gate": mood_gate,
                 "after": mood_after, "error": "Das ging gerade nicht.",
                 "log": lambda a, r: f"{a.get('aktion')} -> " + str(r.get("stimmung", r.get("error", "")))[:40]},
+            diary.MERKEN_TOOL["name"]: {
+                "label": "Remember", "timeout": 5.0, "run": remember_run, "gate": remember_gate,
+                "error": "Das konnte ich mir gerade nicht merken.",
+                "log": lambda a, r: ("ok " if r.get("ok") else "no ") + (a.get("_wer") or "unknown")},
             messages.TO_METIN_TOOL["name"]: {
                 "label": "Message", "timeout": 20.0, "run": self.messages.to_metin,
                 "error": "Die Nachricht konnte gerade nicht gesendet werden.",

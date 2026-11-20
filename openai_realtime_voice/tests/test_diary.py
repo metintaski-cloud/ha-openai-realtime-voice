@@ -204,3 +204,13 @@ def test_pinned_entries_never_fade_and_have_a_limit(tmp_path, monkeypatch):
         dy.add(dict(e, lang=f"x{i}"), "Metin", "chat", now=NOW + i + 1)
         dy.pin(NOW + i + 1)
     assert "error" in dy.pin(NOW)  # the 21st
+
+
+def test_remember_writes_at_once_and_shows_in_the_note(tmp_path):
+    from app.diary import Diary
+    d = Diary(str(tmp_path / "d.json"))
+    assert d.remember("Metin hat am Montag um 9 Uhr Zahnarzt", "Metin")
+    assert not d.remember("ok", "Metin")
+    assert "Zahnarzt" in d.note("Metin")
+    assert d.remember("Metin vermisst sie", "Metin", private=True)
+    assert "vermisst" not in d.note("Metin") and "vermisst" in d.note("Metin", private=True)

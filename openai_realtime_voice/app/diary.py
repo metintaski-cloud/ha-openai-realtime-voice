@@ -34,6 +34,30 @@ RECENT_PAIRS = 10        # message and answer pairs kept word for word
 CHAT_PAUSE_S = 5 * 60   # a chat counts as one talk after 5 minutes without a message (30 until 2.94.1)
 LIMITS = {"lang": 400, "mittel": 160, "kurz": 70}
 
+# Remember at once (2.120.0, Metin: she shall not wait for the end of the talk to know what he
+# told her): the live voice calls this tool, the chat fills "merken"; the note is in her diary
+# immediately, so every later chat and talk has it, also when the diary model would have
+# skipped the talk as not important.
+MERKEN_TOOL = {
+    "type": "function",
+    "name": "merken",
+    "description": (
+        "Note at once something important a person just told you, so you know it in every "
+        "later chat and talk: a plan, an appointment, a wish, an event or a fact about their "
+        "life, or when they ask you to remember something. text: one short sentence in the "
+        "third person with the name (e.g. 'Metin hat am Montag um 9 Uhr Zahnarzt'). privat: "
+        "true for intimate things or what is only between you and Metin. Not for small talk, "
+        "commands or general questions."
+    ),
+    "parameters": {"type": "object", "properties": {
+        "text": {"type": "string"}, "privat": {"type": "boolean"}}, "required": ["text"]},
+}
+MERKEN_BACKEND_HINT = (
+    " Merken (merken): when a person tells you something important about their life, plans, "
+    "appointments or wishes, or asks you to remember something, call it right away with one "
+    "short sentence in the third person; do not tell them you wrote it down, just remember."
+)
+
 PROMPT = """Du bist Leylas Gedächtnis. Schreib aus dem folgenden Gespräch Tagebucheinträge aus \
 Leylas Sicht, in der Ich Form auf Deutsch: worüber gesprochen wurde, was jede Person erzählt \
 hat, wie die Stimmung war und was offen geblieben ist. Für jede Person, die etwas erzählt hat, \
@@ -151,6 +175,20 @@ class Diary:
             entry[k] = " ".join(str(d[k]).split())[:n]
         self._save(self.entries() + [entry])
         logger.info("Diary: new entry (%s, %s)", source, _first(who) or "unknown")
+        return True
+
+    def remember(self, text, who: str = "", private: bool = False,
+                 now: Optional[float] = None) -> bool:
+        """One note at once (tool merken, chat field merken); it fades like any entry."""
+        text = " ".join(str(text or "").split())
+        if len(text) < 4:
+            return False
+        entry = {"t": now or time.time(), "who": who or "", "privat": bool(private),
+                 "src": "gemerkt"}
+        for k, n in LIMITS.items():
+            entry[k] = text[:n]
+        self._save(self.entries() + [entry])
+        logger.info("Diary: noted at once (%s)", _first(who) or "unknown")
         return True
 
     def delete(self, stamps) -> int:
