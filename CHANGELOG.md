@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.116.0 (20 Nov 2026)
+
+- Her yes to a request (dance, kiss, change, bed, rose) no longer cuts into the running clip: the scene waits for the clean hand over and the white dot in the clip timer shows that she will do it (`stageScene` queues through `ZPEND`; an outfit change waits for its change scene).
+- She dances at night too: `nacht/tanz` to `tanz10` (front to front), plus `tanzhf` (back to front, 7) and `tanzhh` (back to back, 5); a night dance is a chain of four clips by facing (`danceChain`: front to back with `hinten`, then back to back or back to front), always starting and ending facing him.
+
 ## 2.115.3 (20 Nov 2026)
 
 - `POST /api/game_reset` starts the touch game of the week again (hits and won bonus cleared), for tests with Metin; like `/api/moodstats` it needs no code word (home network and Tailscale only).

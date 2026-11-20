@@ -471,9 +471,18 @@ const AUDIO=new Map();let REC=null,RECT=null;
 function playAudio(id){try{const a=new Audio(AUDIO.get(id));a.onplay=()=>stageTalk(true);a.onended=a.onpause=()=>stageTalk(false);a.play().catch(()=>stageTalk(false));}catch(e){}}
 let TALKING=false,DANCING=false;
 const DANCE_N=4;
-function stageScene(n){if(!CLIPS||!STM)return;if(n==='bettvonarbeit'&&!clipVars(n).length&&clipVars('umziehen').length)return stagePlay(['umziehen','bettvonfreizeit'],clipFor(STM));if(!clipVars(n).length)return;if(n.startsWith('tanz'))stageDance(n);else stagePlay([n],clipFor(STM));}
+function stageScene(n){if(!CLIPS||!STM)return;const ok=n==='bettvonarbeit'?(clipVars(n).length||clipVars('umziehen').length):clipVars(n).length;if(!ok)return;
+ if(!CONT&&document.getElementById('stage').classList.contains('vid')){ZBUSY=0;const f=()=>stageSceneNow(n);if(SWAP&&SWAP===STOK){CONT=true;f();CONT=false;}else ZPEND=f;return;}  // her yes waits for the clean hand over, the dot shows it (2.116.0)
+ stageSceneNow(n);}
+function stageSceneNow(n){if(n==='bettvonarbeit'&&!clipVars(n).length&&clipVars('umziehen').length)return stagePlay(['umziehen','bettvonfreizeit'],clipFor(STM));if(!clipVars(n).length)return;if(n.startsWith('tanz'))stageDance(n);else stagePlay([n],clipFor(STM));}
+function danceChain(){const pick=g=>{const v=clipVars(g);return v.length?v[Math.floor(Math.random()*v.length)]:null;},q=[];let back=false;  // night: chain by facing, front to back and back to front (2.116.0, concept "Tanz als Kette")
+ for(let i=0;i<DANCE_N;i++){const last=i===DANCE_N-1;let g;if(back)g=last||Math.random()<.5?'tanzhf':'tanzhh';else g=!last&&Math.random()<.4?'hinten':'tanz';
+  let n=pick(g);for(let k=0;k<4&&n&&q.includes(n);k++)n=pick(g);if(!n){if(back){n=pick('tanzhf');if(!n)break;}else{n=pick('tanz');if(!n)break;}g=back?'tanzhf':'tanz';}
+  q.push(n);back=g==='hinten'||g==='tanzhh';}
+ if(back){const n=pick('tanzhf');if(n)q.push(n);}return q;}
 function stageDance(name){const v=clipVars(name);if(!CLIPS||!STM||!v.length)return;const q=[];let pool=[];
  for(let i=0;i<DANCE_N&&(q.length<v.length||name==='tanz');i++){if(!pool.length)pool=v.filter(n=>n!==q[q.length-1]).sort(()=>Math.random()-0.5);q.push(pool.shift());}
+ if(STM&&STM.outfit==='nacht'&&name==='tanz'&&clipVars('tanzhf').length){q.length=0;q.push(...danceChain());}
  DANCING=true;const next=()=>{const n=q.shift();if(n)stageShow(n,false,next,true);else{DANCING=false;stageLoop(clipFor(STM));}};next();}
 function stageTalk(on){on=!!on;if(on===TALKING||CLIPS===null||!STM)return;TALKING=on;
  const t=STM.low&&clipVars('sprichttraurig').length?'sprichttraurig':'spricht';
@@ -513,7 +522,7 @@ function stageNext(b){if(ZPEND){const f=ZPEND;ZPEND=null;return f();}const sp=ST
 function stagePlay(once,loop){DANCING=false;ZBUSY=0;const q=once.map(n=>{const v=clipVars(n);return v.length?v[Math.floor(Math.random()*v.length)]:null;}).filter(Boolean);const next=()=>{const n=q.shift();if(n)stageShow(n,false,next,true);else stageLoop(loop);};next();}
 function stageMood(st){if(CLIPS===null)return;document.getElementById('stage').classList.toggle('low',!!st.low);let once=[];const o=STM;
  if(!o)once=['begruessung'];if(o){if(o.low&&!st.low)once=['uebergang','kuss'];else if(st.low&&o.low&&(st.cheer||0)>(o.cheer||0))once=['trost'];}
- const changed=!o||once.length||o.mood!==st.mood||o.level!==st.level||o.outfit!==st.outfit;STM=st;if(!o||o.outfit!==st.outfit){const im=document.querySelector('#stage .fig img'),nb=st.outfit==='nacht'&&NIGHTBODY?'/clips/nacht/body.jpg':LOOKBODY;if(nb&&!im.src.endsWith(nb))im.src=nb;}if(changed)stagePlay(once,clipFor(st));}
+ const changed=!o||once.length||o.mood!==st.mood||o.level!==st.level;/* an outfit change waits for its change scene or the next hand over (2.116.0) */STM=st;if(!o||o.outfit!==st.outfit){const im=document.querySelector('#stage .fig img'),nb=st.outfit==='nacht'&&NIGHTBODY?'/clips/nacht/body.jpg':LOOKBODY;if(nb&&!im.src.endsWith(nb))im.src=nb;}if(changed)stagePlay(once,clipFor(st));}
 clipsLoad();
 function stageHello(){if(CLIPS&&STM&&!DANCING)stagePlay(['begruessung'],clipFor(STM));}  // hallo on every open (2.113.1, Metin)
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&document.getElementById('chat').style.display==='block')stageHello();});

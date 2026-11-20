@@ -226,6 +226,7 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Beispiel: vorne nach hinten, hinten nach hinten, hinten nach vorne, vorne nach vorne. Weil es genug Clips mit "hinten nach vorne" gibt, kommt jede Kette am Ende wieder zur Kamera zurück.
 - Dasselbe gilt für Zeigen, Love you und Komm her, die als Glieder in eine Kette passen.
 - Länge: ein Tanz dauert etwa 60 Sekunden (4 Clips à 15 Sekunden). Bittet Metin um mehr, tanzt sie weiter, wenn sie Lust hat.
+- Umgesetzt für das Nachtoutfit in 2.116.0 (vorne nach vorne, vorne nach hinten, hinten nach hinten, hinten nach vorne, immer vorne endend).
 
 ### Freizeit vorerst (Metin, 19.11.2026)
 - Freizeit bleibt offen, obwohl es dort noch keine Szenen gibt: sie kann von Arbeit zu Freizeit und von Freizeit ins Nacht Outfit wechseln, die Wechsel passen.
