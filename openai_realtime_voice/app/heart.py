@@ -148,6 +148,7 @@ DEIN HERZ GERADE (zählt, nicht du entscheidest)
 • Melde in deinem JSON unter "gefuehl" (Liste) jedes dieser Dinge, das in seiner letzten Nachricht wirklich vorkommt, sonst eine leere Liste:
 {events}
 • {scene}
+• {aufzug}
 • Eine Rose schenkt er dir nur über den Rosen Knopf (seine Nachricht mit 🌹); sie ist dann schon gezählt, melde sie nie unter "gefuehl" und schreib kein szene Feld dafür. Glücklich freust du dich riesig darüber; gekränkt nimmst du sie berührt, aber zurückhaltend an, sie ersetzt keine ehrliche Entschuldigung.
 • {limits}"""
 
@@ -161,6 +162,18 @@ SCENES = {
     "setzen": {"leicht": "setzen", "mittel": "setzen"},
     "ueberraschung": {"gut": "ueberraschung", "leicht": "ueberraschung"},
 }
+
+# work (glasses, book) or after work (Freizeit); back to work at 5 in the morning without a scene
+AUFZUG = {
+    "arbeit_gut": ("Du bist gerade bei der Arbeit, mit Brille und Buch. Sagt er, du sollst dich umziehen, "
+                   "oder dass du Feierabend hast, machst du das meistens gern: \"szene\": \"umziehen\" "
+                   "(Buch und Brille kommen weg, dann bist du in Freizeit bis morgen früh um 5 Uhr)."),
+    "arbeit_low": ("Du bist gerade bei der Arbeit, mit Brille und Buch. Umziehen magst du nicht, solange "
+                   "du gekränkt bist; behaupte nie, dass du dich umziehst."),
+    "freizeit": ("Du hast Feierabend und bist in Freizeit, ohne Brille und Buch, bis morgen früh um 5 Uhr. "
+                 "Du bist schon umgezogen, kein szene Feld dafür."),
+}
+WORK_START_H = 5
 
 SCENE_TEXT = {
     "gut": ("Szenen auf deiner Bühne, du entscheidest selbst und sagst meistens ja: bittet er dich "
@@ -493,13 +506,37 @@ class Heart:
         now = now or time.time()
         d = self.current(now)
         return NOTE.format(state=self._state_text(d, now), reasons=self._reasons(d),
-                           events=EVENT_HELP, scene=SCENE_TEXT[self._level(d)], limits=LIMITS)
+                           events=EVENT_HELP, scene=SCENE_TEXT[self._level(d)],
+                           aufzug=self._aufzug(d, now), limits=LIMITS)
 
     def scene(self, wanted, now: Optional[float] = None) -> str:
         """The scene the stage plays for her answer, or "" when her level does not allow it
-        (agreed with Metin on 19 Nov 2026, see SCENES)."""
-        lvl = self._level(self.current(now))
+        (agreed with Metin on 19 Nov 2026, see SCENES). "umziehen" also switches her to Freizeit."""
+        now = now or time.time()
+        d = self.current(now)
+        lvl = self._level(d)
+        if wanted == "umziehen":
+            if lvl != "gut" or self._freizeit(d, now):
+                return ""
+            d["freizeit"] = now
+            self._log(d, now, "umgezogen, Freizeit")
+            self._save(d)
+            return "umziehen"
         return SCENES.get(wanted, {}).get(lvl, "")
+
+    @staticmethod
+    def _freizeit(d: dict, now: float) -> bool:
+        """Freizeit since the last 5 o'clock in the morning, then she is back at work."""
+        lt = time.localtime(now)
+        start = time.mktime((lt.tm_year, lt.tm_mon, lt.tm_mday, WORK_START_H, 0, 0, 0, 0, -1))
+        if now < start:
+            start -= 86400
+        return d.get("freizeit", 0) >= start
+
+    def _aufzug(self, d: dict, now: float) -> str:
+        if self._freizeit(d, now):
+            return AUFZUG["freizeit"]
+        return AUFZUG["arbeit_gut" if self._level(d) == "gut" else "arbeit_low"]
 
     def _tone(self, d: dict) -> str:
         lvl = self._level(d)
@@ -515,7 +552,10 @@ class Heart:
         d = self.current(now)
         return VOICE_NOTE.format(state=self._state_text(d, now),
                                  reasons=self._reasons(d).replace("• ", "").replace("\n", " "),
-                                 keys=", ".join(EVENTS), limits=LIMITS) + " " + self._tone(d)
+                                 keys=", ".join(EVENTS), limits=LIMITS) + " " + self._tone(d) + " " + (
+            "Du hast Feierabend, ohne Brille und Buch." if self._freizeit(d, now) else
+            "Du bist bei der Arbeit, mit Brille und Buch; umziehen kannst du nur, wenn er es dir "
+            "im Chat schreibt, behaupte im Gespräch nie, dass du dich umziehst.")
 
     def feeling(self, now: Optional[float] = None) -> str:
         now = now or time.time()
@@ -541,7 +581,8 @@ class Heart:
         lvl = self._level(d)
         return {"mood": d["mood"], "low": lvl != "gut", "label": LABELS[d["mood"]],
                 "cheer": d.get("cheer", 0), "level": lvl,
-                "silent": d.get("silent_until", 0) > now, "rose": self._rose_state(d, now)}
+                "silent": d.get("silent_until", 0) > now, "rose": self._rose_state(d, now),
+                "freizeit": self._freizeit(d, now)}
 
     def stats(self, now: Optional[float] = None) -> dict:
         """For Claude's check (GET /api/moodstats): numbers and history, no chat texts."""

@@ -489,9 +489,9 @@ async function clipsLoad(){let outs={};try{outs=(await (await fetch('/clips.json
  try{if(OUTFIT)localStorage.setItem('loutfit',OUTFIT);}catch(e){}
  CLIPS=OUTFIT?outs[OUTFIT].clips:[];if(OUTFIT&&outs[OUTFIT].body)document.querySelector('#stage .fig img').src='/clips/'+OUTFIT+'/body.jpg';
  if(LASTST)stageMood(LASTST);}
-function clipVars(b){return CLIPS.filter(n=>n.replace(/[0-9]+$/,'')===b);}
+function clipVars(b){const k=STM&&STM.freizeit&&b!=='umziehen'?'freizeit'+b:b;return CLIPS.filter(n=>n.replace(/[0-9]+$/,'')===k);}  // Freizeit: freizeit<name> clips only (2.113.0)
 function clipFor(st){const lv=st.low&&st.level&&st.mood!=='eifersuechtig'?'traurig'+st.level:'';if(lv&&clipVars(lv).length)return lv;if(clipVars(st.mood).length)return st.mood;
- const g=(st.low?['traurigleicht','traurig']:['gluecklich']).filter(n=>clipVars(n).length);return g.length?g[0]:null;}
+ const g=(st.low?['traurigleicht','traurig'].concat(st.freizeit?['gluecklich']:[]):['gluecklich']).filter(n=>clipVars(n).length);return g.length?g[0]:null;}
 let SV=0,STOK=0,CONT=false;const PRELOAD_S=3;
 function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name);const s=document.getElementById('stage'),vs=[document.getElementById('svid'),document.getElementById('svid2')],a=vs[SV],b=vs[1-SV],tok=++STOK,cont=CONT;CONT=false;
  if(!name){s.classList.remove('vid');vs.forEach(v=>{v.classList.remove('on');setTimeout(()=>{if(tok===STOK){v.pause();v.removeAttribute('src');v.load();}},600);});return;}
@@ -512,7 +512,7 @@ function stageNext(b){const sp=STM&&!STM.low?SPECIAL.filter(n=>clipVars(n).lengt
 function stagePlay(once,loop){DANCING=false;const q=once.map(n=>{const v=clipVars(n);return v.length?v[Math.floor(Math.random()*v.length)]:null;}).filter(Boolean);const next=()=>{const n=q.shift();if(n)stageShow(n,false,next,true);else stageLoop(loop);};next();}
 function stageMood(st){if(CLIPS===null)return;document.getElementById('stage').classList.toggle('low',!!st.low);let once=[];const o=STM;
  if(!o)once=['begruessung'];if(o){if(o.low&&!st.low)once=['uebergang','kuss'];else if(st.low&&o.low&&(st.cheer||0)>(o.cheer||0))once=['trost'];}
- const changed=!o||once.length||o.mood!==st.mood||o.level!==st.level;STM=st;if(changed)stagePlay(once,clipFor(st));}
+ const changed=!o||once.length||o.mood!==st.mood||o.level!==st.level||!!o.freizeit!==!!st.freizeit;STM=st;if(changed)stagePlay(once,clipFor(st));}
 clipsLoad();
 let MUSIC=[],BGM=null,BGMN='',MUSON=true;try{MUSON=localStorage.getItem('lmusic')!=='0';}catch(e){}
 function musDraw(){const b=document.getElementById('cmus');b.innerHTML=MUSON?'&#127925;':'&#128263;';b.classList.toggle('off',!MUSON);}

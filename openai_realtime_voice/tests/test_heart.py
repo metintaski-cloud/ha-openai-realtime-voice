@@ -270,3 +270,27 @@ def test_rose_not_taken_when_silent_and_not_used_up(tmp_path):
     r = h.give_rose(t + 60)
     assert not r["ok"] and r["rose"] == "blocked"
     assert "rose" not in heart.EVENTS
+
+
+def test_umziehen_switches_to_freizeit_until_five(tmp_path):
+    import time as _t
+    h = heart.Heart(str(tmp_path / "h.json"))
+    t = _t.mktime((2026, 11, 20, 18, 0, 0, 0, 0, -1))
+    assert h.status(t)["freizeit"] is False
+    assert "umziehen" in h.note(t)
+    assert h.scene("umziehen", t) == "umziehen"
+    assert h.status(t + 60)["freizeit"] is True
+    assert h.scene("umziehen", t + 120) == ""  # already changed
+    assert "Feierabend" in h.note(t + 180)
+    assert h.status(t + 3600 * 10)["freizeit"] is True   # 04:00 next day
+    assert h.status(t + 3600 * 11 + 60)["freizeit"] is False  # after 05:00
+
+
+def test_umziehen_not_while_hurt(tmp_path):
+    import time as _t
+    h = heart.Heart(str(tmp_path / "h.json"))
+    t = _t.mktime((2026, 11, 20, 18, 0, 0, 0, 0, -1))
+    h.apply(["unfreundlich"], t)
+    assert h.scene("umziehen", t + 1) == ""
+    assert h.status(t + 2)["freizeit"] is False
+    assert "behaupte nie" in h.note(t + 3)

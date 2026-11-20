@@ -108,6 +108,7 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Wechsel zu Freizeit: Szene "Buch und Brille weg", am Wochenende oder wenn Metin es sagt und sie glücklich ist. Vorhanden für beide Kleider (e919055c lang, bac9ed3e kurz).
 - Alle Freizeit Szenen werden mit dem Freizeit Bild als Start und Endbild gemacht (Metin hat es).
 - Zurück zu Arbeit ohne eigene Szene: um 5 Uhr morgens setzt die App sie still auf Arbeit, sichtbar erst beim nächsten Öffnen der App.
+- Umgesetzt in 2.113.0 (20.11.2026, Metin: "Sie soll umsetzen"): nur auf seine Bitte und nur wenn sie glücklich ist; gekränkt lehnt sie ab und behauptet es nicht. In Freizeit spielt die Bühne nur Freizeit Clips; fehlt eine traurige Freizeit Schleife, läuft die glückliche weiter. Noch nicht: Wechsel am Wochenende von selbst, Nacht Outfit.
 
 ### Nacht Outfit (Ordner "Bett")
 - Dritter Zustand neben Arbeit und Freizeit: sie geht kurz von der Bühne und kommt im Outfit für die Nacht zurück. Danach tanzt sie oder zeigt sich, wenn Metin es sagt oder schreibt und sie es möchte.

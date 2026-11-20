@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.113.0 (20 Nov 2026)
+
+- She can change into Freizeit now (scene concept stage 2, first part): when Metin tells her to change or that she has Feierabend and she is good, the model writes `"szene": "umziehen"`, `Heart.scene` switches her to Freizeit (`freizeit` timestamp, status field `freizeit`) and the stage plays `umziehen` (book and glasses away), then her Freizeit loop. Back to work at 5 in the morning without a scene. Hurt she does not change and must not claim it. In Freizeit the stage only uses `freizeit<name>` clips (`clipVars`); a missing sad Freizeit loop falls back to the happy one.
+- New clips per look: `umziehen`, `freizeitgluecklich`; long dress also `freizeitbegruessung`, short dress `freizeitgesicht` (tap zone face).
+
 ## 2.112.5 (20 Nov 2026)
 
 - Only the kiss, rose and komm clips play their sound now; every other clip plays silent (Metin's wish, `SND_RE` in the stage script). The files keep their sound, the page mutes them.
