@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.114.10 (20 Nov 2026)
+
+- A white dot in the middle of the clip timer shows that a touch was noticed (Metin); it stays while her touch clip waits and plays and goes out when a new touch would count again.
+
 ## 2.114.9 (20 Nov 2026)
 
 - The microphone is a pill like Live ("🎤 Mikro", while recording "■ Stopp") at the top right above Live (Metin); below it Live, the rose and music. The round button at the bottom is gone, Neuer Chat stays left and ⌨ right.
