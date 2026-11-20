@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.112.3 (20 Nov 2026)
+
+- Chat header: Live sits top right, the rose button below it, the music button below that (Metin's wish).
+- The profile circle is really gone now; a layout rule for the second header block still matched it and kept it visible.
+
 ## 2.112.2 (20 Nov 2026)
 
 - The mood label ("verliebt" and so on) is gone from the chat header too (Metin: he notices her mood without it); her mood still shows on the stage and in her words.
