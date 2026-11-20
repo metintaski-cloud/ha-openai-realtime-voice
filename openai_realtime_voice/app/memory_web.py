@@ -532,11 +532,13 @@ function stageView(){stageFit();const ch=document.getElementById('chat');if(ch.s
 window.addEventListener('resize',stageFit);if(window.visualViewport)visualViewport.addEventListener('resize',stageView);
 document.getElementById('ctext').addEventListener('focus',()=>setTimeout(stageView,300));
 document.getElementById('stage').addEventListener('contextmenu',e=>e.preventDefault());
-const ZONES=[['gesicht',.02,.17],['brust',.17,.32],['bauch',.32,.44],['po',.44,.58]],ZX=[.30,.72],ZLAST={};
+const ZONES=[['gesicht',.02,.17],['brust',.17,.32],['bauch',.32,.44],['po',.44,.58]],ZX=[.30,.72],ZLAST={},ZPRE={po:'hinten'};  // night po clips start from behind: she turns away first (2.114.2)
 function zoneAt(ev){const st=document.getElementById('stage').getBoundingClientRect(),ar=1176/1764;let w=st.width,h=w/ar;if(h<st.height){h=st.height;w=h*ar;}
  const x=(ev.clientX-st.left-(st.width-w)/2)/w,y=(ev.clientY-st.top-(st.height-h)/2)/h;if(x<ZX[0]||x>ZX[1])return null;const z=ZONES.find(z=>y>=z[1]&&y<z[2]);return z?z[0]:null;}
 document.getElementById('stage').onclick=ev=>{if(!CLIPS||!STM||STM.low)return;const z=zoneAt(ev);if(!z)return;const v=clipVars(z);if(!v.length)return;
- const o=v.length>1?v.filter(n=>n!==ZLAST[z]):v,n=o[Math.floor(Math.random()*o.length)];ZLAST[z]=n;DANCING=false;stageShow(n,false,()=>stageLoop(clipFor(STM)),true);};
+ const o=v.length>1?v.filter(n=>n!==ZLAST[z]):v,n=o[Math.floor(Math.random()*o.length)];ZLAST[z]=n;DANCING=false;
+ const pre=ZPRE[z]&&clipVars(ZPRE[z]);if(pre&&pre.length){const h=pre[Math.floor(Math.random()*pre.length)];return stageShow(h,false,()=>stageShow(n,false,()=>stageLoop(clipFor(STM)),true),true);}
+ stageShow(n,false,()=>stageLoop(clipFor(STM)),true);};
 
 document.getElementById('crose').onclick=async()=>{const st=LASTST||{};
  if(st.rose==='used'){CHAT.push({role:'info',text:'🌹 Diese Woche hast du ihr schon eine Rose geschenkt.'});chatDraw();return;}

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.114.2 (20 Nov 2026)
+
+- Night tap on her bottom: she first turns away with one of four front to back clips (`nacht/hinten` to `hinten4`, from "Bett. Glücklich. Tanzen" and "Bett. Tanzen. F. Nach. H"), then one of four back to front po clips (`nacht/po` to `po4`: bett_po, bett_po2, bett_hinten_nach_vorne, bett_hallo_hinten_nach_vorne) brings her back to the front (`ZPRE`).
+
 ## 2.114.1 (20 Nov 2026)
 
 - Night loop: `nacht/gluecklich` and `gluecklich2` (Metin's calm clips of 20 Nov 2026). While she is low in Freizeit or at night the happy loop of that outfit plays until sad clips exist.
