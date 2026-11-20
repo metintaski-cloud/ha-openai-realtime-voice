@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.112.1 (20 Nov 2026)
+
+- The round profile picture with its heart badge is gone from the chat header (Metin: it took space and covered her face); the mood label stays.
+
 ## 2.112.0 (20 Nov 2026)
 
 - Full screen stage (Metin: the clip must fill the screen, everything else lies on top, nothing may scroll): on the start page with the code word the chat is fixed over the whole screen (`body.chatfull`, `#chat` position fixed, page scrolling off), the clip fills it with `object-fit: cover` (on a phone only the misty sides are cut, her whole figure stays), no more 0.97 scale; the buttons, messages and microphone lie on top as before. A ☰ button in the chat header (`#cmenu`) opens the menu, which now floats above the chat. `zoneAt` maps taps through `cover`.
