@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.112.5 (20 Nov 2026)
+
+- Only the kiss, rose and komm clips play their sound now; every other clip plays silent (Metin's wish, `SND_RE` in the stage script). The files keep their sound, the page mutes them.
+
 ## 2.112.4 (20 Nov 2026)
 
 - The chat counter ("Noch 10 von 20") is hidden too (Metin's wish); the limit itself still works.
