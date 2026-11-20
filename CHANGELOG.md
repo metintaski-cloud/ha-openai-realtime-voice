@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.117.5 (20 Nov 2026)
+
+- Background music loops without the short stop (Metin): it plays through the Web Audio API as a looping buffer (`bgmBuf`, `BGSRC.loop`), with the silent padding the AAC encoder adds at start and end cut from the loop (`loopStart`, `loopEnd`); the `<audio loop>` element paused for a moment at every loop point. Pausing suspends the audio context, so the song goes on where it stopped.
+
 ## 2.117.4 (20 Nov 2026)
 
 - Three night clips that mix belly and bottom reactions (Metin) play for a touch on either spot: `nacht/mix` to `mix3` (`ZEXTRA`: po also takes `povorne` and `mix`, bauch takes `mix`; no turn first).
