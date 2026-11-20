@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.114.1 (20 Nov 2026)
+
+- Night loop: `nacht/gluecklich` and `gluecklich2` (Metin's calm clips of 20 Nov 2026). While she is low in Freizeit or at night the happy loop of that outfit plays until sad clips exist.
+
 ## 2.114.0 (20 Nov 2026)
 
 - She goes to bed on request: when Metin sends her to bed or says good night and she is good, the model writes `"szene": "bett"`, `Heart.scene` switches her outfit to `nacht` (status field `outfit`: arbeit, freizeit or nacht, replaces `freizeit`; back to arbeit at 5 in the morning) and the stage plays `bettvonarbeit` or `bettvonfreizeit` of her look. The long dress has no direct change from work, so the page plays `umziehen` and then `bettvonfreizeit`.
