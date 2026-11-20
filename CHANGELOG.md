@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.117.3 (20 Nov 2026)
+
+- More bottom touch clips (Metin's 10 s clips of 20 Nov 2026, still frames trimmed): Freizeit `schwarz/freizeitpo`, `freizeitpo2`, `kurz/freizeitpo` to `freizeitpo3`, and at night `nacht/povorne`, `povorne2`, which start facing him, so the page plays them without turning her away first (`ZPRE` only for the back start `po` clips).
+
 ## 2.117.2 (20 Nov 2026)
 
 - The ⌨ button and its toggle are gone (Metin: tapping the text field brings up the keyboard anyway); the text field sits at the very bottom with Senden and Neuer Chat to its right (Metin), the chat bubbles end just above it.

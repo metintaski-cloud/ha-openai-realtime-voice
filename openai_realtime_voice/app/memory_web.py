@@ -571,10 +571,10 @@ async function zGame(z,miss){if(!miss)ZGOLD=Date.now()+1500;let j=null;try{j=awa
   const free=!on||Date.now()<flash;let p=1;if(!free&&v.duration)p=Math.min(1,v.currentTime/Math.max(.1,v.duration-.8));
   d.classList.toggle('go',free);d.classList.toggle('hit',!!ZPEND||Date.now()<ZBUSY);d.classList.toggle('gold',Date.now()<ZGOLD);fg.setAttribute('stroke-dashoffset',(75.4*(1-(free?1:p))).toFixed(1));},100);})();  // the touch is noted at once and plays when the running clip hands over, so the poses match (2.114.7, Metin)
 function zRing(ev){const st=document.getElementById('stage'),r=st.getBoundingClientRect(),d=document.createElement('div');d.className='zring';d.style.left=(ev.clientX-r.left)+'px';d.style.top=(ev.clientY-r.top)+'px';st.appendChild(d);setTimeout(()=>d.remove(),900);}
-document.getElementById('stage').onpointerdown=ev=>{if(ev.button>0||Date.now()-ZT<700||ZPEND||Date.now()<ZBUSY)return;ZT=Date.now();if(!CLIPS||!STM||STM.low)return;const z=zoneAt(ev);if(!z)return;const v=clipVars(z);if(!v.length)return;ZBUSY=Date.now()+60000;zRing(ev);
+document.getElementById('stage').onpointerdown=ev=>{if(ev.button>0||Date.now()-ZT<700||ZPEND||Date.now()<ZBUSY)return;ZT=Date.now();if(!CLIPS||!STM||STM.low)return;const z=zoneAt(ev);if(!z)return;const v=clipVars(z).concat(z==='po'?clipVars('povorne'):[]);if(!v.length)return;ZBUSY=Date.now()+60000;zRing(ev);
  {const g=(STM&&STM.game)||{};if(!g.done){if(ZT_GREEN()){if(!(g.hits||[]).includes(z))zGame(z);}else if((g.hits||[]).length)zGame(z,true);}}
  const o=v.length>1?v.filter(n=>n!==ZLAST[z]):v,n=o[Math.floor(Math.random()*o.length)];ZLAST[z]=n;
- const pre=ZPRE[z]&&clipVars(ZPRE[z]),h=pre&&pre.length?pre[Math.floor(Math.random()*pre.length)]:'';
+ const pre=ZPRE[z]&&!/povorne/.test(n)&&clipVars(ZPRE[z]),h=pre&&pre.length?pre[Math.floor(Math.random()*pre.length)]:'';  /* povorne clips start facing him, no turn first (2.117.3) */
  const go=()=>{DANCING=false;ZBUSY=Date.now()+40000;if(h)return stageShow(h,false,()=>stageShow(n,false,zDone,true),true);stageShow(n,false,zDone,true);};
  if(SWAP&&SWAP===STOK){CONT=true;go();CONT=false;}else if(document.getElementById('stage').classList.contains('vid'))ZPEND=go;else go();};  // a hand over already waiting: take its place
 
