@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.114.9 (20 Nov 2026)
+
+- The microphone is a pill like Live ("🎤 Mikro", while recording "■ Stopp") at the top right above Live (Metin); below it Live, the rose and music. The round button at the bottom is gone, Neuer Chat stays left and ⌨ right.
+
 ## 2.114.8 (20 Nov 2026)
 
 - Clip timer top left under the menu button (Metin): a small circle whose red ring fills as the running clip goes on and turns green for a second when a new clip begins, so he sees when a touch will start. No numbers. Green also while no clip runs (a touch starts at once).
