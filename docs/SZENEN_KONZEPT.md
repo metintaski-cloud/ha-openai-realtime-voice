@@ -257,4 +257,4 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 
 ### Tippstellen (Metin, 20.11.2026)
 - Statt eines großen unsichtbaren Tippfelds bekommt die Bühne kleine Tippstellen auf ihrem Körper: Gesicht, Brust, Bauch, Po. Jede Stelle hat eigene Clips je Kleid (Prompts von Claude, Clips macht Metin). Überall sonst passiert beim Tippen nichts.
-- Hat eine Stelle mehrere Clips, laufen sie der Reihe nach, nicht zufällig: erster Tipp erster Clip, zweiter Tipp zweiter Clip (Metins Beispiel Nacht Outfit Po: erst bett_po, in dem sie zweimal mit dem Finger nein zeigt, beim zweiten Tippen bett_po2).
+- Hat eine Stelle mehrere Clips, laufen sie der Reihe nach, nicht zufällig: erster Tipp erster Clip, zweiter Tipp zweiter Clip (Metins Beispiel Nacht Outfit Po: erst bett_po, sie droht mit einem Finger, beim zweiten Tippen bett_po2, sie zeigt mit beiden Händen zwei Finger, also zweimal nein).
