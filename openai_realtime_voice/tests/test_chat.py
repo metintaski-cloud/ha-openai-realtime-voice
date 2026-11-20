@@ -320,7 +320,7 @@ def test_notes_to_remember_takes_strings_and_objects():
     from app import chat as c
     got = c.notes_to_remember(["Metin hat Montag frei", {"text": "geheim", "privat": True},
                                 {"text": ""}, 5, "a", "x4", "y5", "z6"])
-    assert got[0] == {"text": "Metin hat Montag frei", "privat": False}
-    assert got[1] == {"text": "geheim", "privat": True}
+    assert got[0] == {"text": "Metin hat Montag frei", "privat": False, "datum": "", "uhrzeit": ""}
+    assert got[1]["privat"] is True and got[1]["text"] == "geheim"
     assert len(got) <= 3
     assert c.notes_to_remember(None) == []

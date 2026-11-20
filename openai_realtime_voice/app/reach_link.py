@@ -40,7 +40,9 @@ class ReachMixin:
         return persona.build([], fan=False, tv=False, messages=False, extra=self.instructions)
 
     async def _reach_notes(self) -> str:
-        return self.diary.note("Metin", private=True) + self.variety.note()
+        # a noted plan of his that is over: her own message may ask how it went (2.121.0)
+        return (self.diary.note("Metin", private=True) + self.variety.note()
+                + self.diary.followup_note("Metin", private=True))
 
     async def _reach_write(self, prompt: str) -> str:
         return await textmodel.ask(

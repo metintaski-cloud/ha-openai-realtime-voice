@@ -384,6 +384,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         open_note = self.ideas.open_note()  # her open question comes back until answered
         rules += open_note
         rules += (self.diary.note("Metin", private=True) + self.variety.note()
+                  + self.diary.followup_note("Metin", private=True)
                   + await self.reminders.followup_note())
         live = self._live_talk_text()
         if live:  # Metin talks with her at home right now: the chat knows it at once
@@ -402,7 +403,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                                 mood=self.mood)
         if out:
             for item in chat.notes_to_remember(out.pop("merken_raw", None)):
-                self.diary.remember(item["text"], "Metin", item["privat"])
+                self.diary.remember(item["text"], "Metin", item["privat"],
+                                    ask_at=diary.event_time(item["datum"], item["uhrzeit"]))
             if out["reply"]:
                 self.variety.add([out["reply"]])
             self.diary.chat_turn(message, out["reply"] or "(Leyla schweigt)")
@@ -621,6 +623,9 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             asked = self.ideas.voice_note()
             if asked:
                 await self._send_note(live_ws, "open", "Interne Notiz, nicht vorlesen." + asked)
+        mine = self.diary.followup_note(name, private=bool(state.get("unlocked")))
+        if mine:  # a noted plan of this person is over: she asks how it went (2.121.0)
+            await self._send_note(live_ws, "follow", "Interne Notiz, nicht erwähnen." + mine)
         if name.split()[0] == "Metin":  # how did his appointment go? (once per appointment)
             follow = await self.reminders.followup_note()
             if follow:

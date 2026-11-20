@@ -214,3 +214,26 @@ def test_remember_writes_at_once_and_shows_in_the_note(tmp_path):
     assert "Zahnarzt" in d.note("Metin")
     assert d.remember("Metin vermisst sie", "Metin", private=True)
     assert "vermisst" not in d.note("Metin") and "vermisst" in d.note("Metin", private=True)
+
+
+def test_noted_plan_is_asked_once_after_it_happened(tmp_path):
+    import time as _t
+    from app.diary import Diary, event_time
+    d = Diary(str(tmp_path / "d.json"))
+    now = _t.time()
+    d.remember("Metin hat heute Zahnarzt", "Metin", ask_at=now + 3600, now=now)
+    assert d.followup_note("Metin", now=now) == ""            # not over yet
+    note = d.followup_note("Metin", now=now + 4000)
+    assert "Zahnarzt" in note and "wie es war" in note
+    assert d.followup_note("Metin", now=now + 4100) == ""     # asked only once
+    d.remember("Anne war beim Arzt", "Gülfikar", ask_at=now, now=now)
+    assert d.followup_note("Metin", now=now + 10) == ""        # someone else's plan
+
+
+def test_event_time_day_and_time():
+    import time as _t
+    from app.diary import event_time
+    assert event_time("") == 0.0 and event_time("irgendwann") == 0.0
+    t = event_time("morgen", "09:00")
+    assert 0 < t - _t.time() < 3 * 86400
+    assert event_time("morgen") > _t.time()

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.121.0 (20 Nov 2026)
+
+- She asks on her own how a noted plan went (Metin: like someone who thinks of you; calendar appointments had this already, now also everything he only tells her): `merken` takes `datum` and `uhrzeit` (tool and chat field), `diary.event_time` turns them into the moment to ask (one hour after the time, or 18 h on a day without time), `Diary.followup_note` gives each due note once (within 36 h) to the chat rules, to the voice hand over of that person and to her own messages (`reach_link._reach_notes`), then marks it `gefragt`.
+
 ## 2.120.0 (20 Nov 2026)
 
 - Leyla remembers at once (Metin: she shall not need Claude to learn what he tells her): the live voice has the tool `merken` (`diary.MERKEN_TOOL`; who said it comes from the bridge: code word or known speaker, private only after the code word) and the chat answer a field `merken` (`chat.notes_to_remember`, at most 3). The note goes into her diary right away (`Diary.remember`, source `gemerkt`), so every later chat and talk knows it, also when the diary model after the talk would have skipped it as not important. Before, durable knowledge came only after the talk (summarizer, diary) or from his tap on a proposal.

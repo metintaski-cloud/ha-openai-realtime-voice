@@ -52,7 +52,7 @@ NOCH OFFEN (was du noch nicht weißt)
 Antworte nur mit JSON in dieser Form und sonst nichts:
 {{"reply": "deine Antwort", "question": "deine neugierige Frage an Metin", "proposals": [{{"action": "add|edit|delete|move", "kind": "family|friends|leyla|private", "to": "Zielliste (nur bei move)", "old": "genauer bisheriger Eintrag (bei edit, delete und move)", "new": "neuer Eintrag (bei add und edit)"}}]}}
 "question" füllst du nur, wenn eine Frage wirklich passt: eine einzige lockere, persönliche Frage, wie eine Freundin sie stellt, höchstens bei jeder zweiten Antwort. Hat deine letzte Antwort schon gefragt oder verabschiedet Metin sich, bleibt sie leer. "proposals" ist leer, wenn es nichts zu ändern gibt. Sollst du Lampen schalten, kommt zusätzlich "lights": [...] dazu.
-Erzählt Metin dir etwas Wichtiges (einen Plan, Termin, Wunsch, ein Ereignis oder etwas aus seinem Leben) oder bittet er dich, dir etwas zu merken, kommt zusätzlich "merken": [{{"text": "ein kurzer Satz in der dritten Person, z. B. Metin hat am Montag Zahnarzt", "privat": true oder false}}] dazu. Das merkst du dir sofort, ohne Ja, für alle späteren Gespräche, auch zu Hause; privat ist true für Intimes und alles, was nur zwischen euch ist. Kleinkram und Befehle nicht."""
+Erzählt Metin dir etwas Wichtiges (einen Plan, Termin, Wunsch, ein Ereignis oder etwas aus seinem Leben) oder bittet er dich, dir etwas zu merken, kommt zusätzlich "merken": [{{"text": "ein kurzer Satz in der dritten Person, z. B. Metin hat am Montag Zahnarzt", "privat": true oder false, "datum": "nur wenn es an einem Tag passiert: JJJJ-MM-TT, TT.MM., heute, morgen oder Wochentag", "uhrzeit": "HH:MM oder leer"}}] dazu; ist es vorbei, fragst du von selbst, wie es war. Das merkst du dir sofort, ohne Ja, für alle späteren Gespräche, auch zu Hause; privat ist true für Intimes und alles, was nur zwischen euch ist. Kleinkram und Befehle nicht."""
 
 
 LIGHTS_NOTE = """
@@ -125,7 +125,8 @@ def notes_to_remember(raw) -> list[dict]:
         if isinstance(x, str):
             x = {"text": x}
         if isinstance(x, dict) and isinstance(x.get("text"), str) and len(x["text"].strip()) >= 4:
-            out.append({"text": x["text"].strip()[:400], "privat": x.get("privat") is True})
+            out.append({"text": x["text"].strip()[:400], "privat": x.get("privat") is True,
+                        "datum": str(x.get("datum") or ""), "uhrzeit": str(x.get("uhrzeit") or "")})
     return out[:3]
 
 

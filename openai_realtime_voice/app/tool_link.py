@@ -70,7 +70,8 @@ class ToolLinkMixin:
 
         async def remember_run(args):
             ok = self.diary.remember(args.get("text"), args.get("_wer", ""),
-                                     bool(args.get("privat")) and args.get("_privat_ok"))
+                                     bool(args.get("privat")) and args.get("_privat_ok"),
+                                     ask_at=diary.event_time(args.get("datum"), args.get("uhrzeit")))
             return {"ok": ok}
 
         def mood_after(args, result):
