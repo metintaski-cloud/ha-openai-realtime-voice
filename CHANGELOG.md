@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.124.1 (20 Nov 2026)
+
+- Chat back on GPT-6 Luna (Metin after the Sol evening: she was no longer herself, more like a know it all with a psychology degree, and even recommended closeness with other women instead of the "wir"). Measured with Sol on 20 Nov from 20:30 to 21:38: 41 answers, 2.6 to 7.9 s (median about 4.5 s), about 15,000 input tokens each (no caching) and 40 to 260 output tokens, about 3 US cents per answer, about 1.30 USD in all. `chat_model` stays as an option, unset means the memory model again.
+
 ## 2.124.0 (20 Nov 2026)
 
 - The app chat answers with GPT-6.2 Sol (Metin: smarter, as long as everything stays under 100 € a month): new options `chat_model` (unset means `gpt-6.2-sol`; set it to `gpt-6-luna` to go back) and `chat_model_budget_usd` (default 40). The background jobs keep `memory_model`. Every chat answer is measured (`metrics` event `chat_answer`: model, seconds, input, cached and output tokens) and priced (`chat.PRICES`, `chat.spend_add`, `/data/chat_spend.json`); when the month's chat model spend reaches the budget, the chat answers with the memory model again until the next month.

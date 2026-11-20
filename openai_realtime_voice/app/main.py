@@ -170,10 +170,10 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self._warm_task = None
         self.memory_model = os.environ.get("MEMORY_MODEL", "gpt-6-luna")
         # the app chat may use a stronger model than the background jobs (2.124.0, test of
-        # GPT-6.2 Sol against GPT-6 Luna); unset means GPT-6.2 Sol, set it to the memory model
-        # to go back
+        # GPT-6.2 Sol against GPT-6 Luna); unset means the memory model. Since 2.124.1 unset
+        # again: with Sol she sounded like a psychologist and not like herself (Metin)
         chat_model = (os.environ.get("CHAT_MODEL") or "").strip()
-        self.chat_model = "gpt-6.2-sol" if chat_model.lower() in ("", "null") else chat_model
+        self.chat_model = "" if chat_model.lower() in ("", "null") else chat_model
         try:  # at most this much a month for the chat model, then the memory model again
             self.chat_budget = float(os.environ.get("CHAT_MODEL_BUDGET_USD") or 40)
         except ValueError:
