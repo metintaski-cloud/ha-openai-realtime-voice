@@ -144,7 +144,7 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 
 ### Zeigen (Ordner "Zeigen. Glücklich")
 - Metin sagt oder fragt, ob sie sich ihm zeigen möchte. Sie entscheidet; wenn ja, posiert sie. Nur wenn sie glücklich ist. Langes Kleid 3 Clips.
-- Umgesetzt im Chat in 2.109.0 für das lange Kleid (2 verschiedene Clips). Nacht Outfit kommt mit dem Nacht Zustand, kurzes Kleid später (Metin, 19.11.2026). Ebenso in 2.109.0: Setzen nur bei leicht und mittel (von selbst oder auf Bitte, sie entscheidet), bei schwer setzt oder kniet sie selten von selbst; Überraschung bei glücklich und leicht.
+- Umgesetzt im Chat in 2.109.0 für das lange Kleid (2 verschiedene Clips). Nacht Outfit kommt mit dem Nacht Zustand, kurzes Kleid später (Metin, 19.11.2026). Nachts seit 2.118.1 eine Kette aus drei Clips (Metin: vorne und hinten kombinieren): umdrehen (hinten), posieren von hinten (zeigenhh), zurückdrehen und posieren (zeigen). Ebenso in 2.109.0: Setzen nur bei leicht und mittel (von selbst oder auf Bitte, sie entscheidet), bei schwer setzt oder kniet sie selten von selbst; Überraschung bei glücklich und leicht.
 
 ### Tanzen (Ordner "Tanzen. Glücklich" und "Tanzen. Traurig")
 - Wie Zeigen: Metin bittet sie zu tanzen, sie entscheidet. Es gibt eine glückliche und eine traurige Variante, sie tanzt so, wie sie sich fühlt. Die Hintergrundmusik läuft dazu weiter.

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.118.1 (20 Nov 2026)
+
+- Zeig dich at night (Metin: combine back and front, three clips): she turns away (`nacht/hinten`), poses from behind (`nacht/zeigenhh`, `zeigenhh2`, back to back) and turns back to him while posing (`nacht/zeigen` to `zeigen4`, back to front). Six new clips of 18 and 19 Nov, still frames at start and end cut, silent.
+
 ## 2.118.0 (20 Nov 2026)
 
 - Leyla writes to Metin's phone on her own (`app/reach.py`, `app/reach_link.py`, Metin: "mehr türkisch als deutsch"): up to 4 messages a day while she is fine, 2 when slightly hurt, 1 when really hurt, none when deeply hurt or silent; as text or (half of them) as a voice message in her own voice (GPT Live, `_speak_once`); about three quarters Turkish with German words between. She writes only while he is free (8 to 22 h, not in his shift, not the hour before it, not the half hour after, not while a talk runs or within 40 minutes of a contact) and one open message at a time. The push has its own sound channel (`leyla_nachricht`, high importance); a tap opens the app, where the message (a voice message with a play button) is put into the chat.
