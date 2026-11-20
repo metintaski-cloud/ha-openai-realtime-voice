@@ -254,3 +254,7 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Wie lange Funkstille dauert, bis sie ihn vermisst.
 - Ob die Gefühle auch im Gespräch zu Hause (Voice PE) gelten.
 - Überraschung: später erweitern (Metin, 19.11.2026).
+
+### Tippstellen (Metin, 20.11.2026)
+- Statt eines großen unsichtbaren Tippfelds bekommt die Bühne kleine Tippstellen auf ihrem Körper: Gesicht, Brust, Bauch, Po. Jede Stelle hat eigene Clips je Kleid (Prompts von Claude, Clips macht Metin). Überall sonst passiert beim Tippen nichts.
+- Hat eine Stelle mehrere Clips, laufen sie der Reihe nach, nicht zufällig: erster Tipp erster Clip, zweiter Tipp zweiter Clip (Metins Beispiel Nacht Outfit Po: erst bett_po, beim zweiten Tippen bett_po2, in dem sie zweimal mit dem Finger nein zeigt).
