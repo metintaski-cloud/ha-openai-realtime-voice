@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.111.1 (20 Nov 2026)
+
+- A long press on Leyla no longer opens the phone's menu for the video or picture (Metin): `#stage` has `-webkit-touch-callout: none`, no text selection and no tap highlight, and its context menu is blocked.
+
 ## 2.111.0 (20 Nov 2026)
 
 - Tap zones on her body instead of one big tap area (Metin, 20 Nov 2026): face, chest, belly and bottom (`ZONES`, measured on the 2:3 frame: face 0.02 to 0.17, chest to 0.32, belly to 0.44, bottom to 0.58 of the height, 0.30 to 0.72 of the width; `zoneAt` maps the tap through `object-fit: contain` and the 0.97 scale). Each zone plays its own clips (`gesicht`, `brust`, `bauch`, `po` with variants, never the same one twice in a row, `ZLAST`), only while she is good; a tap anywhere else does nothing. The chat bubbles no longer catch taps on the empty part of the message area (`#clog` pointer events off, bubbles on). Before, a tap anywhere played a kiss or an I love you.
