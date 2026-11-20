@@ -157,7 +157,7 @@ SCENES = {
     "tanz": {"gut": "tanz", "leicht": "tanztraurig"},
     "kuss": {"gut": "kuss"},
     "liebe": {"gut": "liebe"},
-    "komm": {"gut": "liebe", "leicht": "kommtraurig"},
+    "komm": {"gut": "komm", "leicht": "kommtraurig"},  # the page plays liebe where a look has no komm clip
     "zeigen": {"gut": "zeigen"},
     "setzen": {"leicht": "setzen", "mittel": "setzen"},
     "ueberraschung": {"gut": "ueberraschung", "leicht": "ueberraschung"},

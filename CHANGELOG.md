@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.117.0 (20 Nov 2026)
+
+- Komm her and I love you at night: `nacht/komm` to `komm4` ("Bett. Komm. F") and `nacht/liebe` to `liebe4` ("Bett. F. Nach. F. I Love You", two of the six were the same file), still frames trimmed, sound kept where the clip has one. `Heart.scene("komm")` at gut now returns `komm`; the page plays `liebe` where a look has no `komm` clip (the work dresses), so nothing changes there.
+
 ## 2.116.5 (20 Nov 2026)
 
 - Night dance `nacht/tanz11` (Metin's oriental dance of 20 Nov 2026, front to front, tail trimmed), measured into `DNEXT`.

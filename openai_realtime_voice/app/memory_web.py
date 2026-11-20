@@ -471,7 +471,7 @@ const AUDIO=new Map();let REC=null,RECT=null;
 function playAudio(id){try{const a=new Audio(AUDIO.get(id));a.onplay=()=>stageTalk(true);a.onended=a.onpause=()=>stageTalk(false);a.play().catch(()=>stageTalk(false));}catch(e){}}
 let TALKING=false,DANCING=false;
 const DANCE_N=4;
-function stageScene(n){if(!CLIPS||!STM)return;const ok=n==='bettvonarbeit'?(clipVars(n).length||clipVars('umziehen').length):clipVars(n).length;if(!ok)return;
+function stageScene(n){if(!CLIPS||!STM)return;if(n==='komm'&&!clipVars('komm').length)n='liebe';const ok=n==='bettvonarbeit'?(clipVars(n).length||clipVars('umziehen').length):clipVars(n).length;if(!ok)return;
  ZBUSY=Date.now()+300000;if(!CONT&&document.getElementById('stage').classList.contains('vid')){const f=()=>stageSceneNow(n);if(SWAP&&SWAP===STOK){CONT=true;f();CONT=false;}else ZPEND=f;return;}  // her yes waits for the clean hand over, the dot shows it (2.116.0)
  stageSceneNow(n);}
 function stageSceneNow(n){if(n==='bettvonarbeit'&&!clipVars(n).length&&clipVars('umziehen').length)return stagePlay(['umziehen','bettvonfreizeit'],clipFor(STM));if(!clipVars(n).length)return;if(n.startsWith('tanz'))stageDance(n);else stagePlay([n],clipFor(STM));}

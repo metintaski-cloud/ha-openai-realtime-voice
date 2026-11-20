@@ -223,7 +223,7 @@ def test_she_dances_only_when_her_heart_allows(h):
 def test_kiss_and_come_here_follow_her_heart(h):
     t = at(*THU, 15)
     h.contact(t)
-    assert h.scene("kuss", t) == "kuss" and h.scene("komm", t) == "liebe" and h.scene("liebe", t) == "liebe"
+    assert h.scene("kuss", t) == "kuss" and h.scene("komm", t) == "komm" and h.scene("liebe", t) == "liebe"
     h.apply(["kurz_angebunden"], t)
     assert h.scene("kuss", t) == "" and h.scene("liebe", t) == "" and h.scene("komm", t) == "kommtraurig"
     h.apply(["unfreundlich"], t + 60)
