@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.114.0 (20 Nov 2026)
+
+- She goes to bed on request: when Metin sends her to bed or says good night and she is good, the model writes `"szene": "bett"`, `Heart.scene` switches her outfit to `nacht` (status field `outfit`: arbeit, freizeit or nacht, replaces `freizeit`; back to arbeit at 5 in the morning) and the stage plays `bettvonarbeit` or `bettvonfreizeit` of her look. The long dress has no direct change from work, so the page plays `umziehen` and then `bettvonfreizeit`.
+- Night clips live in the shared folder `/media/leyla/nacht/` (same outfit for both dresses, not a look of its own): `body.jpg` (still), `begruessung`, `gesicht`, `brust`, `bauch`. There is no night loop yet, so the stage shows the night still with the app's mist between scenes.
+
 ## 2.113.1 (20 Nov 2026)
 
 - She says hallo (`begruessung`) every time the app opens, is reloaded or comes back to the front, not only on the first mood of a page load (`stageHello`, Metin's wish).

@@ -471,7 +471,7 @@ const AUDIO=new Map();let REC=null,RECT=null;
 function playAudio(id){try{const a=new Audio(AUDIO.get(id));a.onplay=()=>stageTalk(true);a.onended=a.onpause=()=>stageTalk(false);a.play().catch(()=>stageTalk(false));}catch(e){}}
 let TALKING=false,DANCING=false;
 const DANCE_N=4;
-function stageScene(n){if(!CLIPS||!STM||!clipVars(n).length)return;if(n.startsWith('tanz'))stageDance(n);else stagePlay([n],clipFor(STM));}
+function stageScene(n){if(!CLIPS||!STM)return;if(n==='bettvonarbeit'&&!clipVars(n).length&&clipVars('umziehen').length)return stagePlay(['umziehen','bettvonfreizeit'],clipFor(STM));if(!clipVars(n).length)return;if(n.startsWith('tanz'))stageDance(n);else stagePlay([n],clipFor(STM));}
 function stageDance(name){const v=clipVars(name);if(!CLIPS||!STM||!v.length)return;const q=[];let pool=[];
  for(let i=0;i<DANCE_N&&(q.length<v.length||name==='tanz');i++){if(!pool.length)pool=v.filter(n=>n!==q[q.length-1]).sort(()=>Math.random()-0.5);q.push(pool.shift());}
  DANCING=true;const next=()=>{const n=q.shift();if(n)stageShow(n,false,next,true);else{DANCING=false;stageLoop(clipFor(STM));}};next();}
@@ -482,16 +482,17 @@ function moodShow(st){if(!st||!st.mood)return;const c=document.getElementById('c
  c.classList.toggle('low',!!st.low);c.classList.toggle('good',!st.low);document.getElementById('pulse').dataset.mood=st.low?'low':'good';b.style.display='flex';b.textContent=st.low?'🖤':'❤️';
  document.getElementById('mlabel').textContent=(st.low?'🖤 ':'❤️ ')+st.label;LASTST=st;const rb=document.getElementById('crose');if(rb)rb.classList.toggle('off',st.rose!=='ready');stageMood(st);}
 let CLIPS=null,LASTST=null,STM=null;
-let OUTFIT='';
+let OUTFIT='',NIGHT=[],NIGHTBODY=false,LOOKBODY='';const CHANGE=['umziehen','bettvonarbeit','bettvonfreizeit'];
 async function clipsLoad(){let outs={};try{outs=(await (await fetch('/clips.json')).json()).outfits||{};}catch(e){}
- const names=Object.keys(outs);let last='';try{last=localStorage.getItem('loutfit')||'';}catch(e){}
+ NIGHT=outs.nacht?outs.nacht.clips:[];NIGHTBODY=!!(outs.nacht&&outs.nacht.body);delete outs.nacht;const names=Object.keys(outs);let last='';try{last=localStorage.getItem('loutfit')||'';}catch(e){}
  const cand=names.length>1?names.filter(n=>n!==last):names;OUTFIT=cand.length?cand[Math.floor(Math.random()*cand.length)]:'';
  try{if(OUTFIT)localStorage.setItem('loutfit',OUTFIT);}catch(e){}
- CLIPS=OUTFIT?outs[OUTFIT].clips:[];if(OUTFIT&&outs[OUTFIT].body)document.querySelector('#stage .fig img').src='/clips/'+OUTFIT+'/body.jpg';
+ CLIPS=OUTFIT?outs[OUTFIT].clips:[];if(OUTFIT&&outs[OUTFIT].body){LOOKBODY='/clips/'+OUTFIT+'/body.jpg';document.querySelector('#stage .fig img').src=LOOKBODY;}
  if(LASTST)stageMood(LASTST);}
-function clipVars(b){const k=STM&&STM.freizeit&&b!=='umziehen'?'freizeit'+b:b;return CLIPS.filter(n=>n.replace(/[0-9]+$/,'')===k);}  // Freizeit: freizeit<name> clips only (2.113.0)
+function clipVars(b){const o=STM&&!CHANGE.includes(b)?STM.outfit:'';if(o==='nacht')return NIGHT.filter(n=>n.replace(/[0-9]+$/,'')===b).map(n=>'nacht/'+n);
+ const k=o==='freizeit'?'freizeit'+b:b;return CLIPS.filter(n=>n.replace(/[0-9]+$/,'')===k);}  // Freizeit: freizeit<name> clips (2.113.0), night: folder nacht (2.114.0)
 function clipFor(st){const lv=st.low&&st.level&&st.mood!=='eifersuechtig'?'traurig'+st.level:'';if(lv&&clipVars(lv).length)return lv;if(clipVars(st.mood).length)return st.mood;
- const g=(st.low?['traurigleicht','traurig'].concat(st.freizeit?['gluecklich']:[]):['gluecklich']).filter(n=>clipVars(n).length);return g.length?g[0]:null;}
+ const g=(st.low?['traurigleicht','traurig'].concat(st.outfit==='freizeit'?['gluecklich']:[]):['gluecklich']).filter(n=>clipVars(n).length);return g.length?g[0]:null;}
 let SV=0,STOK=0,CONT=false;const PRELOAD_S=3;
 function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name);const s=document.getElementById('stage'),vs=[document.getElementById('svid'),document.getElementById('svid2')],a=vs[SV],b=vs[1-SV],tok=++STOK,cont=CONT;CONT=false;
  if(!name){s.classList.remove('vid');vs.forEach(v=>{v.classList.remove('on');setTimeout(()=>{if(tok===STOK){v.pause();v.removeAttribute('src');v.load();}},600);});return;}
@@ -501,18 +502,18 @@ function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name);const s=docume
  const go=()=>{b.currentTime=0;b.play().catch(()=>{b.muted=true;b.play().catch(()=>{});});b.style.zIndex=1;a.style.zIndex=0;b.classList.add('on');s.classList.add('vid');SV=1-SV;
   setTimeout(()=>{if(tok===STOK)a.classList.remove('on');},850);setTimeout(()=>{if(!a.classList.contains('on'))a.pause();},1000);let fired=false;const fire=()=>{if(fired||tok!==STOK||!done)return;fired=true;CONT=true;done();CONT=false;};
   b.ontimeupdate=()=>{if(b.duration&&b.currentTime>b.duration-PRELOAD_S)fire();};b.onended=fire;};
- b.src='/clips/'+OUTFIT+'/'+name+'.mp4';b.load();}
+ b.src='/clips/'+(name.includes('/')?name:OUTFIT+'/'+name)+'.mp4';b.load();}
 function stageLoop(b){DANCING=false;if(!b)return stageShow(null);const v=clipVars(b),nx=()=>stageNext(b);if(v.length<2)return stageShow(v[0],false,nx);
- const cur=document.getElementById(SV?'svid2':'svid').src.split('/').pop().replace('.mp4','');const o=v.filter(n=>n!==cur);stageShow(o[Math.floor(Math.random()*o.length)],false,nx);}
+ const cur=document.getElementById(SV?'svid2':'svid').src.split('/').pop().replace('.mp4','');const o=v.filter(n=>n.split('/').pop()!==cur);stageShow(o[Math.floor(Math.random()*o.length)],false,nx);}
 const SPECIAL=[],SPECIAL_P=0;  // since 2.111.2 no dance by herself, only when Metin asks (Metin)
-const KNIET_P=0.12,EXTRA_P=0.25;const SND_RE=/^(kuss|rose|komm)/;
+const KNIET_P=0.12,EXTRA_P=0.25;const SND_RE=/(^|[/])(kuss|rose|komm)/;
 function stageNext(b){const sp=STM&&!STM.low?SPECIAL.filter(n=>clipVars(n).length):[];if(sp.length&&Math.random()<SPECIAL_P)stagePlay([sp[Math.floor(Math.random()*sp.length)]],b);
  else if(STM&&!STM.low&&clipVars('gluecklichextra').length&&Math.random()<EXTRA_P)stagePlay(['gluecklichextra'],b);
  else if(STM&&STM.low&&STM.level==='schwer'&&clipVars('setzen').length&&Math.random()<KNIET_P)stagePlay(['setzen'],b);else stageLoop(b);}
 function stagePlay(once,loop){DANCING=false;const q=once.map(n=>{const v=clipVars(n);return v.length?v[Math.floor(Math.random()*v.length)]:null;}).filter(Boolean);const next=()=>{const n=q.shift();if(n)stageShow(n,false,next,true);else stageLoop(loop);};next();}
 function stageMood(st){if(CLIPS===null)return;document.getElementById('stage').classList.toggle('low',!!st.low);let once=[];const o=STM;
  if(!o)once=['begruessung'];if(o){if(o.low&&!st.low)once=['uebergang','kuss'];else if(st.low&&o.low&&(st.cheer||0)>(o.cheer||0))once=['trost'];}
- const changed=!o||once.length||o.mood!==st.mood||o.level!==st.level||!!o.freizeit!==!!st.freizeit;STM=st;if(changed)stagePlay(once,clipFor(st));}
+ const changed=!o||once.length||o.mood!==st.mood||o.level!==st.level||o.outfit!==st.outfit;STM=st;if(!o||o.outfit!==st.outfit){const im=document.querySelector('#stage .fig img'),nb=st.outfit==='nacht'&&NIGHTBODY?'/clips/nacht/body.jpg':LOOKBODY;if(nb&&!im.src.endsWith(nb))im.src=nb;}if(changed)stagePlay(once,clipFor(st));}
 clipsLoad();
 function stageHello(){if(CLIPS&&STM&&!DANCING)stagePlay(['begruessung'],clipFor(STM));}  // hallo on every open (2.113.1, Metin)
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&document.getElementById('chat').style.display==='block')stageHello();});

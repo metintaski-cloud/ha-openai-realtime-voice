@@ -163,15 +163,22 @@ SCENES = {
     "ueberraschung": {"gut": "ueberraschung", "leicht": "ueberraschung"},
 }
 
-# work (glasses, book) or after work (Freizeit); back to work at 5 in the morning without a scene
+# work (glasses, book), after work (Freizeit) or night outfit; back to work at 5 in the morning
+# without a scene (Metin, 20 Nov 2026)
+BED = ("Schickt er dich ins Bett oder sagt er gute Nacht, gehst du meistens gern: \"szene\": \"bett\" "
+       "(du gehst kurz von der Bühne und kommst im Outfit für die Nacht zurück, bis morgen früh um 5 Uhr).")
 AUFZUG = {
     "arbeit_gut": ("Du bist gerade bei der Arbeit, mit Brille und Buch. Sagt er, du sollst dich umziehen, "
                    "oder dass du Feierabend hast, machst du das meistens gern: \"szene\": \"umziehen\" "
-                   "(Buch und Brille kommen weg, dann bist du in Freizeit bis morgen früh um 5 Uhr)."),
-    "arbeit_low": ("Du bist gerade bei der Arbeit, mit Brille und Buch. Umziehen magst du nicht, solange "
-                   "du gekränkt bist; behaupte nie, dass du dich umziehst."),
-    "freizeit": ("Du hast Feierabend und bist in Freizeit, ohne Brille und Buch, bis morgen früh um 5 Uhr. "
-                 "Du bist schon umgezogen, kein szene Feld dafür."),
+                   "(Buch und Brille kommen weg, dann bist du in Freizeit bis morgen früh um 5 Uhr). " + BED),
+    "freizeit_gut": ("Du hast Feierabend und bist in Freizeit, ohne Brille und Buch, bis morgen früh um 5 Uhr. "
+                     "Du bist schon umgezogen, kein \"umziehen\" mehr. " + BED),
+    "arbeit_low": ("Du bist gerade bei der Arbeit, mit Brille und Buch. Umziehen oder ins Bett gehen magst du "
+                   "nicht, solange du gekränkt bist; behaupte nie, dass du dich umziehst."),
+    "freizeit_low": ("Du hast Feierabend und bist in Freizeit, ohne Brille und Buch. Ins Bett gehen magst du "
+                     "nicht, solange du gekränkt bist; behaupte nie, dass du dich umziehst."),
+    "nacht": ("Du bist schon im Outfit für die Nacht, bis morgen früh um 5 Uhr. Kein szene Feld zum "
+              "Umziehen mehr."),
 }
 WORK_START_H = 5
 
@@ -515,28 +522,33 @@ class Heart:
         now = now or time.time()
         d = self.current(now)
         lvl = self._level(d)
-        if wanted == "umziehen":
-            if lvl != "gut" or self._freizeit(d, now):
+        if wanted in ("umziehen", "bett"):
+            cur = self._outfit(d, now)
+            if lvl != "gut" or cur == "nacht" or (wanted == "umziehen" and cur == "freizeit"):
                 return ""
-            d["freizeit"] = now
-            self._log(d, now, "umgezogen, Freizeit")
+            new = "freizeit" if wanted == "umziehen" else "nacht"
+            d.update(outfit=new, outfit_t=now)
+            self._log(d, now, "umgezogen: " + new)
             self._save(d)
-            return "umziehen"
+            return "umziehen" if new == "freizeit" else "bettvon" + cur
         return SCENES.get(wanted, {}).get(lvl, "")
 
     @staticmethod
-    def _freizeit(d: dict, now: float) -> bool:
-        """Freizeit since the last 5 o'clock in the morning, then she is back at work."""
+    def _outfit(d: dict, now: float) -> str:
+        """arbeit, freizeit or nacht; any change counts until the next 5 o'clock in the morning."""
         lt = time.localtime(now)
         start = time.mktime((lt.tm_year, lt.tm_mon, lt.tm_mday, WORK_START_H, 0, 0, 0, 0, -1))
         if now < start:
             start -= 86400
-        return d.get("freizeit", 0) >= start
+        if d.get("outfit_t", 0) >= start:
+            return d.get("outfit", "arbeit")
+        return "freizeit" if d.get("freizeit", 0) >= start else "arbeit"  # state before 2.114.0
 
     def _aufzug(self, d: dict, now: float) -> str:
-        if self._freizeit(d, now):
-            return AUFZUG["freizeit"]
-        return AUFZUG["arbeit_gut" if self._level(d) == "gut" else "arbeit_low"]
+        cur = self._outfit(d, now)
+        if cur == "nacht":
+            return AUFZUG["nacht"]
+        return AUFZUG[cur + ("_gut" if self._level(d) == "gut" else "_low")]
 
     def _tone(self, d: dict) -> str:
         lvl = self._level(d)
@@ -553,9 +565,11 @@ class Heart:
         return VOICE_NOTE.format(state=self._state_text(d, now),
                                  reasons=self._reasons(d).replace("• ", "").replace("\n", " "),
                                  keys=", ".join(EVENTS), limits=LIMITS) + " " + self._tone(d) + " " + (
-            "Du hast Feierabend, ohne Brille und Buch." if self._freizeit(d, now) else
-            "Du bist bei der Arbeit, mit Brille und Buch; umziehen kannst du nur, wenn er es dir "
-            "im Chat schreibt, behaupte im Gespräch nie, dass du dich umziehst.")
+            {"freizeit": "Du hast Feierabend, ohne Brille und Buch.",
+             "nacht": "Du bist im Outfit für die Nacht."}.get(self._outfit(d, now),
+                                                              "Du bist bei der Arbeit, mit Brille und Buch.")
+            + " Umziehen kannst du nur, wenn er es dir im Chat schreibt; behaupte im Gespräch nie, "
+              "dass du dich umziehst.")
 
     def feeling(self, now: Optional[float] = None) -> str:
         now = now or time.time()
@@ -582,7 +596,7 @@ class Heart:
         return {"mood": d["mood"], "low": lvl != "gut", "label": LABELS[d["mood"]],
                 "cheer": d.get("cheer", 0), "level": lvl,
                 "silent": d.get("silent_until", 0) > now, "rose": self._rose_state(d, now),
-                "freizeit": self._freizeit(d, now)}
+                "outfit": self._outfit(d, now)}
 
     def stats(self, now: Optional[float] = None) -> dict:
         """For Claude's check (GET /api/moodstats): numbers and history, no chat texts."""

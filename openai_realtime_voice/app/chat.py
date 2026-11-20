@@ -381,7 +381,7 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
             scene = mood.scene(out.pop("szene", "")) if not out.get("silent") else ""
             if scene:
                 out["scene"] = scene
-                if scene == "umziehen":
+                if scene == "umziehen" or scene.startswith("bettvon"):
                     out["mood"] = mood.status()  # now in Freizeit, the stage loops her Freizeit clips
         elif mood:
             if paused:

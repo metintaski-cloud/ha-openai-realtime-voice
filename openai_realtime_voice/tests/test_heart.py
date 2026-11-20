@@ -276,14 +276,14 @@ def test_umziehen_switches_to_freizeit_until_five(tmp_path):
     import time as _t
     h = heart.Heart(str(tmp_path / "h.json"))
     t = _t.mktime((2026, 11, 20, 18, 0, 0, 0, 0, -1))
-    assert h.status(t)["freizeit"] is False
+    assert h.status(t)["outfit"] == "arbeit"
     assert "umziehen" in h.note(t)
     assert h.scene("umziehen", t) == "umziehen"
-    assert h.status(t + 60)["freizeit"] is True
+    assert h.status(t + 60)["outfit"] == "freizeit"
     assert h.scene("umziehen", t + 120) == ""  # already changed
     assert "Feierabend" in h.note(t + 180)
-    assert h.status(t + 3600 * 10)["freizeit"] is True   # 04:00 next day
-    assert h.status(t + 3600 * 11 + 60)["freizeit"] is False  # after 05:00
+    assert h.status(t + 3600 * 10)["outfit"] == "freizeit"   # 04:00 next day
+    assert h.status(t + 3600 * 11 + 60)["outfit"] == "arbeit"  # after 05:00
 
 
 def test_umziehen_not_while_hurt(tmp_path):
@@ -292,5 +292,29 @@ def test_umziehen_not_while_hurt(tmp_path):
     t = _t.mktime((2026, 11, 20, 18, 0, 0, 0, 0, -1))
     h.apply(["unfreundlich"], t)
     assert h.scene("umziehen", t + 1) == ""
-    assert h.status(t + 2)["freizeit"] is False
+    assert h.status(t + 2)["outfit"] == "arbeit"
     assert "behaupte nie" in h.note(t + 3)
+
+
+def test_bett_from_work_and_freizeit(tmp_path):
+    import time as _t
+    h = heart.Heart(str(tmp_path / "h.json"))
+    t = _t.mktime((2026, 11, 20, 21, 0, 0, 0, 0, -1))
+    assert h.scene("bett", t) == "bettvonarbeit"
+    assert h.status(t + 1)["outfit"] == "nacht"
+    assert h.scene("bett", t + 2) == "" and h.scene("umziehen", t + 3) == ""
+    assert "Nacht" in h.note(t + 4)
+    h2 = heart.Heart(str(tmp_path / "h2.json"))
+    assert h2.scene("umziehen", t) == "umziehen"
+    assert h2.scene("bett", t + 5) == "bettvonfreizeit"
+    assert h2.status(t + 3600 * 8 + 60)["outfit"] == "arbeit"  # 05:01 next day
+
+
+def test_old_freizeit_state_still_read(tmp_path):
+    import time as _t, json
+    t = _t.mktime((2026, 11, 20, 21, 0, 0, 0, 0, -1))
+    h = heart.Heart(str(tmp_path / "h.json"))
+    h.status(t)
+    d = json.load(open(tmp_path / "h.json")); d["freizeit"] = t
+    json.dump(d, open(tmp_path / "h.json", "w"))
+    assert h.status(t + 1)["outfit"] == "freizeit"
