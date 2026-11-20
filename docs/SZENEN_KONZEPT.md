@@ -169,7 +169,7 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Sofortige Reaktion auf eine Kränkung: Arme verschränken, sich wegdrehen.
 - "Endlich bist du da" nach langer Funkstille: erleichtert oder schmollend.
 - Lachen über einen Witz von Metin.
-- "Gute Nacht" im Nacht Outfit.
+- "Gute Nacht" im Nacht Outfit: dafür nehmen wir die Hallo und Bye Clips des Nacht Outfits (Metin, 20.11.2026).
 
 ### Setzen (Ordner "Setzten. Traurig")
 - Sie setzt sich hin, wenn sie traurig ist, von selbst oder wenn Metin sagt "setz dich kurz". Ob sie es macht, entscheidet sie. Langes Kleid 9 Clips, kurzes Kleid ebenso.
@@ -256,7 +256,7 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Überraschung: später erweitern (Metin, 19.11.2026).
 
 ### Tippstellen (Metin, 20.11.2026)
-- Statt eines großen unsichtbaren Tippfelds bekommt die Bühne kleine Tippstellen auf ihrem Körper: Gesicht, Brust, Bauch, Po. Jede Stelle hat eigene Clips je Kleid (Prompts von Claude, Clips macht Metin). Überall sonst passiert beim Tippen nichts.
+- Statt eines großen unsichtbaren Tippfelds bekommt die Bühne kleine Tippstellen auf ihrem Körper: Gesicht, Brust, Bauch, Po. Jede Stelle hat eigene Clips je Kleid (Prompts von Claude, Clips macht Metin). Überall sonst passiert beim Tippen nichts. Umgesetzt in 2.111.0 für beide Kleider mit Buch (nur wenn sie glücklich ist).
 - Bauch (langes Kleid): bauch und bauch2 wechseln sich ab, mal so, mal so, damit es nicht eintönig wird (Metin, 20.11.2026).
 - Nacht Outfit Po: feste Reihenfolge, siehe unten. Hat eine Stelle mehrere Clips und Metin sagt nichts anderes, wechseln sie sich ab; nur wo er eine Reihenfolge nennt, laufen sie der Reihe nach: erster Tipp erster Clip, zweiter Tipp zweiter Clip (Metins Beispiel Nacht Outfit Po: erst bett_po, sie droht mit einem Finger, beim zweiten Tippen bett_po2, sie zeigt mit beiden Händen zwei Finger, also zweimal nein).
 - Nacht Outfit, Blick hinten (Metin, 20.11.2026): steht sie mit dem Rücken zur Kamera, dreht ein Tipp sie zu ihm um. Dafür gibt es bett_hallo_hinten_nach_vorne (sie dreht sich um und winkt Hallo) und bett_hinten_nach_vorne (zum Mischen, dreht sich tanzend um); beide werden durch Tippen ausgelöst. Bis das Nacht Outfit gebaut ist, liegen sie im Desktop Ordner "Leyla später".

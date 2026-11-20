@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.111.0 (20 Nov 2026)
+
+- Tap zones on her body instead of one big tap area (Metin, 20 Nov 2026): face, chest, belly and bottom (`ZONES`, measured on the 2:3 frame: face 0.02 to 0.17, chest to 0.32, belly to 0.44, bottom to 0.58 of the height, 0.30 to 0.72 of the width; `zoneAt` maps the tap through `object-fit: contain` and the 0.97 scale). Each zone plays its own clips (`gesicht`, `brust`, `bauch`, `po` with variants, never the same one twice in a row, `ZLAST`), only while she is good; a tap anywhere else does nothing. The chat bubbles no longer catch taps on the empty part of the message area (`#clog` pointer events off, bubbles on). Before, a tap anywhere played a kiss or an I love you.
+- Clips (made by Metin on 19 and 20 Nov 2026, in the media folder): long dress gesicht, gesicht2, brust, bauch, bauch2, po; short dress gesicht, gesicht2, brust, brust2, brust3, bauch, bauch2, po; plus `schwarz/rosefroh2` and `kurz/kuss3`.
+
 ## 2.110.1 (19 Nov 2026)
 
 - Scenes where she comes to the camera only on request (Metin: she did it too often): I love you, komm her and kiss are no longer random special scenes and the model may choose them only when Metin asks explicitly, never by herself. The random special scene while she is good is now only a dance, with 30 % chance after a loop cycle (40 % before, when liebe and kuss were in it). A tap on her and the kiss at the end of a reconciliation stay.
