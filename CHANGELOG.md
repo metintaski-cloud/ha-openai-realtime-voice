@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.115.1 (20 Nov 2026)
+
+- Touch game with more action (Metin): a touch on one of her spots outside the green moment erases the hits collected so far ("❌ Daneben, deine Treffer sind weg."). Touches while her touch clip waits or plays do not count either way; a won week stays won.
+
 ## 2.115.0 (20 Nov 2026)
 
 - Touch game (Metin's idea): a touch on a spot exactly while the clip timer is green counts as a hit (the dot turns gold, the chat shows "🎯 Treffer: Brust (2 von 4)"). Face, chest, belly and bottom all hit within one calendar week free the rose button once more, at most one bonus rose a week; misses erase nothing, hits stay until Sunday night (`Heart.game_hit`, `POST /api/game`, status field `game`, `GAME_ZONES`).

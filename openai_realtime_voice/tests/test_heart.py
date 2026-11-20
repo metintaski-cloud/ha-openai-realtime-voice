@@ -338,3 +338,16 @@ def test_touch_game_bonus_rose(tmp_path):
     assert not h.game_hit("po", t + 50)["bonus"]  # one bonus a week
     nxt = t + 7 * 86400
     assert h.status(nxt)["rose"] != "used" and h.status(nxt)["game"]["hits"] == []
+
+
+def test_touch_game_miss_resets(tmp_path):
+    import time as _t
+    h = heart.Heart(str(tmp_path / "h.json"))
+    t = _t.mktime((2026, 11, 20, 18, 0, 0, 0, 0, -1))
+    h.game_hit("gesicht", t); h.game_hit("brust", t + 1)
+    r = h.game_hit("bauch", t + 2, miss=True)
+    assert r["hits"] == [] and h.status(t + 3)["game"]["hits"] == []
+    for i, z in enumerate(("gesicht", "brust", "bauch", "po")):
+        r = h.game_hit(z, t + 10 + i)
+    assert r["bonus"]
+    assert h.game_hit("po", t + 20, miss=True)["mood"]["game"]["done"]  # won stays won

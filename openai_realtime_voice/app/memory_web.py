@@ -539,7 +539,8 @@ var ZT=0,ZBUSY=0;  // one touch at a time: no other spot reacts until her clip i
 const zDone=()=>{ZBUSY=0;stageLoop(clipFor(STM));};
 var ZPEND=null,ZT_GREEN=()=>false,ZGOLD=0;
 const ZNAME={gesicht:'Gesicht',brust:'Brust',bauch:'Bauch',po:'Po'};
-async function zGame(z){ZGOLD=Date.now()+1500;let j=null;try{j=await (await post('/api/game',{zone:z})).json();}catch(e){}if(!j||!j.ok)return;  // touch game: hit while the timer is green (2.115.0, Metin)
+async function zGame(z,miss){if(!miss)ZGOLD=Date.now()+1500;let j=null;try{j=await (await post('/api/game',{zone:z,miss:!!miss})).json();}catch(e){}if(!j||!j.ok)return;
+ if(miss){if(j.mood)moodShow(j.mood);CHAT.push({role:'info',text:'❌ Daneben, deine Treffer sind weg.'});chatDraw();return;}  // touch game: hit while the timer is green (2.115.0, Metin)
  if(j.mood)moodShow(j.mood);const n=(j.hits||[]).length;CHAT.push({role:'info',text:j.bonus?'🌹 Alle vier Stellen getroffen! Der Rosenknopf ist noch einmal frei.':'🎯 Treffer: '+ZNAME[z]+' ('+n+' von 4)'});chatDraw();}
 (function(){const c=document.getElementById('chat'),d=document.createElement('div');d.id='ztimer';  // clip timer: red ring = how far the running clip is, green = a touch starts now (2.114.8, Metin)
  d.innerHTML='<svg viewBox="0 0 30 30"><circle class="bg" cx="15" cy="15" r="12"/><circle class="fg" cx="15" cy="15" r="12" stroke-dasharray="75.4" stroke-dashoffset="75.4"/><circle class="dot" cx="15" cy="15" r="4"/></svg>';c.appendChild(d);
@@ -550,7 +551,7 @@ async function zGame(z){ZGOLD=Date.now()+1500;let j=null;try{j=await (await post
   d.classList.toggle('go',free);d.classList.toggle('hit',!!ZPEND||Date.now()<ZBUSY);d.classList.toggle('gold',Date.now()<ZGOLD);fg.setAttribute('stroke-dashoffset',(75.4*(1-(free?1:p))).toFixed(1));},100);})();  // the touch is noted at once and plays when the running clip hands over, so the poses match (2.114.7, Metin)
 function zRing(ev){const st=document.getElementById('stage'),r=st.getBoundingClientRect(),d=document.createElement('div');d.className='zring';d.style.left=(ev.clientX-r.left)+'px';d.style.top=(ev.clientY-r.top)+'px';st.appendChild(d);setTimeout(()=>d.remove(),900);}
 document.getElementById('stage').onpointerdown=ev=>{if(ev.button>0||Date.now()-ZT<700||ZPEND||Date.now()<ZBUSY)return;ZT=Date.now();if(!CLIPS||!STM||STM.low)return;const z=zoneAt(ev);if(!z)return;const v=clipVars(z);if(!v.length)return;ZBUSY=Date.now()+60000;zRing(ev);
- if(ZT_GREEN()){const g=(STM&&STM.game)||{};if(!g.done&&!(g.hits||[]).includes(z))zGame(z);}
+ {const g=(STM&&STM.game)||{};if(!g.done){if(ZT_GREEN()){if(!(g.hits||[]).includes(z))zGame(z);}else if((g.hits||[]).length)zGame(z,true);}}
  const o=v.length>1?v.filter(n=>n!==ZLAST[z]):v,n=o[Math.floor(Math.random()*o.length)];ZLAST[z]=n;
  const pre=ZPRE[z]&&clipVars(ZPRE[z]),h=pre&&pre.length?pre[Math.floor(Math.random()*pre.length)]:'';
  const go=()=>{DANCING=false;ZBUSY=Date.now()+40000;if(h)return stageShow(h,false,()=>stageShow(n,false,zDone,true),true);stageShow(n,false,zDone,true);};
@@ -1085,7 +1086,7 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                 logger.info("Memory page: rose %s", "given" if out.get("ok") else "not taken")
             await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
         elif method == "POST" and path == "/api/game":
-            out = (mood.game_hit(str(d.get("zone", ""))[:20])
+            out = (mood.game_hit(str(d.get("zone", ""))[:20], miss=bool(d.get("miss")))
                    if (unlocked and mood and hasattr(mood, "game_hit")) else {"ok": False})
             if out.get("bonus"):
                 logger.info("Memory page: touch game won, bonus rose")

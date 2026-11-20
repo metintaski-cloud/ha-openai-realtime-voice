@@ -417,9 +417,10 @@ class Heart:
                 "mood": self.status(now)}
 
     # --- the touch game (Metin, 20 Nov 2026) --------------------------------------------------
-    def game_hit(self, zone: str, now: Optional[float] = None) -> dict:
+    def game_hit(self, zone: str, now: Optional[float] = None, miss: bool = False) -> dict:
         """A touch exactly while the clip timer is green. All of GAME_ZONES within one calendar
-        week frees the rose button once more (at most one bonus a week); misses erase nothing."""
+        week frees the rose button once more (at most one bonus a week); a touch on her outside
+        the green moment (miss) erases the hits collected so far (Metin: more action)."""
         now = now or time.time()
         d = self.current(now)
         wk = self._week(now)
@@ -427,7 +428,12 @@ class Heart:
             d["game_week"], d["game_hits"] = wk, []
         hits = d.setdefault("game_hits", [])
         new_bonus = False
-        if zone in GAME_ZONES and zone not in hits and d.get("bonus_week") != wk:
+        if miss:
+            if hits and d.get("bonus_week") != wk:
+                d["game_hits"] = hits = []
+                self._log(d, now, "Spiel daneben, Treffer weg")
+                self._save(d)
+        elif zone in GAME_ZONES and zone not in hits and d.get("bonus_week") != wk:
             hits.append(zone)
             self._log(d, now, "Spiel Treffer: " + zone)
             if all(z in hits for z in GAME_ZONES):
