@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.111.3 (20 Nov 2026)
+
+- No more freezing at the end of a clip (Metin: in the happy long dress she froze too long at the end of some clips): the next clip of a loop or chain now starts loading 3 s before the end (`PRELOAD_S`, was 0.8 s) and fades in exactly 0.8 s before the end (`CONT`, the swap waits for the right moment). Before, the next clip only started loading 0.8 s before the end; over the WLAN that was often too short, and the last frame stood still until the next clip could play. A tap or a scene from the chat still swaps at once.
+
 ## 2.111.2 (20 Nov 2026)
 
 - No dance by herself any more, only when Metin asks (`SPECIAL` empty, Metin: in the short dress she danced without being asked). Dance clips without their Kling sound (kurz/tanz3, kurz/tanz6, schwarz/tanz6 re-muxed without audio, in the Desktop folder "leyla neu" for the media folder); the background music stays.
