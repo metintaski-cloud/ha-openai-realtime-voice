@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.116.3 (20 Nov 2026)
+
+- Work dress dances cut cleanly too: the still frames at start and end are trimmed (short dress up to 3 s, long dress up to 1.7 s; new files `kurz/tanz` to `tanz10`, `schwarz/tanz` to `tanz6`, `schwarz/tanztraurig`, made again from the originals in "Orner Leyla Szenen"), and a dance only joins measured matching clips (`DNEXTW`, `workChain`, least used first; the short dress poses vary more, so its threshold is 6).
+- A new mood in the same answer no longer restarts her loop under a yes or cuts a running scene or touch clip (`stageMood` waits while `ZBUSY`, `ZPEND` or `DANCING`; the chat answer queues the scene before it shows the mood).
+
 ## 2.116.2 (20 Nov 2026)
 
 - Night dances cut cleanly (Metin: the transitions looked badly cut): the still frames at start and end of 24 night clips are trimmed (0.1 to 1 s each, measured by frame difference; originals kept in the Desktop folder "Leyla aussortiert/nacht_vor_schnitt"), and a dance chain only joins clips whose end pose matches the next start pose (`DNEXT`, measured on the body area, mean difference up to 4.5); hinten3 and hinten4 never open a dance (start pose too far from her loop), tanzhf4 never ends it. Clips are picked least used first (`DUSED`, kept in the phone), so the clips that start with her back are spread evenly.
