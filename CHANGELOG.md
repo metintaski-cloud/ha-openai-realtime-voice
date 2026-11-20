@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.114.7 (20 Nov 2026)
+
+- No more jerk on a touch (Metin): the touch is noted at once and shown as a small white see through ring that fades, but her touch clip starts only when the running clip hands over in her starting pose (`ZPEND`, taken by `stageNext` or `stageLoop`; when the next loop clip is already waiting for its hand over, the touch clip takes its place, `SWAP`). The wait is at most the rest of the running clip. Further touches count only after her clip is through.
+
 ## 2.114.6 (20 Nov 2026)
 
 - She reacts the moment Metin touches her (`pointerdown`), not only after a clean tap; a touch with a little movement or a longer hold counts too (at most one reaction per 0.7 s). One touch at a time (Metin): while her touch clip plays, other spots do not react until it is through (`ZBUSY`, cleared when the clip hands over or another scene starts).
