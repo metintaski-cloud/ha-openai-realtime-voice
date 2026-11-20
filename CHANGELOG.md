@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.116.1 (20 Nov 2026)
+
+- The white dot now stays from her yes until the scene is through (a dance of four clips too), not only while it waits for the hand over (Metin did not see it); touches do not count meanwhile. `ZBUSY` is set by `stageScene` and cleared when the loop comes back (`stageLoop`).
+
 ## 2.116.0 (20 Nov 2026)
 
 - Her yes to a request (dance, kiss, change, bed, rose) no longer cuts into the running clip: the scene waits for the clean hand over and the white dot in the clip timer shows that she will do it (`stageScene` queues through `ZPEND`; an outfit change waits for its change scene).

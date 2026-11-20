@@ -472,7 +472,7 @@ function playAudio(id){try{const a=new Audio(AUDIO.get(id));a.onplay=()=>stageTa
 let TALKING=false,DANCING=false;
 const DANCE_N=4;
 function stageScene(n){if(!CLIPS||!STM)return;const ok=n==='bettvonarbeit'?(clipVars(n).length||clipVars('umziehen').length):clipVars(n).length;if(!ok)return;
- if(!CONT&&document.getElementById('stage').classList.contains('vid')){ZBUSY=0;const f=()=>stageSceneNow(n);if(SWAP&&SWAP===STOK){CONT=true;f();CONT=false;}else ZPEND=f;return;}  // her yes waits for the clean hand over, the dot shows it (2.116.0)
+ ZBUSY=Date.now()+300000;if(!CONT&&document.getElementById('stage').classList.contains('vid')){const f=()=>stageSceneNow(n);if(SWAP&&SWAP===STOK){CONT=true;f();CONT=false;}else ZPEND=f;return;}  // her yes waits for the clean hand over, the dot shows it (2.116.0)
  stageSceneNow(n);}
 function stageSceneNow(n){if(n==='bettvonarbeit'&&!clipVars(n).length&&clipVars('umziehen').length)return stagePlay(['umziehen','bettvonfreizeit'],clipFor(STM));if(!clipVars(n).length)return;if(n.startsWith('tanz'))stageDance(n);else stagePlay([n],clipFor(STM));}
 function danceChain(){const pick=g=>{const v=clipVars(g);return v.length?v[Math.floor(Math.random()*v.length)]:null;},q=[];let back=false;  // night: chain by facing, front to back and back to front (2.116.0, concept "Tanz als Kette")
@@ -512,14 +512,14 @@ function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name);const s=docume
   setTimeout(()=>{if(tok===STOK)a.classList.remove('on');},850);setTimeout(()=>{if(!a.classList.contains('on'))a.pause();},1000);let fired=false;const fire=()=>{if(fired||tok!==STOK||!done)return;fired=true;CONT=true;done();CONT=false;};
   b.ontimeupdate=()=>{if(b.duration&&b.currentTime>b.duration-PRELOAD_S)fire();};b.onended=fire;};
  b.src='/clips/'+(name.includes('/')?name:OUTFIT+'/'+name)+'.mp4';b.load();}
-function stageLoop(b){if(ZPEND){const f=ZPEND;ZPEND=null;return f();}DANCING=false;if(!b)return stageShow(null);const v=clipVars(b),nx=()=>stageNext(b);if(v.length<2)return stageShow(v[0],false,nx);
+function stageLoop(b){if(ZPEND){const f=ZPEND;ZPEND=null;return f();}ZBUSY=0;DANCING=false;if(!b)return stageShow(null);const v=clipVars(b),nx=()=>stageNext(b);if(v.length<2)return stageShow(v[0],false,nx);
  const cur=document.getElementById(SV?'svid2':'svid').src.split('/').pop().replace('.mp4','');const o=v.filter(n=>n.split('/').pop()!==cur);stageShow(o[Math.floor(Math.random()*o.length)],false,nx);}
 const SPECIAL=[],SPECIAL_P=0;  // since 2.111.2 no dance by herself, only when Metin asks (Metin)
 const KNIET_P=0.12,EXTRA_P=0.25;const SND_RE=/(^|[/])(kuss|rose|komm)/;
 function stageNext(b){if(ZPEND){const f=ZPEND;ZPEND=null;return f();}const sp=STM&&!STM.low?SPECIAL.filter(n=>clipVars(n).length):[];if(sp.length&&Math.random()<SPECIAL_P)stagePlay([sp[Math.floor(Math.random()*sp.length)]],b);
  else if(STM&&!STM.low&&clipVars('gluecklichextra').length&&Math.random()<EXTRA_P)stagePlay(['gluecklichextra'],b);
  else if(STM&&STM.low&&STM.level==='schwer'&&clipVars('setzen').length&&Math.random()<KNIET_P)stagePlay(['setzen'],b);else stageLoop(b);}
-function stagePlay(once,loop){DANCING=false;ZBUSY=0;const q=once.map(n=>{const v=clipVars(n);return v.length?v[Math.floor(Math.random()*v.length)]:null;}).filter(Boolean);const next=()=>{const n=q.shift();if(n)stageShow(n,false,next,true);else stageLoop(loop);};next();}
+function stagePlay(once,loop){DANCING=false;const q=once.map(n=>{const v=clipVars(n);return v.length?v[Math.floor(Math.random()*v.length)]:null;}).filter(Boolean);const next=()=>{const n=q.shift();if(n)stageShow(n,false,next,true);else stageLoop(loop);};next();}
 function stageMood(st){if(CLIPS===null)return;document.getElementById('stage').classList.toggle('low',!!st.low);let once=[];const o=STM;
  if(!o)once=['begruessung'];if(o){if(o.low&&!st.low)once=['uebergang','kuss'];else if(st.low&&o.low&&(st.cheer||0)>(o.cheer||0))once=['trost'];}
  const changed=!o||once.length||o.mood!==st.mood||o.level!==st.level;/* an outfit change waits for its change scene or the next hand over (2.116.0) */STM=st;if(!o||o.outfit!==st.outfit){const im=document.querySelector('#stage .fig img'),nb=st.outfit==='nacht'&&NIGHTBODY?'/clips/nacht/body.jpg':LOOKBODY;if(nb&&!im.src.endsWith(nb))im.src=nb;}if(changed)stagePlay(once,clipFor(st));}
