@@ -8,15 +8,17 @@ propose changes to the memory; nothing is stored here. The page shows each propo
 still never deletes or changes anything by herself.
 """
 import json
+import os
 import logging
 import random
 import re
+import time
 from typing import Optional
 
 import httpx
 
 from app import inbox as inbox_mod
-from app import mail, memory
+from app import mail, memory, metrics
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +119,44 @@ def valid_proposals(raw, lists: dict) -> list[dict]:
             item["to"] = to
         out.append(item)
     return out[:12]
+
+
+# What the stronger chat model costs (2.124.0, Metin: test GPT-6.2 Sol, but never over 100 € a
+# month in all): USD per million tokens (input, cached input, output) of the official price list.
+PRICES = {"gpt-6.2-sol": (2.0, 0.10, 10.0), "gpt-6.1-sol": (2.0, 0.10, 10.0)}
+SPEND_PATH = os.environ.get("CHAT_SPEND_PATH", "/data/chat_spend.json")
+
+
+def _spend_load() -> dict:
+    try:
+        with open(SPEND_PATH, encoding="utf-8") as f:
+            return json.load(f) or {}
+    except Exception:
+        return {}
+
+
+def spend_add(model: str, usage: dict) -> float:
+    """Adds the cost of one answer of a priced model to this month; returns the month's sum."""
+    p = PRICES.get(model)
+    if not p:
+        return month_spend()
+    cached = (usage.get("input_tokens_details") or {}).get("cached_tokens", 0) or 0
+    fresh = max(0, (usage.get("input_tokens") or 0) - cached)
+    usd = (fresh * p[0] + cached * p[1] + (usage.get("output_tokens") or 0) * p[2]) / 1e6
+    d = _spend_load()
+    month = time.strftime("%Y-%m")
+    d = {month: round(d.get(month, 0.0) + usd, 4)}
+    try:
+        os.makedirs(os.path.dirname(SPEND_PATH) or ".", exist_ok=True)
+        with open(SPEND_PATH, "w", encoding="utf-8") as f:
+            json.dump(d, f)
+    except Exception as e:
+        logger.warning("Chat spend not saved: %s", e)
+    return d[month]
+
+
+def month_spend() -> float:
+    return float(_spend_load().get(time.strftime("%Y-%m"), 0.0))
 
 
 def notes_to_remember(raw) -> list[dict]:
@@ -473,6 +513,7 @@ async def _answer(api_key, models, rules, store, history, message, url, lights):
     dialog.append({"role": "user", "content": message})
     async with httpx.AsyncClient(timeout=60.0) as client:
         for model in [m for m in models if m]:
+            started = time.monotonic()
             try:
                 resp = await client.post(
                     url, headers={"Authorization": f"Bearer {api_key}",
@@ -486,6 +527,12 @@ async def _answer(api_key, models, rules, store, history, message, url, lights):
                                resp.text[:200])
                 continue
             out = resp.json()
+            usage = out.get("usage") or {}
+            spend_add(model, usage)
+            metrics.record("chat_answer", model=model, seconds=time.monotonic() - started,
+                           input_tokens=usage.get("input_tokens", 0),
+                           cached_tokens=(usage.get("input_tokens_details") or {}).get("cached_tokens", 0),
+                           output_tokens=usage.get("output_tokens", 0))
             text = out.get("output_text") or ""
             if not text:
                 for item in out.get("output", []):

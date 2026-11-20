@@ -324,3 +324,14 @@ def test_notes_to_remember_takes_strings_and_objects():
     assert got[1]["privat"] is True and got[1]["text"] == "geheim"
     assert len(got) <= 3
     assert c.notes_to_remember(None) == []
+
+
+def test_chat_spend_counts_only_priced_models(tmp_path, monkeypatch):
+    from app import chat as c
+    monkeypatch.setattr(c, "SPEND_PATH", str(tmp_path / "s.json"))
+    assert c.month_spend() == 0.0
+    c.spend_add("gpt-6-luna", {"input_tokens": 10000, "output_tokens": 200})
+    assert c.month_spend() == 0.0
+    total = c.spend_add("gpt-6.2-sol", {"input_tokens": 10000, "output_tokens": 200,
+                                        "input_tokens_details": {"cached_tokens": 8000}})
+    assert abs(total - (2000 * 2.0 + 8000 * 0.10 + 200 * 10.0) / 1e6) < 1e-6

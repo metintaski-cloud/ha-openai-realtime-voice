@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.124.0 (20 Nov 2026)
+
+- The app chat answers with GPT-6.2 Sol (Metin: smarter, as long as everything stays under 100 € a month): new options `chat_model` (unset means `gpt-6.2-sol`; set it to `gpt-6-luna` to go back) and `chat_model_budget_usd` (default 40). The background jobs keep `memory_model`. Every chat answer is measured (`metrics` event `chat_answer`: model, seconds, input, cached and output tokens) and priced (`chat.PRICES`, `chat.spend_add`, `/data/chat_spend.json`); when the month's chat model spend reaches the budget, the chat answers with the memory model again until the next month.
+
 ## 2.123.0 (20 Nov 2026)
 
 - Her whole library (Metin: nothing shall get lost, also after months): every diary entry and every noted thing is also appended to `/data/leyla_diary.json.archive.jsonl`, which never fades (the diary she is given still fades after 30 days). She looks things up there by key words when a question goes further back: tool `erinnern` in voice (same speaker and privacy rules as `merken`) and the chat field `erinnern` (a second pass with `Diary.recall_note`, up to 6 entries of that person or unnamed ones, best word match, then newest). Entries Metin deletes in the app folder Tagebuch are removed from the archive too.
