@@ -2,7 +2,7 @@
 
 ## 2.117.2 (20 Nov 2026)
 
-- The ⌨ button and its toggle are gone (Metin: tapping the text field brings up the keyboard anyway); the text field and Senden are always shown above Neuer Chat.
+- The ⌨ button and its toggle are gone (Metin: tapping the text field brings up the keyboard anyway); the text field sits at the very bottom with Senden and Neuer Chat to its right (Metin), the chat bubbles end just above it.
 
 ## 2.117.1 (20 Nov 2026)
 
