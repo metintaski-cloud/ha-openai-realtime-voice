@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.115.0 (20 Nov 2026)
+
+- Touch game (Metin's idea): a touch on a spot exactly while the clip timer is green counts as a hit (the dot turns gold, the chat shows "🎯 Treffer: Brust (2 von 4)"). Face, chest, belly and bottom all hit within one calendar week free the rose button once more, at most one bonus rose a week; misses erase nothing, hits stay until Sunday night (`Heart.game_hit`, `POST /api/game`, status field `game`, `GAME_ZONES`).
+
 ## 2.114.10 (20 Nov 2026)
 
 - A white dot in the middle of the clip timer shows that a touch was noticed (Metin); it stays while her touch clip waits and plays and goes out when a new touch would count again.

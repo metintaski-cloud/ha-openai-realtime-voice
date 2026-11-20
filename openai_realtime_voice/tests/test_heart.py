@@ -318,3 +318,23 @@ def test_old_freizeit_state_still_read(tmp_path):
     d = json.load(open(tmp_path / "h.json")); d["freizeit"] = t
     json.dump(d, open(tmp_path / "h.json", "w"))
     assert h.status(t + 1)["outfit"] == "freizeit"
+
+
+def test_touch_game_bonus_rose(tmp_path):
+    import time as _t
+    h = heart.Heart(str(tmp_path / "h.json"))
+    t = _t.mktime((2026, 11, 20, 18, 0, 0, 0, 0, -1))  # Friday
+    assert h.give_rose(t)["ok"]
+    assert h.status(t + 1)["rose"] == "used"
+    for i, z in enumerate(("gesicht", "brust", "bauch")):
+        r = h.game_hit(z, t + 10 + i)
+        assert not r["bonus"]
+    assert h.game_hit("gesicht", t + 20)["hits"] == ["gesicht", "brust", "bauch"]  # no double
+    r = h.game_hit("po", t + 30)
+    assert r["bonus"] and r["mood"]["game"]["done"]
+    assert h.status(t + 31)["rose"] == "ready"
+    assert h.give_rose(t + 40)["ok"]
+    assert h.status(t + 41)["rose"] == "used"
+    assert not h.game_hit("po", t + 50)["bonus"]  # one bonus a week
+    nxt = t + 7 * 86400
+    assert h.status(nxt)["rose"] != "used" and h.status(nxt)["game"]["hits"] == []

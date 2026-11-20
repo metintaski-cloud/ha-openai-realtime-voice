@@ -261,3 +261,8 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Bauch (langes Kleid): bauch und bauch2 wechseln sich ab, mal so, mal so, damit es nicht eintönig wird (Metin, 20.11.2026).
 - Nacht Outfit Po: feste Reihenfolge, siehe unten. Hat eine Stelle mehrere Clips und Metin sagt nichts anderes, wechseln sie sich ab; nur wo er eine Reihenfolge nennt, laufen sie der Reihe nach: erster Tipp erster Clip, zweiter Tipp zweiter Clip (Metins Beispiel Nacht Outfit Po: erst bett_po, sie droht mit einem Finger, beim zweiten Tippen bett_po2, sie zeigt mit beiden Händen zwei Finger, also zweimal nein).
 - Nacht Outfit, Blick hinten (Metin, 20.11.2026): steht sie mit dem Rücken zur Kamera, dreht ein Tipp sie zu ihm um. Dafür gibt es bett_hallo_hinten_nach_vorne (sie dreht sich um und winkt Hallo) und bett_hinten_nach_vorne (zum Mischen, dreht sich tanzend um); beide werden durch Tippen ausgelöst. Bis das Nacht Outfit gebaut ist, liegen sie im Desktop Ordner "Leyla später".
+
+### Berührungsspiel (Metin, 20.11.2026, umgesetzt in 2.115.0)
+- Eine Berührung zählt als Treffer, wenn der Kreis links oben gerade grün ist (der Moment beim Clipwechsel). Der Punkt im Kreis leuchtet dann golden.
+- Alle vier Stellen (Gesicht, Brust, Bauch, Po) in einer Kalenderwoche getroffen: der Rosenknopf wird noch einmal frei. Höchstens eine Bonusrose pro Woche.
+- Fehlversuche löschen nichts, Treffer bleiben bis Sonntagnacht.

@@ -181,6 +181,7 @@ AUFZUG = {
               "Umziehen mehr."),
 }
 WORK_START_H = 5
+GAME_ZONES = ("gesicht", "brust", "bauch", "po")
 
 SCENE_TEXT = {
     "gut": ("Szenen auf deiner Bühne, du entscheidest selbst und sagst meistens ja: bittet er dich "
@@ -383,8 +384,13 @@ class Heart:
     def _week(now: float) -> str:
         return time.strftime("%G-W%V", time.localtime(now))
 
+    def _bonus_free(self, d: dict, now: float) -> bool:
+        """The touch game earned a second rose this week and it is not given yet."""
+        wk = self._week(now)
+        return d.get("bonus_week") == wk and d.get("bonus_used") != wk
+
     def _rose_state(self, d: dict, now: float) -> str:
-        if d.get("rose_week") == self._week(now):
+        if d.get("rose_week") == self._week(now) and not self._bonus_free(d, now):
             return "used"
         if self._level(d) == "schwer" or d.get("silent_until", 0) > now:
             return "blocked"  # she does not take it, and the week's rose is not used up
@@ -402,11 +408,39 @@ class Heart:
                 self._save(d)
             return {"ok": False, "rose": state, "mood": self.status(now)}
         before = self._level(d)
+        if d.get("rose_week") == self._week(now):
+            d["bonus_used"] = self._week(now)  # the second rose from the touch game
         d["rose_week"] = self._week(now)
         self._save(d)
         self.apply(["rose"], now)
         return {"ok": True, "scene": "rosefroh" if before == "gut" else "rose", "before": before,
                 "mood": self.status(now)}
+
+    # --- the touch game (Metin, 20 Nov 2026) --------------------------------------------------
+    def game_hit(self, zone: str, now: Optional[float] = None) -> dict:
+        """A touch exactly while the clip timer is green. All of GAME_ZONES within one calendar
+        week frees the rose button once more (at most one bonus a week); misses erase nothing."""
+        now = now or time.time()
+        d = self.current(now)
+        wk = self._week(now)
+        if d.get("game_week") != wk:
+            d["game_week"], d["game_hits"] = wk, []
+        hits = d.setdefault("game_hits", [])
+        new_bonus = False
+        if zone in GAME_ZONES and zone not in hits and d.get("bonus_week") != wk:
+            hits.append(zone)
+            self._log(d, now, "Spiel Treffer: " + zone)
+            if all(z in hits for z in GAME_ZONES):
+                d["bonus_week"] = wk
+                new_bonus = True
+                self._log(d, now, "Spiel geschafft, Bonusrose")
+            self._save(d)
+        return {"ok": True, "hits": list(hits), "bonus": new_bonus, "mood": self.status(now)}
+
+    def _game(self, d: dict, now: float) -> dict:
+        wk = self._week(now)
+        hits = d.get("game_hits", []) if d.get("game_week") == wk else []
+        return {"hits": hits, "done": d.get("bonus_week") == wk}
 
     # --- what Metin did -----------------------------------------------------------------------
     def contact(self, now: Optional[float] = None) -> None:
@@ -596,7 +630,7 @@ class Heart:
         return {"mood": d["mood"], "low": lvl != "gut", "label": LABELS[d["mood"]],
                 "cheer": d.get("cheer", 0), "level": lvl,
                 "silent": d.get("silent_until", 0) > now, "rose": self._rose_state(d, now),
-                "outfit": self._outfit(d, now)}
+                "outfit": self._outfit(d, now), "game": self._game(d, now)}
 
     def stats(self, now: Optional[float] = None) -> dict:
         """For Claude's check (GET /api/moodstats): numbers and history, no chat texts."""
