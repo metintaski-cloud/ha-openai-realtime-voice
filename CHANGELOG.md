@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.114.5 (20 Nov 2026)
+
+- Smaller chat bubbles on the stage (Metin): 46 % wide instead of 56 %, 13 px text, less padding, so more of her stays visible.
+
 ## 2.114.4 (20 Nov 2026)
 
 - A long press on the stage or a chat bubble no longer selects a word and opens Chrome's search panel (`user-select: none` and no touch callout in the full screen chat; the text field stays selectable), Metin's screenshot of 20 Nov 2026.
