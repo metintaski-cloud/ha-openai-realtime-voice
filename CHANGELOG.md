@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.114.8 (20 Nov 2026)
+
+- Clip timer top left under the menu button (Metin): a small circle whose red ring fills as the running clip goes on and turns green for a second when a new clip begins, so he sees when a touch will start. No numbers. Green also while no clip runs (a touch starts at once).
+
 ## 2.114.7 (20 Nov 2026)
 
 - No more jerk on a touch (Metin): the touch is noted at once and shown as a small white see through ring that fades, but her touch clip starts only when the running clip hands over in her starting pose (`ZPEND`, taken by `stageNext` or `stageLoop`; when the next loop clip is already waiting for its hand over, the touch clip takes its place, `SWAP`). The wait is at most the rest of the running clip. Further touches count only after her clip is through.
