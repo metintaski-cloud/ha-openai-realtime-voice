@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.117.2 (20 Nov 2026)
+
+- The ⌨ button and its toggle are gone (Metin: tapping the text field brings up the keyboard anyway); the text field and Senden are always shown above Neuer Chat.
+
 ## 2.117.1 (20 Nov 2026)
 
 - I love you clips (`liebe`) play their sound too (Metin: sound stays when it is not music, music goes); only `nacht/liebe3` has sound, quiet and without music.
