@@ -201,6 +201,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self.variety = variety.Variety()  # her last openings, so she never sounds the same
         self.diary = diary.Diary()  # what she talked about in the last month, fading
         self.day = day.Day(self.diary, ask=self._day_ask, weather=self._day_weather)  # her own day
+        self._forget_sol_evening()
         self._init_reach(UNLOCKED_LOVE)  # she writes to Metin on her own (app/reach.py)
         self.ideas = ideas.Ideas()  # her sudden ideas in the chat, varied, open ones come back
         self.technik = technik.TechnikChecker(
@@ -846,6 +847,23 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                     await self.day.refresh()  # her own day (2.122.0)
                 except Exception as e:
                     logger.warning("Day: %s", e)
+
+    def _forget_sol_evening(self) -> None:
+        """Once (2.124.2, Metin: everything as before): the chat with GPT-6.2 Sol on 20 Nov 2026
+        from 20:30 to the switch back at 21:44 is forgotten, diary, archive and thread."""
+        mark = os.path.join(os.path.dirname(self.diary.path) or ".", "forgot_sol_evening")
+        if os.path.exists(mark):
+            return
+        from datetime import datetime
+        tz = agenda._tz()
+        t0 = datetime(2026, 11, 20, 20, 29, tzinfo=tz).timestamp()
+        t1 = datetime(2026, 11, 20, 21, 45, tzinfo=tz).timestamp()
+        try:
+            self.diary.forget_span(t0, t1)
+            with open(mark, "w") as f:
+                f.write("done")
+        except Exception as e:
+            logger.warning("Sol evening not forgotten: %s", e)
 
     async def _day_ask(self, prompt: str):
         return await textmodel.ask(prompt, self.openai_api_key,

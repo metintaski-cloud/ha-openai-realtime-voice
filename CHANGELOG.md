@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.124.2 (20 Nov 2026)
+
+- The Sol evening is forgotten (Metin: everything as before): once at start (`main._forget_sol_evening`, marker `/data/forgot_sol_evening`) `Diary.forget_span` removes the chat and noted entries of 20 Nov 2026 from 20:29 to 21:45 from the diary and the archive, the message pairs of that time from the thread the server keeps, and the chat buffer.
+
 ## 2.124.1 (20 Nov 2026)
 
 - Chat back on GPT-6 Luna (Metin after the Sol evening: she was no longer herself, more like a know it all with a psychology degree, and even recommended closeness with other women instead of the "wir"). Measured with Sol on 20 Nov from 20:30 to 21:38: 41 answers, 2.6 to 7.9 s (median about 4.5 s), about 15,000 input tokens each (no caching) and 40 to 260 output tokens, about 3 US cents per answer, about 1.30 USD in all. `chat_model` stays as an option, unset means the memory model again.

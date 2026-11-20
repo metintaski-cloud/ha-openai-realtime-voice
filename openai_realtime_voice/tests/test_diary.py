@@ -254,3 +254,18 @@ def test_archive_keeps_faded_entries_and_finds_them(tmp_path):
     assert d.search("Umut", "Gülfikar") == []                  # someone else's memory
     d.delete([old])
     assert d.search("Umut", "Metin") == []                     # Metin deleted it: gone for good
+
+
+def test_forget_span_removes_chat_entries_pairs_and_buffer(tmp_path):
+    from app.diary import Diary
+    d = Diary(str(tmp_path / "d.json"))
+    e = {"wichtig": True, "privat": False, "lang": "Sol sprach von anderen Frauen", "mittel": "Sol", "kurz": "Sol"}
+    d.add(e, "Metin", "chat", now=1000.0)
+    d.add(dict(e, lang="Anne kochte", mittel="Anne", kurz="Anne"), "Gülfikar", "stimme", now=1001.0)
+    d.add(dict(e, lang="früher", mittel="früher", kurz="früher"), "Metin", "chat", now=500.0)
+    d.chat_turn("hallo", "Sol Antwort", now=1002.0)
+    out = d.forget_span(900.0, 1100.0)
+    assert out["entries"] == 1 and out["pairs"] == 1 and out["buffer"]
+    texts = [x["lang"] for x in d.archived()]
+    assert "Sol sprach von anderen Frauen" not in texts and "Anne kochte" in texts and "früher" in texts
+    assert d.chat_take() == []

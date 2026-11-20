@@ -358,6 +358,23 @@ class Diary:
             logger.warning("Diary: archive not cleaned: %s", e)
         return len(items) - len(kept)
 
+    def forget_span(self, t0: float, t1: float) -> dict:
+        """Metin asked to forget a chat evening (2.124.2): its chat and noted entries leave the
+        diary and the archive, its pairs leave the thread the server keeps, and a buffer still
+        holding it is emptied, so it is as if it never happened."""
+        gone = [e["t"] for e in self.archived()
+                if t0 <= e.get("t", 0) <= t1 and e.get("src") in ("chat", "gemerkt")]
+        n = self.delete(gone) if gone else 0
+        before = len(self._recent)
+        self._recent = [p for p in self._recent if not (t0 <= p[2] <= t1)]
+        buffer = bool(self._chat) and self._chat_last >= t0
+        if buffer:
+            self._chat = []
+        self._save_chat()
+        out = {"entries": len(gone), "diary": n, "pairs": before - len(self._recent), "buffer": buffer}
+        logger.info("Diary: forgot a chat span: %s", out)
+        return out
+
     def pin(self, stamp) -> dict:
         """🔑 in the app: keep an entry for good, or let it fade again."""
         try:
