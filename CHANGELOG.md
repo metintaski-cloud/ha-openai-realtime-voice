@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.113.1 (20 Nov 2026)
+
+- She says hallo (`begruessung`) every time the app opens, is reloaded or comes back to the front, not only on the first mood of a page load (`stageHello`, Metin's wish).
+
 ## 2.113.0 (20 Nov 2026)
 
 - She can change into Freizeit now (scene concept stage 2, first part): when Metin tells her to change or that she has Feierabend and she is good, the model writes `"szene": "umziehen"`, `Heart.scene` switches her to Freizeit (`freizeit` timestamp, status field `freizeit`) and the stage plays `umziehen` (book and glasses away), then her Freizeit loop. Back to work at 5 in the morning without a scene. Hurt she does not change and must not claim it. In Freizeit the stage only uses `freizeit<name>` clips (`clipVars`); a missing sad Freizeit loop falls back to the happy one.
