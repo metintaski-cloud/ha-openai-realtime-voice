@@ -544,7 +544,7 @@ async function bgmIsLong(n){if(n in BGLONG)return BGLONG[n];let L=false;try{cons
 async function bgmBuf(n){if(BGBUF[n])return BGBUF[n];const b=await BGCTX.decodeAudioData(await (await fetch('/clips/musik/'+n+'.m4a')).arrayBuffer());
  const d=b.getChannelData(0);let a=0,e=d.length-1;while(a<e&&Math.abs(d[a])<1e-4)a++;while(e>a&&Math.abs(d[e])<1e-4)e--;b.ls=a/b.sampleRate;b.le=(e+1)/b.sampleRate;BGBUF[n]=b;return b;}
 function bgmTick(){const c=document.getElementById('chat');let n='';if(STM&&MUSIC.length){n=MUSIC.includes(STM.mood)?STM.mood:(STM.low?'traurig':'gut');if(!MUSIC.includes(n))n='';}  /* gapless loop through Web Audio, the audio element paused at its loop point (2.117.5, Metin) */
- const on=n&&MUSON&&soundOn&&c.style.display==='block'&&!c.classList.contains('oncall')&&!document.hidden;
+ const on=n&&MUSON&&soundOn&&CODE&&!REC&&!c.classList.contains('oncall')&&!document.hidden;  /* keeps playing in the menu and list pages, silent while he records (2.117.7, Metin) */
  if(!on){if(BGCTX&&BGCTX.state==='running')BGCTX.suspend().catch(()=>{});if(BGEL)BGEL.pause();return;}
  if(BGEL&&BGMN===n){BGEL.volume=TALKING?.05:.22;if(BGEL.paused)BGEL.play().catch(()=>{});return;}
  if(!BGCTX){try{BGCTX=new (window.AudioContext||window.webkitAudioContext)();BGGAIN=BGCTX.createGain();BGGAIN.connect(BGCTX.destination);}catch(e){return;}}
@@ -610,9 +610,9 @@ document.getElementById('cmic').onclick=async()=>{const b=document.getElementByI
  if(!navigator.mediaDevices||!window.MediaRecorder){CHAT.push({role:'info',text:'Das Mikrofon ist auf dieser Seite nicht frei (Chrome Einstellung fehlt).'});chatSave();chatDraw();return;}
  let st;try{st=await navigator.mediaDevices.getUserMedia({audio:true});}catch(e){CHAT.push({role:'info',text:'Kein Zugriff aufs Mikrofon.'});chatSave();chatDraw();return;}
  const parts=[];REC=new MediaRecorder(st);REC.ondataavailable=e=>{if(e.data.size)parts.push(e.data);};
- REC.onstop=()=>{st.getTracks().forEach(t=>t.stop());clearTimeout(RECT);const mime=REC.mimeType||'audio/webm';REC=null;b.classList.remove('rec');b.innerHTML='&#127908; Mikro';
+ REC.onstop=()=>{st.getTracks().forEach(t=>t.stop());clearTimeout(RECT);const mime=REC.mimeType||'audio/webm';REC=null;bgmTick();b.classList.remove('rec');b.innerHTML='&#127908; Mikro';
   const blob=new Blob(parts,{type:mime});if(blob.size>2000)voiceSend(blob,mime);};
- REC.start();b.classList.add('rec');b.innerHTML='&#9632; Stopp';snd.on();RECT=setTimeout(()=>{if(REC)REC.stop();},60000);};
+ REC.start();bgmTick();b.classList.add('rec');b.innerHTML='&#9632; Stopp';snd.on();RECT=setTimeout(()=>{if(REC)REC.stop();},60000);};
 function mailCard(m,i){const c=document.createElement('div');c.className='mc';const e=m.e;
  const h=document.createElement('b');h.textContent='✉ E-Mail an '+e.to;c.appendChild(h);
  const a=document.createElement('div');a.className='meta';a.textContent=e.addr+'  ·  Betreff: '+e.subject;c.appendChild(a);

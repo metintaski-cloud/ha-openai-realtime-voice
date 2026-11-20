@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.117.7 (20 Nov 2026)
+
+- The music pauses while Metin records a voice message (she understood him badly with music behind him) and goes on afterwards at the same spot.
+- The music keeps playing in the menu, list pages and settings (only the code word, the 🎵 button, Ton aus, a live call or a hidden page stop it), instead of stopping as soon as the chat is not shown.
+
 ## 2.117.6 (20 Nov 2026)
 
 - New happy background music: Metin's Persian trance track (the first 2 hours of his download, audio only, 44 MB, `musik/gut.m4a` in the media folder; his old song mix is in the git history before 2.108.0). A track over 4 MB streams through an audio element (`bgmIsLong` reads the size from a one byte range request), because decoding hours of music into memory would overload the phone; short loops still play gapless through Web Audio.
