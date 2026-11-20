@@ -535,7 +535,7 @@ document.getElementById('stage').addEventListener('contextmenu',e=>e.preventDefa
 const ZONES=[['gesicht',.02,.16,.37,.63],['brust',.16,.31,.30,.70],['bauch',.31,.42,.32,.68],['po',.42,.57,.29,.71]],ZLAST={},ZPRE={po:'hinten'};  // night po clips start from behind: she turns away first (2.114.2)
 function zoneAt(ev){const st=document.getElementById('stage').getBoundingClientRect(),ar=1176/1764;let w=st.width,h=w/ar;if(h<st.height){h=st.height;w=h*ar;}
  const x=(ev.clientX-st.left-(st.width-w)/2)/w,y=(ev.clientY-st.top-(st.height-h)/2)/h;const z=ZONES.find(z=>y>=z[1]&&y<z[2]&&x>=z[3]&&x<=z[4]);return z?z[0]:null;}
-document.getElementById('stage').onclick=ev=>{if(!CLIPS||!STM||STM.low)return;const z=zoneAt(ev);if(!z)return;const v=clipVars(z);if(!v.length)return;
+let ZT=0;document.getElementById('stage').onpointerdown=ev=>{if(ev.button>0||Date.now()-ZT<700)return;ZT=Date.now();if(!CLIPS||!STM||STM.low)return;const z=zoneAt(ev);if(!z)return;const v=clipVars(z);if(!v.length)return;
  const o=v.length>1?v.filter(n=>n!==ZLAST[z]):v,n=o[Math.floor(Math.random()*o.length)];ZLAST[z]=n;DANCING=false;
  const pre=ZPRE[z]&&clipVars(ZPRE[z]);if(pre&&pre.length){const h=pre[Math.floor(Math.random()*pre.length)];return stageShow(h,false,()=>stageShow(n,false,()=>stageLoop(clipFor(STM)),true),true);}
  stageShow(n,false,()=>stageLoop(clipFor(STM)),true);};

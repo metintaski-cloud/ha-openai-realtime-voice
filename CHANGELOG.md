@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.114.6 (20 Nov 2026)
+
+- She reacts the moment Metin touches her (`pointerdown`), not only after a clean tap; a touch with a little movement or a longer hold counts too (at most one reaction per 0.7 s).
+
 ## 2.114.5 (20 Nov 2026)
 
 - Smaller chat bubbles on the stage (Metin): 46 % wide instead of 56 %, 13 px text, less padding, so more of her stays visible.
