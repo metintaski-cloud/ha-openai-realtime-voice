@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.117.1 (20 Nov 2026)
+
+- I love you clips (`liebe`) play their sound too (Metin: sound stays when it is not music, music goes); only `nacht/liebe3` has sound, quiet and without music.
+
 ## 2.117.0 (20 Nov 2026)
 
 - Komm her and I love you at night: `nacht/komm` to `komm4` ("Bett. Komm. F") and `nacht/liebe` to `liebe4` ("Bett. F. Nach. F. I Love You", two of the six were the same file), still frames trimmed, sound kept where the clip has one. `Heart.scene("komm")` at gut now returns `komm`; the page plays `liebe` where a look has no `komm` clip (the work dresses), so nothing changes there.
