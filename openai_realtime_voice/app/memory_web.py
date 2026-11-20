@@ -510,7 +510,7 @@ const KNIET_P=0.12,EXTRA_P=0.25;const SND_RE=/(^|[/])(kuss|rose|komm)/;
 function stageNext(b){const sp=STM&&!STM.low?SPECIAL.filter(n=>clipVars(n).length):[];if(sp.length&&Math.random()<SPECIAL_P)stagePlay([sp[Math.floor(Math.random()*sp.length)]],b);
  else if(STM&&!STM.low&&clipVars('gluecklichextra').length&&Math.random()<EXTRA_P)stagePlay(['gluecklichextra'],b);
  else if(STM&&STM.low&&STM.level==='schwer'&&clipVars('setzen').length&&Math.random()<KNIET_P)stagePlay(['setzen'],b);else stageLoop(b);}
-function stagePlay(once,loop){DANCING=false;const q=once.map(n=>{const v=clipVars(n);return v.length?v[Math.floor(Math.random()*v.length)]:null;}).filter(Boolean);const next=()=>{const n=q.shift();if(n)stageShow(n,false,next,true);else stageLoop(loop);};next();}
+function stagePlay(once,loop){DANCING=false;ZBUSY=0;const q=once.map(n=>{const v=clipVars(n);return v.length?v[Math.floor(Math.random()*v.length)]:null;}).filter(Boolean);const next=()=>{const n=q.shift();if(n)stageShow(n,false,next,true);else stageLoop(loop);};next();}
 function stageMood(st){if(CLIPS===null)return;document.getElementById('stage').classList.toggle('low',!!st.low);let once=[];const o=STM;
  if(!o)once=['begruessung'];if(o){if(o.low&&!st.low)once=['uebergang','kuss'];else if(st.low&&o.low&&(st.cheer||0)>(o.cheer||0))once=['trost'];}
  const changed=!o||once.length||o.mood!==st.mood||o.level!==st.level||o.outfit!==st.outfit;STM=st;if(!o||o.outfit!==st.outfit){const im=document.querySelector('#stage .fig img'),nb=st.outfit==='nacht'&&NIGHTBODY?'/clips/nacht/body.jpg':LOOKBODY;if(nb&&!im.src.endsWith(nb))im.src=nb;}if(changed)stagePlay(once,clipFor(st));}
@@ -535,10 +535,12 @@ document.getElementById('stage').addEventListener('contextmenu',e=>e.preventDefa
 const ZONES=[['gesicht',.02,.16,.37,.63],['brust',.16,.31,.30,.70],['bauch',.31,.42,.32,.68],['po',.42,.57,.29,.71]],ZLAST={},ZPRE={po:'hinten'};  // night po clips start from behind: she turns away first (2.114.2)
 function zoneAt(ev){const st=document.getElementById('stage').getBoundingClientRect(),ar=1176/1764;let w=st.width,h=w/ar;if(h<st.height){h=st.height;w=h*ar;}
  const x=(ev.clientX-st.left-(st.width-w)/2)/w,y=(ev.clientY-st.top-(st.height-h)/2)/h;const z=ZONES.find(z=>y>=z[1]&&y<z[2]&&x>=z[3]&&x<=z[4]);return z?z[0]:null;}
-let ZT=0;document.getElementById('stage').onpointerdown=ev=>{if(ev.button>0||Date.now()-ZT<700)return;ZT=Date.now();if(!CLIPS||!STM||STM.low)return;const z=zoneAt(ev);if(!z)return;const v=clipVars(z);if(!v.length)return;
+var ZT=0,ZBUSY=0;  // one touch at a time: no other spot reacts until her clip is through (2.114.6, Metin)
+const zDone=()=>{ZBUSY=0;stageLoop(clipFor(STM));};
+document.getElementById('stage').onpointerdown=ev=>{if(ev.button>0||Date.now()-ZT<700||Date.now()<ZBUSY)return;ZT=Date.now();if(!CLIPS||!STM||STM.low)return;const z=zoneAt(ev);if(!z)return;const v=clipVars(z);if(!v.length)return;ZBUSY=Date.now()+40000;
  const o=v.length>1?v.filter(n=>n!==ZLAST[z]):v,n=o[Math.floor(Math.random()*o.length)];ZLAST[z]=n;DANCING=false;
- const pre=ZPRE[z]&&clipVars(ZPRE[z]);if(pre&&pre.length){const h=pre[Math.floor(Math.random()*pre.length)];return stageShow(h,false,()=>stageShow(n,false,()=>stageLoop(clipFor(STM)),true),true);}
- stageShow(n,false,()=>stageLoop(clipFor(STM)),true);};
+ const pre=ZPRE[z]&&clipVars(ZPRE[z]);if(pre&&pre.length){const h=pre[Math.floor(Math.random()*pre.length)];return stageShow(h,false,()=>stageShow(n,false,zDone,true),true);}
+ stageShow(n,false,zDone,true);};
 
 document.getElementById('crose').onclick=async()=>{const st=LASTST||{};
  if(st.rose==='used'){CHAT.push({role:'info',text:'🌹 Diese Woche hast du ihr schon eine Rose geschenkt.'});chatDraw();return;}

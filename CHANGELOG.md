@@ -2,7 +2,7 @@
 
 ## 2.114.6 (20 Nov 2026)
 
-- She reacts the moment Metin touches her (`pointerdown`), not only after a clean tap; a touch with a little movement or a longer hold counts too (at most one reaction per 0.7 s).
+- She reacts the moment Metin touches her (`pointerdown`), not only after a clean tap; a touch with a little movement or a longer hold counts too (at most one reaction per 0.7 s). One touch at a time (Metin): while her touch clip plays, other spots do not react until it is through (`ZBUSY`, cleared when the clip hands over or another scene starts).
 
 ## 2.114.5 (20 Nov 2026)
 
