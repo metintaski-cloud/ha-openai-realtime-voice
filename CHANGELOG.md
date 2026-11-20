@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.123.0 (20 Nov 2026)
+
+- Her whole library (Metin: nothing shall get lost, also after months): every diary entry and every noted thing is also appended to `/data/leyla_diary.json.archive.jsonl`, which never fades (the diary she is given still fades after 30 days). She looks things up there by key words when a question goes further back: tool `erinnern` in voice (same speaker and privacy rules as `merken`) and the chat field `erinnern` (a second pass with `Diary.recall_note`, up to 6 entries of that person or unnamed ones, best word match, then newest). Entries Metin deletes in the app folder Tagebuch are removed from the archive too.
+
 ## 2.122.0 (20 Nov 2026)
 
 - Leyla's own day (`app/day.py`, Metin: alive, with something of her own to tell, nothing invented): from 7 o'clock a text model builds her day from real things, the family's talks at home that day (diary entries of others, never private, never Metin's own, only harmless everyday things, never what Anne told her in confidence) and the Home Assistant weather, plus her inner life: a real book she reads for 4 to 9 days, a thought and a song. Built again when the family talked to her since (at most every 2 hours), 7 days kept so she knows yesterday. `Day.note` goes into the chat rules, the voice hand over for Metin and her own messages; she tells a piece only when it fits or he asks how her day was.

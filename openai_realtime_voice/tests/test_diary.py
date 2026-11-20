@@ -237,3 +237,20 @@ def test_event_time_day_and_time():
     t = event_time("morgen", "09:00")
     assert 0 < t - _t.time() < 3 * 86400
     assert event_time("morgen") > _t.time()
+
+
+def test_archive_keeps_faded_entries_and_finds_them(tmp_path):
+    import time as _t
+    from app.diary import Diary, KEEP_S
+    d = Diary(str(tmp_path / "d.json"))
+    old = _t.time() - KEEP_S - 86400
+    d.add({"wichtig": True, "privat": False, "lang": "Metin erzählte, dass Umut im Sommer nach Izmir zog",
+           "mittel": "Umut zog nach Izmir", "kurz": "Umut Izmir"}, "Metin", "chat", now=old)
+    d.add({"wichtig": True, "privat": False, "lang": "Wetter war schön", "mittel": "Wetter",
+           "kurz": "Wetter"}, "Metin", "chat")
+    assert "Izmir" not in d.note("Metin")                      # faded out of the diary
+    assert "Izmir" in d.recall_note("Was weißt du über Umut?", "Metin")
+    assert "nichts" in d.recall_note("Fahrrad", "Metin")
+    assert d.search("Umut", "Gülfikar") == []                  # someone else's memory
+    d.delete([old])
+    assert d.search("Umut", "Metin") == []                     # Metin deleted it: gone for good

@@ -52,7 +52,8 @@ NOCH OFFEN (was du noch nicht weißt)
 Antworte nur mit JSON in dieser Form und sonst nichts:
 {{"reply": "deine Antwort", "question": "deine neugierige Frage an Metin", "proposals": [{{"action": "add|edit|delete|move", "kind": "family|friends|leyla|private", "to": "Zielliste (nur bei move)", "old": "genauer bisheriger Eintrag (bei edit, delete und move)", "new": "neuer Eintrag (bei add und edit)"}}]}}
 "question" füllst du nur, wenn eine Frage wirklich passt: eine einzige lockere, persönliche Frage, wie eine Freundin sie stellt, höchstens bei jeder zweiten Antwort. Hat deine letzte Antwort schon gefragt oder verabschiedet Metin sich, bleibt sie leer. "proposals" ist leer, wenn es nichts zu ändern gibt. Sollst du Lampen schalten, kommt zusätzlich "lights": [...] dazu.
-Erzählt Metin dir etwas Wichtiges (einen Plan, Termin, Wunsch, ein Ereignis oder etwas aus seinem Leben) oder bittet er dich, dir etwas zu merken, kommt zusätzlich "merken": [{{"text": "ein kurzer Satz in der dritten Person, z. B. Metin hat am Montag Zahnarzt", "privat": true oder false, "datum": "nur wenn es an einem Tag passiert: JJJJ-MM-TT, TT.MM., heute, morgen oder Wochentag", "uhrzeit": "HH:MM oder leer"}}] dazu; ist es vorbei, fragst du von selbst, wie es war. Das merkst du dir sofort, ohne Ja, für alle späteren Gespräche, auch zu Hause; privat ist true für Intimes und alles, was nur zwischen euch ist. Kleinkram und Befehle nicht."""
+Erzählt Metin dir etwas Wichtiges (einen Plan, Termin, Wunsch, ein Ereignis oder etwas aus seinem Leben) oder bittet er dich, dir etwas zu merken, kommt zusätzlich "merken": [{{"text": "ein kurzer Satz in der dritten Person, z. B. Metin hat am Montag Zahnarzt", "privat": true oder false, "datum": "nur wenn es an einem Tag passiert: JJJJ-MM-TT, TT.MM., heute, morgen oder Wochentag", "uhrzeit": "HH:MM oder leer"}}] dazu; ist es vorbei, fragst du von selbst, wie es war.
+Fragt Metin nach etwas, das länger her ist und nicht in deinem Tagebuch oder Gedächtnis oben steht, kommt "erinnern": "ein paar Suchwörter" dazu; du bekommst dann deine Erinnerungen aus allen Gesprächen und antwortest noch einmal. Das merkst du dir sofort, ohne Ja, für alle späteren Gespräche, auch zu Hause; privat ist true für Intimes und alles, was nur zwischen euch ist. Kleinkram und Befehle nicht."""
 
 
 LIGHTS_NOTE = """
@@ -185,6 +186,7 @@ def _parse(text: str, lists: dict, may_ask: bool = True) -> Optional[dict]:
             "lights_raw": parsed.get("lights"), "email_raw": parsed.get("email"),
             "mail_raw": parsed.get("mail"), "mama_raw": parsed.get("mama"),
             "kalender_raw": parsed.get("kalender"), "merken_raw": parsed.get("merken"),
+            "erinnern_raw": parsed.get("erinnern"),
             "mood_resolved": parsed.get("mood_resolved") is True,
             "mood_pause": parsed.get("mood_pause") is True,
             "gefuehl": parsed.get("gefuehl") if isinstance(parsed.get("gefuehl"), list) else [],
@@ -333,7 +335,7 @@ def speak_prompt(reply: str) -> str:
 async def answer(api_key: str, models: list[str], rules: str, store: memory.MemoryStore,
                  history, message: str, url: str = memory.RESPONSES_URL,
                  lights=None, room=None, mailer=None, inbox=None,
-                 mama=None, mood=None, agenda=None) -> Optional[dict]:
+                 mama=None, mood=None, agenda=None, recall=None) -> Optional[dict]:
     """`lights`: (count, run) of the light controller, so Leyla can switch the lamps.
     `room`: async function giving the room values, asked only when Metin asks about them.
     `mailer`: `mail.Mailer`; an "email" in her answer becomes a draft card, never a sent mail.
@@ -389,6 +391,14 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
                                lights)
         if second:
             second.pop("kalender_raw", None)
+            second["proposals"] = out["proposals"] + second["proposals"]
+            out = second
+    rec_req = out.pop("erinnern_raw", None) if out else None
+    if out and recall and isinstance(rec_req, str) and rec_req.strip():  # 2.123.0: her library
+        second = await _answer(api_key, models, rules + recall(rec_req[:200]), store, history,
+                               message, url, lights)
+        if second:
+            second.pop("erinnern_raw", None)
             second["proposals"] = out["proposals"] + second["proposals"]
             out = second
     if out and lights and out.get("lights_raw"):

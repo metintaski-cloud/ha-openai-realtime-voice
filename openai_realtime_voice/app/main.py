@@ -302,6 +302,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
              agenda.AGENDA_BACKEND_HINT,
              "Metins Kalender verwalten (Termine ansehen, eintragen, ändern, löschen; nur für "
              "Metin selbst nach seinem Codewort)"),
+            (self.enable_memory, diary.ERINNERN_TOOL, diary.ERINNERN_BACKEND_HINT,
+             "in deinem ganzen Gedächtnis nachschlagen, auch Monate zurück"),
             (self.enable_memory, diary.MERKEN_TOOL, diary.MERKEN_BACKEND_HINT,
              "dir sofort merken, was dir jemand Wichtiges erzählt (Pläne, Termine, Wünsche)"),
             (self.reminders.available, reminders.OK_TOOL, reminders.OK_BACKEND_HINT,
@@ -401,7 +403,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                                 if self.lights.token else None,
                                 mailer=self.mailer, inbox=self.inbox, agenda=self.agenda,
                                 mama=self.messages.from_metin if self.messages.available else None,
-                                mood=self.mood)
+                                mood=self.mood,
+                                recall=lambda q: self.diary.recall_note(q, "Metin", private=True))
         if out:
             for item in chat.notes_to_remember(out.pop("merken_raw", None)):
                 self.diary.remember(item["text"], "Metin", item["privat"],
