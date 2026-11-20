@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.114.3 (20 Nov 2026)
+
+- Tap zones aimed better: each zone has its own width (face narrow, chest, belly and bottom as wide as her body), measured on the night still and both dresses. Chat bubbles no longer catch taps (only their buttons and cards do), so a tap on her body through a bubble reaches her.
+
 ## 2.114.2 (20 Nov 2026)
 
 - Night tap on her bottom: she first turns away with one of four front to back clips (`nacht/hinten` to `hinten4`, from "Bett. Glücklich. Tanzen" and "Bett. Tanzen. F. Nach. H"), then one of four back to front po clips (`nacht/po` to `po4`: bett_po, bett_po2, bett_hinten_nach_vorne, bett_hallo_hinten_nach_vorne) brings her back to the front (`ZPRE`).
