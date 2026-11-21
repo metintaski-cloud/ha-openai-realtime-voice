@@ -603,8 +603,8 @@ document.getElementById('stage').onpointerdown=ev=>{if(ev.button>0||Date.now()-Z
  {const g=(STM&&STM.game)||{};if(!g.done){if(ZT_GREEN()){if(!(g.hits||[]).includes(z))zGame(z);}else if((g.hits||[]).length)zGame(z,true);}}
  const o=v.length>1?v.filter(n=>n!==ZLAST[z]):v,n=o[Math.floor(Math.random()*o.length)];ZLAST[z]=n;
  const pre=ZPRE[z]&&!/povorne|mix/.test(n)&&clipVars(ZPRE[z]),h=pre&&pre.length?pre[Math.floor(Math.random()*pre.length)]:'';  /* povorne clips start facing him, no turn first (2.117.3) */
- const go=()=>{DANCING=false;ZBUSY=Date.now()+40000;if(tr)tr.then(touchShow);if(h)return stageShow(h,false,()=>stageShow(n,false,zDone,true),true);stageShow(n,false,zDone,true);};
- if(SWAP&&SWAP===STOK){CONT=true;go();CONT=false;}else if(document.getElementById('stage').classList.contains('vid'))ZPEND=go;else go();};  // a hand over already waiting: take its place
+ const go=()=>{DANCING=false;ZBUSY=Date.now()+40000;if(tr)tr.then(touchShow);document.querySelectorAll('#stage video:not(.pet)').forEach(x=>{x.style.transition='opacity .35s';setTimeout(()=>{x.style.transition='';},1500);});if(h)return stageShow(h,false,()=>stageShow(n,false,zDone,true),true);stageShow(n,false,zDone,true);};
+ ZPEND=null;SWAP=0;go();};  /* 2.130.3: the reaction starts at the touch (crossfade), no more waiting for the clip end (Metin: must be in sync) */
 
 document.getElementById('crose').onclick=async()=>{const st=LASTST||{};
  if(st.rose==='used'){CHAT.push({role:'info',text:'🌹 Diese Woche hast du ihr schon eine Rose geschenkt.'});chatDraw();return;}

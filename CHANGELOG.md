@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.130.3 (21 Nov 2026)
+
+- Touch in sync (Metin: waiting for the dot and the clip end did not work): a touch starts the reaction at once with a short 0.35 s crossfade instead of queuing it in `ZPEND` until the running clip ends (2.114.7 behaviour removed for touches); the written reply comes at the same moment.
+
 ## 2.130.2 (21 Nov 2026)
 
 - The chest touch in the short Freizeit dress plays its sound too (`SND_RE` gets `freizeitbrust`, clip re-encoded with its Kling sound).
