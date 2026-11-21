@@ -2,7 +2,7 @@ import asyncio
 import json
 import time
 
-from app import day as daymod
+from app import day, day as daymod
 from app.diary import Diary
 
 
@@ -46,3 +46,11 @@ def test_bad_answer_keeps_nothing(tmp_path, monkeypatch):
     dy = daymod.Day(Diary(str(tmp_path / "d.json")), ask, None, str(tmp_path / "day.json"))
     assert not asyncio.run(dy.refresh())
     assert dy.note() == ""
+
+
+def test_pet_note_thanks_once(tmp_path):
+    f = str(tmp_path / "flag")
+    assert "Überraschung" in day.pet_note(f) and "Mokka" in day.pet_note(f)
+    assert not day.pet_seen("Wie war dein Tag?", f)
+    assert day.pet_seen("Danke für Mokka, sie ist so süß!", f)
+    assert "schon bei Metin" in day.pet_note(f) and not day.pet_seen("Mokka schläft", f)

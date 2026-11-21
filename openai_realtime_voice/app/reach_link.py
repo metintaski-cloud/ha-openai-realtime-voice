@@ -10,7 +10,7 @@ import os
 from typing import Optional
 from urllib.parse import urlparse
 
-from app import chat, memory, messages, persona, reach, textmodel
+from app import chat, day, memory, messages, persona, reach, textmodel
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ class ReachMixin:
     async def _reach_notes(self) -> str:
         # a noted plan of his that is over: her own message may ask how it went (2.121.0)
         return (self.diary.note("Metin", private=True) + self.variety.note()
-                + self.diary.followup_note("Metin", private=True) + self.day.note())
+                + self.diary.followup_note("Metin", private=True) + self.day.note() + day.pet_note())
 
     async def _reach_write(self, prompt: str) -> str:
         return await textmodel.ask(

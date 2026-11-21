@@ -400,7 +400,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         if self.enable_memory:
             rules += chat.cleanup_note(self.cleaner.chat_items())
         rules += (self.diary.note("Metin", private=True) + self.variety.note()
-                  + self.diary.followup_note("Metin", private=True) + self.day.note()
+                  + self.diary.followup_note("Metin", private=True) + self.day.note() + day.pet_note()
                   + await self.reminders.followup_note())
         if self.reach.available:  # she knows she writes to him on her own (2.129.0)
             rules += reach.CHAT_NOTE
@@ -434,6 +434,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                                     ask_at=diary.event_time(item["datum"], item["uhrzeit"]))
             if out["reply"]:
                 self.variety.add([out["reply"]])
+                day.pet_seen(out["reply"])  # she thanked Metin for Mokka once (2.131.0)
             self.diary.chat_turn(message, out["reply"] or "(Leyla schweigt)")
             self.ideas.after_answer(out["reply"], kind, open_noted=bool(open_note),
                                     answered=out.pop("open_answered", False))
@@ -653,6 +654,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 await self._send_note(live_ws, "open", "Interne Notiz, nicht vorlesen." + asked)
         if name.split()[0] == "Metin" and self.day.note():  # her own day, to tell him about
             await self._send_note(live_ws, "day", "Interne Notiz, nicht vorlesen." + self.day.note())
+        if name.split()[0] == "Metin":  # her cat Mokka, Metin's surprise (2.131.0)
+            await self._send_note(live_ws, "pet", "Interne Notiz, nicht vorlesen." + day.pet_note())
         mine = self.diary.followup_note(name, private=bool(state.get("unlocked")))
         if mine:  # a noted plan of this person is over: she asks how it went (2.121.0)
             await self._send_note(live_ws, "follow", "Interne Notiz, nicht erwähnen." + mine)

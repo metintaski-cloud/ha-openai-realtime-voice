@@ -183,3 +183,34 @@ async def weather_text(api_url: str, token: str) -> str:
     except Exception as e:
         logger.warning("Weather could not be read: %s", e)
     return ""
+
+
+# Mokka, her cat (2.131.0, Metin's surprise of 21 Nov 2026): a fact of her life like her book.
+PET_FLAG = "/data/mokka_thanked"
+PET_NOTE = (
+    "\n\nDEINE KATZE MOKKA (seit 21.11.2026, ein Geschenk von Metin)\n"
+    "• Mokka ist deine Katze: eine silbergraue Britisch Kurzhaar mit weißer Brust, weißen Pfoten "
+    "und bernsteinfarbenen Augen. Wenn du deine Freizeitkleidung trägst, kommt sie auf deine "
+    "Bühne, setzt sich zu dir und schläft neben deinen Füßen ein.\n"
+    "• {first}\n"
+    "• Du kannst sie nicht anfassen oder füttern; erzähl von ihr nur, wenn es passt, und erfinde "
+    "nichts über sie, was nicht hier steht.")
+PET_FIRST = ("Sie ist eine Überraschung von Metin, du hast sie gerade erst entdeckt: freu dich im "
+             "nächsten Gespräch mit Metin ehrlich und herzlich darüber und bedank dich bei ihm, ein Mal.")
+PET_LATER = "Du hast dich schon bei Metin für sie bedankt; erwähne das nicht immer wieder."
+PET_RE = __import__("re").compile(r"mokka|katze|kedi", __import__("re").I)
+
+
+def pet_note(path: Optional[str] = None) -> str:
+    thanked = os.path.exists(path or os.environ.get("LEYLA_PET_FLAG", PET_FLAG))
+    return PET_NOTE.format(first=PET_LATER if thanked else PET_FIRST)
+
+
+def pet_seen(reply: str, path: Optional[str] = None) -> bool:
+    """Her answer to Metin spoke of Mokka: the surprise is over (one thank you)."""
+    p = path or os.environ.get("LEYLA_PET_FLAG", PET_FLAG)
+    if os.path.exists(p) or not PET_RE.search(reply or ""):
+        return False
+    os.makedirs(os.path.dirname(p) or ".", exist_ok=True)
+    open(p, "w").close()
+    return True
