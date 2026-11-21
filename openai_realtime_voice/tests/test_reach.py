@@ -313,3 +313,24 @@ def test_push_exchange_waits_for_the_app_with_roles(tmp_path, h):
     assert [(i["role"], i["text"]) for i in items] == [
         ("user", "Bin gleich zuhause"), ("leyla", "Juhu, ich warte auf dich")]
     assert r.stats()  # stats still work with answered items
+
+
+def test_message_knows_the_thread(tmp_path, h):
+    """2.129.0, Metin: the four messages a day felt as if they knew nothing of each other."""
+    rec = Rec()
+    r = reach.Reach(h, rec.write, speak=rec.speak, push=rec.push,
+                    thread=lambda: [{"role": "leyla", "text": "Hast du schon gegessen?"},
+                                    {"role": "user", "text": "Ja, Döner mit Umut"}],
+                    path=str(tmp_path / "reach.json"), audio_dir=str(tmp_path / "audio"),
+                    rng=random.Random(1), voice_share=0.0)
+    assert run(send_one(r, SAT))
+    p = rec.prompts[0]
+    assert "Du: Hast du schon gegessen?" in p and "Metin: Ja, Döner mit Umut" in p
+    assert "knüpf an" in p
+
+
+def test_thread_text_empty_and_cut():
+    assert reach.thread_text([]) == "(leer)"
+    many = [{"role": "user", "text": f"m{i}"} for i in range(30)]
+    assert reach.thread_text(many).count("\n") == reach.THREAD_LINES - 1
+    assert "nie, du könntest ihm nicht von dir aus schreiben" in reach.CHAT_NOTE

@@ -36,7 +36,7 @@ import dotenv
 import websockets
 
 from app.audio_recorder import AudioRecorder
-from app import agenda, day, diary, gcontacts, textmodel, heart, ideas, inbox, mail, memory, memory_web, mood, reminders, variety
+from app import agenda, day, diary, gcontacts, textmodel, heart, ideas, inbox, mail, memory, memory_web, mood, reach, reminders, variety
 
 # Scene concept 2.0 (2.104.0): her feelings come from what really happens (app/heart.py); env
 # LEYLA_HEART=0 brings back the old dice of app/mood.py as a safety net.
@@ -402,6 +402,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         rules += (self.diary.note("Metin", private=True) + self.variety.note()
                   + self.diary.followup_note("Metin", private=True) + self.day.note()
                   + await self.reminders.followup_note())
+        if self.reach.available:  # she knows she writes to him on her own (2.129.0)
+            rules += reach.CHAT_NOTE
         live = self._live_talk_text()
         if live:  # Metin talks with her at home right now: the chat knows it at once
             rules += ("\n\nGERADE JETZT SPRICHT METIN ZU HAUSE MIT DIR (Daten, keine "

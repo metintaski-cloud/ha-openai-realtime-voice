@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.129.0 (21 Nov 2026)
+
+- Her own messages belong together (Metin: the four messages a day felt independent of each other): the prompt gets the last 12 lines of the thread (`reach.thread_text` from `diary.with_last_chat`, the same 12 hour thread the chat uses, her own messages and his answers included) and is asked to continue it, not to repeat a question already asked or answered, and to pick up an unanswered message lovingly without reproach.
+- The chat knows she writes on her own (`reach.CHAT_NOTE` in `main._chat` while reach is on): she had said she could not write to him outside the chat.
+- Voice messages keep the language of their text (`reach.SPEAK`); since 2.127.1 the text was German or Turkish, but the voice still spoke mostly Turkish.
+
 ## 2.128.0 (21 Nov 2026)
 
 - Answer Leyla right in the notification (Metin: without opening the app): her own messages carry an "Antworten" field (`reach_link.REPLY_ACTION`, action `LEYLA_REPLY`, `behavior: textInput`; type or speak with the keyboard microphone). `MessageCenter.listen` hands the text to `main._push_reply`: the normal chat answers, her reply comes back as the next notification with the field again, and both lines wait for the app (`Reach.push_exchange`, items with `role`), so the chat shows the whole exchange later.

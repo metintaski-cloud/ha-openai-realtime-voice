@@ -36,7 +36,7 @@ class ReachMixin:
             self.mood, write=self._reach_write, speak=self._reach_speak,
             push=self._reach_push if self.messages.available else None,
             busy=lambda: bool(self._active_sessions), rules=self._reach_rules,
-            notes=self._reach_notes)
+            notes=self._reach_notes, thread=lambda: self.diary.with_last_chat([]))
 
     def _reach_rules(self) -> str:
         return persona.build([], fan=False, tv=False, messages=False, extra=self.instructions)
