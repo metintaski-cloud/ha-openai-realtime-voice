@@ -452,6 +452,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         if not out or not out.get("reply"):
             return out
         out.pop("scene", None)  # the page already plays the touch clip
+        out["reply"] = out["reply"].strip().strip('„“"”').strip()  # spoken words, no quote marks
         out["proposals"], out["lights"] = [], []
         st = self.mood.status()
         if (st.get("level") == "gut" and st.get("mood") == "verliebt"

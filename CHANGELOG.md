@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.127.0 (21 Nov 2026)
+
+- Touch replies now and then in Turkish (Metin: only German so far): 40 % of them (`chat.TOUCH_TURKISH_P`), and without quotation marks around her words.
+- Prepared, not active until her clips are in the media folder: Mokka, Leyla's cat (Metin's gift; Leyla chose a cat, the name Mokka and a silver grey British Shorthair with white paws). See through WebM clips (VP9 with alpha) in `/media/leyla/mokka/` (`kommt` walks in from the right, `sitzt...` sitting loops), listed as `alpha` in `/clips.json` (`CLIP_RE` takes `.webm`), played in `#spet` over the stage with the same size and fit as the clips, only while Leyla wears her Freizeit clothes (`petTick`), silent.
+
 ## 2.126.0 (21 Nov 2026)
 
 - Ask instead of guessing (Leyla's own idea in the chat, Metin agreed): a persona rule in WAS DU WEISST (chat and voice) says that when she is not sure about something from her memory (a name, a date, an appointment, who said what) she says so honestly and asks briefly instead of guessing, and never invents anything; general knowledge and requests are answered as before without a counter question.

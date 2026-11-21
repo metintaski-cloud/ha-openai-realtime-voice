@@ -217,6 +217,7 @@ def notes_to_remember(raw) -> list[dict]:
 TOUCH_WHERE = {"gesicht": "im Gesicht", "brust": "an der Brust", "bauch": "am Bauch",
                "po": "am Po"}
 TOUCH_VOICE_P = 0.3  # share of touch reactions spoken when she is in love (Metin: her voice)
+TOUCH_TURKISH_P = 0.4  # now and then in Turkish, his other language (2.127.0, Metin)
 
 
 def touch_message(zone: str) -> str:
@@ -231,7 +232,9 @@ def touch_message(zone: str) -> str:
             "Beschreibe nie deine Reaktion oder deinen Zustand wie eine Erzählerin (nicht: "
             "'Deine Berührung lässt mich lächeln', nicht: 'ich kichere'), sondern sprich ihn an, "
             "z. B. 'Hey, das kitzelt, du Frecher!' oder 'Mmh, mach ruhig weiter.' "
-            "Keine Frage, kein szene Feld, keine Vorschläge.)")
+            "Keine Anführungszeichen, keine Frage, kein szene Feld, keine Vorschläge."
+            + (" Diesmal sagst du es auf Türkisch, liebevoll und natürlich, z. B. 'Ay, gıdıklanıyorum, "
+               "yaramaz!'" if random.random() < TOUCH_TURKISH_P else "") + ")")
 
 
 def no_dashes(text: str) -> str:

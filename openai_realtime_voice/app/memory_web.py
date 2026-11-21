@@ -54,7 +54,7 @@ def clips_dir() -> str:
     except OSError:
         pass
     return BUILTIN_CLIPS
-CLIP_RE = re.compile(r"^/clips/([a-z0-9]{2,20})/([a-z]{2,20}[0-9]{0,2})\.(mp4|jpg|m4a)$")  # look/scene (2.99.4), musik/<mood>.m4a (2.103.0)
+CLIP_RE = re.compile(r"^/clips/([a-z0-9]{2,20})/([a-z]{2,20}[0-9]{0,2})\.(mp4|jpg|m4a|webm)$")  # look/scene (2.99.4), musik/<mood>.m4a (2.103.0)
 
 
 def check_code(typed, phrase: str, now: Optional[float] = None) -> bool:
@@ -318,6 +318,7 @@ button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 @keyframes fogr{0%{transform:translate(0,4%) scale(1.1);opacity:.5}50%{opacity:.85}100%{transform:translate(-9%,-3%) scale(.95);opacity:.35}}
 @keyframes fogf{0%{opacity:.35;transform:scaleY(1)}100%{opacity:.75;transform:scaleY(1.15)}}
 #stage.low .fog{opacity:.6}#stage video.on{opacity:1}
+#stage video.pet{z-index:2;pointer-events:none;transition:opacity 1.2s}
 #stage.vid .fig{opacity:0;animation:none}
 #stage.low .fig{animation-duration:12s}#stage.low img{filter:saturate(.55) brightness(.75)}
 #chat.oncall #stage{box-shadow:inset 0 0 40px #22d3ee55}#chat.oncall.speak #stage{box-shadow:inset 0 0 60px #d946efaa}
@@ -343,7 +344,7 @@ button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 #clog{bottom:84px}#stage{top:0;bottom:0}body.chatfull{overflow:hidden;overscroll-behavior:none}body.chatfull #chat{position:fixed;inset:0;z-index:15;margin:0;border-radius:0;height:100vh!important;height:100dvh!important}body.chatfull #menu{position:fixed;top:56px;left:8px;right:8px;z-index:60;max-height:80vh;overflow-y:auto}#chat .chead .cav,#chat #mlabel,#chat .chead>div:nth-child(3){display:none!important}#chat .chead #clive,#chat .chead #crose,#chat .chead #cmus{position:absolute;right:10px;margin:0;z-index:3;min-width:52px;text-align:center}#chat .chead #cmic{position:absolute;right:10px;top:10px;margin:0;z-index:3;min-width:52px;width:auto;height:auto;padding:7px 12px!important;font-size:14px;line-height:normal;border-radius:999px;box-shadow:none;text-align:center}#chat .chead #clive{top:58px}#chat .chead #crose{top:106px}#chat .chead #cmus{top:154px}#chat .chead #cmenu{width:auto;padding:7px 11px;font-size:16px;background:#000a;border:1px solid #22d3ee66}#chat #clog{pointer-events:none}#chat #clog>*{pointer-events:auto}#clog .m,#clog .lr,#clog .wait{pointer-events:none}#clog .play{pointer-events:auto}#ztimer{display:none;position:absolute;z-index:4;left:14px;top:64px;width:30px;height:30px;pointer-events:none}body.chatfull #ztimer{display:block}#ztimer circle{fill:none;stroke-width:4}#ztimer .bg{stroke:#ffffff26}#ztimer .fg{stroke:#ef4444;stroke-linecap:round;transform:rotate(-90deg);transform-origin:50% 50%;transition:stroke .2s}#ztimer.go .fg{stroke:#22c55e}#ztimer .dot{fill:#fff;stroke:none;opacity:0;transition:opacity .2s}#ztimer.hit .dot{opacity:.9}#ztimer.gold .dot{fill:#facc15;opacity:1}#stage .zring{position:absolute;z-index:6;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;border:2px solid #fffb;background:#ffffff1f;pointer-events:none;animation:zring .9s ease-out forwards}@keyframes zring{from{transform:scale(.5);opacity:1}to{transform:scale(1.4);opacity:0}}body.chatfull #chat{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}body.chatfull #chat textarea{-webkit-user-select:text;user-select:text}body.chatfull #clog{width:46%}body.chatfull #clog .m{font-size:13px;line-height:1.3;padding:6px 9px;border-radius:11px}body.chatfull #clog .wait{font-size:12px}#stage,#stage *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 </style></head><body>
 <div id="splash"><div class="sp"><img src="/icon.png?v=5" alt=""><svg viewBox="0 0 200 200"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#a855f7"/><stop offset="1" stop-color="#d946ef"/></linearGradient></defs><circle class="trk" cx="100" cy="100" r="90"/><circle class="rg" cx="100" cy="100" r="90" pathLength="100"/></svg></div></div>
-<header><button id="back">&#8249;</button><img id="micon" src="/icon.png?v=5" alt="Menü" title="Menü"><h1>Leyla Gedächtnis</h1></header><div id="menu"></div><div id="pulse" class="ok" title="Alles in Ordnung"><div class="tick" id="tick" style="display:none"><span></span></div><i class="spark" style="left:12%;top:30%;animation-delay:0s"></i><i class="spark" style="left:22%;top:68%;animation-delay:0.6s"></i><i class="spark" style="left:31%;top:22%;animation-delay:1.2s"></i><i class="spark" style="left:68%;top:74%;animation-delay:0.3s"></i><i class="spark" style="left:77%;top:28%;animation-delay:0.9s"></i><i class="spark" style="left:88%;top:60%;animation-delay:1.5s"></i><i class="spark" style="left:40%;top:80%;animation-delay:1.8s"></i><i class="spark" style="left:60%;top:18%;animation-delay:2.1s"></i><div class="beam"></div><svg viewBox="0 0 100 90"><defs><linearGradient id="hg" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#f43f5e"/></linearGradient><radialGradient id="hc"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#7dd3fc"/><stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/></radialGradient></defs><path d="M50 84C20 62 4 46 4 28C4 14 15 4 28 4C38 4 46 10 50 18C54 10 62 4 72 4C85 4 96 14 96 28C96 46 80 62 50 84Z" fill="#0b1650cc" stroke="url(#hg)" stroke-width="3.2" stroke-linejoin="round"/><path d="M14 40H34L40 28L47 54L53 34L58 44H86" fill="none" stroke="#e0f2fe" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/><circle cx="54" cy="38" r="9" fill="url(#hc)"/></svg></div><div id="chat"><div id="stage"><div class="fig"><img src="/leyla_body.jpg" alt=""></div><video id="svid" muted playsinline preload="auto"></video><video id="svid2" muted playsinline preload="auto"></video><div class="fog"><i class="fl"></i><i class="fr"></i><i class="ff"></i></div></div><div class="chead"><button id="cmenu" title="Menü">&#9776;</button><div class="cav"><img src="/leyla.jpg" alt=""><span id="mbadge"></span></div><div><h2>Chat mit Leyla</h2><div id="mlabel"></div><div id="ccount"></div></div><button id="crose" title="Rose schenken, einmal pro Woche">&#127801;</button><button id="cmus" title="Musik an oder aus">&#127925;</button><button id="clive" title="Live mit Leyla reden">&#128222; Live</button><div id="lpill"></div></div><div id="clog"></div><div id="ctype"><textarea id="ctext" placeholder="Schreib Leyla ..."></textarea><button id="csend">Senden</button></div><div id="cin"><button id="cnew" title="Neuen Chat beginnen">Neuer Chat</button><button id="cmic" title="Sprachnachricht">&#127908; Mikro</button></div></div><div id="live"><img src="/leyla.jpg" alt=""><div id="lstat">Verbinde ...</div><button id="lend">Auflegen</button></div><div id="rules"><div class="top"><button id="rback">&#8249;</button><h1>So ist Leyla</h1></div><div id="rtext"></div></div><div id="root"></div><div id="gmail" style="display:none"></div><div id="lamps" style="display:none"></div>
+<header><button id="back">&#8249;</button><img id="micon" src="/icon.png?v=5" alt="Menü" title="Menü"><h1>Leyla Gedächtnis</h1></header><div id="menu"></div><div id="pulse" class="ok" title="Alles in Ordnung"><div class="tick" id="tick" style="display:none"><span></span></div><i class="spark" style="left:12%;top:30%;animation-delay:0s"></i><i class="spark" style="left:22%;top:68%;animation-delay:0.6s"></i><i class="spark" style="left:31%;top:22%;animation-delay:1.2s"></i><i class="spark" style="left:68%;top:74%;animation-delay:0.3s"></i><i class="spark" style="left:77%;top:28%;animation-delay:0.9s"></i><i class="spark" style="left:88%;top:60%;animation-delay:1.5s"></i><i class="spark" style="left:40%;top:80%;animation-delay:1.8s"></i><i class="spark" style="left:60%;top:18%;animation-delay:2.1s"></i><div class="beam"></div><svg viewBox="0 0 100 90"><defs><linearGradient id="hg" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#f43f5e"/></linearGradient><radialGradient id="hc"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#7dd3fc"/><stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/></radialGradient></defs><path d="M50 84C20 62 4 46 4 28C4 14 15 4 28 4C38 4 46 10 50 18C54 10 62 4 72 4C85 4 96 14 96 28C96 46 80 62 50 84Z" fill="#0b1650cc" stroke="url(#hg)" stroke-width="3.2" stroke-linejoin="round"/><path d="M14 40H34L40 28L47 54L53 34L58 44H86" fill="none" stroke="#e0f2fe" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/><circle cx="54" cy="38" r="9" fill="url(#hc)"/></svg></div><div id="chat"><div id="stage"><div class="fig"><img src="/leyla_body.jpg" alt=""></div><video id="svid" muted playsinline preload="auto"></video><video id="svid2" muted playsinline preload="auto"></video><video id="spet" class="pet" muted playsinline preload="auto"></video><div class="fog"><i class="fl"></i><i class="fr"></i><i class="ff"></i></div></div><div class="chead"><button id="cmenu" title="Menü">&#9776;</button><div class="cav"><img src="/leyla.jpg" alt=""><span id="mbadge"></span></div><div><h2>Chat mit Leyla</h2><div id="mlabel"></div><div id="ccount"></div></div><button id="crose" title="Rose schenken, einmal pro Woche">&#127801;</button><button id="cmus" title="Musik an oder aus">&#127925;</button><button id="clive" title="Live mit Leyla reden">&#128222; Live</button><div id="lpill"></div></div><div id="clog"></div><div id="ctype"><textarea id="ctext" placeholder="Schreib Leyla ..."></textarea><button id="csend">Senden</button></div><div id="cin"><button id="cnew" title="Neuen Chat beginnen">Neuer Chat</button><button id="cmic" title="Sprachnachricht">&#127908; Mikro</button></div></div><div id="live"><img src="/leyla.jpg" alt=""><div id="lstat">Verbinde ...</div><button id="lend">Auflegen</button></div><div id="rules"><div class="top"><button id="rback">&#8249;</button><h1>So ist Leyla</h1></div><div id="rtext"></div></div><div id="root"></div><div id="gmail" style="display:none"></div><div id="lamps" style="display:none"></div>
 <div id="bar"><button id="del" disabled>Markierte löschen</button></div>
 <script>
 let CODE=null;
@@ -507,9 +508,19 @@ function moodShow(st){if(!st||!st.mood)return;const c=document.getElementById('c
  c.classList.toggle('low',!!st.low);c.classList.toggle('good',!st.low);document.getElementById('pulse').dataset.mood=st.low?'low':'good';b.style.display='flex';b.textContent=st.low?'🖤':'❤️';
  document.getElementById('mlabel').textContent=(st.low?'🖤 ':'❤️ ')+st.label;LASTST=st;const rb=document.getElementById('crose');if(rb)rb.classList.toggle('off',st.rose!=='ready');stageMood(st);}
 let CLIPS=null,LASTST=null,STM=null;
-let CVER={},MUSV={};let OUTFIT='',NIGHT=[],NIGHTBODY=false,LOOKBODY='';const CHANGE=['umziehen','bettvonarbeit','bettvonfreizeit'];
+let CVER={},MUSV={},PET=[],PETON=false;let OUTFIT='',NIGHT=[],NIGHTBODY=false,LOOKBODY='';const CHANGE=['umziehen','bettvonarbeit','bettvonfreizeit'];
+/* Mokka, Leyla's cat (2.127.0, Metin's gift, name and look chosen by Leyla): a see through
+   layer over the stage, same size and fit as the clips, only while Leyla wears her Freizeit
+   clothes. She walks in from the right once (kommt), then plays her sitting loops (sitzt...). */
+function petUrl(n){return '/clips/mokka/'+n+'.webm?v='+(CVER.mokka||0);}
+function petNext(){const v=document.getElementById('spet');if(!v||!PETON)return;const idle=PET.filter(n=>n.startsWith('sitzt'));if(!idle.length)return;
+ const n=idle[Math.floor(Math.random()*idle.length)];v.src=petUrl(n);v.play().catch(()=>{});}
+function petTick(){const v=document.getElementById('spet');if(!v)return;const want=!!(STM&&STM.outfit==='freizeit'&&PET.length&&document.body.classList.contains('chatfull'));
+ if(want&&!PETON){PETON=true;v.onended=petNext;v.src=petUrl(PET.includes('kommt')?'kommt':PET.find(n=>n.startsWith('sitzt')));v.play().catch(()=>{});v.classList.add('on');}
+ else if(!want&&PETON){PETON=false;v.classList.remove('on');setTimeout(()=>{if(!PETON){v.pause();v.removeAttribute('src');v.load();}},1300);}}
+setInterval(petTick,2000);
 async function clipsLoad(){let outs={};try{outs=(await (await fetch('/clips.json')).json()).outfits||{};}catch(e){}
- for(const k in outs)CVER[k]=outs[k].v||0;NIGHT=outs.nacht?outs.nacht.clips:[];NIGHTBODY=!!(outs.nacht&&outs.nacht.body);delete outs.nacht;const names=Object.keys(outs);let last='';try{last=localStorage.getItem('loutfit')||'';}catch(e){}
+ for(const k in outs)CVER[k]=outs[k].v||0;NIGHT=outs.nacht?outs.nacht.clips:[];NIGHTBODY=!!(outs.nacht&&outs.nacht.body);delete outs.nacht;PET=outs.mokka&&outs.mokka.alpha||[];delete outs.mokka;const names=Object.keys(outs);let last='';try{last=localStorage.getItem('loutfit')||'';}catch(e){}
  const cand=names.length>1?names.filter(n=>n!==last):names;OUTFIT=cand.length?cand[Math.floor(Math.random()*cand.length)]:'';
  try{if(OUTFIT)localStorage.setItem('loutfit',OUTFIT);}catch(e){}
  CLIPS=OUTFIT?outs[OUTFIT].clips:[];if(OUTFIT&&outs[OUTFIT].body){LOOKBODY='/clips/'+OUTFIT+'/body.jpg?v='+(CVER[OUTFIT]||0);document.querySelector('#stage .fig img').src=LOOKBODY;}
@@ -894,7 +905,10 @@ def list_outfits() -> dict:
         clips = sorted(f[:-4] for f in files
                        if f.endswith(".mp4") and CLIP_RE.match(f"/clips/{look}/{f}"))
         body = "body.jpg" in files
-        if clips or body:
+        # clips with a see through background (WebM with alpha), Mokka the cat (2.127.0)
+        alpha = sorted(f[:-5] for f in files
+                       if f.endswith(".webm") and CLIP_RE.match(f"/clips/{look}/{f}"))
+        if clips or body or alpha:
             # v: newest change in the folder, the page adds it to every clip address so a phone
             # never plays a cached old version after a clip was replaced (2.117.8)
             try:
@@ -902,6 +916,8 @@ def list_outfits() -> dict:
             except (OSError, ValueError):
                 v = 0
             out[look] = {"clips": clips, "body": body, "v": v}
+            if alpha:
+                out[look]["alpha"] = alpha
     return out
 
 
@@ -949,7 +965,7 @@ async def _send_clip(writer, look: str, name: str, ext: str, lines: list) -> Non
         f.seek(start)
         raw = f.read(end - start + 1)
     extra = f"Content-Range: bytes {start}-{end}/{size}\r\n" if status.startswith("206") else ""
-    ctype = {"mp4": "video/mp4", "m4a": "audio/mp4"}.get(ext, "image/jpeg")
+    ctype = {"mp4": "video/mp4", "m4a": "audio/mp4", "webm": "video/webm"}.get(ext, "image/jpeg")
     writer.write((f"HTTP/1.1 {status}\r\nContent-Type: {ctype}\r\nContent-Length: {len(raw)}\r\n"
                   f"Accept-Ranges: bytes\r\n{extra}Cache-Control: max-age=86400\r\n"
                   "Connection: close\r\n\r\n").encode() + raw)
