@@ -93,6 +93,12 @@ Quellen fünfte Recherche: chatcut.io/blog/kling-4-0-review, kling.ai/blog/kling
 
 Quellen: atlascloud.ai/blog/tips/kling-4-credit-burn-rate-workflow, aitoolanalysis.com/kling-ai-pricing, note.com/rich_emu7600 (Credits verschwinden).
 
+## Bedienung über den Browser der Claude App (21.11.2026)
+
+- Claude stellt Modus, Auflösung, Länge ein und tippt den Prompt; Bilder hochladen und Downloads speichern braucht Metins Hand, weil sich dabei Windows Fenster öffnen (Datei auswählen, Speichern unter: dort nur Enter drücken).
+- Download einer 4K Datei (2352x3524, 24 fps, 10 s) war nur 6 MB groß.
+- Vor jedem "Generate" zeigt Claude Einstellungen und Credits und wartet auf Metins Okay.
+
 ## Metins Erfahrung (über 238 Clips)
 
 Ein richtig guter Clip kommt meist erst nach etwa 4 Versuchen. Das ist die Arbeitsregel: pro Clip 4 Versuche einplanen (zum Testen mit Flash oder Standard), den besten nehmen und nur noch per Edit nachbessern.
@@ -106,4 +112,4 @@ Jeder neue Clip wird gemessen (Unruhe, Rucken, Anfang und Ende gegen die Grundpo
 | 21.11.2026 | Mokka kommt (alt) | 10 s, nur Startbild, langer Prompt | Pfoten rutschen beim Hinsetzen | eine Handlung pro Clip, Motion Brush mit Bahn |
 | 21.11.2026 | Mokka hinlegen | 5 s, Startbild mit sitzender Katze | kein Reinlaufen, alles gehetzt, Ende (liegt, Augen zu) gut | 5 s nur für eine Handlung; Endbild für das Hinlegen |
 | 21.11.2026 | Mokka springt auf den Schoß (Metin) | 15 s, 5 Handlungen (springen, streicheln, runter, zurücklaufen, hinlegen), Verbote im Prompt | über 4 Versuche, alle schlecht, gelöscht | zu viele Handlungen für einen Clip; Verbote statt positiver Sätze |
-| 21.11.2026 | Mokka kommt, sitzt, liegt | Kling 4.0 Keyframes (allein, sitzt, liegt), 4K, 10 s, 350 Credits, Versuch 1 | läuft | erster Clip nach offizieller Anleitung |
+| 21.11.2026 | Mokka kommt, sitzt, liegt | Kling 4.0 Keyframes (allein, sitzt, liegt), 4K, 10 s, 350 Credits, Versuch 1 | Katze beim ersten Versuch toll (echte Schritte, setzt sich, legt sich, Ende wie Keyframe); Leyla komplett eingefroren | gleiche Pose auf allen Keyframes plus "keeps her pose" friert eine Figur ein. Für Tiere nutzen wir das: Leyla und Bühne stehen still, Mokka wird per Differenz zum ersten Bild sauber ausgeschnitten und über die normalen Clips gelegt. Soll eine Figur leben, ihre Bewegung beschreiben und nicht dreimal dieselbe Pose geben |
