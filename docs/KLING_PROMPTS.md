@@ -68,6 +68,19 @@ Die offiziellen Anleitungen von Kling (kling.ai/quickstart) widersprechen in zwe
 
 Quellen vierte Recherche: kling.ai/quickstart/kling-4-model-user-guide, kling.ai/quickstart/motion-control-user-guide, kling.ai/blog/fix-ai-video-drift-consistency-guide, curiousrefuge.com/blog/8-ways-to-use-first-frame-last-frame-in-your-ai-videos.
 
+## Kosten sparen wie Profis (21.11.2026, Recherche)
+
+- Jede Generierung kostet, auch die verworfenen; 4 Versionen auf einmal sind 4 Abrechnungen.
+- Kling 3.0 Credits pro Sekunde: 720p ohne Ton 6, mit Ton 9; 1080p ohne Ton 8, mit Ton 12. Ein 5 s 720p Test ohne Ton = 30 Credits, ein 10 s 1080p Clip mit Ton = 120. Für Kling 4.0 gibt es im Abo noch keine veröffentlichte Credit Tabelle (API: 0,157 USD/s 720p, 0,235 USD/s 1080p): vor dem Start immer den angezeigten Preis prüfen.
+- Ablauf: höchstens 3 bis 4 Tests mit 5 s, 720p, ohne Ton (Flash oder Standard); jeder neue Versuch repariert genau einen benannten Fehler; dann ein einziger finaler Render in 1080p.
+- Ton nur, wo die App ihn abspielt (Kuss, Rose, Komm, I love you); bei allen anderen Clips Ton aus, das spart ein Drittel.
+- 5 s statt 10 s halbiert den Preis; längere Abläufe als Kette von 5 s Clips.
+- Was ich im Schnitt retten kann (Flackern, Ende in die Grundpose, Anfang kürzen), nicht neu generieren.
+- Erfolgreiche Prompts aufheben und wiederverwenden (dieses Dokument und das Erfahrungslog).
+- Abo: Jahreszahlung spart etwa 25 %; Monats Credits verfallen nach 31 Tagen, gekaufte Credit Pakete halten 2 Jahre (Kling verbraucht die bald ablaufenden zuerst); tägliche Bonus Credits bei der ersten Anmeldung am Tag, sie verfallen um Mitternacht.
+
+Quellen: atlascloud.ai/blog/tips/kling-4-credit-burn-rate-workflow, aitoolanalysis.com/kling-ai-pricing, note.com/rich_emu7600 (Credits verschwinden).
+
 ## Metins Erfahrung (über 238 Clips)
 
 Ein richtig guter Clip kommt meist erst nach etwa 4 Versuchen. Das ist die Arbeitsregel: pro Clip 4 Versuche einplanen (zum Testen mit Flash oder Standard), den besten nehmen und nur noch per Edit nachbessern.
