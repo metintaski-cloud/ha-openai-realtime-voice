@@ -99,8 +99,8 @@ Quellen: atlascloud.ai/blog/tips/kling-4-credit-burn-rate-workflow, aitoolanalys
 - Download einer 4K Datei (2352x3524, 24 fps, 10 s) war nur 6 MB groß.
 - Medienordner ist seit 21.11.2026 auf Metins PC als Laufwerk Z: verbunden (\\192.168.2.240\media) und in der Claude App als Ordner freigegeben: Claude legt fertige Clips selbst nach Z:\leyla\<look>\, Metin muss nichts kopieren.
 - Bilder für Keyframes: einmal hochgeladen, danach über "Asset" > "Uploads" oder "Extract Frames" (Bild aus einem fertigen Clip) wählbar, ohne Datei Fenster.
-- Seit 21.11.2026 (Metin): wenn alles passt, klickt Claude ohne Nachfrage auf "Generate", bis Metin "stop" schreibt.
-- Vor jedem "Generate" zeigt Claude Einstellungen und Credits und wartet auf Metins Okay.
+- Vor jedem "Generate" zeigt Claude Einstellungen und Credits und wartet auf Metins Okay (Metin schrieb am 21.11.2026 "stop", als ein Clip 525 Credits kostete).
+- Startbild Regel (seit 21.11.2026, nach einem 4K Loop für 350 Credits mit falschem Bild: Mokka lag mit im Clip): Die Reihenfolge unter "Uploads" ändert sich nach jedem neuen Bild, eine Position wie "Reihe 1, Bild 2" ist deshalb nie verlässlich. Direkt vor "Generate" vergrößert Claude die beiden Vorschaubilder "First frame" und "Last frame" im Eingabefeld (Zoom) und prüft am Bild selbst: richtiges Outfit, Katze nur dann sichtbar, wenn der Clip sie braucht. Erst wenn beide stimmen, nennt Claude Metin die Bilder mit Namen ("Start: Leyla allein, Ende: Leyla allein") zusammen mit den Credits.
 
 ## Metins Erfahrung (über 238 Clips)
 
