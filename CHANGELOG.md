@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.131.1 (21 Nov 2026)
+
+- Sound on every touch clip in every outfit (Metin): `SND_RE` now covers gesicht, brust, bauch, po (and povorne), mix and hinten, with or without the `freizeit` prefix, besides kuss, rose, komm, liebe and the Mokka surprise; loops (gluecklich, traurig, extras) and dances stay silent. The older touch clips carry no audio track, so only the new Kling 4.0 clips (her laugh) are heard.
+
 ## 2.131.0 (21 Nov 2026)
 
 - Mokka is Metin's surprise for Leyla: the first time she shows up (short Freizeit dress), the walk in stops when Mokka sits (`PETSIT` 6 s), the overlay fades out and the Kling 4.0 clip `kurz/freizeitmokka` plays (keyframes Mokka sits, Mokka lies: Leyla discovers her, covers her mouth with joy, picks her up, cuddles her, sets her down, Mokka lies down asleep; with its sound), then the sleeping overlay takes over at the clip end (`petFreude`, localStorage `lmokka`, touches blocked meanwhile).
