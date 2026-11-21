@@ -108,6 +108,8 @@ Quellen: atlascloud.ai/blog/tips/kling-4-credit-burn-rate-workflow, aitoolanalys
 
 - Fremde Hand (21.11.2026, Kopf Clip langes Arbeitskleid): Der Prompt "she feels a gentle stroke on her head ... as if someone is stroking her hair" ließ Kling eine fremde Hand von oben ins Bild malen. Bei Berührungs Clips nie eine andere Person, ein "someone" oder eine streichelnde Hand erwähnen; nur Leylas eigene Reaktion beschreiben ("she closes her eyes and tilts her head slightly, smiling blissfully"). Bei Po, Brust und Bauch gilt dasselbe.
 
+Ab 21.11.2026 (Metin): Bei wichtigen Clips gleich zwei Versuche mit demselben Prompt erzeugen und den besseren nehmen; derselbe Prompt lieferte beim Po im langen Arbeitskleid einmal eine volle Drehung und einmal nur seitlich.
+
 ## Metins Erfahrung (über 238 Clips)
 
 Ein richtig guter Clip kommt meist erst nach etwa 4 Versuchen. Das ist die Arbeitsregel: pro Clip 4 Versuche einplanen (zum Testen mit Flash oder Standard), den besten nehmen und nur noch per Edit nachbessern.
