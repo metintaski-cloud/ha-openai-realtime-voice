@@ -124,3 +124,8 @@ Jeder neue Clip wird gemessen (Unruhe, Rucken, Anfang und Ende gegen die Grundpo
 | 21.11.2026 | Mokka hinlegen | 5 s, Startbild mit sitzender Katze | kein Reinlaufen, alles gehetzt, Ende (liegt, Augen zu) gut | 5 s nur für eine Handlung; Endbild für das Hinlegen |
 | 21.11.2026 | Mokka springt auf den Schoß (Metin) | 15 s, 5 Handlungen (springen, streicheln, runter, zurücklaufen, hinlegen), Verbote im Prompt | über 4 Versuche, alle schlecht, gelöscht | zu viele Handlungen für einen Clip; Verbote statt positiver Sätze |
 | 21.11.2026 | Mokka kommt, sitzt, liegt | Kling 4.0 Keyframes (allein, sitzt, liegt), 4K, 10 s, 350 Credits, Versuch 1 | Katze beim ersten Versuch toll (echte Schritte, setzt sich, legt sich, Ende wie Keyframe); Leyla komplett eingefroren | gleiche Pose auf allen Keyframes plus "keeps her pose" friert eine Figur ein. Für Tiere nutzen wir das: Leyla und Bühne stehen still, Mokka wird per Differenz zum ersten Bild sauber ausgeschnitten und über die normalen Clips gelegt. Soll eine Figur leben, ihre Bewegung beschreiben und nicht dreimal dieselbe Pose geben |
+
+
+## Po Nacht "Clubtanz" (21.11.2026, nacht/po7)
+
+Prompt wie Freizeit Po, aber 3 bis 8 s: "she dances with her back to the camera, swaying her hips from side to side on a steady, slow beat like to a sensual R&B song, each sway smooth and even ... keeps glancing back over her shoulder at the camera with a flirty smile". Ergebnis traf Metins Wunsch beim ersten Versuch. Tempo: erste 3 s original, ab 3 s 0,76 mit mci Interpolation und atempo (0,92 bis 0,8 waren ihm zu schnell).
