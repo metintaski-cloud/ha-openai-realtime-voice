@@ -79,3 +79,11 @@ def test_chat_cleanup_helpers():
     assert chat.cleanup_note({"offen": 0}) == ""
     note = chat.cleanup_note({"vorschlaege": [{"nummer": 1, "liste": "family", "eintrag": "x", "grund": "doppelt"}]})
     assert "1. (family) x: doppelt" in note and "aufraeumen" in note
+
+
+def test_cleanup_line_plain_words():
+    from app import chat
+    assert chat.cleanup_line({"gestrichen": 2, "behalten": 0, "offen": 0}) == \
+        "Erledigt: 2 Einträge gelöscht. Keine Vorschläge mehr offen."
+    assert chat.cleanup_line({"gestrichen": 0, "behalten": 1, "offen": 1}) == \
+        "Erledigt: 1 Eintrag bleibt für immer. 1 Vorschlag noch offen."

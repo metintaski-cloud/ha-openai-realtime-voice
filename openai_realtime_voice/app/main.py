@@ -429,9 +429,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 r = self.cleaner.decide(gone, keep)
                 if r.get("gestrichen") and self.todo_sync:
                     self.todo_sync.kick()
-                out.setdefault("lights", []).append(
-                    "🧹 " + (r["error"] if "error" in r else
-                             f"Aufgeräumt: gestrichen {r['gestrichen']}, behalten {r['behalten']}, offen {r['offen']}"))
+                out.setdefault("lights", []).append("🧹 " + chat.cleanup_line(r))
             for item in chat.notes_to_remember(out.pop("merken_raw", None)):
                 self.diary.remember(item["text"], "Metin", item["privat"],
                                     ask_at=diary.event_time(item["datum"], item["uhrzeit"]))

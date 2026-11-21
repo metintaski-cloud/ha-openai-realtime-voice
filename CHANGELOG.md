@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.125.1 (21 Nov 2026)
+
+- Clearer cleanup line (Metin: confusing): plain words instead of counters ("🧹 Erledigt: 2 Einträge gelöscht. Keine Vorschläge mehr offen.", `chat.cleanup_line`), no 💡 in front, and the chat note tells her not to promise a later report, because the deletion happens at once.
+
 ## 2.125.0 (21 Nov 2026)
 
 - Tidying up from the chat (Metin: the chat did not know the night's proposals): the open proposals go into the chat rules with their numbers (`chat.cleanup_note`), and when Metin names numbers she adds `aufraeumen: {streichen, behalten}`; `Cleaner.decide` deletes and keeps on the same numbering at once, and a line under her answer says what really happened ("🧹 Aufgeräumt: gestrichen 2, behalten 1, offen 0"). The push now also says it works in the chat.

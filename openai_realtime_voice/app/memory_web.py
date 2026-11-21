@@ -605,7 +605,7 @@ setInterval(()=>{if(CODE&&document.getElementById('chat').style.display==='block
 function chatAnswer(j){if(j&&j.silent){CHAT.push({role:'info',text:'🤐 Leyla antwortet gerade nicht.'});if(j.mood)moodShow(j.mood);return null;}
  if(!j||j.error||!j.reply){CHAT.push({role:'leyla',text:'Hmm, gerade komme ich nicht durch. Versuch es gleich nochmal.'});return null;}
  const m={role:'leyla',text:j.reply};if(j.audio){m.aid='a'+Date.now();AUDIO.set(m.aid,'data:audio/wav;base64,'+j.audio);}CHAT.push(m);
- (j.lights||[]).forEach(t=>CHAT.push({role:'info',text:(/^(✉|📣)/.test(t)?'':'💡 ')+t}));if(j.scene)stageScene(j.scene);if(j.mood)moodShow(j.mood);if(j.email)CHAT.push({role:'mail',e:j.email});if(j.trash)CHAT.push({role:'trash',t:j.trash});(j.proposals||[]).forEach(p=>CHAT.push({role:'prop',p}));return m.aid||null;}
+ (j.lights||[]).forEach(t=>CHAT.push({role:'info',text:(/^(✉|📣|🧹)/.test(t)?'':'💡 ')+t}));if(j.scene)stageScene(j.scene);if(j.mood)moodShow(j.mood);if(j.email)CHAT.push({role:'mail',e:j.email});if(j.trash)CHAT.push({role:'trash',t:j.trash});(j.proposals||[]).forEach(p=>CHAT.push({role:'prop',p}));return m.aid||null;}
 function blobB64(b){return new Promise(r=>{const f=new FileReader();f.onload=()=>r(String(f.result).split(',')[1]||'');f.readAsDataURL(b);});}
 async function voiceSend(blob,mime){const history=CHAT.filter(m=>m.role==='user'||m.role==='leyla').map(m=>({role:m.role,text:m.text}));
  const u={role:'user',text:'🎤 ...'};CHAT.push(u);chatSave();chatDraw(true);snd.on();
