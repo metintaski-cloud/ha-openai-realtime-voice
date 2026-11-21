@@ -318,8 +318,22 @@ class Reach:
     # ---- the app ----
     def pending(self) -> list:
         """Messages the app has not put into the chat yet."""
-        return [{"id": i["id"], "t": i["t"], "text": i["text"], "voice": i["voice"]}
+        return [{"id": i["id"], "t": i["t"], "text": i["text"], "voice": i["voice"],
+                 "role": i.get("role", "leyla")}
                 for i in self._load()["items"] if not i.get("seen")]
+
+    def push_exchange(self, mine: str, hers: str, now: Optional[float] = None) -> None:
+        """Metin answered from the notification (2.128.0): his words and her reply wait for
+        the app like her own messages, so the chat shows the whole exchange later. They are
+        answers, not messages of hers, so the quota and the judging leave them alone."""
+        now = now or time.time()
+        d = self._load()
+        for role, text in (("user", mine), ("leyla", hers)):
+            if text:
+                d["items"].append({"id": uuid.uuid4().hex[:10], "t": round(now), "text": text,
+                                   "voice": False, "state": "answered", "seen": False,
+                                   "role": role})
+        self._save(d)
 
     def seen(self, ids) -> int:
         d = self._load()

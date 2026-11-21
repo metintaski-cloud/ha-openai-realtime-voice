@@ -682,7 +682,7 @@ async function remindPending(){let j=null;try{j=await (await post('/api/remind/p
  if(added){chatSave();chatDraw();}}
 async function reachPending(){let j=null;try{j=await (await post('/api/reach/pending',{})).json();}catch(_){}
  if(!j||!j.ok||!(j.items||[]).length)return;const ids=[];
- j.items.forEach(r=>{if(!CHAT.some(m=>m.rid===r.id))CHAT.push({role:'leyla',text:r.text,rid:r.id,voice:!!r.voice});ids.push(r.id);});
+ j.items.forEach(r=>{if(!CHAT.some(m=>m.rid===r.id))CHAT.push({role:r.role==='user'?'user':'leyla',text:r.text,rid:r.id,voice:!!r.voice});ids.push(r.id);});
  chatSave();chatDraw();try{await post('/api/reach/seen',{ids});}catch(_){}}
 async function reachPlay(id){let j=null;try{j=await (await post('/api/reach/audio',{id})).json();}catch(_){}
  if(!j||!j.ok)return;if(!AUDIO.has('r'+id)){const bin=atob(j.audio),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);AUDIO.set('r'+id,URL.createObjectURL(new Blob([u],{type:'audio/wav'})));}playAudio('r'+id);}

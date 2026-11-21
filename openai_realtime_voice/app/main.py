@@ -208,6 +208,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             notify=self.messages.push if self.messages.available else None)
         self.technik.lamp_count = len(self.lights.entities)
         self.messages.on_command = self._automation_command
+        self.messages.on_leyla_reply = self._push_reply
         self.messages.before_play = self._tv_down_for_announcement
         self.messages.after_play = self._tv_up_after_announcement
         self.messages.converse = self._converse

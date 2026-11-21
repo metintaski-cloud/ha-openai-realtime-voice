@@ -16,6 +16,8 @@ logger = logging.getLogger(__name__)
 
 # the Home Assistant app plays this channel with sound and shows the message on top
 PUSH_EXTRA = {"channel": "leyla_nachricht", "importance": "high", "priority": "high", "ttl": 0}
+# answer right in the notification by typing or with the keyboard microphone (2.128.0, Metin)
+REPLY_ACTION = {"action": "LEYLA_REPLY", "title": "Antworten", "behavior": "textInput"}
 
 
 def app_url() -> str:
@@ -57,7 +59,20 @@ class ReachMixin:
         return messages.pcm_to_wav(pcm) if pcm else None
 
     async def _reach_push(self, title: str, message: str) -> None:
-        await self.messages.push(title, message, extra={**PUSH_EXTRA, "clickAction": app_url()})
+        await self.messages.push(title, message, extra={**PUSH_EXTRA, "clickAction": app_url(),
+                                                        "actions": [REPLY_ACTION], "tag": "leyla"})
+
+    async def _push_reply(self, text: str) -> None:
+        """Metin answered a notification of hers: the normal chat answers, her reply comes back
+        as the next notification (with the answer field again) and both wait for the app."""
+        out = await self._chat(None, text)
+        hers = (out or {}).get("reply") or ""
+        if out and out.get("silent"):
+            hers = ""
+        self.reach.push_exchange(text, hers)
+        logger.info("Reach: Metin answered from the notification, reply %s", "sent" if hers else "none")
+        if hers:
+            await self._reach_push("Leyla", hers)
 
     async def _reach_tick(self) -> None:
         item = await self.reach.tick()

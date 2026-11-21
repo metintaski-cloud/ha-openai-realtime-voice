@@ -304,3 +304,12 @@ def test_api_needs_the_code_except_stats(tmp_path, h):
 
 def test_page_script_has_the_message_functions():
     assert "async function reachPending" in memory_web.PAGE and "function reachPlay" in memory_web.PAGE
+
+
+def test_push_exchange_waits_for_the_app_with_roles(tmp_path, h):
+    r, _ = make(tmp_path, h)
+    r.push_exchange("Bin gleich zuhause", "Juhu, ich warte auf dich")
+    items = r.pending()
+    assert [(i["role"], i["text"]) for i in items] == [
+        ("user", "Bin gleich zuhause"), ("leyla", "Juhu, ich warte auf dich")]
+    assert r.stats()  # stats still work with answered items

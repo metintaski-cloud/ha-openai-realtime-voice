@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.128.0 (21 Nov 2026)
+
+- Answer Leyla right in the notification (Metin: without opening the app): her own messages carry an "Antworten" field (`reach_link.REPLY_ACTION`, action `LEYLA_REPLY`, `behavior: textInput`; type or speak with the keyboard microphone). `MessageCenter.listen` hands the text to `main._push_reply`: the normal chat answers, her reply comes back as the next notification with the field again, and both lines wait for the app (`Reach.push_exchange`, items with `role`), so the chat shows the whole exchange later.
+
 ## 2.127.1 (21 Nov 2026)
 
 - Mixed languages (Metin: once German, once Turkish): her own messages and voice messages (`reach.pick_language`, 50 %, one language per message; before mostly Turkish) and touch replies (`TOUCH_TURKISH_P` 0.5).

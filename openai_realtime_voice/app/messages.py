@@ -112,6 +112,7 @@ class MessageCenter:
         self.audio: dict[str, bytes] = {}
         self._wake = asyncio.Event()
         self.on_command: Optional[Callable[[dict], Awaitable[dict]]] = None
+        self.on_leyla_reply: Optional[Callable[[str], Awaitable[None]]] = None  # 2.128.0
         # Turn the TV down before an announcement and back up after it (set by main).
         self.before_play: Optional[Callable[[], Awaitable[None]]] = None
         self.after_play: Optional[Callable[[], Awaitable[None]]] = None
@@ -499,6 +500,12 @@ class MessageCenter:
                         elif ev.get("event_type") == "mobile_app_notification_action":
                             if data.get("action") == "REPLY" and data.get("reply_text"):
                                 await self.from_metin(data["reply_text"])
+                            elif (data.get("action") == "LEYLA_REPLY" and data.get("reply_text")
+                                  and self.on_leyla_reply):
+                                task = asyncio.create_task(self.on_leyla_reply(data["reply_text"]))
+                                task.add_done_callback(
+                                    lambda t: t.exception() and logger.warning(
+                                        "Reply to Leyla failed: %s", t.exception()))
                         elif data.get("entity_id") in self.state_listeners:
                             new = (data.get("new_state") or {}).get("state", "")
                             try:
