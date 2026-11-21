@@ -508,15 +508,16 @@ function moodShow(st){if(!st||!st.mood)return;const c=document.getElementById('c
  c.classList.toggle('low',!!st.low);c.classList.toggle('good',!st.low);document.getElementById('pulse').dataset.mood=st.low?'low':'good';b.style.display='flex';b.textContent=st.low?'🖤':'❤️';
  document.getElementById('mlabel').textContent=(st.low?'🖤 ':'❤️ ')+st.label;LASTST=st;const rb=document.getElementById('crose');if(rb)rb.classList.toggle('off',st.rose!=='ready');stageMood(st);}
 let CLIPS=null,LASTST=null,STM=null;
-let CVER={},MUSV={},PET=[],PETON=false;let OUTFIT='',NIGHT=[],NIGHTBODY=false,LOOKBODY='';const CHANGE=['umziehen','bettvonarbeit','bettvonfreizeit'];
+let CVER={},MUSV={},PET=[],PETON=false,PETCAME=false;let OUTFIT='',NIGHT=[],NIGHTBODY=false,LOOKBODY='';const CHANGE=['umziehen','bettvonarbeit','bettvonfreizeit'];
 /* Mokka, Leyla's cat (2.127.0, Metin's gift, name and look chosen by Leyla): a see through
    layer over the stage, same size and fit as the clips, only while Leyla wears her Freizeit
    clothes. She walks in from the right once (kommt), then plays her sitting loops (sitzt...). */
 function petUrl(n){return '/clips/mokka/'+n+'.webm?v='+(CVER.mokka||0);}
-function petNext(){const v=document.getElementById('spet');if(!v||!PETON)return;const idle=PET.filter(n=>n.startsWith('sitzt'));if(!idle.length)return;
- const n=idle[Math.floor(Math.random()*idle.length)];v.src=petUrl(n);v.play().catch(()=>{});}
+function petIdle(){const l=PET.filter(n=>n.startsWith('liegt'));return l.length?l:PET.filter(n=>n.startsWith('sitzt'));}  /* 2.130.0: after the walk in she sleeps (liegt), sitzt only as a fallback */
+function petNext(){const v=document.getElementById('spet');if(!v||!PETON)return;const idle=petIdle();if(!idle.length)return;
+ const n=idle[Math.floor(Math.random()*idle.length)];v.loop=idle.length===1;v.src=petUrl(n);v.play().catch(()=>{});}
 function petTick(){const v=document.getElementById('spet');if(!v)return;const want=!!(STM&&STM.outfit==='freizeit'&&PET.length&&document.body.classList.contains('chatfull'));
- if(want&&!PETON){PETON=true;v.onended=petNext;v.src=petUrl(PET.includes('kommt')?'kommt':PET.find(n=>n.startsWith('sitzt')));v.play().catch(()=>{});v.classList.add('on');}
+ if(want&&!PETON){PETON=true;v.onended=petNext;v.classList.add('on');if(PET.includes('kommt')&&!PETCAME){PETCAME=true;v.loop=false;v.src=petUrl('kommt');v.play().catch(()=>{});}else petNext();}
  else if(!want&&PETON){PETON=false;v.classList.remove('on');setTimeout(()=>{if(!PETON){v.pause();v.removeAttribute('src');v.load();}},1300);}}
 setInterval(petTick,2000);
 async function clipsLoad(){let outs={};try{outs=(await (await fetch('/clips.json')).json()).outfits||{};}catch(e){}

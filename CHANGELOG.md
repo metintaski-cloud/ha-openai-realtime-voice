@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.130.0 (21 Nov 2026)
+
+- Mokka walks in once per app start and then sleeps beside Leyla: `petIdle` prefers `liegt*` clips (sitzt only as a fallback), a single idle clip loops natively (`loop`), and `PETCAME` keeps the walk in to the first time the chat is shown. New clips from Kling 4.0 keyframes (Leyla alone, Mokka sits, Mokka lies): `mokka/kommt.webm` (walk in with real steps, sit, lie down, eyes closed), `mokka/liegt.webm` (still for now, a Kling sleep loop follows). Cut out by the difference to the first frame (Leyla and the stage stand still) plus isnet on that area, mask dropouts filled from the neighbouring frames, no reflection.
+- New touch clip `kurz/freizeitbrust` (Kling 4.0, first and last keyframe the same pose): measured flicker 0.12, jump 10.3, start to end 1.0 (the old kurz/brust 1.6).
+
 ## 2.129.0 (21 Nov 2026)
 
 - Her own messages belong together (Metin: the four messages a day felt independent of each other): the prompt gets the last 12 lines of the thread (`reach.thread_text` from `diary.with_last_chat`, the same 12 hour thread the chat uses, her own messages and his answers included) and is asked to continue it, not to repeat a question already asked or answered, and to pick up an unanswered message lovingly without reproach.
