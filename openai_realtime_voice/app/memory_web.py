@@ -513,11 +513,16 @@ let CVER={},MUSV={},PET=[],PETON=false,PETCAME=false;let OUTFIT='',NIGHT=[],NIGH
    layer over the stage, same size and fit as the clips, only while Leyla wears her Freizeit
    clothes. She walks in from the right once (kommt), then plays her sitting loops (sitzt...). */
 function petUrl(n){return '/clips/mokka/'+n+'.webm?v='+(CVER.mokka||0);}
+const PETSIT=6.0;  /* 2.131.0: second of kommt.webm where Mokka sits like the first keyframe of the surprise clip */
+function petFreude(v,clip){try{localStorage.setItem('lmokka','1');}catch(e){}ZBUSY=Date.now()+20000;  /* the first time: Leyla discovers Mokka, cuddles her and puts her down (clip carries the cat) */
+ v.style.transition='opacity .35s';v.classList.remove('on');setTimeout(()=>{v.pause();v.style.transition='';},400);
+ stageShow(clip,false,()=>{const a=document.getElementById(SV?'svid2':'svid'),left=a&&a.duration?Math.max(0,(a.duration-a.currentTime)*1000-350):3000;
+  setTimeout(()=>{if(PETON){petNext();v.classList.add('on');}},left);stageLoop(clipFor(STM));},true);}
 function petIdle(){const l=PET.filter(n=>n.startsWith('liegt'));return l.length?l:PET.filter(n=>n.startsWith('sitzt'));}  /* 2.130.0: after the walk in she sleeps (liegt), sitzt only as a fallback */
 function petNext(){const v=document.getElementById('spet');if(!v||!PETON)return;const idle=petIdle();if(!idle.length)return;
  const n=idle[Math.floor(Math.random()*idle.length)];v.loop=idle.length===1;v.src=petUrl(n);v.play().catch(()=>{});}
 function petTick(){const v=document.getElementById('spet');if(!v)return;const want=!!(STM&&STM.outfit==='freizeit'&&PET.length&&document.body.classList.contains('chatfull'));
- if(want&&!PETON){PETON=true;v.onended=petNext;v.classList.add('on');if(PET.includes('kommt')&&!PETCAME){PETCAME=true;v.loop=false;v.src=petUrl('kommt');v.play().catch(()=>{});}else petNext();}
+ if(want&&!PETON){PETON=true;v.onended=petNext;v.ontimeupdate=null;v.classList.add('on');if(PET.includes('kommt')&&!PETCAME){PETCAME=true;v.loop=false;v.src=petUrl('kommt');v.play().catch(()=>{});let first=false;try{first=!localStorage.getItem('lmokka');}catch(e){}const fr=clipVars('mokka');if(first&&fr.length)v.ontimeupdate=()=>{if(v.currentTime<PETSIT)return;v.ontimeupdate=null;petFreude(v,fr[0]);};}else petNext();}
  else if(!want&&PETON){PETON=false;v.classList.remove('on');setTimeout(()=>{if(!PETON){v.pause();v.removeAttribute('src');v.load();}},1300);}}
 setInterval(petTick,2000);
 async function clipsLoad(){let outs={};try{outs=(await (await fetch('/clips.json')).json()).outfits||{};}catch(e){}
@@ -543,7 +548,7 @@ function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name);const s=docume
 function stageLoop(b){if(ZPEND){const f=ZPEND;ZPEND=null;return f();}ZBUSY=0;DANCING=false;if(!b)return stageShow(null);const v=clipVars(b),nx=()=>stageNext(b);if(v.length<2)return stageShow(v[0],false,nx);
  const cur=document.getElementById(SV?'svid2':'svid').src.split('?')[0].split('/').pop().replace('.mp4','');const o=v.filter(n=>n.split('/').pop()!==cur);stageShow(o[Math.floor(Math.random()*o.length)],false,nx);}
 const SPECIAL=[],SPECIAL_P=0;  // since 2.111.2 no dance by herself, only when Metin asks (Metin)
-const KNIET_P=0.12,EXTRA_P=0.25;const SND_RE=/(^|[/])(kuss|rose|komm|liebe|freizeitbauch|freizeitbrust)/;  /* 2.130.2: her laugh on the belly and chest touch (Metin) */
+const KNIET_P=0.12,EXTRA_P=0.25;const SND_RE=/(^|[/])(kuss|rose|komm|liebe|freizeitbauch|freizeitbrust|freizeitmokka)/;  /* 2.130.2: her laugh on the belly and chest touch, 2.131.0 the cat surprise (Metin) */
 function stageNext(b){if(ZPEND){const f=ZPEND;ZPEND=null;return f();}const sp=STM&&!STM.low?SPECIAL.filter(n=>clipVars(n).length):[];if(sp.length&&Math.random()<SPECIAL_P)stagePlay([sp[Math.floor(Math.random()*sp.length)]],b);
  else if(STM&&!STM.low&&clipVars('gluecklichextra').length&&Math.random()<EXTRA_P)stagePlay(['gluecklichextra'],b);
  else if(STM&&STM.low&&STM.level==='schwer'&&clipVars('setzen').length&&Math.random()<KNIET_P)stagePlay(['setzen'],b);else stageLoop(b);}

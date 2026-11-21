@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.131.0 (21 Nov 2026)
+
+- Mokka is Metin's surprise for Leyla: the first time she shows up (short Freizeit dress), the walk in stops when Mokka sits (`PETSIT` 6 s), the overlay fades out and the Kling 4.0 clip `kurz/freizeitmokka` plays (keyframes Mokka sits, Mokka lies: Leyla discovers her, covers her mouth with joy, picks her up, cuddles her, sets her down, Mokka lies down asleep; with its sound), then the sleeping overlay takes over at the clip end (`petFreude`, localStorage `lmokka`, touches blocked meanwhile).
+- Leyla knows her cat (`day.pet_note` in the chat rules, in the talk at home once Metin is known and in her own messages): silver grey British Shorthair, comes to her stage in Freizeit clothes; she thanks Metin once (`day.pet_seen` sets `/data/mokka_thanked` when her chat answer mentions Mokka), then does not keep bringing it up.
+
 ## 2.130.3 (21 Nov 2026)
 
 - Touch in sync (Metin: waiting for the dot and the clip end did not work): a touch starts the reaction at once with a short 0.35 s crossfade instead of queuing it in `ZPEND` until the running clip ends (2.114.7 behaviour removed for touches); the written reply comes at the same moment.
