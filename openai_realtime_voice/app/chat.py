@@ -225,8 +225,12 @@ def touch_message(zone: str) -> str:
     if not where:
         return ""
     return (f"(Bühne: Metin berührt dich gerade zärtlich {where}. Er schreibt nichts dazu. "
-            "Reagiere mit einem einzigen kurzen Satz darauf, so wie du dich gerade fühlst und "
-            "passend zu der Stelle, verspielt und gern ein wenig sinnlich, aber nie explizit. "
+            "Sag ihm darauf einen einzigen kurzen Satz, direkt zu ihm, als Leyla in wörtlicher "
+            "Rede, so wie du es laut zu ihm sagen würdest, passend zu der Stelle und wie du "
+            "dich gerade fühlst, verspielt und gern ein wenig sinnlich, aber nie explizit. "
+            "Beschreibe nie deine Reaktion oder deinen Zustand wie eine Erzählerin (nicht: "
+            "'Deine Berührung lässt mich lächeln', nicht: 'ich kichere'), sondern sprich ihn an, "
+            "z. B. 'Hey, das kitzelt, du Frecher!' oder 'Mmh, mach ruhig weiter.' "
             "Keine Frage, kein szene Feld, keine Vorschläge.)")
 
 

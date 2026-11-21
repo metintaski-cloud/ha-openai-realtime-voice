@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.125.4 (21 Nov 2026)
+
+- Touch replies in her own voice (Metin: they read like a description of a state): `chat.touch_message` now asks for one sentence spoken directly to him as Leyla, never narrating her reaction ("Deine Berührung lässt mich lächeln"), with examples ("Hey, das kitzelt, du Frecher!").
+
 ## 2.125.3 (21 Nov 2026)
 
 - She can read the whole cleanup list (Metin: all proposals, not only number 3): the list as it went to his phone is kept for 3 days (`sent` in `/data/cleanup_state.json`, `Cleaner.sent_list`) and goes into the chat rules with the wording and what became of each number (offen, gelöscht, bleibt, geändert), so she can read entries out to him. The phone numbers stay valid while he works through the list (`decide` maps them, chat and voice), instead of shifting after each deletion. Works from the next nightly list on.
