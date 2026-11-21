@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.130.2 (21 Nov 2026)
+
+- The chest touch in the short Freizeit dress plays its sound too (`SND_RE` gets `freizeitbrust`, clip re-encoded with its Kling sound).
+
 ## 2.130.1 (21 Nov 2026)
 
 - Her laugh on the belly touch in the short Freizeit dress plays (`SND_RE` gets `freizeitbauch`; new clip `kurz/freizeitbauch` from Kling 4.0 with its sound: flicker 0.06, jump 11.3, start to end 1.2).
