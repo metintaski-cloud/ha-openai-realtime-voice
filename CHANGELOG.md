@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.125.2 (21 Nov 2026)
+
+- She confirms the cleanup herself (Metin expected "ist gelöscht"): when her answer carries `aufraeumen`, `chat.answer` deletes first (`cleanup=` callback, `main._chat_cleanup`) and asks her once more with the real result, so her reply says what really happened; the 🧹 line stays below.
+
 ## 2.125.1 (21 Nov 2026)
 
 - Clearer cleanup line (Metin: confusing): plain words instead of counters ("🧹 Erledigt: 2 Einträge gelöscht. Keine Vorschläge mehr offen.", `chat.cleanup_line`), no 💡 in front, and the chat note tells her not to promise a later report, because the deletion happens at once.

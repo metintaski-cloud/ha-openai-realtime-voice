@@ -87,3 +87,22 @@ def test_cleanup_line_plain_words():
         "Erledigt: 2 Einträge gelöscht. Keine Vorschläge mehr offen."
     assert chat.cleanup_line({"gestrichen": 0, "behalten": 1, "offen": 1}) == \
         "Erledigt: 1 Eintrag bleibt für immer. 1 Vorschlag noch offen."
+
+
+async def test_chat_deletes_first_then_she_confirms(monkeypatch):
+    from app import chat
+    calls = []
+
+    async def fake(api_key, models, rules, store, history, message, url, lights):
+        calls.append(rules)
+        if len(calls) == 1:
+            return {"reply": "Mach ich", "proposals": [], "lights_raw": None,
+                    "aufraeumen_raw": {"streichen": [1, 2]}}
+        return {"reply": "Ist gelöscht", "proposals": [], "lights_raw": None}
+    monkeypatch.setattr(chat, "_answer", fake)
+    done = []
+    out = await chat.answer("k", ["m"], "regeln", None, [], "streich 1 und 2",
+                            cleanup=lambda d, k: done.append((d, k)) or "Erledigt: 2 Einträge gelöscht.")
+    assert done == [("1,2", "")]
+    assert out["reply"] == "Ist gelöscht" and "ERGEBNIS DES AUFRÄUMENS" in calls[1]
+    assert "🧹 Erledigt: 2 Einträge gelöscht." in out["lights"]

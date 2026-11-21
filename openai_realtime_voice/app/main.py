@@ -422,14 +422,10 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                                 mailer=self.mailer, inbox=self.inbox, agenda=self.agenda,
                                 mama=self.messages.from_metin if self.messages.available else None,
                                 mood=self.mood,
-                                recall=lambda q: self.diary.recall_note(q, "Metin", private=True))
+                                recall=lambda q: self.diary.recall_note(q, "Metin", private=True),
+                                cleanup=self._chat_cleanup if self.enable_memory else None)
         if out:
-            gone, keep = chat.cleanup_numbers(out.pop("aufraeumen_raw", None))
-            if gone or keep:  # 2.124.3: tidying up from the chat, the result line tells the truth
-                r = self.cleaner.decide(gone, keep)
-                if r.get("gestrichen") and self.todo_sync:
-                    self.todo_sync.kick()
-                out.setdefault("lights", []).append("🧹 " + chat.cleanup_line(r))
+            out.pop("aufraeumen_raw", None)
             for item in chat.notes_to_remember(out.pop("merken_raw", None)):
                 self.diary.remember(item["text"], "Metin", item["privat"],
                                     ask_at=diary.event_time(item["datum"], item["uhrzeit"]))
@@ -855,6 +851,13 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                     await self.day.refresh()  # her own day (2.122.0)
                 except Exception as e:
                     logger.warning("Day: %s", e)
+
+    def _chat_cleanup(self, delete: str, keep: str) -> str:
+        """Tidying up from the chat (2.125.0): done at once, the result in plain words."""
+        r = self.cleaner.decide(delete, keep)
+        if r.get("gestrichen") and self.todo_sync:
+            self.todo_sync.kick()
+        return chat.cleanup_line(r)
 
     def _forget_sol_evening(self) -> None:
         """Once (2.124.2, Metin: everything as before): the chat with GPT-6.2 Sol on 20 Nov 2026
