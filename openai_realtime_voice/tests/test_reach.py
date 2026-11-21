@@ -272,7 +272,7 @@ def test_diary_keeps_her_message_in_the_thread(tmp_path):
     dy = diary.Diary(str(tmp_path / "d.json"))
     dy.leyla_wrote("Ne yapıyorsun, Metin?", now=at(*SAT, 12))
     assert dy._recent[-1][0] == "" and "Ne yapıyorsun" in dy._recent[-1][1]
-    assert "Ne yapıyorsun" in dy.chat_text()
+    assert "Ne yapıyorsun" in dy.chat_text(now=at(*SAT, 12, 5))  # fixed clock: the 12 h window must not depend on the real date
 
 
 def test_push_extra_reaches_the_app_data():
