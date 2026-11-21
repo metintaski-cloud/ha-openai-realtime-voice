@@ -68,6 +68,18 @@ Die offiziellen Anleitungen von Kling (kling.ai/quickstart) widersprechen in zwe
 
 Quellen vierte Recherche: kling.ai/quickstart/kling-4-model-user-guide, kling.ai/quickstart/motion-control-user-guide, kling.ai/blog/fix-ai-video-drift-consistency-guide, curiousrefuge.com/blog/8-ways-to-use-first-frame-last-frame-in-your-ai-videos.
 
+## Profi Tests und Feinheiten (21.11.2026, fünfte Recherche)
+
+- Unerwünschte Schnitte: Multi Shot ist an. Den Prompt mit "a single continuous shot with no cuts" beginnen und nie zwei Bildgrößen nennen (z. B. "wide shot ... close up"), das löste im Test einen harten Schnitt aus.
+- Kamera fest: nur eine Bildgröße am Anfang nennen ("full body shot") und keine Bewegungswörter. Diese Wörter lösen Kamerabewegung aus: pan, tilt, zoom, dolly, orbit, crane, spin, tracking, following, steady (meint Steadicam), handheld, aerial.
+- Start und Endbild in Kling 4.0: im Test einwandfrei, sowohl ein 10 s Clip als auch zwei verkettete 5 s Clips ohne Verformung; beim Verketten nur der Ton am Übergang hörbar, 4 bis 6 Bilder Ton Überblendung.
+- "no text" verhindert keine Schrift auf Gegenständen; Flächen als schlicht und unbeschriftet beschreiben.
+- Flash hält Farben gut und ist billig, verfehlt aber eher Abstände und Bewegungen; Kling 3.0 driftete im Test im Licht und ließ Bewegungen weg. Für die finalen Leyla Clips Kling 4.0.
+- Elemente (Leyla immer gleich): ein Element pro Outfit aus bis zu 4 Bildern (vorne, seitlich, hinten, Detail Gesicht), gleichmäßig ausgeleuchtet; Schalter "Bind Subject to Enhance Consistency" an. Ein einziges Bild lässt Kling die unsichtbaren Seiten raten (z. B. beim Umdrehen).
+- Referenzvideo für Bewegung (4.0 Omni Reference): im Prompt sagen, was es liefert und was nicht ("only the motion of @Video1, not its person or background"), kostet etwa 20 % mehr.
+
+Quellen fünfte Recherche: chatcut.io/blog/kling-4-0-review, kling.ai/blog/kling-3-subject-binding-character-consistency, kling.ai/blog/ai-camera-control-movement-prompts-guide.
+
 ## Kosten sparen wie Profis (21.11.2026, Recherche)
 
 - Jede Generierung kostet, auch die verworfenen; 4 Versionen auf einmal sind 4 Abrechnungen.
