@@ -135,3 +135,11 @@ Freizeit (21.11.2026): Derselbe Clubtanz Prompt gab im kurzen Freizeitkleid sofo
 ## Musikrichtung im Prompt
 
 Die genannte Musik bestimmt den Bewegungsrhythmus, auch wenn kein Ton erzeugt wird: "like to a sensual R&B song" gab einen gleichmäßigen Clubtanz. Für orientalischen Hüftschwung "on a steady oriental drum rhythm" und "belly dance" nennen; ohne Musikrichtung ("gently swaying her hips") kam nur leichtes Wippen (Hüftschwung Schleife lang Freizeit, erster Versuch).
+
+## Bauchtanz (22.11.2026, schwarz/freizeittanz3)
+
+Prompt Kern: "she dances an elegant, sensual oriental belly dance in place. Her upper body and shoulders stay calm and upright while her hips swing wide and fluidly from side to side, drawing smooth figure eights and soft hip drops on a steady oriental drum rhythm ... Her arms float softly and gracefully at her sides like a belly dancer". Erster Versuch sauber, Metin: schön, mehr davon. Als Schleife zu unruhig, deshalb als Tanz.
+
+## Erfundene Brille (22.11.2026)
+
+Kling setzte im kurzen Freizeitkleid beim Blick über die Schulter eine Brille auf, obwohl Start und Endbild keine zeigen (vermutlich aus den Arbeitsbildern gelernt). Bei Drehungen und Rückenansicht immer "She never wears glasses; her face, eyes and hair stay exactly as in the keyframes the whole time" in den Prompt; Gesichter im Kontaktbogen gezielt auf Brille prüfen.
