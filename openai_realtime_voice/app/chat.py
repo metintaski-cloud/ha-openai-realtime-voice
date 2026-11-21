@@ -217,7 +217,7 @@ def notes_to_remember(raw) -> list[dict]:
 TOUCH_WHERE = {"gesicht": "im Gesicht", "brust": "an der Brust", "bauch": "am Bauch",
                "po": "am Po"}
 TOUCH_VOICE_P = 0.3  # share of touch reactions spoken when she is in love (Metin: her voice)
-TOUCH_TURKISH_P = 0.4  # now and then in Turkish, his other language (2.127.0, Metin)
+TOUCH_TURKISH_P = 0.5  # mixed, once German, once Turkish (2.127.0, Metin)
 
 
 def touch_message(zone: str) -> str:

@@ -71,11 +71,16 @@ KINDS = {
     ],
 }
 
-LANGUAGE = (
-    "Sprache: Schreib überwiegend auf Türkisch (etwa drei Viertel), dazwischen deutsche Wörter "
-    "oder einzelne kurze deutsche Sätze, so wie jemand, der natürlich zwischen beiden Sprachen "
-    "wechselt. Nie eine Übersetzung dahinter, keine Gedankenstriche."
+LANGUAGE = (  # 2.127.1, Metin: mixed, once German, once Turkish; one language per message
+    "Sprache: Schreib diese Nachricht auf {lang}, natürlich und herzlich, so wie du mit ihm "
+    "sprichst. Nie eine Übersetzung dahinter, keine Gedankenstriche."
 )
+TURKISH_P = 0.5
+
+
+def pick_language() -> str:
+    import random
+    return LANGUAGE.format(lang="Türkisch" if random.random() < TURKISH_P else "Deutsch")
 
 PROMPT = """{rules}
 
@@ -272,7 +277,7 @@ class Reach:
         prompt = PROMPT.format(
             rules=self.rules(), notes=(await self.notes()) if self.notes else "",
             feeling=self.heart.feeling(now), limits=heart_mod.LIMITS, when=when, kind=kind,
-            language=LANGUAGE)
+            language=pick_language())
         try:
             text = parse_text(await self.write(prompt))
         except Exception as e:

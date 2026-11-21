@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.127.1 (21 Nov 2026)
+
+- Mixed languages (Metin: once German, once Turkish): her own messages and voice messages (`reach.pick_language`, 50 %, one language per message; before mostly Turkish) and touch replies (`TOUCH_TURKISH_P` 0.5).
+
 ## 2.127.0 (21 Nov 2026)
 
 - Touch replies now and then in Turkish (Metin: only German so far): 40 % of them (`chat.TOUCH_TURKISH_P`), and without quotation marks around her words.

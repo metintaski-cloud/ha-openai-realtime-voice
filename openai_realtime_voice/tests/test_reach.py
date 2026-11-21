@@ -88,7 +88,7 @@ def test_sends_a_turkish_prompt_and_a_push(tmp_path, h):
     r, rec = make(tmp_path, h)
     item = run(send_one(r, SAT))
     assert item and item["state"] == "open" and not item["voice"]
-    assert "Türkisch" in rec.prompts[0] and "Samstag" in rec.prompts[0]
+    assert ("Türkisch" in rec.prompts[0] or "Deutsch" in rec.prompts[0]) and "Samstag" in rec.prompts[0]
     assert rec.pushed == [("Leyla", item["text"])]
     assert r.pending()[0]["text"] == item["text"]
 
