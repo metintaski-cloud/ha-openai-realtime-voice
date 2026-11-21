@@ -129,3 +129,9 @@ Jeder neue Clip wird gemessen (Unruhe, Rucken, Anfang und Ende gegen die Grundpo
 ## Po Nacht "Clubtanz" (21.11.2026, nacht/po7)
 
 Prompt wie Freizeit Po, aber 3 bis 8 s: "she dances with her back to the camera, swaying her hips from side to side on a steady, slow beat like to a sensual R&B song, each sway smooth and even ... keeps glancing back over her shoulder at the camera with a flirty smile". Ergebnis traf Metins Wunsch beim ersten Versuch. Tempo: erste 3 s original, ab 3 s 0,76 mit mci Interpolation und atempo (0,92 bis 0,8 waren ihm zu schnell).
+
+Freizeit (21.11.2026): Derselbe Clubtanz Prompt gab im kurzen Freizeitkleid sofort einen guten Clip (kurz/freizeitpo9, ab 3 s 0,94), im langen Freizeitkleid aber zwei schnelle Drehungen mit fliegenden Haaren (hektisch); gerettet durch abschnittsweise Bremsen nur der Drehungen (schwarz/freizeittanz2). Für schnelle Bewegungen nur leicht bremsen (0,94), 0,76 war für Freizeit zu langsam.
+
+## Musikrichtung im Prompt
+
+Die genannte Musik bestimmt den Bewegungsrhythmus, auch wenn kein Ton erzeugt wird: "like to a sensual R&B song" gab einen gleichmäßigen Clubtanz. Für orientalischen Hüftschwung "on a steady oriental drum rhythm" und "belly dance" nennen; ohne Musikrichtung ("gently swaying her hips") kam nur leichtes Wippen (Hüftschwung Schleife lang Freizeit, erster Versuch).
