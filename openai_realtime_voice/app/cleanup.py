@@ -9,6 +9,7 @@ import datetime as _dt
 import json
 import logging
 import os
+import time
 from typing import Optional
 
 from app import memory, textmodel
@@ -17,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 MAX_PROPOSALS = 15
 MAX_KEPT = 300
+SENT_DAYS = 3  # the chat knows the last list on his phone for this long
 TITLE = "Leyla räumt auf"
 
 CLEANUP_PROMPT = """Du hilfst Metin, das Gedächtnis seiner Sprachassistentin Leyla sauber zu halten.
@@ -107,7 +109,8 @@ class Cleaner:
             data = {}
         return {"pending": [p for p in data.get("pending", []) if isinstance(p, dict)],
                 "kept": [k for k in data.get("kept", []) if isinstance(k, str)],
-                "last_run": data.get("last_run")}
+                "last_run": data.get("last_run"),
+                "sent": data.get("sent") if isinstance(data.get("sent"), dict) else {}}
 
     def _save(self, state: dict) -> None:
         os.makedirs(os.path.dirname(self.state_path) or ".", exist_ok=True)
@@ -166,6 +169,11 @@ class Cleaner:
         state["last_run"] = (today or _dt.date.today()).isoformat()
         self._save(state)
         logger.info("Cleanup review: %d new proposals, %d open", len(new), len(state["pending"]))
+        if new:  # the list as it went to his phone: its numbers stay valid (2.125.3)
+            state["sent"] = {"t": time.time(),
+                             "items": [{"kind": p["kind"], "fact": p["fact"], "grund": p.get("grund", "")}
+                                       for p in state["pending"]]}
+            self._save(state)
         if new and self.notify:
             try:
                 await self.notify(TITLE, self.phone_text(state["pending"]))
@@ -227,12 +235,51 @@ class Cleaner:
         self._save(state)
         return {"behalten": len(picked), "offen": len(state["pending"])}
 
-    def decide(self, delete: str, keep: str) -> dict:
-        """Delete and keep in one go, both numbered on the same list (chat, 2.124.3)."""
+    def sent_list(self) -> list:
+        """The last list sent to his phone (within SENT_DAYS) with what became of each number:
+        offen, gelöscht, bleibt (kept for good) or geändert (the entry was changed since)."""
         state = self._state()
+        sent = state.get("sent") or {}
+        if not sent.get("items") or time.time() - sent.get("t", 0) > SENT_DAYS * 86400:
+            return []
+        lists = self.store.load_all()
+        pending = {p["fact"] for p in self._live_pending(state)}
+        kept = set(state["kept"])
+        out = []
+        for i, p in enumerate(sent["items"], 1):
+            there = p["fact"] in lists.get(p["kind"], [])
+            status = ("offen" if p["fact"] in pending else "bleibt" if p["fact"] in kept
+                      else "geändert" if there else "gelöscht")
+            out.append({**p, "nummer": i, "status": status})
+        return out
+
+    def chat_items(self) -> list:
+        """What the chat shows her: the list on his phone with statuses, else the open ones."""
+        sent = self.sent_list()
+        if sent:
+            return sent
+        return [{"nummer": p["nummer"], "kind": p["liste"], "fact": p["eintrag"],
+                 "grund": p.get("grund") or "", "status": "offen"}
+                for p in self.proposals().get("vorschlaege") or []]
+
+    def decide(self, delete: str, keep: str) -> dict:
+        """Delete and keep in one go (chat, 2.124.3). Since 2.125.3 the numbers are those of
+        the list on his phone, so they never shift while he works through it."""
+        state = self._state()
+        sent = [p for p in self.sent_list() if p["status"] == "offen"]
+        if sent:
+            live = self.sent_list()
+            ok = {p["nummer"] - 1 for p in sent}
+            gone_i = [i for i in (parse_numbers(delete, len(live)) if delete else []) if i in ok]
+            keep_i = [i for i in (parse_numbers(keep, len(live)) if keep else [])
+                      if i in ok and i not in gone_i]
+            return self._apply(state, live, gone_i, keep_i)
         live = self._live_pending(state)
         gone_i = parse_numbers(delete, len(live)) if delete else []
         keep_i = [i for i in (parse_numbers(keep, len(live)) if keep else []) if i not in gone_i]
+        return self._apply(state, live, gone_i, keep_i)
+
+    def _apply(self, state: dict, live: list, gone_i: list, keep_i: list) -> dict:
         if not gone_i and not keep_i:
             return {"error": "Welche Nummern? Die habe ich nicht gefunden."}
         lists = self.store.load_all()
@@ -245,7 +292,8 @@ class Cleaner:
         if gone:
             self.store.save_all(lists)
         state["kept"] += [live[i]["fact"] for i in keep_i]
-        state["pending"] = [p for i, p in enumerate(live) if i not in gone_i and i not in keep_i]
+        done = {live[i]["fact"] for i in gone_i + keep_i}
+        state["pending"] = [p for p in self._live_pending(state) if p["fact"] not in done]
         self._save(state)
         logger.info("Cleanup: Metin deleted %d and kept %d entries in the chat", gone, len(keep_i))
         return {"gestrichen": gone, "behalten": len(keep_i), "offen": len(state["pending"])}
@@ -253,12 +301,17 @@ class Cleaner:
     async def run(self, args: dict) -> dict:
         action = args.get("action")
         if action == "vorschlaege":
-            return self.proposals()
+            items = self.chat_items()
+            return {"liste": [{"nummer": p["nummer"], "eintrag": p["fact"][:300],
+                               "status": p["status"], "grund": p.get("grund")} for p in items]} \
+                if items else self.proposals()
         if action == "pruefen":
             result = await self.review()
             return result if "error" in result else {**result, **self.proposals()}
-        if action == "streichen":
-            return self.delete(args.get("nummern"))
+        nums = args.get("nummern")
+        same = nums not in (None, "") and str(nums).strip().lower() not in ("null", "alle")
+        if action == "streichen":  # numbers as on his phone (2.125.3), "all" as before
+            return self.decide(str(nums), "") if same else self.delete(nums)
         if action == "behalten":
-            return self.keep(args.get("nummern"))
+            return self.decide("", str(nums)) if same else self.keep(nums)
         return {"error": f"Unbekannte Aktion: {action}"}

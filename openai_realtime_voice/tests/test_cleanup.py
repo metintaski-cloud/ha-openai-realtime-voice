@@ -76,9 +76,9 @@ def test_chat_cleanup_helpers():
     from app import chat
     assert chat.cleanup_numbers({"streichen": [1, 2], "behalten": 3}) == ("1,2", "3")
     assert chat.cleanup_numbers(None) == ("", "")
-    assert chat.cleanup_note({"offen": 0}) == ""
-    note = chat.cleanup_note({"vorschlaege": [{"nummer": 1, "liste": "family", "eintrag": "x", "grund": "doppelt"}]})
-    assert "1. (family) x: doppelt" in note and "aufraeumen" in note
+    assert chat.cleanup_note([]) == ""
+    note = chat.cleanup_note([{"nummer": 1, "kind": "family", "fact": "x", "grund": "doppelt", "status": "offen"}])
+    assert "1. (Familie) x [offen]: doppelt" in note and "aufraeumen" in note
 
 
 def test_cleanup_line_plain_words():
@@ -106,3 +106,17 @@ async def test_chat_deletes_first_then_she_confirms(monkeypatch):
     assert done == [("1,2", "")]
     assert out["reply"] == "Ist gelöscht" and "ERGEBNIS DES AUFRÄUMENS" in calls[1]
     assert "🧹 Erledigt: 2 Einträge gelöscht." in out["lights"]
+
+
+async def test_phone_numbers_stay_valid_while_working_through(tmp_path):
+    store, c, _ = make(tmp_path, {"family": ["a", "b", "c"], "friends": [], "private": []},
+                       [{"nummer": 1, "grund": "x"}, {"nummer": 2, "grund": "y"},
+                        {"nummer": 3, "grund": "z"}])
+    await c.review()
+    assert c.decide("1", "")["gestrichen"] == 1
+    assert c.decide("3", "")["gestrichen"] == 1          # still number 3 as on the phone
+    assert store.load("family") == ["b"]
+    st = {p["nummer"]: p["status"] for p in c.chat_items()}
+    assert st == {1: "gelöscht", 2: "offen", 3: "gelöscht"}
+    assert c.decide("", "2")["behalten"] == 1
+    assert {p["nummer"]: p["status"] for p in c.chat_items()}[2] == "bleibt"

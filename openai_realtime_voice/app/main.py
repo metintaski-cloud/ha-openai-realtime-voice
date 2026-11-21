@@ -397,7 +397,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         open_note = self.ideas.open_note()  # her open question comes back until answered
         rules += open_note
         if self.enable_memory:
-            rules += chat.cleanup_note(self.cleaner.proposals())
+            rules += chat.cleanup_note(self.cleaner.chat_items())
         rules += (self.diary.note("Metin", private=True) + self.variety.note()
                   + self.diary.followup_note("Metin", private=True) + self.day.note()
                   + await self.reminders.followup_note())
