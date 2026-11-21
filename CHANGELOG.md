@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.126.0 (21 Nov 2026)
+
+- Ask instead of guessing (Leyla's own idea in the chat, Metin agreed): a persona rule in WAS DU WEISST (chat and voice) says that when she is not sure about something from her memory (a name, a date, an appointment, who said what) she says so honestly and asks briefly instead of guessing, and never invents anything; general knowledge and requests are answered as before without a counter question.
+
 ## 2.125.4 (21 Nov 2026)
 
 - Touch replies in her own voice (Metin: they read like a description of a state): `chat.touch_message` now asks for one sentence spoken directly to him as Leyla, never narrating her reaction ("Deine Berührung lässt mich lächeln"), with examples ("Hey, das kitzelt, du Frecher!").
