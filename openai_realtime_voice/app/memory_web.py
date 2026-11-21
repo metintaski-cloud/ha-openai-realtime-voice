@@ -543,7 +543,7 @@ function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name);const s=docume
 function stageLoop(b){if(ZPEND){const f=ZPEND;ZPEND=null;return f();}ZBUSY=0;DANCING=false;if(!b)return stageShow(null);const v=clipVars(b),nx=()=>stageNext(b);if(v.length<2)return stageShow(v[0],false,nx);
  const cur=document.getElementById(SV?'svid2':'svid').src.split('?')[0].split('/').pop().replace('.mp4','');const o=v.filter(n=>n.split('/').pop()!==cur);stageShow(o[Math.floor(Math.random()*o.length)],false,nx);}
 const SPECIAL=[],SPECIAL_P=0;  // since 2.111.2 no dance by herself, only when Metin asks (Metin)
-const KNIET_P=0.12,EXTRA_P=0.25;const SND_RE=/(^|[/])(kuss|rose|komm|liebe)/;
+const KNIET_P=0.12,EXTRA_P=0.25;const SND_RE=/(^|[/])(kuss|rose|komm|liebe|freizeitbauch)/;  /* 2.130.1: her laugh on the belly touch (Metin) */
 function stageNext(b){if(ZPEND){const f=ZPEND;ZPEND=null;return f();}const sp=STM&&!STM.low?SPECIAL.filter(n=>clipVars(n).length):[];if(sp.length&&Math.random()<SPECIAL_P)stagePlay([sp[Math.floor(Math.random()*sp.length)]],b);
  else if(STM&&!STM.low&&clipVars('gluecklichextra').length&&Math.random()<EXTRA_P)stagePlay(['gluecklichextra'],b);
  else if(STM&&STM.low&&STM.level==='schwer'&&clipVars('setzen').length&&Math.random()<KNIET_P)stagePlay(['setzen'],b);else stageLoop(b);}
@@ -560,14 +560,15 @@ musDraw();document.getElementById('cmus').onclick=e=>{e.stopPropagation();MUSON=
 async function bgmIsLong(n){if(n in BGLONG)return BGLONG[n];let L=false;try{const r=await fetch('/clips/musik/'+n+'.m4a?v='+(MUSV[n]||0),{headers:{Range:'bytes=0-0'}});const m=(r.headers.get('Content-Range')||'').match(/[/]([0-9]+)/);L=m?+m[1]>4e6:false;}catch(e){}BGLONG[n]=L;return L;}  /* a long track (over 4 MB) streams through an audio element; a short loop is decoded for a gapless loop (2.117.6) */
 async function bgmBuf(n){if(BGBUF[n])return BGBUF[n];const b=await BGCTX.decodeAudioData(await (await fetch('/clips/musik/'+n+'.m4a?v='+(MUSV[n]||0))).arrayBuffer());
  const d=b.getChannelData(0);let a=0,e=d.length-1;while(a<e&&Math.abs(d[a])<1e-4)a++;while(e>a&&Math.abs(d[e])<1e-4)e--;b.ls=a/b.sampleRate;b.le=(e+1)/b.sampleRate;BGBUF[n]=b;return b;}
+function bgVol(){if(TALKING)return .05;const v=document.getElementById(SV?'svid2':'svid');return v&&!v.muted&&!v.paused?.22*.96:.22;}  /* 2.130.1: a clip with sound (her laugh) lowers the music from 100 to 96 % (Metin) */
 function bgmTick(){const c=document.getElementById('chat');let n='';if(STM&&MUSIC.length){n=MUSIC.includes(STM.mood)?STM.mood:(STM.low?'traurig':'gut');if(!MUSIC.includes(n))n='';}  /* gapless loop through Web Audio, the audio element paused at its loop point (2.117.5, Metin) */
  const on=n&&MUSON&&soundOn&&CODE&&!REC&&!c.classList.contains('oncall')&&!document.hidden;  /* keeps playing in the menu and list pages, silent while he records (2.117.7, Metin) */
  if(!on){if(BGCTX&&BGCTX.state==='running')BGCTX.suspend().catch(()=>{});if(BGEL)BGEL.pause();return;}
- if(BGEL&&BGMN===n){BGEL.volume=TALKING?.05:.22;if(BGEL.paused)BGEL.play().catch(()=>{});return;}
+ if(BGEL&&BGMN===n){BGEL.volume=bgVol();if(BGEL.paused)BGEL.play().catch(()=>{});return;}
  if(!BGCTX){try{BGCTX=new (window.AudioContext||window.webkitAudioContext)();BGGAIN=BGCTX.createGain();BGGAIN.connect(BGCTX.destination);}catch(e){return;}}
  if(BGCTX.state==='suspended')BGCTX.resume().catch(()=>{});
- BGGAIN.gain.setTargetAtTime(TALKING?.05:.22,BGCTX.currentTime,.3);
- if(n!==BGMN&&BGLOAD!==n){BGLOAD=n;bgmIsLong(n).then(L=>{if(L){BGLOAD='';if(BGSRC){try{BGSRC.stop();}catch(e){}BGSRC=null;}if(BGEL)BGEL.pause();BGEL=new Audio('/clips/musik/'+n+'.m4a?v='+(MUSV[n]||0));BGEL.loop=true;BGEL.volume=TALKING?.05:.22;BGEL.play().catch(()=>{});BGMN=n;return;}
+ BGGAIN.gain.setTargetAtTime(bgVol(),BGCTX.currentTime,.3);
+ if(n!==BGMN&&BGLOAD!==n){BGLOAD=n;bgmIsLong(n).then(L=>{if(L){BGLOAD='';if(BGSRC){try{BGSRC.stop();}catch(e){}BGSRC=null;}if(BGEL)BGEL.pause();BGEL=new Audio('/clips/musik/'+n+'.m4a?v='+(MUSV[n]||0));BGEL.loop=true;BGEL.volume=bgVol();BGEL.play().catch(()=>{});BGMN=n;return;}
  bgmBuf(n).then(b=>{BGLOAD='';if(BGEL){BGEL.pause();BGEL=null;}if(BGSRC){try{BGSRC.stop();}catch(e){}}const s=BGCTX.createBufferSource();s.buffer=b;s.loop=true;s.loopStart=b.ls;s.loopEnd=b.le;s.connect(BGGAIN);s.start(0,b.ls);BGSRC=s;BGMN=n;}).catch(()=>{BGLOAD='';});});}}
 fetch('/clips.json').then(r=>r.json()).then(o=>{MUSIC=o.music||[];MUSV=o.music_v||{};bgmTick();}).catch(()=>{});
 setInterval(bgmTick,1000);document.addEventListener('pointerdown',bgmTick);document.addEventListener('visibilitychange',bgmTick);

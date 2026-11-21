@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.130.1 (21 Nov 2026)
+
+- Her laugh on the belly touch in the short Freizeit dress plays (`SND_RE` gets `freizeitbauch`; new clip `kurz/freizeitbauch` from Kling 4.0 with its sound: flicker 0.06, jump 11.3, start to end 1.2).
+- While a clip plays its own sound the background music drops from 100 to 96 % (`bgVol`, Metin).
+
 ## 2.130.0 (21 Nov 2026)
 
 - Mokka walks in once per app start and then sleeps beside Leyla: `petIdle` prefers `liegt*` clips (sitzt only as a fallback), a single idle clip loops natively (`loop`), and `PETCAME` keeps the walk in to the first time the chat is shown. New clips from Kling 4.0 keyframes (Leyla alone, Mokka sits, Mokka lies): `mokka/kommt.webm` (walk in with real steps, sit, lie down, eyes closed), `mokka/liegt.webm` (still for now, a Kling sleep loop follows). Cut out by the difference to the first frame (Leyla and the stage stand still) plus isnet on that area, mask dropouts filled from the neighbouring frames, no reflection.
