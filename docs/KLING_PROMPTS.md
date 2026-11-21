@@ -97,6 +97,9 @@ Quellen: atlascloud.ai/blog/tips/kling-4-credit-burn-rate-workflow, aitoolanalys
 
 - Claude stellt Modus, Auflösung, Länge ein und tippt den Prompt; Bilder hochladen und Downloads speichern braucht Metins Hand, weil sich dabei Windows Fenster öffnen (Datei auswählen, Speichern unter: dort nur Enter drücken).
 - Download einer 4K Datei (2352x3524, 24 fps, 10 s) war nur 6 MB groß.
+- Medienordner ist seit 21.11.2026 auf Metins PC als Laufwerk Z: verbunden (\\192.168.2.240\media) und in der Claude App als Ordner freigegeben: Claude legt fertige Clips selbst nach Z:\leyla\<look>\, Metin muss nichts kopieren.
+- Bilder für Keyframes: einmal hochgeladen, danach über "Asset" > "Uploads" oder "Extract Frames" (Bild aus einem fertigen Clip) wählbar, ohne Datei Fenster.
+- Seit 21.11.2026 (Metin): wenn alles passt, klickt Claude ohne Nachfrage auf "Generate", bis Metin "stop" schreibt.
 - Vor jedem "Generate" zeigt Claude Einstellungen und Credits und wartet auf Metins Okay.
 
 ## Metins Erfahrung (über 238 Clips)
