@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.131.2 (22 Nov 2026)
+
+- Night belly dances `nacht/tanz12` and `tanz13` join the night dance chain (`DNEXT`, same transitions as `tanz11`, poses measured against `tanz` and `tanz11`). The Freizeit belly dances `kurz/freizeittanz` and `schwarz/freizeittanz3` need no code change (Freizeit dances pick from all `freizeittanz*` clips). All four belly dances run at the same measured hip rhythm (0.68 sways per second, Metin's favourite clip in its original tempo).
+
 ## 2.131.1 (21 Nov 2026)
 
 - Sound on every touch clip in every outfit (Metin): `SND_RE` now covers gesicht, brust, bauch, po (and povorne), mix and hinten, with or without the `freizeit` prefix, besides kuss, rose, komm, liebe and the Mokka surprise; loops (gluecklich, traurig, extras) and dances stay silent. The older touch clips carry no audio track, so only the new Kling 4.0 clips (her laugh) are heard.

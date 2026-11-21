@@ -143,3 +143,7 @@ Prompt Kern: "she dances an elegant, sensual oriental belly dance in place. Her 
 ## Erfundene Brille (22.11.2026)
 
 Kling setzte im kurzen Freizeitkleid beim Blick über die Schulter eine Brille auf, obwohl Start und Endbild keine zeigen (vermutlich aus den Arbeitsbildern gelernt). Zweiter Versuch mit "She never wears glasses" brachte trotzdem kurz eine Brille in der Drehung: Das Wort selbst kann die Brille erst hervorrufen (Kling folgt positiven Beschreibungen, Verneinungen wirken schlecht). Deshalb das Wort glasses nicht schreiben, sondern positiv "Her bare face, eyes and hair stay exactly as in the keyframes the whole time"; Gesichter im Kontaktbogen gezielt auf Brille prüfen. "Edit Video" zum Entfernen kostet in 4K 420 Credits, mehr als ein neuer Clip.
+
+## Gleicher Takt für alle Bauchtänze (22.11.2026)
+
+Die Tänze laufen in der App hintereinander, deshalb müssen alle Bauchtänze im selben Rhythmus schwingen. Messung: horizontaler Schwerpunkt der Hüftzone pro Bild, dann die stärkste Frequenz (FFT) zwischen 0,2 und 3 Hz. Maßstab ist Clip 1901 (Nacht) im Originaltempo mit 0,68 Schwüngen pro Sekunde (Metin: "dieses Tempo am liebsten überall"); Faktor für jeden anderen Clip = 0,68 / eigene Frequenz (nacht/tanz12 0,675, schwarz/freizeittanz3 0,87, kurz/freizeittanz 0,787). Gleichmäßig über den ganzen Clip bremsen, mit mci Interpolation. Ein schon langsamer Clip sah bei 0,89 gebremst schlechter aus als im Original: Clips mit gutem Eigentakt lieber als Maßstab nehmen und die anderen anpassen. Für alte Tänze ohne festen Takt geht das nicht.
