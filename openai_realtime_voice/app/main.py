@@ -396,6 +396,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             rules += idea + (await self._today_agenda_note() if kind == "termin" else "")
         open_note = self.ideas.open_note()  # her open question comes back until answered
         rules += open_note
+        if self.enable_memory:
+            rules += chat.cleanup_note(self.cleaner.proposals())
         rules += (self.diary.note("Metin", private=True) + self.variety.note()
                   + self.diary.followup_note("Metin", private=True) + self.day.note()
                   + await self.reminders.followup_note())
@@ -422,6 +424,14 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                                 mood=self.mood,
                                 recall=lambda q: self.diary.recall_note(q, "Metin", private=True))
         if out:
+            gone, keep = chat.cleanup_numbers(out.pop("aufraeumen_raw", None))
+            if gone or keep:  # 2.124.3: tidying up from the chat, the result line tells the truth
+                r = self.cleaner.decide(gone, keep)
+                if r.get("gestrichen") and self.todo_sync:
+                    self.todo_sync.kick()
+                out.setdefault("lights", []).append(
+                    "🧹 " + (r["error"] if "error" in r else
+                             f"Aufgeräumt: gestrichen {r['gestrichen']}, behalten {r['behalten']}, offen {r['offen']}"))
             for item in chat.notes_to_remember(out.pop("merken_raw", None)):
                 self.diary.remember(item["text"], "Metin", item["privat"],
                                     ask_at=diary.event_time(item["datum"], item["uhrzeit"]))

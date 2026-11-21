@@ -176,7 +176,7 @@ class Cleaner:
     @staticmethod
     def phone_text(pending: list) -> str:
         lines = ["Diese Einträge würde ich streichen. Gelöscht wird nichts, bis du es mir sagst "
-                 "(sag Leyla: „Räum auf“)."]
+                 "(sag oder schreib Leyla z. B.: „Streich 1 und 2, behalte 3“)."]
         for i, p in enumerate(pending, 1):
             tag = {"family": "Familie", "friends": "Freunde", "private": "privat"}.get(
                 p.get("kind"), "")
@@ -226,6 +226,29 @@ class Cleaner:
         state["pending"] = [p for i, p in enumerate(live) if i not in picked]
         self._save(state)
         return {"behalten": len(picked), "offen": len(state["pending"])}
+
+    def decide(self, delete: str, keep: str) -> dict:
+        """Delete and keep in one go, both numbered on the same list (chat, 2.124.3)."""
+        state = self._state()
+        live = self._live_pending(state)
+        gone_i = parse_numbers(delete, len(live)) if delete else []
+        keep_i = [i for i in (parse_numbers(keep, len(live)) if keep else []) if i not in gone_i]
+        if not gone_i and not keep_i:
+            return {"error": "Welche Nummern? Die habe ich nicht gefunden."}
+        lists = self.store.load_all()
+        gone = 0
+        for i in gone_i:
+            p = live[i]
+            if p["fact"] in lists[p["kind"]]:
+                lists[p["kind"]].remove(p["fact"])
+                gone += 1
+        if gone:
+            self.store.save_all(lists)
+        state["kept"] += [live[i]["fact"] for i in keep_i]
+        state["pending"] = [p for i, p in enumerate(live) if i not in gone_i and i not in keep_i]
+        self._save(state)
+        logger.info("Cleanup: Metin deleted %d and kept %d entries in the chat", gone, len(keep_i))
+        return {"gestrichen": gone, "behalten": len(keep_i), "offen": len(state["pending"])}
 
     async def run(self, args: dict) -> dict:
         action = args.get("action")

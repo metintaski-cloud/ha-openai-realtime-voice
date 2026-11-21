@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.125.0 (21 Nov 2026)
+
+- Tidying up from the chat (Metin: the chat did not know the night's proposals): the open proposals go into the chat rules with their numbers (`chat.cleanup_note`), and when Metin names numbers she adds `aufraeumen: {streichen, behalten}`; `Cleaner.decide` deletes and keeps on the same numbering at once, and a line under her answer says what really happened ("🧹 Aufgeräumt: gestrichen 2, behalten 1, offen 0"). The push now also says it works in the chat.
+- Test fix: a confidential test entry had expired on 20 Nov 2026 (now 2099).
+
 ## 2.124.2 (20 Nov 2026)
 
 - The Sol evening is forgotten (Metin: everything as before): once at start (`main._forget_sol_evening`, marker `/data/forgot_sol_evening`) `Diary.forget_span` removes the chat and noted entries of 20 Nov 2026 from 20:29 to 21:45 from the diary and the archive, the message pairs of that time from the thread the server keeps, and the chat buffer.

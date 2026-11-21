@@ -60,3 +60,22 @@ def test_parse_numbers():
     assert cleanup.parse_numbers("1, 3", 3) == [0, 2]
     assert cleanup.parse_numbers(None, 2) == [0, 1]
     assert cleanup.parse_numbers("9", 2) == []
+
+
+async def test_decide_deletes_and_keeps_on_the_same_numbering(tmp_path):
+    store, c, _ = make(tmp_path, {"family": ["a", "b", "c"], "friends": [], "private": []},
+                       [{"nummer": 1, "grund": "x"}, {"nummer": 2, "grund": "y"},
+                        {"nummer": 3, "grund": "z"}])
+    await c.review()
+    assert c.decide("1,2", "3") == {"gestrichen": 2, "behalten": 1, "offen": 0}
+    assert store.load("family") == ["c"]
+    assert "error" in c.decide("", "")
+
+
+def test_chat_cleanup_helpers():
+    from app import chat
+    assert chat.cleanup_numbers({"streichen": [1, 2], "behalten": 3}) == ("1,2", "3")
+    assert chat.cleanup_numbers(None) == ("", "")
+    assert chat.cleanup_note({"offen": 0}) == ""
+    note = chat.cleanup_note({"vorschlaege": [{"nummer": 1, "liste": "family", "eintrag": "x", "grund": "doppelt"}]})
+    assert "1. (family) x: doppelt" in note and "aufraeumen" in note

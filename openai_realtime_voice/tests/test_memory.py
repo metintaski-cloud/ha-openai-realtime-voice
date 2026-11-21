@@ -336,7 +336,7 @@ async def test_summarize_keeps_leyla_list_when_model_wipes_it(monkeypatch):
     assert out["leyla"] == old["leyla"]
 
 
-SECRET = "Aktuell bis 20.11.2026: Gülfikar macht sich Sorgen um ihre Knie"
+SECRET = "Aktuell bis 20.11.2099: Gülfikar macht sich Sorgen um ihre Knie"
 
 
 def test_confidential_list_is_hidden_but_given_to_leyla(tmp_path):
