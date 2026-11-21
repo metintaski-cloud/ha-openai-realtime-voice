@@ -142,4 +142,4 @@ Prompt Kern: "she dances an elegant, sensual oriental belly dance in place. Her 
 
 ## Erfundene Brille (22.11.2026)
 
-Kling setzte im kurzen Freizeitkleid beim Blick über die Schulter eine Brille auf, obwohl Start und Endbild keine zeigen (vermutlich aus den Arbeitsbildern gelernt). Bei Drehungen und Rückenansicht immer "She never wears glasses; her face, eyes and hair stay exactly as in the keyframes the whole time" in den Prompt; Gesichter im Kontaktbogen gezielt auf Brille prüfen.
+Kling setzte im kurzen Freizeitkleid beim Blick über die Schulter eine Brille auf, obwohl Start und Endbild keine zeigen (vermutlich aus den Arbeitsbildern gelernt). Zweiter Versuch mit "She never wears glasses" brachte trotzdem kurz eine Brille in der Drehung: Das Wort selbst kann die Brille erst hervorrufen (Kling folgt positiven Beschreibungen, Verneinungen wirken schlecht). Deshalb das Wort glasses nicht schreiben, sondern positiv "Her bare face, eyes and hair stay exactly as in the keyframes the whole time"; Gesichter im Kontaktbogen gezielt auf Brille prüfen. "Edit Video" zum Entfernen kostet in 4K 420 Credits, mehr als ein neuer Clip.
