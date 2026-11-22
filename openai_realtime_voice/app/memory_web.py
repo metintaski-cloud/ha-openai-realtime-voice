@@ -383,11 +383,11 @@ async function saveFields(fields){if(!view)return false;
  const j=await r.json();if(j.ok)view.text=j.text;return j.ok;}
 let sec=null,menuOpen=false,LASTD=null;
 const SECNAME={family:'Familie und Haushalt',friends:'Freunde und Verwandte',leyla:'Leylas Geschichte',private:'Privat',mail:'Google verbinden',lamps:'Lampenfarben',set:'Einstellungen'};
-const SECICON={family:'👪',friends:'🤝',leyla:'💜',private:'🔒',mail:'✉',lamps:'💡',rules:'📜',diary:'📔',set:'⚙'};
+const SECICON={family:'👪',friends:'🤝',leyla:'💜',private:'🔒',mail:'✉',lamps:'💡',rules:'📜',diary:'📔',full:'⛶',set:'⚙'};
 function menuItems(){const it=[];const ls=(LASTD&&LASTD.lists)||[];
  for(const l of ls)it.push([l.kind,l.title,l.items.length]);
  if(CODE&&GM.shown&&GM.needs)it.push(['mail','Google verbinden','']);if(lampOn)it.push(['lamps','Lampenfarben','']);
- if(CODE){it.push(['diary','Tagebuch','']);it.push(['rules','So ist Leyla',''])};it.push(['set','Einstellungen','']);return it;}
+ if(CODE){it.push(['diary','Tagebuch','']);it.push(['rules','So ist Leyla',''])};it.push(['full','Vollbild','']);it.push(['set','Einstellungen','']);return it;}
 function drawMenu(){const m=document.getElementById('menu');m.innerHTML='';m.style.display=menuOpen?'block':'none';document.getElementById('micon').classList.toggle('open',menuOpen);if(!menuOpen)return;
  for(const [k,t,n] of menuItems()){const b=document.createElement('button');b.className='mi';const i=document.createElement('i');i.textContent=SECICON[k]||'•';
   const sp=document.createElement('span');sp.textContent=t;const sm=document.createElement('small');sm.textContent=n===''?'':String(n);const ch=document.createElement('b');ch.textContent='›';
@@ -395,6 +395,11 @@ function drawMenu(){const m=document.getElementById('menu');m.innerHTML='';m.sty
 document.getElementById('micon').onclick=()=>{menuOpen=!menuOpen;snd[menuOpen?'on':'off']();drawMenu();};
 document.getElementById('cmenu').onclick=e=>{e.stopPropagation();document.getElementById('micon').onclick();};
 function openSec(k){menuOpen=false;drawMenu();if(k==='rules'){openRules();return;}if(k==='diary'){openDiary();return;}
+ if(k==='full'){  /* 2.134.2 (Metin): the stage over the whole phone, without the address bar */
+  const d=document.documentElement;
+  if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});
+  else (d.requestFullscreen?d.requestFullscreen({navigationUI:'hide'}):Promise.reject()).catch(()=>{});
+  return;}
  const was=sec;sec=k;view=null;sel=new Set();last='';if(!was)history.pushState({s:1},'');else history.replaceState({s:1},'');window.scrollTo(0,0);snd.on();
  if(k==='mail')gmailLoad();if(k==='lamps')loadLamps();load();}
 function openFolder(kind,head){view={kind,head,text:''};sel=new Set();last='';history.pushState({f:1},'');window.scrollTo(0,0);snd.on();load();}
@@ -903,7 +908,7 @@ sndLabel();loadLamps();setInterval(load,4000);
 </script></body></html>"""
 
 MANIFEST = json.dumps({"name": "Leyla Gedächtnis", "short_name": "Leyla", "start_url": "/",
-                       "display": "standalone", "background_color": "#000000",
+                       "display": "fullscreen", "background_color": "#000000",
                        "theme_color": "#000000",
                        "id": "/", "scope": "/",
                        "icons": [{"src": "/icon.png?v=5", "sizes": sz, "type": "image/png",

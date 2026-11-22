@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.134.2 (22 Nov 2026)
+
+- The stage can fill the whole phone (Metin): the menu has an entry "Vollbild" that switches the page to full screen and back, which also hides the address bar in Chrome. The manifest asks for `display: fullscreen` instead of `standalone`, so the installed app starts without the address bar and without the Android status bar; that needs adding the app to the home screen once more.
+
 ## 2.134.1 (22 Nov 2026)
 
 - A tap on the clip timer at the top left shows the name of the running clip (`#zname`, for example `nacht/tanz23`), another tap hides it again; the setting is remembered in the phone (`lzname`). Metin's idea, so he can name the clip he wants replaced or deleted while he watches.
