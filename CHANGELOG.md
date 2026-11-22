@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.132.0 (22 Nov 2026)
+
+- Night dances `nacht/tanz28` (spin, side legwork and glances, 0.8 tempo) and `tanz29` (spins with a camera move, original tempo) join the night dance chain.
+
 ## 2.131.9 (22 Nov 2026)
 
 - Night 20 s belly dance solos `nacht/tanz26` (fiery) and `tanz27` (wild but feminine, camera from hips to face) join the night dance chain in their original tempo; they never follow each other. Media only: `kurz/freizeitrose2` (20 s rose reconciliation, with sound).
