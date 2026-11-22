@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.132.5 (22 Nov 2026)
+
+- The floor work clip is a "Zeig dich" clip, not a dance (Metin): it left the night dance chain and plays as `nacht/zeigenlang2`, uncut.
+
 ## 2.132.4 (22 Nov 2026)
 
 - Night 20 s solo `nacht/tanz32` (belly dance with floor work, uncut, original tempo) joins the night dance chain; the five 20 s solos never follow each other.
