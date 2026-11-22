@@ -1098,12 +1098,22 @@ async function build(){const j=await (await fetch('/clips.json')).json();const o
    try{await fetch('/api/tempo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:sel.value,rate:Number(r.value)})});mk.textContent='gemerkt';}catch(e){mk.textContent='ging nicht';}
    setTimeout(()=>{mk.textContent='merken';},1500);liste();};
   row.append(lab,r,b,mk);
-  const load=()=>{v.src='/clips/'+sel.value+'.mp4?t='+Date.now();v.playbackRate=Number(r.value);v.play().catch(()=>{});};
+  const pos=document.createElement('div');pos.style.cssText='margin-top:4px;color:#9fe8ff';
+  const nav=document.createElement('div');nav.className='row';
+  const prev=document.createElement('button');prev.textContent='\u25C0';
+  const next=document.createElement('button');next.textContent='\u25B6';
+  nav.append(prev,pos,next);
+  const idx=()=>names.indexOf(sel.value);
+  const show=()=>{pos.textContent=sel.value+'   '+(idx()+1)+' von '+names.length;};
+  const load=()=>{v.src='/clips/'+sel.value+'.mp4?t='+Date.now();v.playbackRate=Number(r.value);v.play().catch(()=>{});show();};
+  const step=k=>{const i=(idx()+k+names.length)%names.length;sel.value=names[i];load();};
+  prev.onclick=()=>step(-1);next.onclick=()=>step(1);
+  v.addEventListener('wheel',e=>{e.preventDefault();step(e.deltaY>0?1:-1);},{passive:false});
   sel.onchange=load;
   r.oninput=()=>{v.playbackRate=Number(r.value);lab.textContent=Number(r.value).toFixed(2);};
   b.onclick=()=>{r.value='1';r.oninput();};
   v.onloadeddata=()=>{v.playbackRate=Number(r.value);};
-  d.append(sel,v,row);w.appendChild(d);
+  d.append(sel,nav,v,row);w.appendChild(d);
   sel.value=names[Math.min(i,names.length-1)];load();}
 }
 async function liste(){let j={items:[]};try{j=await (await fetch('/api/tempo?t='+Date.now())).json();}catch(e){}

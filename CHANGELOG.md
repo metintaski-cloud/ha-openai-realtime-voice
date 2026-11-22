@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.135.4 (22 Nov 2026)
+
+- The tempo tester steps through the clips without opening the list (Metin lost track in it): the mouse wheel over a player switches to the next or previous clip, two arrows do the same, and the line under the picker shows the clip and its position, for example "14 von 298".
+
 ## 2.135.3 (22 Nov 2026)
 
 - The remember button of 2.135.2 was only half in the file: the button, the storage and the two endpoints are there now, with a test.
