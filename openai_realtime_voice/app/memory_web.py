@@ -542,7 +542,7 @@ document.addEventListener('pointerdown',()=>{  /* 2.134.5: at every touch, not o
  if(want&&!document.fullscreenElement)goFull();},true);
 if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});  /* 2.134.3: only with a service worker does Chrome install the page as an app, and only then does the manifest's fullscreen apply */
 async function clipsLoad(){let outs={};try{outs=(await (await fetch('/clips.json')).json()).outfits||{};}catch(e){}
- for(const k in outs){CVER[k]=outs[k].v||0;const r=outs[k].r||{};for(const c in r)RATE[k+'/'+c]=r[c];}  /* 2.136.0 (Metin): his tempo from the tester, the clip files stay untouched */
+ for(const k in outs){CVER[k]=outs[k].v||0;const r=outs[k].r||{};for(const c in r)RATE[k+'/'+c]=r[c];const q=outs[k].k||{};for(const c in q)KURVE[k+'/'+c]=q[c];}  /* 2.136.0 (Metin): his tempo from the tester, the clip files stay untouched */
 NIGHT=outs.nacht?outs.nacht.clips:[];NIGHTBODY=!!(outs.nacht&&outs.nacht.body);delete outs.nacht;PET=outs.mokka&&outs.mokka.alpha||[];delete outs.mokka;const names=Object.keys(outs);
  let last='',lday='',seen=0;try{last=localStorage.getItem('loutfit')||'';lday=localStorage.getItem('loutfitday')||'';seen=Number(localStorage.getItem('lseen')||0);}catch(e){}
  let mokpend=false;try{mokpend=!localStorage.getItem('lmokka');}catch(e){}
@@ -557,8 +557,15 @@ function clipVars(b){const o=STM&&!CHANGE.includes(b)?STM.outfit:'';if(o==='nach
  const k=o==='freizeit'?'freizeit'+b:b;return CLIPS.filter(n=>n.replace(/[0-9]+$/,'')===k);}  // Freizeit: freizeit<name> clips (2.113.0), night: folder nacht (2.114.0)
 function clipFor(st){const lv=st.low&&st.level&&st.mood!=='eifersuechtig'?'traurig'+st.level:'';if(lv&&clipVars(lv).length)return lv;if(clipVars(st.mood).length)return st.mood;
  const g=(st.low?['traurigleicht','traurig','eifersuechtig'].concat(st.outfit&&st.outfit!=='arbeit'?['gluecklich']:[]):['gluecklich']).filter(n=>clipVars(n).length);return g.length?g[0]:null;}
-let RATE={};
+let RATE={},KURVE={};
 function rateOf(pth){return RATE[pth]||1;}
+/* a clip can have its own speed for a stretch inside it (2.139.0, Metin: the whole clip is
+   not too fast, one second in the middle is). The browser takes a new speed mid play, so
+   this costs no re-encoding and no quality. */
+function rateAt(pth,t){const k=KURVE[pth];if(k)for(const s of k)if(t>=s[0]&&t<s[1])return s[2];
+ return rateOf(pth);}
+function rateFollow(v,pth){if(!KURVE[pth])return null;return()=>{const r=rateAt(pth,v.currentTime);
+ if(Math.abs((v.playbackRate||1)-r)>0.001)v.playbackRate=r;};}
 let SV=0,STOK=0,CONT=false,SWAP=0;const PRELOAD_S=3;
 let TIGHT=false;  /* a loop that replays the same clip blends only at the very end (2.133.5): nacht/eifersuechtig does not come all the way back to its start pose, and the wide blend showed both poses at once */
 function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name);const tight=TIGHT;TIGHT=false;const PRE=tight?0.25:0.8,OFF=tight?300:850;const s=document.getElementById('stage'),vs=[document.getElementById('svid'),document.getElementById('svid2')],a=vs[SV],b=vs[1-SV],tok=++STOK,cont=CONT;CONT=false;
@@ -568,8 +575,9 @@ function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name);const tight=TI
   if(cont&&a.classList.contains('on')&&a.duration&&!a.ended){const w=(a.duration-PRE-a.currentTime)*1000/(a.playbackRate||1);if(w>30){SWAP=tok;setTimeout(()=>{if(tok===STOK)go();},w);return;}}go();};
  const go=()=>{b.currentTime=0;b.play().catch(()=>{b.muted=true;b.play().catch(()=>{});});b.style.zIndex=1;a.style.zIndex=0;b.classList.add('on');s.classList.add('vid');SV=1-SV;
   setTimeout(()=>{if(tok===STOK)a.classList.remove('on');},OFF);setTimeout(()=>{if(!a.classList.contains('on'))a.pause();},OFF+150);let fired=false;const fire=()=>{if(fired||tok!==STOK||!done)return;fired=true;CONT=true;done();CONT=false;};
-  b.ontimeupdate=()=>{if(b.duration&&b.currentTime>b.duration-PRELOAD_S)fire();};b.onended=fire;};
- {const pth=name.includes('/')?name:OUTFIT+'/'+name;const rt=rateOf(pth);b.src='/clips/'+pth+'.mp4?v='+(CVER[pth.split('/')[0]]||0);b.playbackRate=rt;b.onratechange=null;b.onloadedmetadata=()=>{b.playbackRate=rt;};}b.load();}
+  const fol=rateFollow(b,b.dataset.pth||'');
+  b.ontimeupdate=()=>{if(fol)fol();if(b.duration&&b.currentTime>b.duration-PRELOAD_S)fire();};b.onended=fire;};
+ {const pth=name.includes('/')?name:OUTFIT+'/'+name;b.dataset.pth=pth;const rt=rateAt(pth,0);b.src='/clips/'+pth+'.mp4?v='+(CVER[pth.split('/')[0]]||0);b.playbackRate=rt;b.onratechange=null;b.onloadedmetadata=()=>{b.playbackRate=rateAt(pth,0);};}b.load();}
 function stageLoop(b){if(ZPEND){const f=ZPEND;ZPEND=null;return f();}ZBUSY=0;DANCING=false;if(!b)return stageShow(null);const v=clipVars(b),nx=()=>stageNext(b);if(v.length<2){TIGHT=true;return stageShow(v[0],false,nx);}
  const cur=document.getElementById(SV?'svid2':'svid').src.split('?')[0].split('/').pop().replace('.mp4','');const o=v.filter(n=>n.split('/').pop()!==cur);stageShow(o[Math.floor(Math.random()*o.length)],false,nx);}
 const SPECIAL=[],SPECIAL_P=0;  // since 2.111.2 no dance by herself, only when Metin asks (Metin)
@@ -972,6 +980,13 @@ def list_outfits() -> dict:
         look, clip = name.split("/", 1)
         if look in out and (clip in out[look]["clips"] or clip in out[look].get("alpha", ())):
             out[look].setdefault("r", {})[clip] = rate
+    # k: the tempo curve, a own speed for a stretch inside a clip (2.139.0)
+    for name, segs in _kurve_read().items():
+        if "/" not in name:
+            continue
+        look, clip = name.split("/", 1)
+        if look in out and clip in out[look]["clips"]:
+            out[look].setdefault("k", {})[clip] = segs
     return out
 
 
@@ -1079,6 +1094,44 @@ def _tempo_add(name: str, rate: float) -> None:
     os.replace(tmp, path)
 
 
+KURVE_PATH = "/data/tempo_kurve.json"
+
+
+def _kurve_read() -> dict:
+    """Tempo curves: a clip can have its own speed for a stretch inside it (2.139.0,
+    Metin: "Ich muesste mit einem Skalpell die ms hoeher oder tiefer stellen an Sekunde
+    4-5 von 10"). Shape: {"nacht/tanz4": [[3.5, 5.0, 1.3], ...]} with seconds and speed."""
+    try:
+        with open(os.environ.get("LEYLA_KURVE", KURVE_PATH), encoding="utf-8") as f:
+            d = json.load(f)
+        return d if isinstance(d, dict) else {}
+    except Exception:
+        return {}
+
+
+def _kurve_set(name: str, segs: list) -> None:
+    path = os.environ.get("LEYLA_KURVE", KURVE_PATH)
+    d = _kurve_read()
+    clean = []
+    for seg in segs if isinstance(segs, list) else []:
+        try:
+            a_, b_, r_ = float(seg[0]), float(seg[1]), round(float(seg[2]), 2)
+        except (TypeError, ValueError, IndexError):
+            continue
+        if b_ > a_ >= 0 and 0.2 <= r_ <= 3:
+            clean.append([round(a_, 2), round(b_, 2), r_])
+    clean.sort()
+    if clean:
+        d[name] = clean[:40]
+    else:
+        d.pop(name, None)
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(d, f, ensure_ascii=False)
+    os.replace(tmp, path)
+
+
 def _tempo_clear() -> None:
     """His run by feel is replaced by the measurement (2.137.0, he said 'Kannst loeschen';
     the old values stay readable in docs/TEMPO_WUNSCH.md)."""
@@ -1133,7 +1186,7 @@ button{padding:6px 10px;border-radius:8px;background:#222;color:#eee;border:1px 
    work, so the left side keeps playing one clip he picked as the reference and the right
    side is the clip under test. He steps with the mouse wheel or the arrows, sets the
    speed until the two match and presses merken, which takes the clip out of the list. */
-let NAMES=[],REF='',RATES={};
+let NAMES=[],REF='',RATES={},KURVE={};
 const med=a=>{a=a.slice().sort((x,y)=>x-y);return a.length?a[Math.floor(a.length/2)]:1;};
 function save(k,v){try{localStorage.setItem(k,v);}catch(e){}}
 function load(k){try{return localStorage.getItem(k)||'';}catch(e){return '';}}
@@ -1142,6 +1195,7 @@ async function build(){
  const order=['kurz','schwarz','nacht','mokka'];
  const looks=Object.keys(o).sort((a,b)=>(order.indexOf(a)+99)%100-(order.indexOf(b)+99)%100||a.localeCompare(b));
  for(const look of looks){const r=o[look].r||{};for(const c in r)RATES[look+'/'+c]=r[c];
+  const q=o[look].k||{};for(const c in q)KURVE[look+'/'+c]=q[c];
   for(const c of (o[look].clips||[]).slice().sort())NAMES.push(look+'/'+c);}
  let done=[];try{done=((await (await fetch('/api/tempo?t='+Date.now())).json()).items||[]).map(x=>x.name);}catch(e){}
  for(const n of done){const i=NAMES.indexOf(n);if(i>=0&&NAMES.length>2)NAMES.splice(i,1);}
@@ -1178,26 +1232,59 @@ async function build(){
  const mk=document.createElement('button');mk.textContent='merken';
  const skip=document.createElement('button');skip.textContent='passt schon';
  row.append(lab,back,mk,skip);
- d.append(pos,v,nav,r,row);
+ /* the scalpel (2.139.0, Metin): a stretch inside the clip gets its own tempo */
+ const seg=document.createElement('div');seg.className='row';
+ const sfrom=document.createElement('input');sfrom.type='range';sfrom.min='0';sfrom.max='10';sfrom.step='0.05';sfrom.value='0';
+ const slen=document.createElement('input');slen.type='range';slen.min='0.2';slen.max='4';slen.step='0.05';slen.value='1';
+ const srate=document.createElement('input');srate.type='range';srate.min='0.4';srate.max='2';srate.step='0.05';srate.value='1';
+ const slab=document.createElement('div');slab.className='t';
+ const only=document.createElement('button');only.textContent='nur Stueck';
+ const sadd=document.createElement('button');sadd.textContent='Stueck merken';
+ const sclr=document.createElement('button');sclr.textContent='Kurve loeschen';
+ const slist=document.createElement('div');slist.className='t';
+ seg.append(only,sadd,sclr);
+ d.append(pos,v,nav,r,row,slab,sfrom,slen,srate,seg,slist);
  let cur=NAMES.find(n=>n!==REF)||NAMES[0];
  const show=()=>{pos.textContent=cur+'   '+(NAMES.indexOf(cur)+1)+' von '+NAMES.length+' offen';};
  const play=()=>{v.src='/clips/'+cur+'.mp4?t='+Date.now();v.playbackRate=Number(r.value);v.play().catch(()=>{});show();};
  v.onloadedmetadata=()=>{v.playbackRate=Number(r.value);};
  const step=k=>{const i=NAMES.indexOf(cur);cur=NAMES[((i<0?0:i)+k+NAMES.length)%NAMES.length];
-  r.value=String(RATES[cur]||1);lab.textContent=Number(r.value).toFixed(2);play();};
+  r.value=String(RATES[cur]||1);lab.textContent=Number(r.value).toFixed(2);play();segShow();};
  prev.onclick=()=>step(-1);next.onclick=()=>step(1);
  v.addEventListener('wheel',e=>{e.preventDefault();step(e.deltaY>0?1:-1);},{passive:false});
  r.oninput=()=>{v.playbackRate=Number(r.value);lab.textContent=Number(r.value).toFixed(2);};
  back.onclick=()=>{r.value='1';r.oninput();};
  asref.onclick=()=>{REF=cur;refShow();step(1);};
  const drop=()=>{const i=NAMES.indexOf(cur);if(i>=0&&NAMES.length>2)NAMES.splice(i,1);
-  cur=NAMES[Math.min(i<0?0:i,NAMES.length-1)];r.value=String(RATES[cur]||1);lab.textContent=Number(r.value).toFixed(2);play();};
+  cur=NAMES[Math.min(i<0?0:i,NAMES.length-1)];r.value=String(RATES[cur]||1);lab.textContent=Number(r.value).toFixed(2);play();segShow();};
  const remember=async rate=>{try{await fetch('/api/tempo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:cur,rate:rate})});
    RATES[cur]=rate;mk.textContent='gemerkt';drop();}catch(e){mk.textContent='ging nicht';}
   setTimeout(()=>{mk.textContent='merken';},1200);liste();};
  mk.onclick=()=>remember(Number(r.value));
  skip.onclick=()=>remember(1);
- w.append(rd,d);refShow();play();
+ /* --- the piece inside the clip --- */
+ let ONLY=false;
+ const segFrom=()=>Number(sfrom.value),segTo=()=>Number(sfrom.value)+Number(slen.value);
+ const segShow=()=>{slab.textContent='Stueck '+segFrom().toFixed(2)+' bis '+segTo().toFixed(2)+' s   Tempo '+Number(srate.value).toFixed(2)+(ONLY?'   (Schleife nur ueber dem Stueck)':'');
+  slist.innerHTML=(KURVE[cur]||[]).map((x,i)=>'Kurve: '+x[0].toFixed(2)+'-'+x[1].toFixed(2)+' s  '+Number(x[2]).toFixed(2)+' <a href="#" data-i="'+i+'">weg</a>').join('<br>')||'keine Kurve';
+  slist.querySelectorAll('a').forEach(a2=>{a2.onclick=e=>{e.preventDefault();const k=(KURVE[cur]||[]).slice();k.splice(Number(a2.dataset.i),1);kurveSave(k);};});};
+ sfrom.oninput=slen.oninput=()=>{segShow();if(ONLY)v.currentTime=segFrom();};
+ srate.oninput=()=>{segShow();if(ONLY)v.playbackRate=Number(srate.value);};
+ only.onclick=()=>{ONLY=!ONLY;only.style.borderColor=ONLY?'#2a6':'';v.currentTime=ONLY?segFrom():0;segShow();};
+ v.addEventListener('timeupdate',()=>{
+  if(ONLY){if(v.currentTime>=segTo()||v.currentTime<segFrom()-0.1)v.currentTime=segFrom();
+   v.playbackRate=Number(srate.value);return;}
+  const k=KURVE[cur];if(!k)return;let rr=Number(r.value);
+  for(const sg of k)if(v.currentTime>=sg[0]&&v.currentTime<sg[1])rr=sg[2];
+  if(Math.abs(v.playbackRate-rr)>0.001)v.playbackRate=rr;});
+ async function kurveSave(k){try{await fetch('/api/kurve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:cur,segs:k})});
+   if(k.length)KURVE[cur]=k;else delete KURVE[cur];}catch(e){}
+  segShow();}
+ sadd.onclick=()=>{const k=(KURVE[cur]||[]).filter(x=>x[1]<=segFrom()||x[0]>=segTo());
+  k.push([Number(segFrom().toFixed(2)),Number(segTo().toFixed(2)),Number(srate.value)]);k.sort((a2,b2)=>a2[0]-b2[0]);kurveSave(k);};
+ sclr.onclick=()=>kurveSave([]);
+ v.addEventListener('loadedmetadata',()=>{sfrom.max=String(Math.max(1,(v.duration||10)-0.2));segShow();});
+ w.append(rd,d);refShow();play();segShow();
 }
 async function liste(){let j={items:[]};try{j=await (await fetch('/api/tempo?t='+Date.now())).json();}catch(e){}
  let d=document.getElementById('liste');if(!d){d=document.createElement('div');d.id='liste';document.body.appendChild(d);}
@@ -1293,6 +1380,15 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                 _tempo_add(n, rate)
                 logger.info("Tempo tester: %s at %.2f", n, rate)
             await _respond(writer, "200 OK", "application/json", json.dumps({"ok": ok}))
+        elif method == "GET" and path == "/api/kurve":
+            await _respond(writer, "200 OK", "application/json",
+                           json.dumps(_kurve_read(), ensure_ascii=False))
+        elif method == "POST" and path == "/api/kurve":
+            n = str(d.get("name") or "")[:60]
+            if n:
+                _kurve_set(n, d.get("segs") or [])
+                logger.info("Tempo curve: %s -> %s", n, d.get("segs"))
+            await _respond(writer, "200 OK", "application/json", json.dumps({"ok": bool(n)}))
         elif method == "GET" and path == "/api/motion":
             await _respond(writer, "200 OK", "application/json",
                            json.dumps(motion_runner().status()))

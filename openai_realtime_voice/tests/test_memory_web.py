@@ -1,3 +1,4 @@
+import os
 import asyncio
 import json
 
@@ -337,3 +338,29 @@ def test_tempo_tester_keeps_the_factor(tmp_path, monkeypatch):
     items = memory_web._tempo_read()
     assert [i["name"] for i in items] == ["nacht/tanz14", "kurz/freizeitgluecklich"]
     assert items[-1]["rate"] == 1.35
+
+
+def test_tempo_curve_keeps_only_sane_pieces(tmp_path, monkeypatch):
+    """A stretch inside a clip can have its own speed (2.139.0, Metin's scalpel)."""
+    monkeypatch.setenv("LEYLA_KURVE", str(tmp_path / "k.json"))
+    memory_web._kurve_set("nacht/tanz4", [[5.0, 4.0, 1.2],      # end before start
+                                          [3.5, 5.0, 1.3],
+                                          [1.0, 2.0, 9.0],      # speed out of range
+                                          ["x", 2.0, 1.1],      # junk
+                                          [0.0, 1.0, 0.8]])
+    assert memory_web._kurve_read() == {"nacht/tanz4": [[0.0, 1.0, 0.8], [3.5, 5.0, 1.3]]}
+    memory_web._kurve_set("nacht/tanz4", [])
+    assert memory_web._kurve_read() == {}, "an empty curve removes the clip again"
+
+
+def test_clips_carry_the_curve(tmp_path, monkeypatch):
+    monkeypatch.setattr(memory_web, "CLIPS_DIR", "")
+    monkeypatch.setattr(memory_web, "MEDIA_CLIPS", str(tmp_path / "media"))
+    os.makedirs(tmp_path / "media" / "nacht")
+    (tmp_path / "media" / "nacht" / "tanz4.mp4").write_bytes(b"x")
+    monkeypatch.setenv("LEYLA_KURVE", str(tmp_path / "k.json"))
+    monkeypatch.setenv("LEYLA_TEMPO", str(tmp_path / "t.json"))
+    memory_web._kurve_set("nacht/tanz4", [[3.5, 5.0, 1.3]])
+    memory_web._kurve_set("nacht/weg", [[1.0, 2.0, 1.3]])
+    out = memory_web.list_outfits()["nacht"]
+    assert out["k"] == {"tanz4": [[3.5, 5.0, 1.3]]}
