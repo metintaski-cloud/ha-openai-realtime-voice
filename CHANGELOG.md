@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.133.3 (22 Nov 2026)
+
+- The chat bar no longer hides Mokka (Metin): Senden sits at the top left under the clip timer, Neuer Chat in the right button column under the music, and the text field alone at the bottom left over 58 % of the width, so the cat at Leyla's feet stays visible.
+
 ## 2.133.2 (22 Nov 2026)
 
 - She keeps her dress (Metin: every reload showed another one): the stage picks a dress once per day, counted from 5 in the morning (`dressDay`), and keeps it while the app is used; only after the app has been away for more than 4 hours (`AWAY_MS`, `lseen` written every minute) can she have changed, as planned in docs/SZENEN_KONZEPT.md under Kleiderwechsel. A new dress is still never the same as the one before.
