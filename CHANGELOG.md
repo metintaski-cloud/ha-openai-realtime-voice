@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.133.4 (22 Nov 2026)
+
+- Dance chains cleaned up after measuring every clip (first and last frame of all 296 media clips compared): the work dress chain pointed at 11 clips that are not in the media folder (`kurz` tanz2, tanz3, tanz6, tanz7, tanz10 and all six `schwarz` dances, so the long work dress has no dance at all and `DNEXTW.schwarz` is gone). 25 dead entries removed.
+- Four rough hand overs removed as well, where the end pose of one clip and the start pose of the next are furthest apart: `kurz` tanz4 to tanz and in the night tanz6 to tanz, tanz6 to tanz4 and tanz11 to tanz30. Measured result of the night chain otherwise: 1498 hand overs, no wrong facing, no dead end, no clip with a black first or last frame; of 48 mood loops only `nacht/eifersuechtig` closes visibly rough.
+
 ## 2.133.3 (22 Nov 2026)
 
 - The chat bar no longer hides Mokka (Metin): Senden sits at the top left under the clip timer, Neuer Chat in the right button column under the music, and the text field alone at the bottom left over 58 % of the width, so the cat at Leyla's feet stays visible.
