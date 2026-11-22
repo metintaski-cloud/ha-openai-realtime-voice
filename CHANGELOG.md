@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.131.8 (22 Nov 2026)
+
+- Night belly dances `nacht/tanz23` (side profile), `tanz24` (shimmy with snake arms) and `tanz25` (slow spin with a camera move) join the night dance chain at the common rhythm. Media only: `schwarz/freizeitrose2` (rose reconciliation, with sound).
+
 ## 2.131.7 (22 Nov 2026)
 
 - Third night serpentine dance `nacht/tanz22` joins the night dance chain. Media only: `schwarz/umziehen` replaced by a 4K clip like `kurz/umziehen`.
