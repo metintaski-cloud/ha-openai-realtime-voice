@@ -154,3 +154,7 @@ Metin: "unbedingt 1:1" für Nacht, kurz Freizeit und lang Freizeit (6 Clips). Ab
 - tanz8: 0 bis 1,5 s Drehung mit dem Rücken zur Kamera; 1,5 bis 8 s weite, gleichmäßige Hüftschwünge von Seite zu Seite, Arme schwingen locker, Kopf bleibt nach vorne; 8 bis 10 s Drehung zurück in die Startpose.
 - tanz9: wie tanz8, aber die Hüfte wird deutlicher nach hinten geschoben, sie beugt sich leicht vor und streckt einen Arm zur Seite, kurzes Wippen in der Mitte.
 Prompts ohne Buch und ohne das Wort glasses ("Her bare face ... stays exactly as in the keyframes"), Musikrichtung nennen; danach auf den Bauchtanz Takt prüfen.
+
+## R&B mit Darbuka (22.11.2026, kurz/freizeittanz2)
+
+Prompt Kern: "she dances in place to a slow, sensual R&B groove blended with Arabic darbuka drums, moving like a belly dancer: her hips sway wide and smoothly from side to side with soft hip drops on each drum beat, her upper body stays calm, her arms float gracefully". Kling tanzte trotzdem recht schnell (1,1 Schwünge pro Sekunde); auf 0,62 gebremst wirkten Gesicht und Mimik träge, Metin nahm 0,75. Nächstes Mal "slow, elegant" direkt in den Prompt, damit weniger gebremst werden muss.
