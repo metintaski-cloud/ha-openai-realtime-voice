@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.134.3 (22 Nov 2026)
+
+- The page serves a small service worker (`/sw.js`, it only passes requests through and caches nothing) and registers it. Without one Chrome makes a plain shortcut that opens with its address bar; with one the page installs as a real app, so the manifest's fullscreen applies and the stage starts without the address bar and without the Android bar.
+
 ## 2.134.2 (22 Nov 2026)
 
 - The stage can fill the whole phone (Metin): the menu has an entry "Vollbild" that switches the page to full screen and back, which also hides the address bar in Chrome. The manifest asks for `display: fullscreen` instead of `standalone`, so the installed app starts without the address bar and without the Android status bar; that needs adding the app to the home screen once more.

@@ -536,6 +536,7 @@ const AWAY_MS=4*3600*1000;  /* she chooses her dress at 5 in the morning and kee
 function dressDay(){const d=new Date(Date.now()-5*3600*1000);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
 function seenTick(){try{localStorage.setItem('lseen',String(Date.now()));}catch(e){}}
 setInterval(seenTick,60000);document.addEventListener('visibilitychange',seenTick);
+if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});  /* 2.134.3: only with a service worker does Chrome install the page as an app, and only then does the manifest's fullscreen apply */
 async function clipsLoad(){let outs={};try{outs=(await (await fetch('/clips.json')).json()).outfits||{};}catch(e){}
  for(const k in outs)CVER[k]=outs[k].v||0;NIGHT=outs.nacht?outs.nacht.clips:[];NIGHTBODY=!!(outs.nacht&&outs.nacht.body);delete outs.nacht;PET=outs.mokka&&outs.mokka.alpha||[];delete outs.mokka;const names=Object.keys(outs);
  let last='',lday='',seen=0;try{last=localStorage.getItem('loutfit')||'';lday=localStorage.getItem('loutfitday')||'';seen=Number(localStorage.getItem('lseen')||0);}catch(e){}
@@ -1106,6 +1107,14 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
             await _send_clip(writer, m.group(1), m.group(2), m.group(3), lines)
         elif method == "GET" and path == "/manifest.json":
             await _respond(writer, "200 OK", "application/manifest+json", MANIFEST)
+        elif method == "GET" and path == "/sw.js":
+            # without a service worker Chrome only makes a shortcut that opens with its address
+            # bar; with one the page installs as an app and the manifest's fullscreen applies
+            # (2.134.3, Metin). It only passes requests through, nothing is cached.
+            await _respond(writer, "200 OK", "application/javascript",
+                           "self.addEventListener('install',e=>self.skipWaiting());\n"
+                           "self.addEventListener('activate',e=>e.waitUntil(clients.claim()));\n"
+                           "self.addEventListener('fetch',e=>{});\n")
         elif method == "GET" and path == "/api/lists":
             await _respond(writer, "200 OK", "application/json",
                            json.dumps(snapshot(store), ensure_ascii=False))
