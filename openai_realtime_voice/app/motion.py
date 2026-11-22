@@ -42,19 +42,44 @@ def cadence(series: list, fps: float = 12.0, lo_hz: float = 0.4,
     zero = sum(v * v for v in x)
     if zero <= 0:
         return 0.0, 0.0
-    lo, hi = max(2, int(fps / hi_hz)), min(n - 2, int(fps / lo_hz))
-    cs = {}
-    for lag in range(lo, hi + 1):
-        c = sum(x[i] * x[i + lag] for i in range(n - lag))
-        cs[lag] = c / (n - lag)             # per sample, so long lags are not punished
-    best = max(cs.values()) if cs else 0.0
-    if best <= 0:
+    lo, hi = max(2, int(fps / hi_hz)), min(n // 2, int(fps / lo_hz))
+    if hi <= lo:
         return 0.0, 0.0
-    # two steps fit the shift just as well as one, so take the shortest shift that fits:
-    # otherwise a cadence of two a second would be read as one a second
-    best_lag = min(l for l, c in cs.items() if c >= best * 0.85)
-    best = cs[best_lag]
-    conf = max(0.0, min(1.0, best * n / zero))
+    r = {}
+    for lag in range(1, hi + 1):
+        a_ = x[:n - lag]
+        b_ = x[lag:]
+        ea = sum(v * v for v in a_)
+        eb = sum(v * v for v in b_)
+        if ea <= 0 or eb <= 0:
+            r[lag] = 0.0
+            continue
+        r[lag] = sum(p * q for p, q in zip(a_, b_)) / (ea * eb) ** 0.5
+    # neighbouring frames always look alike, so the curve starts high whatever the rhythm
+    # is. Walk down until it stops falling, and from there take the FIRST hill that is
+    # nearly as high as the highest one: the highest hill alone is often two or three
+    # movements at once (2.137.3, Metin; the first version answered 3.0 Hz for everything)
+    start = 0
+    for lag in range(1, hi):
+        if r[lag + 1] > r[lag]:
+            start = lag
+            break
+    if not start:
+        return 0.0, 0.0
+    rng = [l for l in range(max(start, lo), hi + 1)]
+    if not rng:
+        return 0.0, 0.0
+    top = max(r[l] for l in rng)
+    if top <= 0:
+        return 0.0, 0.0
+    best_lag = rng[-1]
+    for l in rng:
+        hill = r[l] >= r.get(l - 1, 0) and r[l] >= r.get(l + 1, 0)
+        if hill and r[l] >= top * 0.8:
+            best_lag = l
+            break
+    best = r[best_lag]
+    conf = max(0.0, min(1.0, best))
     return round(fps / best_lag, 2), round(conf, 2)
 
 
@@ -107,7 +132,7 @@ def factors(items: dict, lo: float = 0.6, hi: float = 1.6) -> dict:
     factor that brings it there. Clips without a beat (she stands still) keep 1."""
     groups = {}
     for name, m in items.items():
-        if not m.get("beat") or m.get("conf", 1) < 0.25:
+        if not m.get("beat") or m.get("conf", 1) < 0.5:
             continue      # no clear repetition, so there is no tempo to correct
         look, clip = name.split("/", 1) if "/" in name else ("", name)
         groups.setdefault(look + "/" + clip.rstrip("0123456789"), []).append((name, m["beat"]))

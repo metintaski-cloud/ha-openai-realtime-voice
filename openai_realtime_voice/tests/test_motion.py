@@ -30,7 +30,7 @@ def test_cadence_is_not_fooled_by_the_double_shift():
 
 def test_factors_ignore_an_unclear_cadence():
     items = {"a/b": {"beat": 1.0, "conf": 0.9}, "a/b2": {"beat": 1.0, "conf": 0.9},
-             "a/b3": {"beat": 0.5, "conf": 0.9}, "a/b4": {"beat": 0.4, "conf": 0.1}}
+             "a/b3": {"beat": 0.5, "conf": 0.9}, "a/b4": {"beat": 0.4, "conf": 0.3}}
     out = motion.factors(items)
     assert out["a/b3"] == 1.6 and "a/b4" not in out
 
