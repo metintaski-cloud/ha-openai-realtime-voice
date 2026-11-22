@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.131.4 (22 Nov 2026)
+
+- Night back view dances `nacht/tanz15` to `tanz19` (Kling 4.0 attempts at remaking the old work dresses' tanz8 and tanz9) join the night dance chain, set to the common hip rhythm (0.58 to 0.69 sways per second).
+
 ## 2.131.3 (22 Nov 2026)
 
 - Night R&B dance `nacht/tanz14` (Kling 4.0, 0.7 tempo) joins the night dance chain with the same transitions as `tanz11` to `tanz13`.
