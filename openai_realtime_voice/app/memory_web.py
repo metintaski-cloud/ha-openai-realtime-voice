@@ -525,10 +525,17 @@ function petTick(){const v=document.getElementById('spet');if(!v)return;const wa
  if(want&&!PETON){PETON=true;v.onended=petNext;v.ontimeupdate=null;v.classList.add('on');if(PET.includes('kommt')&&!PETCAME){PETCAME=true;v.loop=false;v.src=petUrl('kommt');v.play().catch(()=>{});let first=false;try{first=!localStorage.getItem('lmokka');}catch(e){}const fr=clipVars('mokka');if(first&&fr.length)v.ontimeupdate=()=>{if(v.currentTime<PETSIT)return;v.ontimeupdate=null;petFreude(v,fr[0]);};}else petNext();}
  else if(!want&&PETON){PETON=false;v.classList.remove('on');setTimeout(()=>{if(!PETON){v.pause();v.removeAttribute('src');v.load();}},1300);}}
 setInterval(petTick,2000);
+const AWAY_MS=4*3600*1000;  /* she chooses her dress at 5 in the morning and keeps it; only after the app has been closed for hours can she have changed (docs/SZENEN_KONZEPT.md, Kleiderwechsel; until 2.133.2 every reload rolled a new dress, Metin 22.11.2026) */
+function dressDay(){const d=new Date(Date.now()-5*3600*1000);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+function seenTick(){try{localStorage.setItem('lseen',String(Date.now()));}catch(e){}}
+setInterval(seenTick,60000);document.addEventListener('visibilitychange',seenTick);
 async function clipsLoad(){let outs={};try{outs=(await (await fetch('/clips.json')).json()).outfits||{};}catch(e){}
- for(const k in outs)CVER[k]=outs[k].v||0;NIGHT=outs.nacht?outs.nacht.clips:[];NIGHTBODY=!!(outs.nacht&&outs.nacht.body);delete outs.nacht;PET=outs.mokka&&outs.mokka.alpha||[];delete outs.mokka;const names=Object.keys(outs);let last='';try{last=localStorage.getItem('loutfit')||'';}catch(e){}
- const cand=names.length>1?names.filter(n=>n!==last):names;OUTFIT=cand.length?cand[Math.floor(Math.random()*cand.length)]:'';
- try{if(OUTFIT)localStorage.setItem('loutfit',OUTFIT);}catch(e){}
+ for(const k in outs)CVER[k]=outs[k].v||0;NIGHT=outs.nacht?outs.nacht.clips:[];NIGHTBODY=!!(outs.nacht&&outs.nacht.body);delete outs.nacht;PET=outs.mokka&&outs.mokka.alpha||[];delete outs.mokka;const names=Object.keys(outs);
+ let last='',lday='',seen=0;try{last=localStorage.getItem('loutfit')||'';lday=localStorage.getItem('loutfitday')||'';seen=Number(localStorage.getItem('lseen')||0);}catch(e){}
+ const keep=last&&names.includes(last)&&lday===dressDay()&&(Date.now()-seen)<AWAY_MS;
+ if(keep)OUTFIT=last;else{const cand=names.length>1?names.filter(n=>n!==last):names;OUTFIT=cand.length?cand[Math.floor(Math.random()*cand.length)]:'';}
+ try{if(OUTFIT){localStorage.setItem('loutfit',OUTFIT);localStorage.setItem('loutfitday',dressDay());}}catch(e){}
+ seenTick();
  CLIPS=OUTFIT?outs[OUTFIT].clips:[];if(OUTFIT&&outs[OUTFIT].body){LOOKBODY='/clips/'+OUTFIT+'/body.jpg?v='+(CVER[OUTFIT]||0);document.querySelector('#stage .fig img').src=LOOKBODY;}
  if(LASTST)stageMood(LASTST);}
 function clipVars(b){const o=STM&&!CHANGE.includes(b)?STM.outfit:'';if(o==='nacht')return NIGHT.filter(n=>n.replace(/[0-9]+$/,'')===b).map(n=>'nacht/'+n);

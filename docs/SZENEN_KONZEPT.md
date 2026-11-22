@@ -73,6 +73,7 @@ Leylas Laune ist kein Zufall mehr. Sie entsteht aus dem, was zwischen Metin und 
 - Umgesetzt in 2.110.0. Für glücklich gibt es noch keinen Clip "freut sich", bis dahin zeigt die Bühne einen Kuss. Seit 20.11.2026 gibt es `schwarz/rosefroh` (schüchtern, Hand aus der Kamera, Kling Zeichen mit delogo entfernt); im kurzen Kleid fehlt er noch.
 
 ### Kleiderwechsel lang und kurz (Metin, 19.11.2026)
+- UMGESETZT in 2.133.2 (22.11.2026): Kleid einmal pro Tag ab 5 Uhr, Wechsel erst nach über 4 Stunden ohne App.
 - Sie wechselt das Kleid selbst, aber nur während die App geschlossen ist, so braucht es keine Umzieh Szene: morgens um 5 Uhr wählt sie ihr Kleid für den Tag, und war die App mehrere Stunden zu, kann sie sich inzwischen umgezogen haben.
 - Bittet Metin bei offener App um ein anderes Kleid, sagt sie zu oder ab und zieht sich erst um, wenn die App das nächste Mal geschlossen war.
 

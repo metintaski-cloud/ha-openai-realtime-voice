@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.133.2 (22 Nov 2026)
+
+- She keeps her dress (Metin: every reload showed another one): the stage picks a dress once per day, counted from 5 in the morning (`dressDay`), and keeps it while the app is used; only after the app has been away for more than 4 hours (`AWAY_MS`, `lseen` written every minute) can she have changed, as planned in docs/SZENEN_KONZEPT.md under Kleiderwechsel. A new dress is still never the same as the one before.
+
 ## 2.133.1 (22 Nov 2026)
 
 - Leyla knows Mokka only once the surprise has really played on the stage (Metin: she said nothing about the cat and still had the rule that she had just discovered her). The page reports the moment the surprise clip starts (`POST /api/pet`, flag `/data/mokka_gesehen`); until then `day.pet_note` is empty and the cat is in none of her rules, in the chat, in a talk at home or in her own messages.
