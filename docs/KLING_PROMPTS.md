@@ -147,3 +147,10 @@ Kling setzte im kurzen Freizeitkleid beim Blick über die Schulter eine Brille a
 ## Gleicher Takt für alle Bauchtänze (22.11.2026)
 
 Die Tänze laufen in der App hintereinander, deshalb müssen alle Bauchtänze im selben Rhythmus schwingen. Messung: horizontaler Schwerpunkt der Hüftzone pro Bild, dann die stärkste Frequenz (FFT) zwischen 0,2 und 3 Hz. Maßstab ist Clip 1901 (Nacht) im Originaltempo mit 0,68 Schwüngen pro Sekunde (Metin: "dieses Tempo am liebsten überall"); Faktor für jeden anderen Clip = 0,68 / eigene Frequenz (nacht/tanz12 0,675, schwarz/freizeittanz3 0,87, kurz/freizeittanz 0,787). Gleichmäßig über den ganzen Clip bremsen, mit mci Interpolation. Ein schon langsamer Clip sah bei 0,89 gebremst schlechter aus als im Original: Clips mit gutem Eigentakt lieber als Maßstab nehmen und die anderen anpassen. Für alte Tänze ohne festen Takt geht das nicht.
+
+## Nachbau kurz/tanz8 und tanz9 für Nacht und Freizeit (geplant 22.11.2026)
+
+Metin: "unbedingt 1:1" für Nacht, kurz Freizeit und lang Freizeit (6 Clips). Ablauf der alten Clips (14 s, auf 10 s verdichtet):
+- tanz8: 0 bis 1,5 s Drehung mit dem Rücken zur Kamera; 1,5 bis 8 s weite, gleichmäßige Hüftschwünge von Seite zu Seite, Arme schwingen locker, Kopf bleibt nach vorne; 8 bis 10 s Drehung zurück in die Startpose.
+- tanz9: wie tanz8, aber die Hüfte wird deutlicher nach hinten geschoben, sie beugt sich leicht vor und streckt einen Arm zur Seite, kurzes Wippen in der Mitte.
+Prompts ohne Buch und ohne das Wort glasses ("Her bare face ... stays exactly as in the keyframes"), Musikrichtung nennen; danach auf den Bauchtanz Takt prüfen.
