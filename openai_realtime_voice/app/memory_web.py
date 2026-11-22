@@ -474,9 +474,9 @@ const AUDIO=new Map();let REC=null,RECT=null;
 function playAudio(id){try{const a=new Audio(AUDIO.get(id));a.onplay=()=>stageTalk(true);a.onended=a.onpause=()=>stageTalk(false);a.play().catch(()=>stageTalk(false));}catch(e){}}
 let TALKING=false,DANCING=false;
 const DANCE_N=4;
-function zeigenChain(){if(!STM||STM.outfit!=='nacht')return null;const T=['ruhig','mittel','schnell'].filter(t=>clipVars('zeigen'+t).length);if(!T.length)return null;const t=T[Math.floor(Math.random()*T.length)],f='zeigen'+t,o=[];
+function zeigenChain(){if(!STM||STM.outfit!=='nacht')return null;const T=['ruhig','mittel','schnell'].filter(t=>clipVars('zeigen'+t).length);if(clipVars('zeigenlang').length&&(!T.length||Math.random()<.5))return ['zeigenlang'];if(!T.length)return null;const t=T[Math.floor(Math.random()*T.length)],f='zeigen'+t,o=[];
  if(clipVars('hinten').length&&clipVars(f+'hf').length){o.push([f,'hinten',f+'hf']);if(clipVars(f+'hh').length)o.push(['hinten',f+'hh',f+'hf']);}
- if(!o.length)o.push([f,f,f]);return o[Math.floor(Math.random()*o.length)];}  /* night show (2.119.1, Metin): three clips of one tempo, front poses, turning away, posing from behind, turning back; fast ones three front poses */
+ if(!o.length)o.push([f,f,f]);return o[Math.floor(Math.random()*o.length)];}  /* night show (2.119.1, Metin): three clips of one tempo, front poses, turning away, posing from behind, turning back; fast ones three front poses; since 2.132.3 every second time one long 20 s clip zeigenlang* alone (slow, shy, with a close-up) */
 function stageScene(n){if(!CLIPS||!STM)return;ZCOLNOW='';if(n==='komm'&&!clipVars('komm').length)n='liebe';const ok=n==='zeigen'&&zeigenChain()?1:n==='bettvonarbeit'?(clipVars(n).length||clipVars('umziehen').length):clipVars(n).length;if(!ok)return;
  ZBUSY=Date.now()+300000;if(!CONT&&document.getElementById('stage').classList.contains('vid')){const f=()=>stageSceneNow(n);if(SWAP&&SWAP===STOK){CONT=true;f();CONT=false;}else ZPEND=f;return;}  // her yes waits for the clean hand over, the dot shows it (2.116.0)
  stageSceneNow(n);}

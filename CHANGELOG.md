@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.132.3 (22 Nov 2026)
+
+- "Zeig dich" at night: every second time the page plays one long 20 s clip `nacht/zeigenlang*` alone (slow, shy, curvy poses, close-up of her face) instead of the chain of three short clips.
+- Media only: `kurz/freizeitzeigen` and `schwarz/freizeitzeigen` (20 s, 4K), so "Zeig dich" now also works in both leisure outfits.
+
 ## 2.132.2 (22 Nov 2026)
 
 - Night 20 s solo `nacht/tanz31` (slow, very feminine belly dance with camera from hips to face, slowed to 0.8) joins the night dance chain. The four 20 s solos `tanz26`, `tanz27`, `tanz30` and `tanz31` never follow each other.
