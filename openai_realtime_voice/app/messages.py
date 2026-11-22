@@ -31,7 +31,13 @@ import httpx
 from app import ticker
 import websockets
 
+from app.pacing import BYTES_PER_SEC
+
 logger = logging.getLogger(__name__)
+
+CHARS_PER_SEC = 13.0   # how fast she speaks, measured over her announcements
+SHORT_RATIO = 0.7      # below this share of the expected length it is spoken again
+CHECK_FROM_CHARS = 40  # short announcements are not checked, their length varies too much
 
 REPEAT_EVERY_S = 600
 GIVE_UP_AFTER_S = 3600
@@ -309,11 +315,29 @@ class MessageCenter:
             await self._play(pcm)
             logger.info("Announced from stored clip: %r", text)
             return
-        pcm = await self.speak(self._announce_prompt(text, bilingual, happy))
+        pcm = await self._say_pcm(text, bilingual, happy)
         if remember and not bilingual and pcm:
             self._cache_put(text, pcm)
         await self._play(pcm)
         logger.info("Announced: %r", text)
+
+    async def _say_pcm(self, text: str, bilingual: bool, happy: bool) -> bytes:
+        """The spoken announcement, with one retry when it is far too short for the text.
+        On 22 Nov 2026 Metin heard "Fehleralarm" instead of the evening announcement; the log
+        showed 2.9 s of audio for a sentence of about nine, so the voice had said something else."""
+        pcm = await self.speak(self._announce_prompt(text, bilingual, happy))
+        if len(text) < CHECK_FROM_CHARS:
+            return pcm
+        want = len(text) / CHARS_PER_SEC * (2 if bilingual else 1)
+        got = len(pcm) / BYTES_PER_SEC
+        if got >= want * SHORT_RATIO:
+            return pcm
+        logger.warning("Announcement only %.1f s for %d characters (expected about %.0f s), "
+                       "speaking it again", got, len(text), want)
+        again = await self.speak(self._announce_prompt(text, bilingual, happy))
+        if len(again) / BYTES_PER_SEC > got:
+            return again
+        return pcm
 
     async def prepare(self, texts: list) -> None:
         """Record clips ahead (HA event leyla_announce_prepare), one after the other."""

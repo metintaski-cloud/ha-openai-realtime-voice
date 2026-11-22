@@ -193,3 +193,32 @@ def test_happy_turkish_only_announcement_has_no_german_part():
     svc = MessageCenter.__new__(MessageCenter)
     prompt = svc._announce_prompt("Saat 17:05.", False, happy=True)
     assert "Lache nicht" in prompt and "deutschen Teil" not in prompt and "türkische Teil" not in prompt
+
+
+def test_a_much_too_short_announcement_is_spoken_again(monkeypatch):
+    """Metin, 22.11.2026: instead of the evening announcement the voice said one short word."""
+    import asyncio
+    from app import messages as m
+    mc = m.MessageCenter.__new__(m.MessageCenter)
+    text = "Saat 16:21. 15 dakika sonra güneş batıyor, lambaları şimdi açıyorum."
+    kurz = b"\x00" * int(2.9 * m.BYTES_PER_SEC)
+    lang = b"\x00" * int(9.0 * m.BYTES_PER_SEC)
+    calls = []
+
+    async def speak(prompt):
+        calls.append(prompt)
+        return kurz if len(calls) == 1 else lang
+    mc.speak = speak
+    mc._announce_prompt = lambda t, b, h=False: t
+    out = asyncio.run(mc._say_pcm(text, False, False))
+    assert len(calls) == 2, "too short: spoken a second time"
+    assert out == lang
+
+    calls.clear()
+
+    async def ok(prompt):
+        calls.append(prompt)
+        return lang
+    mc.speak = ok
+    assert asyncio.run(mc._say_pcm(text, False, False)) == lang
+    assert len(calls) == 1, "a normal announcement is spoken only once"

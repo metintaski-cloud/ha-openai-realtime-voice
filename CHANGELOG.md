@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.134.6 (22 Nov 2026)
+
+- An announcement that comes out far too short is spoken again (`MessageCenter._say_pcm`, from 40 characters on, below 70 % of the expected length at 13 characters a second, one retry, logged as a warning). On 22 Nov at 16:21 Metin heard one short German word instead of the evening announcement; the log showed 2.9 s of audio for a Turkish sentence of about five, so the voice had said something else than the text.
+
 ## 2.134.5 (22 Nov 2026)
 
 - While full screen is switched on, any touch brings it back, not only the first one after loading (Metin: leaving and coming back showed the bars again). Only the menu entry switches it off for good.
