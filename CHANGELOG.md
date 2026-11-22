@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.132.1 (22 Nov 2026)
+
+- Night 20 s solo `nacht/tanz30` (soft, feminine belly dance; dance part slowed to 0.75, calm ending in original tempo) joins the night dance chain and never follows `tanz26` or `tanz27`.
+- Fix: `tanz28` and `tanz29` were only reachable from `tanz11` to `tanz27`; they and `tanz30` now also follow `tanz` to `tanz10` and the `tanzhf` clips, like every other night dance.
+
 ## 2.132.0 (22 Nov 2026)
 
 - Night dances `nacht/tanz28` (spin, side legwork and glances, 0.8 tempo) and `tanz29` (spins with a camera move, original tempo) join the night dance chain.
