@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.134.0 (22 Nov 2026)
+
+- She dresses again on request (Metin: the night outfit must not be on the screen when he takes out his phone among people): "zieh dich wieder an", or telling her he is out, gives `"szene": "anziehen"`, and she goes back to her leisure clothes at once, at any level and without a scene of her own; the stage shows it at the next clean hand over, like the change back to work at 5 in the morning. Until now the night outfit stayed until 5 o'clock.
+
 ## 2.133.9 (22 Nov 2026)
 
 - Clip names may be 30 letters long instead of 20 (`CLIP_RE`). `freizeiteifersuechtig` has 21 and was therefore invisible to the server, in both dresses, so Leyla kept smiling in her leisure clothes when she was sad or jealous, although 2.132.9 had put the clip in the media folder.

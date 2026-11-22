@@ -362,3 +362,23 @@ def test_touch_game_reset(tmp_path):
     assert h.status(t + 1)["game"]["done"]
     assert h.game_reset(t + 2)["game"] == {"hits": [], "done": False}
     assert h.game_hit("po", t + 3)["hits"] == ["po"]
+
+def test_she_dresses_again_when_he_is_among_people(h):
+    """Metin, 22.11.2026: the night outfit must not stay on the screen when he is out."""
+    t = at(*THU, 20)
+    h.contact(t)
+    assert h.scene("bett", t) == "bettvonarbeit"
+    assert h.status(t)["outfit"] == "nacht"
+    assert h.scene("anziehen", t + 60) == "still", "no scene of her own, she just changes"
+    assert h.status(t + 60)["outfit"] == "freizeit"
+    assert h.scene("anziehen", t + 120) == "", "nothing to do when she is not in the night outfit"
+
+
+def test_she_dresses_again_even_when_hurt(h):
+    t = at(*THU, 20)
+    h.contact(t)
+    h.scene("bett", t)
+    h.apply(["unfreundlich"], t + 60)
+    assert h.status(t + 60)["level"] != "gut"
+    assert h.scene("anziehen", t + 120) == "still"
+    assert h.status(t + 120)["outfit"] == "freizeit"

@@ -525,7 +525,11 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
             scene = mood.scene(out.pop("szene", "")) if not out.get("silent") else ""
             if scene:
                 out["scene"] = scene
-                if scene == "umziehen" or scene.startswith("bettvon"):
+                if scene == "still":
+                    # back out of the night outfit without a scene of her own (2.134.0): only the
+                    # state changes, the stage shows it at the next clean hand over
+                    out.pop("scene")
+                if scene in ("umziehen", "still") or scene.startswith("bettvon"):
                     out["mood"] = mood.status()  # now in Freizeit, the stage loops her Freizeit clips
         elif mood:
             if paused:

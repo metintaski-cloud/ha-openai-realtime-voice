@@ -181,8 +181,9 @@ AUFZUG = {
                    "nicht, solange du gekränkt bist; behaupte nie, dass du dich umziehst."),
     "freizeit_low": ("Du hast Feierabend und bist in Freizeit, ohne Brille und Buch. Ins Bett gehen magst du "
                      "nicht, solange du gekränkt bist; behaupte nie, dass du dich umziehst."),
-    "nacht": ("Du bist schon im Outfit für die Nacht, bis morgen früh um 5 Uhr. Kein szene Feld zum "
-              "Umziehen mehr."),
+    "nacht": ("Du bist schon im Outfit für die Nacht. Bittet Metin dich, dich wieder anzuziehen, "
+              "oder sagt er, dass er unter Leuten ist, machst du das sofort: \"szene\": \"anziehen\" "
+              "(du bist dann wieder in Freizeit). Sonst bleibst du so bis morgen früh um 5 Uhr."),
 }
 WORK_START_H = 5
 GAME_ZONES = ("gesicht", "brust", "bauch", "po")
@@ -600,6 +601,15 @@ class Heart:
         now = now or time.time()
         d = self.current(now)
         lvl = self._level(d)
+        if wanted == "anziehen":
+            # Metin is out among people and does not want the night outfit on his screen
+            # (22.11.2026): she changes back at once, at any level, without a scene of her own
+            if self._outfit(d, now) != "nacht":
+                return ""
+            d.update(outfit="freizeit", outfit_t=now)
+            self._log(d, now, "wieder angezogen: freizeit")
+            self._save(d)
+            return "still"
         if wanted in ("umziehen", "bett"):
             cur = self._outfit(d, now)
             if lvl != "gut" or cur == "nacht" or (wanted == "umziehen" and cur == "freizeit"):
