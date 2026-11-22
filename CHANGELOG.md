@@ -1,5 +1,57 @@
 # Changelog
 
+## 2.132.12 (22 Nov 2026)
+
+- Night solo `nacht/tanz36` (30 s, uncut, original tempo, clip 3917) joins the night dance chain; the long solos never follow each other.
+
+## 2.132.11 (22 Nov 2026)
+
+- Night solo `nacht/tanz35` (30 s, uncut, original tempo, clip 4032) joins the night dance chain; the long solos never follow each other.
+
+## 2.132.10 (22 Nov 2026)
+
+- Night solo `nacht/tanz34` (30 s, uncut, original tempo, clip 3908) joins the night dance chain; the long solos never follow each other.
+
+## 2.132.9 (22 Nov 2026)
+
+- Sad or sour in an outfit without sad clips (both leisure dresses, night): the stage shows the sulky jealousy loop of that outfit instead of the happy loop. Media: `kurz/freizeiteifersuechtig` (20 s loop, 4K), so every outfit now has its jealousy loop.
+
+## 2.132.8 (22 Nov 2026)
+
+- Night solo `nacht/tanz33` (30 s, uncut, original tempo) joins the night dance chain; the six long solos never follow each other.
+
+## 2.132.7 (22 Nov 2026)
+
+- Night solo `nacht/tanz32` (30 s, uncut, original tempo) joins the night dance chain; the five long solos never follow each other.
+
+## 2.132.6 (22 Nov 2026)
+
+- Leyla reacts at once: a wished scene (Zeig dich, dance, kiss, komm, rose, outfit change) starts immediately with a 0.35 s crossfade instead of waiting for the end of the running clip. Before, the wait was the rest of the running clip, up to about 19 s with the new 20 s loops; now it is only the loading time of the clip.
+
+## 2.132.5 (22 Nov 2026)
+
+- The floor work clip is a "Zeig dich" clip, not a dance (Metin): it left the night dance chain and plays as `nacht/zeigenlang2`, uncut.
+
+## 2.132.4 (22 Nov 2026)
+
+- Night 20 s solo `nacht/tanz32` (belly dance with floor work, uncut, original tempo) joins the night dance chain; the five 20 s solos never follow each other.
+- Media only: jealousy loops in 4K, `nacht/eifersuechtig` (first one for the night outfit), `schwarz/freizeiteifersuechtig`, `kurz/eifersuechtig6`, `schwarz/eifersuechtig5`.
+
+## 2.132.3 (22 Nov 2026)
+
+- "Zeig dich" at night: every second time the page plays one long 20 s clip `nacht/zeigenlang*` alone (slow, shy, curvy poses, close-up of her face) instead of the chain of three short clips.
+- Media only: `kurz/freizeitzeigen` and `schwarz/freizeitzeigen` (20 s, 4K), so "Zeig dich" now also works in both leisure outfits.
+
+## 2.132.2 (22 Nov 2026)
+
+- Night 20 s solo `nacht/tanz31` (slow, very feminine belly dance with camera from hips to face, slowed to 0.8) joins the night dance chain. The four 20 s solos `tanz26`, `tanz27`, `tanz30` and `tanz31` never follow each other.
+- Media only: rose clips for the work dresses in 4K with sound, `kurz/rose4` (she walks to the camera) and `schwarz/rose3` (the camera moves to her), both 20 s from a sad start frame.
+
+## 2.132.1 (22 Nov 2026)
+
+- Night 20 s solo `nacht/tanz30` (soft, feminine belly dance; dance part slowed to 0.75, calm ending in original tempo) joins the night dance chain and never follows `tanz26` or `tanz27`.
+- Fix: `tanz28` and `tanz29` were only reachable from `tanz11` to `tanz27`; they and `tanz30` now also follow `tanz` to `tanz10` and the `tanzhf` clips, like every other night dance.
+
 ## 2.132.0 (22 Nov 2026)
 
 - Night dances `nacht/tanz28` (spin, side legwork and glances, 0.8 tempo) and `tanz29` (spins with a camera move, original tempo) join the night dance chain.
