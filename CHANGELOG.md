@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.134.5 (22 Nov 2026)
+
+- While full screen is switched on, any touch brings it back, not only the first one after loading (Metin: leaving and coming back showed the bars again). Only the menu entry switches it off for good.
+
 ## 2.134.4 (22 Nov 2026)
 
 - Full screen is remembered (`lfull`): once Metin has switched it on in the menu, every later visit goes full screen with his first touch on the page, in a Chrome tab as well. A browser never allows full screen without a touch, so the first tap is the earliest possible moment.

@@ -537,9 +537,9 @@ function dressDay(){const d=new Date(Date.now()-5*3600*1000);return d.getFullYea
 function seenTick(){try{localStorage.setItem('lseen',String(Date.now()));}catch(e){}}
 setInterval(seenTick,60000);document.addEventListener('visibilitychange',seenTick);
 function goFull(){const d=document.documentElement;if(document.fullscreenElement)return;(d.requestFullscreen?d.requestFullscreen({navigationUI:'hide'}):Promise.reject()).catch(()=>{});}
-(function(){let want=false;try{want=localStorage.getItem('lfull')==='1';}catch(e){}
- if(!want)return;const once=()=>{goFull();document.removeEventListener('pointerdown',once,true);};
- document.addEventListener('pointerdown',once,true);})();
+document.addEventListener('pointerdown',()=>{  /* 2.134.5: at every touch, not only the first one after loading; leaving full screen with the system gesture otherwise kept it off until he used the menu again (Metin) */
+ let want=false;try{want=localStorage.getItem('lfull')==='1';}catch(e){}
+ if(want&&!document.fullscreenElement)goFull();},true);
 if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});  /* 2.134.3: only with a service worker does Chrome install the page as an app, and only then does the manifest's fullscreen apply */
 async function clipsLoad(){let outs={};try{outs=(await (await fetch('/clips.json')).json()).outfits||{};}catch(e){}
  for(const k in outs)CVER[k]=outs[k].v||0;NIGHT=outs.nacht?outs.nacht.clips:[];NIGHTBODY=!!(outs.nacht&&outs.nacht.body);delete outs.nacht;PET=outs.mokka&&outs.mokka.alpha||[];delete outs.mokka;const names=Object.keys(outs);
