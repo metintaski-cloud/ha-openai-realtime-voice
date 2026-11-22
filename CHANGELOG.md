@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.131.9 (22 Nov 2026)
+
+- Night 20 s belly dance solos `nacht/tanz26` (fiery) and `tanz27` (wild but feminine, camera from hips to face) join the night dance chain in their original tempo; they never follow each other. Media only: `kurz/freizeitrose2` (20 s rose reconciliation, with sound).
+
 ## 2.131.8 (22 Nov 2026)
 
 - Night belly dances `nacht/tanz23` (side profile), `tanz24` (shimmy with snake arms) and `tanz25` (slow spin with a camera move) join the night dance chain at the common rhythm. Media only: `schwarz/freizeitrose2` (rose reconciliation, with sound).
