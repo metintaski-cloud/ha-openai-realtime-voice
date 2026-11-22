@@ -523,11 +523,11 @@ function petUrl(n){return '/clips/mokka/'+n+'.webm?v='+(CVER.mokka||0);}
 const PETSIT=6.0;  /* 2.131.0: second of kommt.webm where Mokka sits like the first keyframe of the surprise clip */
 function petFreude(v,clip){try{localStorage.setItem('lmokka','1');}catch(e){}post('/api/pet',{}).catch(()=>{});ZBUSY=Date.now()+20000;  /* the first time: Leyla discovers Mokka, cuddles her and puts her down (clip carries the cat) */
  v.style.transition='opacity .35s';v.classList.remove('on');setTimeout(()=>{v.pause();v.style.transition='';},400);
- stageShow(clip,false,()=>{const a=document.getElementById(SV?'svid2':'svid'),left=a&&a.duration?Math.max(0,(a.duration-a.currentTime)*1000-350):3000;
+ stageShow(clip,false,()=>{const a=document.getElementById(SV?'svid2':'svid'),left=a&&a.duration?Math.max(0,(a.duration-a.currentTime)*1000/(a.playbackRate||1)-350):3000;
   setTimeout(()=>{if(PETON){petNext();v.classList.add('on');}},left);stageLoop(clipFor(STM));},true);}
 function petIdle(){const l=PET.filter(n=>n.startsWith('liegt'));return l.length?l:PET.filter(n=>n.startsWith('sitzt'));}  /* 2.130.0: after the walk in she sleeps (liegt), sitzt only as a fallback */
 function petNext(){const v=document.getElementById('spet');if(!v||!PETON)return;const idle=petIdle();if(!idle.length)return;
- const n=idle[Math.floor(Math.random()*idle.length)];v.loop=idle.length===1;v.src=petUrl(n);v.play().catch(()=>{});}
+ const n=idle[Math.floor(Math.random()*idle.length)];v.loop=idle.length===1;v.src=petUrl(n);v.playbackRate=rateOf('mokka/'+n);v.play().catch(()=>{});}
 function petTick(){const v=document.getElementById('spet');if(!v)return;const want=!!(STM&&STM.outfit==='freizeit'&&PET.length&&document.body.classList.contains('chatfull'));
  if(want&&!PETON){PETON=true;v.onended=petNext;v.ontimeupdate=null;v.classList.add('on');if(PET.includes('kommt')&&!PETCAME){PETCAME=true;v.loop=false;v.src=petUrl('kommt');v.play().catch(()=>{});let first=false;try{first=!localStorage.getItem('lmokka');}catch(e){}const fr=clipVars('mokka');if(first&&fr.length)v.ontimeupdate=()=>{if(v.currentTime<PETSIT)return;v.ontimeupdate=null;petFreude(v,fr[0]);};}else petNext();}
  else if(!want&&PETON){PETON=false;v.classList.remove('on');setTimeout(()=>{if(!PETON){v.pause();v.removeAttribute('src');v.load();}},1300);}}
@@ -542,7 +542,8 @@ document.addEventListener('pointerdown',()=>{  /* 2.134.5: at every touch, not o
  if(want&&!document.fullscreenElement)goFull();},true);
 if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});  /* 2.134.3: only with a service worker does Chrome install the page as an app, and only then does the manifest's fullscreen apply */
 async function clipsLoad(){let outs={};try{outs=(await (await fetch('/clips.json')).json()).outfits||{};}catch(e){}
- for(const k in outs)CVER[k]=outs[k].v||0;NIGHT=outs.nacht?outs.nacht.clips:[];NIGHTBODY=!!(outs.nacht&&outs.nacht.body);delete outs.nacht;PET=outs.mokka&&outs.mokka.alpha||[];delete outs.mokka;const names=Object.keys(outs);
+ for(const k in outs){CVER[k]=outs[k].v||0;const r=outs[k].r||{};for(const c in r)RATE[k+'/'+c]=r[c];}  /* 2.136.0 (Metin): his tempo from the tester, the clip files stay untouched */
+NIGHT=outs.nacht?outs.nacht.clips:[];NIGHTBODY=!!(outs.nacht&&outs.nacht.body);delete outs.nacht;PET=outs.mokka&&outs.mokka.alpha||[];delete outs.mokka;const names=Object.keys(outs);
  let last='',lday='',seen=0;try{last=localStorage.getItem('loutfit')||'';lday=localStorage.getItem('loutfitday')||'';seen=Number(localStorage.getItem('lseen')||0);}catch(e){}
  let mokpend=false;try{mokpend=!localStorage.getItem('lmokka');}catch(e){}
  const mok=PET.length&&mokpend?names.filter(n=>(outs[n].clips||[]).includes('freizeitmokka')):[];  /* until Metin's surprise has played she wears the dress that has the discovery clip (2.133.6) */
@@ -556,17 +557,19 @@ function clipVars(b){const o=STM&&!CHANGE.includes(b)?STM.outfit:'';if(o==='nach
  const k=o==='freizeit'?'freizeit'+b:b;return CLIPS.filter(n=>n.replace(/[0-9]+$/,'')===k);}  // Freizeit: freizeit<name> clips (2.113.0), night: folder nacht (2.114.0)
 function clipFor(st){const lv=st.low&&st.level&&st.mood!=='eifersuechtig'?'traurig'+st.level:'';if(lv&&clipVars(lv).length)return lv;if(clipVars(st.mood).length)return st.mood;
  const g=(st.low?['traurigleicht','traurig','eifersuechtig'].concat(st.outfit&&st.outfit!=='arbeit'?['gluecklich']:[]):['gluecklich']).filter(n=>clipVars(n).length);return g.length?g[0]:null;}
+let RATE={};
+function rateOf(pth){return RATE[pth]||1;}
 let SV=0,STOK=0,CONT=false,SWAP=0;const PRELOAD_S=3;
 let TIGHT=false;  /* a loop that replays the same clip blends only at the very end (2.133.5): nacht/eifersuechtig does not come all the way back to its start pose, and the wide blend showed both poses at once */
 function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name);const tight=TIGHT;TIGHT=false;const PRE=tight?0.25:0.8,OFF=tight?300:850;const s=document.getElementById('stage'),vs=[document.getElementById('svid'),document.getElementById('svid2')],a=vs[SV],b=vs[1-SV],tok=++STOK,cont=CONT;CONT=false;
  if(!name){s.classList.remove('vid');vs.forEach(v=>{v.classList.remove('on');setTimeout(()=>{if(tok===STOK){v.pause();v.removeAttribute('src');v.load();}},600);});return;}
  if(loop&&a.loop&&a.classList.contains('on')&&a.src.split('?')[0].endsWith('/'+name+'.mp4'))return;
  b.onended=null;b.ontimeupdate=null;b.loop=!!loop;b.muted=!snd||document.getElementById('chat').classList.contains('oncall');b.volume=.7;b.oncanplay=()=>{b.oncanplay=null;if(tok!==STOK)return;
-  if(cont&&a.classList.contains('on')&&a.duration&&!a.ended){const w=(a.duration-PRE-a.currentTime)*1000;if(w>30){SWAP=tok;setTimeout(()=>{if(tok===STOK)go();},w);return;}}go();};
+  if(cont&&a.classList.contains('on')&&a.duration&&!a.ended){const w=(a.duration-PRE-a.currentTime)*1000/(a.playbackRate||1);if(w>30){SWAP=tok;setTimeout(()=>{if(tok===STOK)go();},w);return;}}go();};
  const go=()=>{b.currentTime=0;b.play().catch(()=>{b.muted=true;b.play().catch(()=>{});});b.style.zIndex=1;a.style.zIndex=0;b.classList.add('on');s.classList.add('vid');SV=1-SV;
   setTimeout(()=>{if(tok===STOK)a.classList.remove('on');},OFF);setTimeout(()=>{if(!a.classList.contains('on'))a.pause();},OFF+150);let fired=false;const fire=()=>{if(fired||tok!==STOK||!done)return;fired=true;CONT=true;done();CONT=false;};
   b.ontimeupdate=()=>{if(b.duration&&b.currentTime>b.duration-PRELOAD_S)fire();};b.onended=fire;};
- {const pth=name.includes('/')?name:OUTFIT+'/'+name;b.src='/clips/'+pth+'.mp4?v='+(CVER[pth.split('/')[0]]||0);}b.load();}
+ {const pth=name.includes('/')?name:OUTFIT+'/'+name;const rt=rateOf(pth);b.src='/clips/'+pth+'.mp4?v='+(CVER[pth.split('/')[0]]||0);b.playbackRate=rt;b.onratechange=null;b.onloadedmetadata=()=>{b.playbackRate=rt;};}b.load();}
 function stageLoop(b){if(ZPEND){const f=ZPEND;ZPEND=null;return f();}ZBUSY=0;DANCING=false;if(!b)return stageShow(null);const v=clipVars(b),nx=()=>stageNext(b);if(v.length<2){TIGHT=true;return stageShow(v[0],false,nx);}
  const cur=document.getElementById(SV?'svid2':'svid').src.split('?')[0].split('/').pop().replace('.mp4','');const o=v.filter(n=>n.split('/').pop()!==cur);stageShow(o[Math.floor(Math.random()*o.length)],false,nx);}
 const SPECIAL=[],SPECIAL_P=0;  // since 2.111.2 no dance by herself, only when Metin asks (Metin)
@@ -956,6 +959,19 @@ def list_outfits() -> dict:
                               for c in clips if os.path.exists(os.path.join(folder, c + ".mp4"))}
             if alpha:
                 out[look]["alpha"] = alpha
+    # r: the play speed Metin set in the tempo tester (2.136.0). The files stay untouched, the
+    # page plays them faster or slower, so nothing is re-encoded and a value can change anytime
+    rates = {}
+    for item in _tempo_read():
+        name, rate = str(item.get("name") or ""), item.get("rate")
+        if "/" not in name or not isinstance(rate, (int, float)):
+            continue
+        if 0.2 <= float(rate) <= 3 and round(float(rate), 2) != 1.0:
+            rates[name] = round(float(rate), 2)
+    for name, rate in rates.items():
+        look, clip = name.split("/", 1)
+        if look in out and (clip in out[look]["clips"] or clip in out[look].get("alpha", ())):
+            out[look].setdefault("r", {})[clip] = rate
     return out
 
 

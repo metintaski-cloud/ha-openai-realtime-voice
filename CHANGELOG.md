@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.136.0 (22 Nov 2026)
+
+- The tempo from the tester now plays in the app: `clips.json` carries the factor per clip (`r`) and the stage sets `playbackRate`. Nothing is re-encoded, so no quality is lost, and a factor can be changed again at any time. The crossfade and the cat timing reckon in real seconds, so they stay in step with a faster or slower clip.
+
 ## 2.135.7 (22 Nov 2026)
 
 - `fix`: the tempo tester kept only the last 60 remembered clips, so most of Metins run through all 300 clips was dropped from `/data/tempo_wunsch.json`. The limit is now 2000. The lost entries were recovered from the add on log and written to `docs/TEMPO_WUNSCH.md`.
