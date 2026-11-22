@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.133.0 (22 Nov 2026)
+
+- Night solo `nacht/tanz37` (30 s, uncut, original tempo, clip 4055) joins the night dance chain; it is reachable from 33 dances and the long solos never follow each other.
+
 ## 2.132.12 (22 Nov 2026)
 
 - Night solo `nacht/tanz36` (30 s, uncut, original tempo, clip 3917) joins the night dance chain; the long solos never follow each other.
