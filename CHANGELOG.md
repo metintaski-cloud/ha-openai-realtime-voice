@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.137.2 (22 Nov 2026)
+
+- `fix`: the cadence was counted as peaks in the movement, which is too coarse for a dance (a dance keeps the change high all the way through and shows hardly any peaks), so the numbers came out far too small. It is now found the way a tempo detector works on music, by laying the signal over itself, and it comes with `conf`, how clear the repetition is. Only a clear cadence sets a factor.
+- The measurement also reports `wobble`: the cadence of the first half against the second. A clip that speeds up or slows down inside itself cannot be fixed by one play speed, so these are the clips to generate again.
+
 ## 2.137.1 (22 Nov 2026)
 
 - The measurement also reports `drift`: how much the movement in one half of a clip differs from the other half. Kling sometimes runs fast in one part of a clip and slow in another (Metin 22.11.2026), and a single play speed cannot fix that, so this names the clips that are uneven in themselves.

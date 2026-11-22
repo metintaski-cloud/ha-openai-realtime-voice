@@ -25,24 +25,37 @@ MIN_FRAMES = 6
 TIMEOUT = 120.0
 
 
-def _peaks(series: list) -> int:
-    """Swings in the movement: a peak counts when the change rises above the middle and
-    falls below it again, so one dance step is one peak and noise is not."""
-    if len(series) < 3:
-        return 0
-    mid = sum(series) / len(series)
-    span = max(series) - min(series)
-    if span < 1.0:                      # a still clip has no beat, only noise
-        return 0
-    hi, lo = mid + span * 0.15, mid - span * 0.15
-    peaks, above = 0, series[0] > hi
-    for v in series[1:]:
-        if above and v < lo:
-            above = False
-            peaks += 1
-        elif not above and v > hi:
-            above = True
-    return peaks
+def cadence(series: list, fps: float = 12.0, lo_hz: float = 0.4,
+            hi_hz: float = 3.0) -> tuple:
+    """How often the movement repeats per second, and how clear that repetition is.
+
+    The same method a tempo detector uses on music: lay the signal over itself, shifted
+    by one step at a time, and the shift that fits best is the length of one movement.
+    Counting peaks (what the first version did, 2.137.0) was too coarse, a dance keeps the
+    change high all the way through and shows almost no peaks (Metin 22.11.2026).
+    """
+    n = len(series)
+    if n < int(fps * 1.5):
+        return 0.0, 0.0
+    mean = sum(series) / n
+    x = [v - mean for v in series]
+    zero = sum(v * v for v in x)
+    if zero <= 0:
+        return 0.0, 0.0
+    lo, hi = max(2, int(fps / hi_hz)), min(n - 2, int(fps / lo_hz))
+    cs = {}
+    for lag in range(lo, hi + 1):
+        c = sum(x[i] * x[i + lag] for i in range(n - lag))
+        cs[lag] = c / (n - lag)             # per sample, so long lags are not punished
+    best = max(cs.values()) if cs else 0.0
+    if best <= 0:
+        return 0.0, 0.0
+    # two steps fit the shift just as well as one, so take the shortest shift that fits:
+    # otherwise a cadence of two a second would be read as one a second
+    best_lag = min(l for l, c in cs.items() if c >= best * 0.85)
+    best = cs[best_lag]
+    conf = max(0.0, min(1.0, best * n / zero))
+    return round(fps / best_lag, 2), round(conf, 2)
 
 
 async def measure(path: str) -> dict:
@@ -77,9 +90,15 @@ async def measure(path: str) -> dict:
     ma = sum(a_) / max(1, len(a_))
     mb = sum(b_) / max(1, len(b_))
     drift = round(max(ma, mb) / max(0.01, min(ma, mb)), 2) if half else 1.0
+    beat, conf = cadence(diffs, FPS)
+    # the cadence of each half on its own: far apart means the clip speeds up or slows
+    # down inside itself, which no single play speed can fix (Metin 22.11.2026)
+    ba, _ = cadence(a_, FPS)
+    bb, _ = cadence(b_, FPS)
+    wobble = round(max(ba, bb) / max(0.01, min(ba, bb)), 2) if ba and bb else 0.0
     return {"dur": round(secs, 2),
             "rate": round(sum(diffs) / len(diffs) * FPS, 1),
-            "beat": round(_peaks(diffs) / secs, 2),
+            "beat": beat, "conf": conf, "wobble": wobble,
             "drift": drift}
 
 
@@ -88,8 +107,8 @@ def factors(items: dict, lo: float = 0.6, hi: float = 1.6) -> dict:
     factor that brings it there. Clips without a beat (she stands still) keep 1."""
     groups = {}
     for name, m in items.items():
-        if not m.get("beat"):
-            continue
+        if not m.get("beat") or m.get("conf", 1) < 0.25:
+            continue      # no clear repetition, so there is no tempo to correct
         look, clip = name.split("/", 1) if "/" in name else ("", name)
         groups.setdefault(look + "/" + clip.rstrip("0123456789"), []).append((name, m["beat"]))
     out = {}
