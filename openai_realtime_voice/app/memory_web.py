@@ -1114,66 +1114,96 @@ TEMPO_PAGE = """<!doctype html><html lang="de"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Tempo Tester</title><style>
 body{margin:0;background:#000;color:#eee;font:15px system-ui}
-h1{font-size:17px;margin:10px}
-.p{margin:10px;padding:8px;border:1px solid #334;border-radius:10px}
-select{width:100%;padding:7px;background:#111;color:#eee;border:1px solid #445;border-radius:8px}
-video{width:100%;max-height:46vh;background:#000;margin-top:6px;border-radius:8px}
+h1{font-size:17px;margin:8px 10px}
+.wrap{display:flex;gap:10px;margin:0 10px;align-items:flex-start}
+.p{flex:1;padding:8px;border:1px solid #334;border-radius:10px;min-width:0}
+.p.ref{border-color:#2a6}
+video{width:100%;max-height:52vh;background:#000;margin-top:6px;border-radius:8px}
 input[type=range]{width:100%}
 .v{font-size:19px;font-weight:600;color:#9fe8ff}
-.row{display:flex;gap:10px;align-items:center;margin-top:6px}
+.row{display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap}
 button{padding:6px 10px;border-radius:8px;background:#222;color:#eee;border:1px solid #445}
-</style></head><body><h1>Tempo Tester</h1><div id="w"></div>
+.t{font-size:13px;color:#8aa}
+.t.g{color:#5c9}
+#liste{margin:10px;padding:8px;border:1px solid #334;border-radius:10px;font-size:13px;color:#9ab}
+@media (max-width:720px){.wrap{flex-direction:column}video{max-height:34vh}}
+</style></head><body><h1>Tempo Tester</h1><div class="wrap" id="w"></div>
 <script>
-async function build(){const j=await (await fetch('/clips.json')).json();const o=j.outfits||{};
+/* 2.138.0 (Metin: "Ich brauche Referenz vor Augen"): judging a clip on its own does not
+   work, so the left side keeps playing one clip he picked as the reference and the right
+   side is the clip under test. He steps with the mouse wheel or the arrows, sets the
+   speed until the two match and presses merken, which takes the clip out of the list. */
+let NAMES=[],REF='',RATES={};
+const med=a=>{a=a.slice().sort((x,y)=>x-y);return a.length?a[Math.floor(a.length/2)]:1;};
+function save(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+function load(k){try{return localStorage.getItem(k)||'';}catch(e){return '';}}
+async function build(){
+ const j=await (await fetch('/clips.json')).json(),o=j.outfits||{};
  const order=['kurz','schwarz','nacht','mokka'];
  const looks=Object.keys(o).sort((a,b)=>(order.indexOf(a)+99)%100-(order.indexOf(b)+99)%100||a.localeCompare(b));
- const names=[];for(const look of looks)for(const c of (o[look].clips||[]).slice().sort())names.push(look+'/'+c);
- /* 2.135.6 (Metin): what is remembered drops out of the list, so he never lands on it again */
+ for(const look of looks){const r=o[look].r||{};for(const c in r)RATES[look+'/'+c]=r[c];
+  for(const c of (o[look].clips||[]).slice().sort())NAMES.push(look+'/'+c);}
  let done=[];try{done=((await (await fetch('/api/tempo?t='+Date.now())).json()).items||[]).map(x=>x.name);}catch(e){}
- for(const n of done){const i=names.indexOf(n);if(i>=0&&names.length>2)names.splice(i,1);}
- const drop=n=>{const i=names.indexOf(n);if(i>=0&&names.length>2)names.splice(i,1);return i<0?0:Math.min(i,names.length-1);};
+ for(const n of done){const i=NAMES.indexOf(n);if(i>=0&&NAMES.length>2)NAMES.splice(i,1);}
+ REF=load('lref');if(!NAMES.length)return;if(!REF)REF=NAMES[0];
  const w=document.getElementById('w');
- for(let i=0;i<2;i++){
-  const d=document.createElement('div');d.className='p';
-  const sel=document.createElement('select');
-  for(const look of looks){const g=document.createElement('optgroup');g.label=look;
-   for(const c of (o[look].clips||[]).slice().sort()){const op=document.createElement('option');op.value=look+'/'+c;op.textContent=c;g.appendChild(op);}
-   sel.appendChild(g);}
-  const left=()=>names.length;
-  const v=document.createElement('video');v.loop=true;v.muted=true;v.playsInline=true;v.controls=false;
-  const r=document.createElement('input');r.type='range';r.min='0.4';r.max='2';r.step='0.05';r.value='1';
-  const lab=document.createElement('span');lab.className='v';lab.textContent='1.00';
-  const row=document.createElement('div');row.className='row';
-  const b=document.createElement('button');b.textContent='zurueck auf 1';
-  const mk=document.createElement('button');mk.textContent='merken';
-  mk.onclick=async()=>{mk.textContent='...';
-   try{await fetch('/api/tempo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:sel.value,rate:Number(r.value)})});mk.textContent='gemerkt';
-    const k=drop(sel.value);sel.value=names[k];load();}catch(e){mk.textContent='ging nicht';}
-   setTimeout(()=>{mk.textContent='merken';},1500);liste();};
-  row.append(lab,r,b,mk);
-  const pos=document.createElement('div');pos.style.cssText='margin-top:4px;color:#9fe8ff';
-  const nav=document.createElement('div');nav.className='row';
-  const prev=document.createElement('button');prev.textContent='\u25C0';
-  const next=document.createElement('button');next.textContent='\u25B6';
-  nav.append(prev,pos,next);
-  const idx=()=>names.indexOf(sel.value);
-  const show=()=>{pos.textContent=sel.value+'   '+(idx()+1)+' von '+left()+'   offen';};
-  const load=()=>{v.src='/clips/'+sel.value+'.mp4?t='+Date.now();v.playbackRate=Number(r.value);v.play().catch(()=>{});show();};
-  const step=k=>{const i=(idx()+k+names.length)%names.length;sel.value=names[i];load();};
-  prev.onclick=()=>step(-1);next.onclick=()=>step(1);
-  v.addEventListener('wheel',e=>{e.preventDefault();step(e.deltaY>0?1:-1);},{passive:false});
-  sel.onchange=load;
-  r.oninput=()=>{v.playbackRate=Number(r.value);lab.textContent=Number(r.value).toFixed(2);};
-  b.onclick=()=>{r.value='1';r.oninput();};
-  v.onloadeddata=()=>{v.playbackRate=Number(r.value);};
-  sel.style.display='none';  /* 2.135.5 (Metin): no list that pops open, he steps with the wheel and the arrows */
-  d.append(sel,nav,v,row);w.appendChild(d);
-  sel.value=names[Math.min(i,names.length-1)];load();
-  mk.title='merken und aus der Liste nehmen';}
+ /* left: the reference, always running */
+ const rd=document.createElement('div');rd.className='p ref';
+ const rt=document.createElement('div');rt.className='t g';
+ const rv=document.createElement('video');rv.loop=true;rv.muted=true;rv.playsInline=true;
+ const rrow=document.createElement('div');rrow.className='row';
+ const rprev=document.createElement('button');rprev.textContent='◀';
+ const rnext=document.createElement('button');rnext.textContent='▶';
+ rrow.append(rprev,rnext);
+ rd.append(rt,rv,rrow);
+ const refShow=()=>{rt.textContent='Referenz: '+REF+'   (Tempo '+(RATES[REF]||1).toFixed(2)+')';
+  rv.src='/clips/'+REF+'.mp4?t='+Date.now();rv.playbackRate=RATES[REF]||1;rv.play().catch(()=>{});save('lref',REF);};
+ rv.onloadedmetadata=()=>{rv.playbackRate=RATES[REF]||1;};
+ const refStep=k=>{const i=NAMES.indexOf(REF);REF=NAMES[((i<0?0:i)+k+NAMES.length)%NAMES.length];refShow();};
+ rprev.onclick=()=>refStep(-1);rnext.onclick=()=>refStep(1);
+ rv.addEventListener('wheel',e=>{e.preventDefault();refStep(e.deltaY>0?1:-1);},{passive:false});
+ /* right: the clip under test */
+ const d=document.createElement('div');d.className='p';
+ const pos=document.createElement('div');pos.className='t';
+ const v=document.createElement('video');v.loop=true;v.muted=true;v.playsInline=true;
+ const nav=document.createElement('div');nav.className='row';
+ const prev=document.createElement('button');prev.textContent='◀';
+ const next=document.createElement('button');next.textContent='▶';
+ const asref=document.createElement('button');asref.textContent='als Referenz';
+ nav.append(prev,next,asref);
+ const r=document.createElement('input');r.type='range';r.min='0.4';r.max='2';r.step='0.05';r.value='1';
+ const lab=document.createElement('span');lab.className='v';lab.textContent='1.00';
+ const row=document.createElement('div');row.className='row';
+ const back=document.createElement('button');back.textContent='zurueck auf 1';
+ const mk=document.createElement('button');mk.textContent='merken';
+ const skip=document.createElement('button');skip.textContent='passt schon';
+ row.append(lab,back,mk,skip);
+ d.append(pos,v,nav,r,row);
+ let cur=NAMES.find(n=>n!==REF)||NAMES[0];
+ const show=()=>{pos.textContent=cur+'   '+(NAMES.indexOf(cur)+1)+' von '+NAMES.length+' offen';};
+ const play=()=>{v.src='/clips/'+cur+'.mp4?t='+Date.now();v.playbackRate=Number(r.value);v.play().catch(()=>{});show();};
+ v.onloadedmetadata=()=>{v.playbackRate=Number(r.value);};
+ const step=k=>{const i=NAMES.indexOf(cur);cur=NAMES[((i<0?0:i)+k+NAMES.length)%NAMES.length];
+  r.value=String(RATES[cur]||1);lab.textContent=Number(r.value).toFixed(2);play();};
+ prev.onclick=()=>step(-1);next.onclick=()=>step(1);
+ v.addEventListener('wheel',e=>{e.preventDefault();step(e.deltaY>0?1:-1);},{passive:false});
+ r.oninput=()=>{v.playbackRate=Number(r.value);lab.textContent=Number(r.value).toFixed(2);};
+ back.onclick=()=>{r.value='1';r.oninput();};
+ asref.onclick=()=>{REF=cur;refShow();step(1);};
+ const drop=()=>{const i=NAMES.indexOf(cur);if(i>=0&&NAMES.length>2)NAMES.splice(i,1);
+  cur=NAMES[Math.min(i<0?0:i,NAMES.length-1)];r.value=String(RATES[cur]||1);lab.textContent=Number(r.value).toFixed(2);play();};
+ const remember=async rate=>{try{await fetch('/api/tempo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:cur,rate:rate})});
+   RATES[cur]=rate;mk.textContent='gemerkt';drop();}catch(e){mk.textContent='ging nicht';}
+  setTimeout(()=>{mk.textContent='merken';},1200);liste();};
+ mk.onclick=()=>remember(Number(r.value));
+ skip.onclick=()=>remember(1);
+ w.append(rd,d);refShow();play();
 }
 async function liste(){let j={items:[]};try{j=await (await fetch('/api/tempo?t='+Date.now())).json();}catch(e){}
- let d=document.getElementById('liste');if(!d){d=document.createElement('div');d.id='liste';d.className='p';document.body.appendChild(d);}
- d.innerHTML='<b>Gemerkt</b><br>'+((j.items||[]).map(x=>x.name+'  '+Number(x.rate).toFixed(2)).join('<br>')||'noch nichts');}
+ let d=document.getElementById('liste');if(!d){d=document.createElement('div');d.id='liste';document.body.appendChild(d);}
+ const it=(j.items||[]).filter(x=>Number(x.rate)!==1);
+ d.innerHTML='<b>Gemerkt</b> ('+(j.items||[]).length+' durch, '+it.length+' mit anderem Tempo)<br>'+
+  (it.slice(-30).map(x=>x.name+'  '+Number(x.rate).toFixed(2)).join('<br>')||'noch nichts');}
 build();liste();
 </script></body></html>"""
 
