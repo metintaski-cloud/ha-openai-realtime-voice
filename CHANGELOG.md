@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.134.1 (22 Nov 2026)
+
+- A tap on the clip timer at the top left shows the name of the running clip (`#zname`, for example `nacht/tanz23`), another tap hides it again; the setting is remembered in the phone (`lzname`). Metin's idea, so he can name the clip he wants replaced or deleted while he watches.
+
 ## 2.134.0 (22 Nov 2026)
 
 - She dresses again on request (Metin: the night outfit must not be on the screen when he takes out his phone among people): "zieh dich wieder an", or telling her he is out, gives `"szene": "anziehen"`, and she goes back to her leisure clothes at once, at any level and without a scene of her own; the stage shows it at the next clean hand over, like the change back to work at 5 in the morning. Until now the night outfit stayed until 5 o'clock.
