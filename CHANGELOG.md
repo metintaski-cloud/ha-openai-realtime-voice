@@ -6,7 +6,7 @@
 
 ## 2.131.9 (22 Nov 2026)
 
-- Night 20 s belly dance solos `nacht/tanz26` (fiery) and `tanz27` (wild but feminine, camera from hips to face) join the night dance chain in their original tempo; they never follow each other. Media only: `kurz/freizeitrose2` (20 s rose reconciliation, with sound).
+- Night 20 s belly dance solos `nacht/tanz26` (fiery) and `tanz27` (wild but feminine, camera from hips to face) join the night dance chain (tanz26 original tempo, tanz27 slowed to 0.75 with motion interpolation); they never follow each other. Media only: `kurz/freizeitrose2` (20 s rose reconciliation, with sound).
 
 ## 2.131.8 (22 Nov 2026)
 
