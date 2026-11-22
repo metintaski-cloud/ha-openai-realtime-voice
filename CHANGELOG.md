@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.133.5 (22 Nov 2026)
+
+- A loop with only one clip blends at the very end instead of 0.8 s before it (`TIGHT`, 0.25 s and a 300 ms fade). Measured on `nacht/eifersuechtig`, the only loop of the 48 that does not come back to its start pose: 0.8 s before the end the pose is still far away (distance 28 to 38), at the last frame it is close (12), so the short blend hides the rest of the jump. A new clip with the same start and end frame stays the real fix (open).
+
 ## 2.133.4 (22 Nov 2026)
 
 - Dance chains cleaned up after measuring every clip (first and last frame of all 296 media clips compared): the work dress chain pointed at 11 clips that are not in the media folder (`kurz` tanz2, tanz3, tanz6, tanz7, tanz10 and all six `schwarz` dances, so the long work dress has no dance at all and `DNEXTW.schwarz` is gone). 25 dead entries removed.

@@ -543,16 +543,17 @@ function clipVars(b){const o=STM&&!CHANGE.includes(b)?STM.outfit:'';if(o==='nach
 function clipFor(st){const lv=st.low&&st.level&&st.mood!=='eifersuechtig'?'traurig'+st.level:'';if(lv&&clipVars(lv).length)return lv;if(clipVars(st.mood).length)return st.mood;
  const g=(st.low?['traurigleicht','traurig','eifersuechtig'].concat(st.outfit&&st.outfit!=='arbeit'?['gluecklich']:[]):['gluecklich']).filter(n=>clipVars(n).length);return g.length?g[0]:null;}
 let SV=0,STOK=0,CONT=false,SWAP=0;const PRELOAD_S=3;
-function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name);const s=document.getElementById('stage'),vs=[document.getElementById('svid'),document.getElementById('svid2')],a=vs[SV],b=vs[1-SV],tok=++STOK,cont=CONT;CONT=false;
+let TIGHT=false;  /* a loop that replays the same clip blends only at the very end (2.133.5): nacht/eifersuechtig does not come all the way back to its start pose, and the wide blend showed both poses at once */
+function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name);const tight=TIGHT;TIGHT=false;const PRE=tight?0.25:0.8,OFF=tight?300:850;const s=document.getElementById('stage'),vs=[document.getElementById('svid'),document.getElementById('svid2')],a=vs[SV],b=vs[1-SV],tok=++STOK,cont=CONT;CONT=false;
  if(!name){s.classList.remove('vid');vs.forEach(v=>{v.classList.remove('on');setTimeout(()=>{if(tok===STOK){v.pause();v.removeAttribute('src');v.load();}},600);});return;}
  if(loop&&a.loop&&a.classList.contains('on')&&a.src.split('?')[0].endsWith('/'+name+'.mp4'))return;
  b.onended=null;b.ontimeupdate=null;b.loop=!!loop;b.muted=!snd||document.getElementById('chat').classList.contains('oncall');b.volume=.7;b.oncanplay=()=>{b.oncanplay=null;if(tok!==STOK)return;
-  if(cont&&a.classList.contains('on')&&a.duration&&!a.ended){const w=(a.duration-0.8-a.currentTime)*1000;if(w>30){SWAP=tok;setTimeout(()=>{if(tok===STOK)go();},w);return;}}go();};
+  if(cont&&a.classList.contains('on')&&a.duration&&!a.ended){const w=(a.duration-PRE-a.currentTime)*1000;if(w>30){SWAP=tok;setTimeout(()=>{if(tok===STOK)go();},w);return;}}go();};
  const go=()=>{b.currentTime=0;b.play().catch(()=>{b.muted=true;b.play().catch(()=>{});});b.style.zIndex=1;a.style.zIndex=0;b.classList.add('on');s.classList.add('vid');SV=1-SV;
-  setTimeout(()=>{if(tok===STOK)a.classList.remove('on');},850);setTimeout(()=>{if(!a.classList.contains('on'))a.pause();},1000);let fired=false;const fire=()=>{if(fired||tok!==STOK||!done)return;fired=true;CONT=true;done();CONT=false;};
+  setTimeout(()=>{if(tok===STOK)a.classList.remove('on');},OFF);setTimeout(()=>{if(!a.classList.contains('on'))a.pause();},OFF+150);let fired=false;const fire=()=>{if(fired||tok!==STOK||!done)return;fired=true;CONT=true;done();CONT=false;};
   b.ontimeupdate=()=>{if(b.duration&&b.currentTime>b.duration-PRELOAD_S)fire();};b.onended=fire;};
  {const pth=name.includes('/')?name:OUTFIT+'/'+name;b.src='/clips/'+pth+'.mp4?v='+(CVER[pth.split('/')[0]]||0);}b.load();}
-function stageLoop(b){if(ZPEND){const f=ZPEND;ZPEND=null;return f();}ZBUSY=0;DANCING=false;if(!b)return stageShow(null);const v=clipVars(b),nx=()=>stageNext(b);if(v.length<2)return stageShow(v[0],false,nx);
+function stageLoop(b){if(ZPEND){const f=ZPEND;ZPEND=null;return f();}ZBUSY=0;DANCING=false;if(!b)return stageShow(null);const v=clipVars(b),nx=()=>stageNext(b);if(v.length<2){TIGHT=true;return stageShow(v[0],false,nx);}
  const cur=document.getElementById(SV?'svid2':'svid').src.split('?')[0].split('/').pop().replace('.mp4','');const o=v.filter(n=>n.split('/').pop()!==cur);stageShow(o[Math.floor(Math.random()*o.length)],false,nx);}
 const SPECIAL=[],SPECIAL_P=0;  // since 2.111.2 no dance by herself, only when Metin asks (Metin)
 const KNIET_P=0.12,EXTRA_P=0.25;const SND_RE=/(^|[/])(kuss|rose|komm|liebe|freizeitmokka|(freizeit)?(gesicht|brust|bauch|po|mix|hinten))/;  /* 2.130.2 laugh on belly and chest, 2.131.0 cat surprise, 2.131.1 sound on every touch clip in every outfit, never on loops or dances (Metin; the older touch clips carry no audio track) */
