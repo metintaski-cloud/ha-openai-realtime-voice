@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.135.6 (22 Nov 2026)
+
+- Tempo tester (Metin): a clip that is remembered drops out of the stepping list at once and stays out after a reload, so he never lands on the same clip twice. The position line now reads "3 von 296 offen".
+
 ## 2.135.5 (22 Nov 2026)
 
 - The tempo tester hides the dropdown completely (Metin): only the wheel and the two arrows step through the clips.

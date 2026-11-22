@@ -1081,6 +1081,10 @@ async function build(){const j=await (await fetch('/clips.json')).json();const o
  const order=['kurz','schwarz','nacht','mokka'];
  const looks=Object.keys(o).sort((a,b)=>(order.indexOf(a)+99)%100-(order.indexOf(b)+99)%100||a.localeCompare(b));
  const names=[];for(const look of looks)for(const c of (o[look].clips||[]).slice().sort())names.push(look+'/'+c);
+ /* 2.135.6 (Metin): what is remembered drops out of the list, so he never lands on it again */
+ let done=[];try{done=((await (await fetch('/api/tempo?t='+Date.now())).json()).items||[]).map(x=>x.name);}catch(e){}
+ for(const n of done){const i=names.indexOf(n);if(i>=0&&names.length>2)names.splice(i,1);}
+ const drop=n=>{const i=names.indexOf(n);if(i>=0&&names.length>2)names.splice(i,1);return i<0?0:Math.min(i,names.length-1);};
  const w=document.getElementById('w');
  for(let i=0;i<2;i++){
   const d=document.createElement('div');d.className='p';
@@ -1088,6 +1092,7 @@ async function build(){const j=await (await fetch('/clips.json')).json();const o
   for(const look of looks){const g=document.createElement('optgroup');g.label=look;
    for(const c of (o[look].clips||[]).slice().sort()){const op=document.createElement('option');op.value=look+'/'+c;op.textContent=c;g.appendChild(op);}
    sel.appendChild(g);}
+  const left=()=>names.length;
   const v=document.createElement('video');v.loop=true;v.muted=true;v.playsInline=true;v.controls=false;
   const r=document.createElement('input');r.type='range';r.min='0.4';r.max='2';r.step='0.05';r.value='1';
   const lab=document.createElement('span');lab.className='v';lab.textContent='1.00';
@@ -1095,7 +1100,8 @@ async function build(){const j=await (await fetch('/clips.json')).json();const o
   const b=document.createElement('button');b.textContent='zurueck auf 1';
   const mk=document.createElement('button');mk.textContent='merken';
   mk.onclick=async()=>{mk.textContent='...';
-   try{await fetch('/api/tempo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:sel.value,rate:Number(r.value)})});mk.textContent='gemerkt';}catch(e){mk.textContent='ging nicht';}
+   try{await fetch('/api/tempo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:sel.value,rate:Number(r.value)})});mk.textContent='gemerkt';
+    const k=drop(sel.value);sel.value=names[k];load();}catch(e){mk.textContent='ging nicht';}
    setTimeout(()=>{mk.textContent='merken';},1500);liste();};
   row.append(lab,r,b,mk);
   const pos=document.createElement('div');pos.style.cssText='margin-top:4px;color:#9fe8ff';
@@ -1104,7 +1110,7 @@ async function build(){const j=await (await fetch('/clips.json')).json();const o
   const next=document.createElement('button');next.textContent='\u25B6';
   nav.append(prev,pos,next);
   const idx=()=>names.indexOf(sel.value);
-  const show=()=>{pos.textContent=sel.value+'   '+(idx()+1)+' von '+names.length;};
+  const show=()=>{pos.textContent=sel.value+'   '+(idx()+1)+' von '+left()+'   offen';};
   const load=()=>{v.src='/clips/'+sel.value+'.mp4?t='+Date.now();v.playbackRate=Number(r.value);v.play().catch(()=>{});show();};
   const step=k=>{const i=(idx()+k+names.length)%names.length;sel.value=names[i];load();};
   prev.onclick=()=>step(-1);next.onclick=()=>step(1);
@@ -1115,7 +1121,8 @@ async function build(){const j=await (await fetch('/clips.json')).json();const o
   v.onloadeddata=()=>{v.playbackRate=Number(r.value);};
   sel.style.display='none';  /* 2.135.5 (Metin): no list that pops open, he steps with the wheel and the arrows */
   d.append(sel,nav,v,row);w.appendChild(d);
-  sel.value=names[Math.min(i,names.length-1)];load();}
+  sel.value=names[Math.min(i,names.length-1)];load();
+  mk.title='merken und aus der Liste nehmen';}
 }
 async function liste(){let j={items:[]};try{j=await (await fetch('/api/tempo?t='+Date.now())).json();}catch(e){}
  let d=document.getElementById('liste');if(!d){d=document.createElement('div');d.id='liste';d.className='p';document.body.appendChild(d);}
