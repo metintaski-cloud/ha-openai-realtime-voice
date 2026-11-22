@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.135.2 (22 Nov 2026)
+
+- The tempo tester has a "merken" button per player: the clip name and the chosen factor are kept on the server (`/data/tempo_wunsch.json`, `GET` and `POST /api/tempo`) and listed under the players, so Metin can go through many clips in one go and Claude reads the whole list afterwards.
+
 ## 2.135.1 (22 Nov 2026)
 
 - The tempo tester groups the clips by outfit (kurz, schwarz, nacht, mokka) instead of one long list.

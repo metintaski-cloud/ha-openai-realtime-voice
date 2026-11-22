@@ -1079,7 +1079,10 @@ async function build(){const j=await (await fetch('/clips.json')).json();const o
   d.append(sel,v,row);w.appendChild(d);
   sel.value=names[Math.min(i,names.length-1)];load();}
 }
-build();
+async function liste(){let j={items:[]};try{j=await (await fetch('/api/tempo?t='+Date.now())).json();}catch(e){}
+ let d=document.getElementById('liste');if(!d){d=document.createElement('div');d.id='liste';d.className='p';document.body.appendChild(d);}
+ d.innerHTML='<b>Gemerkt</b><br>'+((j.items||[]).map(x=>x.name+'  '+Number(x.rate).toFixed(2)).join('<br>')||'noch nichts');}
+build();liste();
 </script></body></html>"""
 
 
