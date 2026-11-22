@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.132.6 (22 Nov 2026)
+
+- Leyla reacts at once: a wished scene (Zeig dich, dance, kiss, komm, rose, outfit change) starts immediately with a 0.35 s crossfade instead of waiting for the end of the running clip. Before, the wait was the rest of the running clip, up to about 19 s with the new 20 s loops; now it is only the loading time of the clip.
+
 ## 2.132.5 (22 Nov 2026)
 
 - The floor work clip is a "Zeig dich" clip, not a dance (Metin): it left the night dance chain and plays as `nacht/zeigenlang2`, uncut.
