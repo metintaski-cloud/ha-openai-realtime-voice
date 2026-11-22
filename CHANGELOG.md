@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.134.7 (22 Nov 2026)
+
+- The clip name sits below the Senden button instead of on top of it.
+
 ## 2.134.6 (22 Nov 2026)
 
 - An announcement that comes out far too short is spoken again (`MessageCenter._say_pcm`, from 40 characters on, below 70 % of the expected length at 13 characters a second, one retry, logged as a warning). On 22 Nov at 16:21 Metin heard one short German word instead of the evening announcement; the log showed 2.9 s of audio for a Turkish sentence of about five, so the voice had said something else than the text.
