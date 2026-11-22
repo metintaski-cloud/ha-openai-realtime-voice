@@ -396,9 +396,9 @@ document.getElementById('micon').onclick=()=>{menuOpen=!menuOpen;snd[menuOpen?'o
 document.getElementById('cmenu').onclick=e=>{e.stopPropagation();document.getElementById('micon').onclick();};
 function openSec(k){menuOpen=false;drawMenu();if(k==='rules'){openRules();return;}if(k==='diary'){openDiary();return;}
  if(k==='full'){  /* 2.134.2 (Metin): the stage over the whole phone, without the address bar */
-  const d=document.documentElement;
-  if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});
-  else (d.requestFullscreen?d.requestFullscreen({navigationUI:'hide'}):Promise.reject()).catch(()=>{});
+  const on=!document.fullscreenElement;
+  try{localStorage.setItem('lfull',on?'1':'0');}catch(e){}  /* 2.134.4: remembered, so the next visit goes full screen at his first touch; a browser never allows it without one */
+  if(on)goFull();else document.exitFullscreen().catch(()=>{});
   return;}
  const was=sec;sec=k;view=null;sel=new Set();last='';if(!was)history.pushState({s:1},'');else history.replaceState({s:1},'');window.scrollTo(0,0);snd.on();
  if(k==='mail')gmailLoad();if(k==='lamps')loadLamps();load();}
@@ -536,6 +536,10 @@ const AWAY_MS=4*3600*1000;  /* she chooses her dress at 5 in the morning and kee
 function dressDay(){const d=new Date(Date.now()-5*3600*1000);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
 function seenTick(){try{localStorage.setItem('lseen',String(Date.now()));}catch(e){}}
 setInterval(seenTick,60000);document.addEventListener('visibilitychange',seenTick);
+function goFull(){const d=document.documentElement;if(document.fullscreenElement)return;(d.requestFullscreen?d.requestFullscreen({navigationUI:'hide'}):Promise.reject()).catch(()=>{});}
+(function(){let want=false;try{want=localStorage.getItem('lfull')==='1';}catch(e){}
+ if(!want)return;const once=()=>{goFull();document.removeEventListener('pointerdown',once,true);};
+ document.addEventListener('pointerdown',once,true);})();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});  /* 2.134.3: only with a service worker does Chrome install the page as an app, and only then does the manifest's fullscreen apply */
 async function clipsLoad(){let outs={};try{outs=(await (await fetch('/clips.json')).json()).outfits||{};}catch(e){}
  for(const k in outs)CVER[k]=outs[k].v||0;NIGHT=outs.nacht?outs.nacht.clips:[];NIGHTBODY=!!(outs.nacht&&outs.nacht.body);delete outs.nacht;PET=outs.mokka&&outs.mokka.alpha||[];delete outs.mokka;const names=Object.keys(outs);

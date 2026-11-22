@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.134.4 (22 Nov 2026)
+
+- Full screen is remembered (`lfull`): once Metin has switched it on in the menu, every later visit goes full screen with his first touch on the page, in a Chrome tab as well. A browser never allows full screen without a touch, so the first tap is the earliest possible moment.
+
 ## 2.134.3 (22 Nov 2026)
 
 - The page serves a small service worker (`/sw.js`, it only passes requests through and caches nothing) and registers it. Without one Chrome makes a plain shortcut that opens with its address bar; with one the page installs as a real app, so the manifest's fullscreen applies and the stage starts without the address bar and without the Android bar.
