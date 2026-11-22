@@ -3,6 +3,7 @@
 ## 2.133.0 (22 Nov 2026)
 
 - Night solo `nacht/tanz37` (30 s, uncut, original tempo, clip 4055) joins the night dance chain; it is reachable from 33 dances and the long solos never follow each other.
+- The media file of `nacht/tanz37` is scaled down like every other night dance (1176x1760, crf 23, no sound, 13.1 MB instead of 62 MB); length and frames unchanged, Metin keeps the 4K original.
 
 ## 2.132.12 (22 Nov 2026)
 
