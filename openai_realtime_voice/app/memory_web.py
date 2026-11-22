@@ -1059,7 +1059,7 @@ def _tempo_add(name: str, rate: float) -> None:
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     tmp = path + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(items[-60:], f, ensure_ascii=False)
+        json.dump(items[-2000:], f, ensure_ascii=False)  # 2.135.7: 60 was too few, his run of 300 clips got cut
     os.replace(tmp, path)
 
 

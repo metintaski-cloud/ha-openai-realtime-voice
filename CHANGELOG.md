@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.135.7 (22 Nov 2026)
+
+- `fix`: the tempo tester kept only the last 60 remembered clips, so most of Metins run through all 300 clips was dropped from `/data/tempo_wunsch.json`. The limit is now 2000. The lost entries were recovered from the add on log and written to `docs/TEMPO_WUNSCH.md`.
+
 ## 2.135.6 (22 Nov 2026)
 
 - Tempo tester (Metin): a clip that is remembered drops out of the stepping list at once and stays out after a reload, so he never lands on the same clip twice. The position line now reads "3 von 296 offen".
