@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.131.3 (22 Nov 2026)
+
+- Night R&B dance `nacht/tanz14` (Kling 4.0, 0.7 tempo) joins the night dance chain with the same transitions as `tanz11` to `tanz13`.
+
 ## 2.131.2 (22 Nov 2026)
 
 - Night belly dances `nacht/tanz12` and `tanz13` join the night dance chain (`DNEXT`, same transitions as `tanz11`, poses measured against `tanz` and `tanz11`). The Freizeit belly dances `kurz/freizeittanz` and `schwarz/freizeittanz3` need no code change (Freizeit dances pick from all `freizeittanz*` clips). All four belly dances run at the same measured hip rhythm (0.68 sways per second, Metin's favourite clip in its original tempo).
