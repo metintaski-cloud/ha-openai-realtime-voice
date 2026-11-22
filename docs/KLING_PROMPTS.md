@@ -221,3 +221,24 @@ Geändert um 06:05 (Metin): nicht Arbeit, sondern Freizeit und Nacht (Arbeit nur
 ## Zeig dich: Ergebnis (22.11.2026)
 
 Clips 3355 (kurz Freizeit), 3351 (lang Freizeit), 3461 (Nacht) gut bei Strähne, Seitenpose, Nahaufnahme mit rotem Gesicht. Die Hüft Acht von hinten kam in keinem Versuch deutlich: mit vier Handlungen im Rückenteil ließ Kling sie weg, mit "does only one thing ... her arms relaxed at her sides" stand sie steif da (Clip 3417). Für den nächsten Versuch: Hände in den Haaren oder an der Hüfte und "a big, wide figure eight, her hips swinging far out to each side".
+
+## Lippenbiss setzt Kling nicht um (22.11.2026, kurz/freizeitgesicht)
+
+Zwei Versuche mit demselben Ziel ("she bites her lower lip"), der zweite mit vier Sekunden nur für den Biss und mit Zähnen, Lippe und Richtung ausführlich beschrieben: In beiden Clips kein Biss, sie lächelt durchgehend mit geschlossenen Lippen (Bild für Bild geprüft bei 2,5, 3,5, 4,5 und 5,5 s). Beide gelöscht. Lehre: Lippenbiss gehört zu den Gesten, die Kling 4.0 nicht liefert; stattdessen Zwinkern, Augenbraue oder eine Kopfhaltung nehmen. Metin wollte danach "sie hält ihr Gesicht hin", umgesetzt ohne fremde Hand über Kopfneigung und gehobenes Kinn.
+
+## Arm bleibt eingefroren (22.11.2026, Metin)
+
+Bei Clips, die nur das Gesicht beschreiben, friert Kling den Körper ein, weil Start gleich Endbild ist und die Kamera festgenagelt wird. Eine einzige benannte Nebenbewegung reicht: "her left hand drifts up a little, her fingertips brush her hip, and by the last second it hangs relaxed at her side again exactly as in the first frame."
+
+## Clips vom 22.11.2026, die auf Anhieb saßen
+
+| Clip | Ziel | Einstellungen | Ergebnis |
+|---|---|---|---|
+| 6080 | kurz/freizeitgluecklich, ruhige süße Schleife, Wiegen, Blinzeln, kurz wegschauen | 4K, 10 s, Keyframes, Start gleich Endbild, 350 Credits | Schleife schließt mit Abstand 0,6, bester Wert aller gemessenen Schleifen; hinterher auf 0,75 gebremst (mci) |
+| 26 (23.11.) | kurz/freizeitbegruessung, winken und Hand aufs Herz | 4K, 10 s, Keyframes | auf Anhieb gut, Originaltempo übernommen |
+| 4144, 4128 | nacht/zeigenlang7 und zeigenlang9 | 4K, 30 s | ungeschnitten übernommen |
+| 4198 | nacht/kuss, erster Kuss im Nachtoutfit | 4K, 30 s | ungeschnitten übernommen |
+
+## Credits sparen (22.11.2026, Metin: "kann nicht haufen Credits für ein Clip")
+
+Die Regel "vier Versuche pro Clip" gilt nicht mehr. Stattdessen Prompts nach dem Muster der Clips bauen, die auf Anhieb saßen (Eifersucht 3453, 3469, 3473; Rosen 3221, 3226; Schleife 6080): eine einzige klare Handlung, konkret beschrieben, feste Kamera, Start gleich Endbild, keine Kamerafahrt. Kamerafahrten und seltene Gesten sind die teuren Fehlschläge.
