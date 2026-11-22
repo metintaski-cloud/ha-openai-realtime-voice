@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.132.8 (22 Nov 2026)
+
+- Night solo `nacht/tanz33` (30 s, uncut, original tempo) joins the night dance chain; the six long solos never follow each other.
+
 ## 2.132.7 (22 Nov 2026)
 
 - Night solo `nacht/tanz32` (30 s, uncut, original tempo) joins the night dance chain; the five long solos never follow each other.
