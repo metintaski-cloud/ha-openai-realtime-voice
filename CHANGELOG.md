@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.137.0 (22 Nov 2026)
+
+- Her real movement speed is measured instead of judged by feel (`app/motion.py`, Metin: "Ich habe nach Gefuehl gemacht und die war nachher wischi waschi"). Every clip is decoded small and grey; from the change between the frames come the amount of movement (`rate`) and the cadence (`beat`, swings per second). Per group of clips the middle cadence is the target and every clip gets the factor that brings it there, capped between 0.6 and 1.6.
+- `POST /api/motion` starts the run in the background, `GET /api/motion` reports how far it is, `GET /api/motion/items` gives the numbers. The result is written into the same file the tempo tester writes, so one place decides the speed and a later "merken" overrules a single clip.
+- The addon image now carries `ffmpeg`, so the measurement runs on the Home Assistant host where the clips are and nothing has to travel over the network.
+- `chore`: Metins run by feel from today is deleted, as he asked.
+
 ## 2.136.0 (22 Nov 2026)
 
 - The tempo from the tester now plays in the app: `clips.json` carries the factor per clip (`r`) and the stage sets `playbackRate`. Nothing is re-encoded, so no quality is lost, and a factor can be changed again at any time. The crossfade and the cat timing reckon in real seconds, so they stay in step with a faster or slower clip.

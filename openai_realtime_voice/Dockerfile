@@ -4,7 +4,7 @@ FROM ${BUILD_FROM}
 
 SHELL ["/bin/sh", "-o", "pipefail", "-c"]
 
-RUN apk add --no-cache bash python3 py3-pip
+RUN apk add --no-cache bash python3 py3-pip ffmpeg
 
 COPY requirements.txt /tmp/requirements.txt
 RUN pip3 install --no-cache-dir --break-system-packages -r /tmp/requirements.txt

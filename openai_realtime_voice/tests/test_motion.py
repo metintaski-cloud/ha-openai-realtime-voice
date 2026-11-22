@@ -1,0 +1,59 @@
+"""Her real movement speed per clip, measured instead of judged by feel (2.137.0, Metin)."""
+import asyncio
+import os
+import shutil
+
+import pytest
+
+from app import motion
+
+
+def test_peaks_counts_swings_not_noise():
+    assert motion._peaks([0, 9, 0, 9, 0, 9, 0]) == 3, "three full swings"
+    assert motion._peaks([5.0, 5.1, 5.0, 5.1]) == 0, "a still clip has no beat"
+    assert motion._peaks([1, 2]) == 0
+
+
+def test_factors_bring_a_group_to_one_cadence():
+    items = {"nacht/tanz": {"beat": 2.0}, "nacht/tanz2": {"beat": 2.0},
+             "nacht/tanz3": {"beat": 1.0}, "nacht/tanz4": {"beat": 8.0},
+             "nacht/kuss": {"beat": 1.0}, "nacht/kuss2": {"beat": 3.0}}
+    out = motion.factors(items)
+    assert out["nacht/tanz3"] == 1.6, "half the cadence of the group, capped at 1.6"
+    assert out["nacht/tanz4"] == 0.6, "far too fast, capped at 0.6"
+    assert "nacht/tanz" not in out and "nacht/tanz2" not in out, "they are the cadence"
+    assert "nacht/kuss" not in out, "two clips cannot say which one is the odd one"
+
+
+def test_factors_leave_a_still_clip_alone():
+    assert motion.factors({"a/b": {"beat": 0}, "a/b2": {"beat": 0}, "a/b3": {"beat": 2}}) == {}
+
+
+@pytest.mark.skipif(not shutil.which("ffmpeg"), reason="ffmpeg only in the addon image")
+def test_measure_reads_a_real_clip(tmp_path):
+    path = str(tmp_path / "x.mp4")
+    os.system(f"ffmpeg -v error -f lavfi -i testsrc=size=320x480:rate=24:duration=3 "
+              f"-pix_fmt yuv420p {path}")
+    m = asyncio.run(motion.measure(path))
+    assert 2.5 <= m["dur"] <= 3.2 and m["rate"] > 0
+
+
+def test_runner_skips_what_it_already_knows(tmp_path):
+    src = tmp_path / "a.mp4"
+    src.write_bytes(b"x")
+    calls = []
+
+    async def fake(path):
+        calls.append(path)
+        return {"dur": 5.0, "rate": 10.0, "beat": 2.0}
+
+    r = motion.Runner(lambda: {"nacht/a": str(src)}, lambda n, f: None,
+                      cache=str(tmp_path / "m.json"))
+    r_measure, motion.measure = motion.measure, fake  # noqa
+    try:
+        asyncio.run(r.run())
+        asyncio.run(r.run())
+    finally:
+        motion.measure = r_measure
+    assert len(calls) == 1, "the second run has nothing new to measure"
+    assert r.items["nacht/a"]["beat"] == 2.0

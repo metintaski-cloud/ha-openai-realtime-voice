@@ -1079,6 +1079,37 @@ def _tempo_add(name: str, rate: float) -> None:
     os.replace(tmp, path)
 
 
+def _tempo_clear() -> None:
+    """His run by feel is replaced by the measurement (2.137.0, he said 'Kannst loeschen';
+    the old values stay readable in docs/TEMPO_WUNSCH.md)."""
+    path = os.environ.get("LEYLA_TEMPO", TEMPO_PATH)
+    try:
+        os.remove(path)
+    except OSError:
+        pass
+
+
+def clip_paths() -> dict:
+    """Every clip with its file, as "look/clip" -> path (for the motion measurement)."""
+    base = clips_dir()
+    out = {}
+    for look, info in list_outfits().items():
+        for clip in info.get("clips", ()):
+            out[f"{look}/{clip}"] = os.path.join(base, look, clip + ".mp4")
+    return out
+
+
+MOTION = None
+
+
+def motion_runner():
+    global MOTION
+    if MOTION is None:
+        from . import motion
+        MOTION = motion.Runner(clip_paths, _tempo_add)
+    return MOTION
+
+
 TEMPO_PAGE = """<!doctype html><html lang="de"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Tempo Tester</title><style>
@@ -1232,6 +1263,21 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                 _tempo_add(n, rate)
                 logger.info("Tempo tester: %s at %.2f", n, rate)
             await _respond(writer, "200 OK", "application/json", json.dumps({"ok": ok}))
+        elif method == "GET" and path == "/api/motion":
+            await _respond(writer, "200 OK", "application/json",
+                           json.dumps(motion_runner().status()))
+        elif method == "POST" and path == "/api/motion":
+            # measure how fast she really moves and set one cadence per group (2.137.0)
+            r = motion_runner()
+            if d.get("fresh"):
+                r.items = {}
+                _tempo_clear()
+            asyncio.get_running_loop().create_task(r.run())
+            await _respond(writer, "200 OK", "application/json",
+                           json.dumps({"ok": True, "started": True}))
+        elif method == "GET" and path == "/api/motion/items":
+            await _respond(writer, "200 OK", "application/json",
+                           json.dumps(motion_runner().items, ensure_ascii=False))
         elif method == "GET" and path == "/tempo":
             # Tempo Tester (2.135.0, Metin): two clips side by side with a speed slider each,
             # so he can find the right factor himself and name it
