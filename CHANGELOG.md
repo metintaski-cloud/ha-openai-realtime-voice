@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.132.4 (22 Nov 2026)
+
+- Night 20 s solo `nacht/tanz32` (belly dance with floor work, uncut, original tempo) joins the night dance chain; the five 20 s solos never follow each other.
+- Media only: jealousy loops in 4K, `nacht/eifersuechtig` (first one for the night outfit), `schwarz/freizeiteifersuechtig`, `kurz/eifersuechtig6`, `schwarz/eifersuechtig5`.
+
 ## 2.132.3 (22 Nov 2026)
 
 - "Zeig dich" at night: every second time the page plays one long 20 s clip `nacht/zeigenlang*` alone (slow, shy, curvy poses, close-up of her face) instead of the chain of three short clips.
