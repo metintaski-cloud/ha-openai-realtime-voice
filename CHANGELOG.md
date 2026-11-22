@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.132.2 (22 Nov 2026)
+
+- Night 20 s solo `nacht/tanz31` (slow, very feminine belly dance with camera from hips to face, slowed to 0.8) joins the night dance chain. The four 20 s solos `tanz26`, `tanz27`, `tanz30` and `tanz31` never follow each other.
+- Media only: rose clips for the work dresses in 4K with sound, `kurz/rose4` (she walks to the camera) and `schwarz/rose3` (the camera moves to her), both 20 s from a sad start frame.
+
 ## 2.132.1 (22 Nov 2026)
 
 - Night 20 s solo `nacht/tanz30` (soft, feminine belly dance; dance part slowed to 0.75, calm ending in original tempo) joins the night dance chain and never follows `tanz26` or `tanz27`.
