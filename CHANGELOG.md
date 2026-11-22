@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.137.1 (22 Nov 2026)
+
+- The measurement also reports `drift`: how much the movement in one half of a clip differs from the other half. Kling sometimes runs fast in one part of a clip and slow in another (Metin 22.11.2026), and a single play speed cannot fix that, so this names the clips that are uneven in themselves.
+
 ## 2.137.0 (22 Nov 2026)
 
 - Her real movement speed is measured instead of judged by feel (`app/motion.py`, Metin: "Ich habe nach Gefuehl gemacht und die war nachher wischi waschi"). Every clip is decoded small and grey; from the change between the frames come the amount of movement (`rate`) and the cadence (`beat`, swings per second). Per group of clips the middle cadence is the target and every clip gets the factor that brings it there, capped between 0.6 and 1.6.

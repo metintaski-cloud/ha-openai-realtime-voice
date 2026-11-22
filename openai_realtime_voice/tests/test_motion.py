@@ -57,3 +57,17 @@ def test_runner_skips_what_it_already_knows(tmp_path):
         motion.measure = r_measure
     assert len(calls) == 1, "the second run has nothing new to measure"
     assert r.items["nacht/a"]["beat"] == 2.0
+
+
+@pytest.mark.skipif(not shutil.which("ffmpeg"), reason="ffmpeg only in the addon image")
+def test_measure_sees_an_uneven_clip(tmp_path):
+    """A clip that moves a lot in one half and little in the other gets a high drift."""
+    even, uneven = str(tmp_path / "even.mp4"), str(tmp_path / "uneven.mp4")
+    os.system(f"ffmpeg -v error -f lavfi -i testsrc=size=240x320:rate=24:duration=4 "
+              f"-pix_fmt yuv420p {even}")
+    os.system(f"ffmpeg -v error -f lavfi -i testsrc=size=240x320:rate=24:duration=2 "
+              f"-f lavfi -i color=c=gray:size=240x320:rate=24:duration=2 "
+              f"-filter_complex '[0:v][1:v]concat=n=2:v=1' -pix_fmt yuv420p {uneven}")
+    a = asyncio.run(motion.measure(even))
+    b = asyncio.run(motion.measure(uneven))
+    assert b["drift"] > a["drift"] * 3

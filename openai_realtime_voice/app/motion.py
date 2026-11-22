@@ -70,9 +70,17 @@ async def measure(path: str) -> dict:
     for a, b in zip(frames, frames[1:]):
         diffs.append(sum(abs(x - y) for x, y in zip(a, b)) / size)
     secs = len(frames) / FPS
+    # drift: Kling sometimes runs fast in one half of a clip and slow in the other
+    # (Metin 22.11.2026). Half against half tells which clips are uneven, 1.0 is even.
+    half = len(diffs) // 2
+    a_, b_ = diffs[:half], diffs[half:]
+    ma = sum(a_) / max(1, len(a_))
+    mb = sum(b_) / max(1, len(b_))
+    drift = round(max(ma, mb) / max(0.01, min(ma, mb)), 2) if half else 1.0
     return {"dur": round(secs, 2),
             "rate": round(sum(diffs) / len(diffs) * FPS, 1),
-            "beat": round(_peaks(diffs) / secs, 2)}
+            "beat": round(_peaks(diffs) / secs, 2),
+            "drift": drift}
 
 
 def factors(items: dict, lo: float = 0.6, hi: float = 1.6) -> dict:
