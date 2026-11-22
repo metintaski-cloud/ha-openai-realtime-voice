@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.131.6 (22 Nov 2026)
+
+- Second night serpentine dance `nacht/tanz21` joins the night dance chain (original tempo, 0.66 sways per second). Media only: `kurz/umziehen` replaced by a Kling 4.0 4K clip (walks out in the work dress, empty stage, walks back in the Freizeit dress).
+
 ## 2.131.5 (22 Nov 2026)
 
 - Night back view dance `nacht/tanz20` (slow serpentine body wave, the closest match to the old tanz8 and tanz9) joins the night dance chain in its original tempo (0.64 sways per second).
