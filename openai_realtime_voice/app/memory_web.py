@@ -935,6 +935,10 @@ def list_outfits() -> dict:
             except (OSError, ValueError):
                 v = 0
             out[look] = {"clips": clips, "body": body, "v": v}
+            # t: the date of each clip file, so a check can tell an old clip from a new one
+            # (2.133.8, Metin wants to replace the clips that are still in the old size)
+            out[look]["t"] = {c: int(os.path.getmtime(os.path.join(folder, c + ".mp4")))
+                              for c in clips if os.path.exists(os.path.join(folder, c + ".mp4"))}
             if alpha:
                 out[look]["alpha"] = alpha
     return out

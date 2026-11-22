@@ -15,6 +15,7 @@ def test_clips_dir_prefers_media_folder(tmp_path, monkeypatch):
     outs = memory_web.list_outfits()
     assert outs["schwarz"]["v"] > 0
     del outs["schwarz"]["v"]
+    assert outs["schwarz"].pop("t")["gluecklich"] > 0, "the date of each clip (2.133.8)"
     assert outs == {"schwarz": {"clips": ["gluecklich"], "body": False}}
     monkeypatch.setattr(memory_web, "CLIPS_DIR", "/elsewhere")
     assert memory_web.clips_dir() == "/elsewhere"
