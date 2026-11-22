@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.135.1 (22 Nov 2026)
+
+- The tempo tester groups the clips by outfit (kurz, schwarz, nacht, mokka) instead of one long list.
+
 ## 2.135.0 (22 Nov 2026)
 
 - Tempo tester at `http://<host>:8082/tempo` (Metin's wish): two players side by side, a clip picked from the whole media folder in each, and a slider from 0.4 to 2.0 that changes the speed live. Metin finds the factor he likes and names it, then the file is rebuilt exactly that way.

@@ -1055,12 +1055,16 @@ button{padding:6px 10px;border-radius:8px;background:#222;color:#eee;border:1px 
 </style></head><body><h1>Tempo Tester</h1><div id="w"></div>
 <script>
 async function build(){const j=await (await fetch('/clips.json')).json();const o=j.outfits||{};
- const names=[];for(const look of Object.keys(o))for(const c of (o[look].clips||[]))names.push(look+'/'+c);
- names.sort();const w=document.getElementById('w');
+ const order=['kurz','schwarz','nacht','mokka'];
+ const looks=Object.keys(o).sort((a,b)=>(order.indexOf(a)+99)%100-(order.indexOf(b)+99)%100||a.localeCompare(b));
+ const names=[];for(const look of looks)for(const c of (o[look].clips||[]).slice().sort())names.push(look+'/'+c);
+ const w=document.getElementById('w');
  for(let i=0;i<2;i++){
   const d=document.createElement('div');d.className='p';
   const sel=document.createElement('select');
-  for(const n of names){const op=document.createElement('option');op.value=n;op.textContent=n;sel.appendChild(op);}
+  for(const look of looks){const g=document.createElement('optgroup');g.label=look;
+   for(const c of (o[look].clips||[]).slice().sort()){const op=document.createElement('option');op.value=look+'/'+c;op.textContent=c;g.appendChild(op);}
+   sel.appendChild(g);}
   const v=document.createElement('video');v.loop=true;v.muted=true;v.playsInline=true;v.controls=false;
   const r=document.createElement('input');r.type='range';r.min='0.4';r.max='2';r.step='0.05';r.value='1';
   const lab=document.createElement('span');lab.className='v';lab.textContent='1.00';
