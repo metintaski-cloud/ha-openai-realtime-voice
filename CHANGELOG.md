@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.132.10 (22 Nov 2026)
+
+- Night solo `nacht/tanz34` (30 s, uncut, original tempo, clip 3908) joins the night dance chain; the long solos never follow each other.
+
 ## 2.132.9 (22 Nov 2026)
 
 - Sad or sour in an outfit without sad clips (both leisure dresses, night): the stage shows the sulky jealousy loop of that outfit instead of the happy loop. Media: `kurz/freizeiteifersuechtig` (20 s loop, 4K), so every outfit now has its jealousy loop.
