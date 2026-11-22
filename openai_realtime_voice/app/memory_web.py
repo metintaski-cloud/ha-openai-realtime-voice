@@ -1113,6 +1113,7 @@ async function build(){const j=await (await fetch('/clips.json')).json();const o
   r.oninput=()=>{v.playbackRate=Number(r.value);lab.textContent=Number(r.value).toFixed(2);};
   b.onclick=()=>{r.value='1';r.oninput();};
   v.onloadeddata=()=>{v.playbackRate=Number(r.value);};
+  sel.style.display='none';  /* 2.135.5 (Metin): no list that pops open, he steps with the wheel and the arrows */
   d.append(sel,nav,v,row);w.appendChild(d);
   sel.value=names[Math.min(i,names.length-1)];load();}
 }

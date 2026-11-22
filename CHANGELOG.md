@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.135.5 (22 Nov 2026)
+
+- The tempo tester hides the dropdown completely (Metin): only the wheel and the two arrows step through the clips.
+
 ## 2.135.4 (22 Nov 2026)
 
 - The tempo tester steps through the clips without opening the list (Metin lost track in it): the mouse wheel over a player switches to the next or previous clip, two arrows do the same, and the line under the picker shows the clip and its position, for example "14 von 298".
