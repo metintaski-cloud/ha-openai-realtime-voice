@@ -324,3 +324,16 @@ def test_wake_stats_count_only_wake_word_talks():
             {"event": "ready", "ts": t}]
     day = metrics.wake_stats(rows)[0]
     assert day["geweckt"] == 2 and day["fehlstarts"] == 1
+
+
+def test_tempo_tester_keeps_the_factor(tmp_path, monkeypatch):
+    """Metin, 22.11.2026: he sets the speed in the tester and the list is read later."""
+    from app import memory_web
+    monkeypatch.setenv("LEYLA_TEMPO", str(tmp_path / "tempo.json"))
+    assert memory_web._tempo_read() == []
+    memory_web._tempo_add("kurz/freizeitgluecklich", 1.2)
+    memory_web._tempo_add("nacht/tanz14", 0.8)
+    memory_web._tempo_add("kurz/freizeitgluecklich", 1.35)  # second try wins
+    items = memory_web._tempo_read()
+    assert [i["name"] for i in items] == ["nacht/tanz14", "kurz/freizeitgluecklich"]
+    assert items[-1]["rate"] == 1.35

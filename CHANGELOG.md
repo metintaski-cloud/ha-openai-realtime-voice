@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.135.3 (22 Nov 2026)
+
+- The remember button of 2.135.2 was only half in the file: the button, the storage and the two endpoints are there now, with a test.
+
 ## 2.135.2 (22 Nov 2026)
 
 - The tempo tester has a "merken" button per player: the clip name and the chosen factor are kept on the server (`/data/tempo_wunsch.json`, `GET` and `POST /api/tempo`) and listed under the players, so Metin can go through many clips in one go and Claude reads the whole list afterwards.

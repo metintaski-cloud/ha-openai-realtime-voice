@@ -1040,6 +1040,29 @@ async def _lamp_api(lamp, method: str, path: str, body: bytes):
     return {"result": await lamp.reset()}
 
 
+TEMPO_PATH = "/data/tempo_wunsch.json"  # what Metin set in the tempo tester (2.135.2)
+
+
+def _tempo_read() -> list:
+    try:
+        with open(os.environ.get("LEYLA_TEMPO", TEMPO_PATH), encoding="utf-8") as f:
+            items = json.load(f)
+        return items if isinstance(items, list) else []
+    except Exception:
+        return []
+
+
+def _tempo_add(name: str, rate: float) -> None:
+    path = os.environ.get("LEYLA_TEMPO", TEMPO_PATH)
+    items = [i for i in _tempo_read() if i.get("name") != name]
+    items.append({"name": name, "rate": rate, "t": int(time.time())})
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(items[-60:], f, ensure_ascii=False)
+    os.replace(tmp, path)
+
+
 TEMPO_PAGE = """<!doctype html><html lang="de"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Tempo Tester</title><style>
@@ -1070,7 +1093,11 @@ async function build(){const j=await (await fetch('/clips.json')).json();const o
   const lab=document.createElement('span');lab.className='v';lab.textContent='1.00';
   const row=document.createElement('div');row.className='row';
   const b=document.createElement('button');b.textContent='zurueck auf 1';
-  row.append(lab,r,b);
+  const mk=document.createElement('button');mk.textContent='merken';
+  mk.onclick=async()=>{mk.textContent='...';
+   try{await fetch('/api/tempo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:sel.value,rate:Number(r.value)})});mk.textContent='gemerkt';}catch(e){mk.textContent='ging nicht';}
+   setTimeout(()=>{mk.textContent='merken';},1500);liste();};
+  row.append(lab,r,b,mk);
   const load=()=>{v.src='/clips/'+sel.value+'.mp4?t='+Date.now();v.playbackRate=Number(r.value);v.play().catch(()=>{});};
   sel.onchange=load;
   r.oninput=()=>{v.playbackRate=Number(r.value);lab.textContent=Number(r.value).toFixed(2);};
@@ -1157,6 +1184,20 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
             await _send_clip(writer, m.group(1), m.group(2), m.group(3), lines)
         elif method == "GET" and path == "/manifest.json":
             await _respond(writer, "200 OK", "application/manifest+json", MANIFEST)
+        elif method == "GET" and path == "/api/tempo":
+            await _respond(writer, "200 OK", "application/json",
+                           json.dumps({"items": _tempo_read()}, ensure_ascii=False))
+        elif method == "POST" and path == "/api/tempo":
+            n = str(d.get("name") or "")[:60]
+            try:
+                rate = round(float(d.get("rate") or 0), 2)
+            except (TypeError, ValueError):
+                rate = 0.0
+            ok = bool(n) and 0.2 <= rate <= 3
+            if ok:
+                _tempo_add(n, rate)
+                logger.info("Tempo tester: %s at %.2f", n, rate)
+            await _respond(writer, "200 OK", "application/json", json.dumps({"ok": ok}))
         elif method == "GET" and path == "/tempo":
             # Tempo Tester (2.135.0, Metin): two clips side by side with a speed slider each,
             # so he can find the right factor himself and name it
