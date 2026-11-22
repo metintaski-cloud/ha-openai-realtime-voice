@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.133.6 (22 Nov 2026)
+
+- Until Mokka has been discovered, Leyla wears the dress that holds the discovery clip (today the short one with `kurz/freizeitmokka`), instead of leaving it to the daily choice; in the long work dress the cat walked in but the surprise could not play. Afterwards the normal daily choice of 2.133.2 applies again.
+
 ## 2.133.5 (22 Nov 2026)
 
 - A loop with only one clip blends at the very end instead of 0.8 s before it (`TIGHT`, 0.25 s and a 300 ms fade). Measured on `nacht/eifersuechtig`, the only loop of the 48 that does not come back to its start pose: 0.8 s before the end the pose is still far away (distance 28 to 38), at the last frame it is close (12), so the short blend hides the rest of the jump. A new clip with the same start and end frame stays the real fix (open).

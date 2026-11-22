@@ -532,8 +532,10 @@ setInterval(seenTick,60000);document.addEventListener('visibilitychange',seenTic
 async function clipsLoad(){let outs={};try{outs=(await (await fetch('/clips.json')).json()).outfits||{};}catch(e){}
  for(const k in outs)CVER[k]=outs[k].v||0;NIGHT=outs.nacht?outs.nacht.clips:[];NIGHTBODY=!!(outs.nacht&&outs.nacht.body);delete outs.nacht;PET=outs.mokka&&outs.mokka.alpha||[];delete outs.mokka;const names=Object.keys(outs);
  let last='',lday='',seen=0;try{last=localStorage.getItem('loutfit')||'';lday=localStorage.getItem('loutfitday')||'';seen=Number(localStorage.getItem('lseen')||0);}catch(e){}
- const keep=last&&names.includes(last)&&lday===dressDay()&&(Date.now()-seen)<AWAY_MS;
- if(keep)OUTFIT=last;else{const cand=names.length>1?names.filter(n=>n!==last):names;OUTFIT=cand.length?cand[Math.floor(Math.random()*cand.length)]:'';}
+ let mokpend=false;try{mokpend=!localStorage.getItem('lmokka');}catch(e){}
+ const mok=PET.length&&mokpend?names.filter(n=>(outs[n].clips||[]).includes('freizeitmokka')):[];  /* until Metin's surprise has played she wears the dress that has the discovery clip (2.133.6) */
+ const keep=!mok.length&&last&&names.includes(last)&&lday===dressDay()&&(Date.now()-seen)<AWAY_MS;
+ if(mok.length)OUTFIT=mok[0];else if(keep)OUTFIT=last;else{const cand=names.length>1?names.filter(n=>n!==last):names;OUTFIT=cand.length?cand[Math.floor(Math.random()*cand.length)]:'';}
  try{if(OUTFIT){localStorage.setItem('loutfit',OUTFIT);localStorage.setItem('loutfitday',dressDay());}}catch(e){}
  seenTick();
  CLIPS=OUTFIT?outs[OUTFIT].clips:[];if(OUTFIT&&outs[OUTFIT].body){LOOKBODY='/clips/'+OUTFIT+'/body.jpg?v='+(CVER[OUTFIT]||0);document.querySelector('#stage .fig img').src=LOOKBODY;}
