@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.135.0 (22 Nov 2026)
+
+- Tempo tester at `http://<host>:8082/tempo` (Metin's wish): two players side by side, a clip picked from the whole media folder in each, and a slider from 0.4 to 2.0 that changes the speed live. Metin finds the factor he likes and names it, then the file is rebuilt exactly that way.
+
 ## 2.134.7 (22 Nov 2026)
 
 - The clip name sits below the Senden button instead of on top of it.

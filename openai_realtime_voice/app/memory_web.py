@@ -1040,6 +1040,45 @@ async def _lamp_api(lamp, method: str, path: str, body: bytes):
     return {"result": await lamp.reset()}
 
 
+TEMPO_PAGE = """<!doctype html><html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tempo Tester</title><style>
+body{margin:0;background:#000;color:#eee;font:15px system-ui}
+h1{font-size:17px;margin:10px}
+.p{margin:10px;padding:8px;border:1px solid #334;border-radius:10px}
+select{width:100%;padding:7px;background:#111;color:#eee;border:1px solid #445;border-radius:8px}
+video{width:100%;max-height:46vh;background:#000;margin-top:6px;border-radius:8px}
+input[type=range]{width:100%}
+.v{font-size:19px;font-weight:600;color:#9fe8ff}
+.row{display:flex;gap:10px;align-items:center;margin-top:6px}
+button{padding:6px 10px;border-radius:8px;background:#222;color:#eee;border:1px solid #445}
+</style></head><body><h1>Tempo Tester</h1><div id="w"></div>
+<script>
+async function build(){const j=await (await fetch('/clips.json')).json();const o=j.outfits||{};
+ const names=[];for(const look of Object.keys(o))for(const c of (o[look].clips||[]))names.push(look+'/'+c);
+ names.sort();const w=document.getElementById('w');
+ for(let i=0;i<2;i++){
+  const d=document.createElement('div');d.className='p';
+  const sel=document.createElement('select');
+  for(const n of names){const op=document.createElement('option');op.value=n;op.textContent=n;sel.appendChild(op);}
+  const v=document.createElement('video');v.loop=true;v.muted=true;v.playsInline=true;v.controls=false;
+  const r=document.createElement('input');r.type='range';r.min='0.4';r.max='2';r.step='0.05';r.value='1';
+  const lab=document.createElement('span');lab.className='v';lab.textContent='1.00';
+  const row=document.createElement('div');row.className='row';
+  const b=document.createElement('button');b.textContent='zurueck auf 1';
+  row.append(lab,r,b);
+  const load=()=>{v.src='/clips/'+sel.value+'.mp4?t='+Date.now();v.playbackRate=Number(r.value);v.play().catch(()=>{});};
+  sel.onchange=load;
+  r.oninput=()=>{v.playbackRate=Number(r.value);lab.textContent=Number(r.value).toFixed(2);};
+  b.onclick=()=>{r.value='1';r.oninput();};
+  v.onloadeddata=()=>{v.playbackRate=Number(r.value);};
+  d.append(sel,v,row);w.appendChild(d);
+  sel.value=names[Math.min(i,names.length-1)];load();}
+}
+build();
+</script></body></html>"""
+
+
 async def _reach_api(reach, method: str, path: str, d: dict, unlocked: bool) -> dict:
     """Her own messages (app/reach.py): the app asks for new ones, marks them seen, plays a
     voice message. GET /api/reachstats (no code word) gives counts and states only."""
@@ -1111,6 +1150,10 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
             await _send_clip(writer, m.group(1), m.group(2), m.group(3), lines)
         elif method == "GET" and path == "/manifest.json":
             await _respond(writer, "200 OK", "application/manifest+json", MANIFEST)
+        elif method == "GET" and path == "/tempo":
+            # Tempo Tester (2.135.0, Metin): two clips side by side with a speed slider each,
+            # so he can find the right factor himself and name it
+            await _respond(writer, "200 OK", "text/html; charset=utf-8", TEMPO_PAGE)
         elif method == "GET" and path == "/sw.js":
             # without a service worker Chrome only makes a shortcut that opens with its address
             # bar; with one the page installs as an app and the manifest's fullscreen applies

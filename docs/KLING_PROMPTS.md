@@ -242,3 +242,7 @@ Bei Clips, die nur das Gesicht beschreiben, friert Kling den Körper ein, weil S
 ## Credits sparen (22.11.2026, Metin: "kann nicht haufen Credits für ein Clip")
 
 Die Regel "vier Versuche pro Clip" gilt nicht mehr. Stattdessen Prompts nach dem Muster der Clips bauen, die auf Anhieb saßen (Eifersucht 3453, 3469, 3473; Rosen 3221, 3226; Schleife 6080): eine einzige klare Handlung, konkret beschrieben, feste Kamera, Start gleich Endbild, keine Kamerafahrt. Kamerafahrten und seltene Gesten sind die teuren Fehlschläge.
+
+## Tempo im Prompt statt in der Nachbearbeitung (22.11.2026, Metins Idee)
+
+"slowly" und "slow and smooth" liefern Zeitlupe, das stand schon im Log. Umgekehrt hilft es, das normale Tempo ausdrücklich zu verlangen: "at natural, real-time speed, as if filmed live, never slow motion". Diese Zeile gehört in jeden Prompt, in dem es nicht ausdrücklich langsam sein soll. Zum Prüfen gibt es seit 2.135.0 den Tempo Tester unter /tempo: zwei Clips nebeneinander mit Schieber, Metin nennt den Faktor.
