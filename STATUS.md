@@ -22,6 +22,7 @@ Diese Datei ist das Gedaechtnis des Projekts. Wer eine Sitzung beginnt, liest si
 
 ## Version und Zustand
 - Kling Standard neu seit 21.11.2026: docs/KLING_PROMPTS.md (kurzer Prompt, Verbote ins Negativ Feld, eine Handlung pro 5 s Clip mit Start und Endbild).
+- Ziel Metin 22.11.2026: Am Ende ist kein Clip mehr unter 4K. Alte Clips werden gesichtet, die besten in 4K nachgebaut, alle alten danach nach Leyla aussortiert.
 - Entscheidung Metin 22.11.2026: Arbeitskleider bekommen keine neuen Tänze, nur Schleifen und Berührungsclips in 4K; neue Tänze nur für Freizeit und Nacht. Die alten Arbeitstänze bleiben vorerst.
 - Server 2.131.2 (22.11.2026): Bauchtänze nacht/tanz12 und tanz13 in der Nacht Tanzkette; alle vier Bauchtänze (dazu kurz/freizeittanz, schwarz/freizeittanz3) im gleich gemessenen Takt 0,68 Schwünge pro Sekunde (Clip 1901 im Originaltempo ist Metins Maßstab: "dieses Tempo am liebsten überall").
 - Server 2.131.1 (21.11.2026): Ton bei allen Berührungs Clips in allen Outfits, nie bei Schleifen und Tänzen (Metin). Neue Clips freizeitpo8, gesicht2, freizeitgesicht, nacht/brust3 jetzt mit Ton.
