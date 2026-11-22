@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.133.7 (22 Nov 2026)
+
+- "Zeig dich" works again at night (Metin: the dot came up and went out again, nothing happened). No night clip is called `zeigen`, they are `zeigenlang`, `zeigenruhig`, `zeigenmittel` and `zeigenschnell`, but `stageSceneNow` asked for exactly `zeigen` before playing and gave up. The show chain is now asked first, and only rolled once instead of twice (the check and the play each rolled their own chain).
+
 ## 2.133.6 (22 Nov 2026)
 
 - Until Mokka has been discovered, Leyla wears the dress that holds the discovery clip (today the short one with `kurz/freizeitmokka`), instead of leaving it to the daily choice; in the long work dress the cat walked in but the surprise could not play. Afterwards the normal daily choice of 2.133.2 applies again.
