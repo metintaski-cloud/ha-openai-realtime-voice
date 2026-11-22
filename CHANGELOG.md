@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.133.9 (22 Nov 2026)
+
+- Clip names may be 30 letters long instead of 20 (`CLIP_RE`). `freizeiteifersuechtig` has 21 and was therefore invisible to the server, in both dresses, so Leyla kept smiling in her leisure clothes when she was sad or jealous, although 2.132.9 had put the clip in the media folder.
+
 ## 2.133.7 (22 Nov 2026)
 
 - "Zeig dich" works again at night (Metin: the dot came up and went out again, nothing happened). No night clip is called `zeigen`, they are `zeigenlang`, `zeigenruhig`, `zeigenmittel` and `zeigenschnell`, but `stageSceneNow` asked for exactly `zeigen` before playing and gave up. The show chain is now asked first, and only rolled once instead of twice (the check and the play each rolled their own chain).

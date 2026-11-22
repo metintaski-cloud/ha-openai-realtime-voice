@@ -54,7 +54,7 @@ def clips_dir() -> str:
     except OSError:
         pass
     return BUILTIN_CLIPS
-CLIP_RE = re.compile(r"^/clips/([a-z0-9]{2,20})/([a-z]{2,20}[0-9]{0,2})\.(mp4|jpg|m4a|webm)$")  # look/scene (2.99.4), musik/<mood>.m4a (2.103.0)
+CLIP_RE = re.compile(r"^/clips/([a-z0-9]{2,20})/([a-z]{2,30}[0-9]{0,2})\.(mp4|jpg|m4a|webm)$")  # 30 since 2.133.9: freizeiteifersuechtig has 21 letters and was invisible to the server, so the jealousy loop never played in Freizeit (Metin, 22.11.2026)  # look/scene (2.99.4), musik/<mood>.m4a (2.103.0)
 
 
 def check_code(typed, phrase: str, now: Optional[float] = None) -> bool:
