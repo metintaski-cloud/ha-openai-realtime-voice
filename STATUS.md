@@ -1,7 +1,5 @@
 # Leyla: Stand, Entscheidungen, offene Punkte
-
 Diese Datei ist das Gedaechtnis des Projekts. Wer eine Sitzung beginnt, liest sie zuerst. Wer etwas entscheidet oder abschliesst, traegt es hier ein (Stand: 13 Nov 2026). README, CHANGELOG, Vorlage voice_pe_config.yaml und die Notizen im Client Ordner wurden am 13 Nov 2026 auf den echten Stand gebracht.
-
 ## Feste Entscheidungen
 - Leyla behaelt ihre Stimme, kein Stimmenwechsel. Die Stimme "Brise" gibt es nicht auf dem Speech Endpoint, deshalb Ansagen ueber GPT Live mit gespeicherten Clips (merken: true).
 - Wake Word: nur "Hallo Leyla" (Modell hallo_leyla), Nabu und Mycroft sind entfernt. probability_cutoff 99 Prozent, gain_factor bleibt 4 (Mama soll weiter erkannt werden).
@@ -9,19 +7,15 @@ Diese Datei ist das Gedaechtnis des Projekts. Wer eine Sitzung beginnt, liest si
 - Antwortstil fuer Metin: kurz, hoechstens 3 Saetze, keine Gedankenstriche, Anleitungen Schritt fuer Schritt mit "weiter".
 - Code immer aufraeumen und Metin ueber Struktur und Dateigroesse informieren.
 - Ineffizientes wird nie liegen gelassen: Es kommt raus oder wird effizient gemacht (Fokus besser, effektiver, leistungsstaerker, stabiler). Beispiel: Werkzeug tief_nachdenken wurde entfernt, weil es nichts brachte (14 Nov 2026).
-
 ## Regel gegen veraltete Infos
 - Jede Aenderung an Server, Geraet oder Entscheidungen wird noch in derselben Sitzung in STATUS.md, DEPLOYED.md und der passenden AGENTS.md nachgezogen und committed.
 - Werte aus diesen Dateien vor der Nutzung gegen das echte System pruefen (Add on Version, Live Config), Datum der letzten Pruefung steht in DEPLOYED.md.
-
 ## Umgebung
 - HAOS 192.168.2.240, Voice PE ha-voice-openai 192.168.2.241, Add on Slug 5b94124a_openai_realtime_voice, ESPHome Add on 5c53de3b_esphome.
 - Deploy Ablauf Server: Tests, Version in config.yaml erhoehen, commit, push, Store neu laden, ohne aktive Sitzung Update ausloesen. Details in openai_realtime_voice/AGENTS.md.
 - Geraete Config aendern: siehe home-assistant-voice-pe/AGENTS.md (Abschnitt Browser Route).
 - Home Assistant erreichbar unter http://192.168.2.240 (Port 80, NICHT 8123: mit 8123 laedt der Browser nichts). Das Add on heisst in Home Assistant "GPT Live Voice", Seite http://192.168.2.240/config/app/5b94124a_openai_realtime_voice/info (a0d7b954 ist der Hash des Tailscale Add ons, nicht unseres). Update vom Browser Tab aus: `document.querySelector('home-assistant').hass.callWS({type:'supervisor/api', endpoint:'/store/reload', method:'post'})`, dann `/addons/5b94124a_openai_realtime_voice/update` (post), Zustand mit `/info`. Der eingebaute Browser der Claude App fragt bei jeder Aktion neu um Freigabe (request_access, scope once), deshalb vor jedem Aufruf neu freigeben.
-
 ## Version und Zustand
-
 ### Einschätzung der Änderungen vom 22.11.2026 (Claude Opus, 09:55)
 - 2.132.6 (sofortige Reaktion) ist die wichtigste Änderung des Tages und ein echter Fehler, der seit 2.116 drin war. Richtig gelöst, weil die Ursache gefunden wurde statt nur das Symptom.
 - 2.132.9 (Eifersucht Schleife bei traurig oder sauer ohne eigene Clips) ist sauber gedacht: lieber eine passende Schleife als eine fröhliche, die nicht zur Laune passt.
@@ -38,8 +32,7 @@ Diese Datei ist das Gedaechtnis des Projekts. Wer eine Sitzung beginnt, liest si
 - Server 2.131.9 (22.11.2026): nacht/tanz26 (Clip 2923, 20 s Trommelsolo, Original) und tanz27 (Clip 2965, 20 s "wild aber feminin", Metin: "MEGA", ab 22.11. auf 0,75 gebremst mit mci), folgen nie direkt aufeinander. Server 2.132.0: nacht/tanz28 (2880, 0,8) und tanz29 (2859, Original).
 - Medien 22.11.2026, 09:30: nacht/zeigenlang6 (Clip 3562, 20 s, von Metin, ungekürzt). Nachts gibt es jetzt sechs lange Zeig dich Clips. Alle verarbeiteten Kling Originale liegen in Desktop\Leyla Kling Originale.
 - Medien 22.11.2026, 11:00 (kein Update nötig): schwarz/gluecklichextra5 gelöscht, der letzte alte Clip in 1080x1620 (Metin: weg damit). Es bleiben sieben seltene Extras im langen Kleid. Alle 296 Clips im Medienordner liegen jetzt einheitlich in 1176x1764 aus Metins 4K Originalen.
-- Medien 22.11.2026, 16:58 (kein Update nötig): nacht/kuss (Clip 4128, 30 s, 4K, ungeschnitten, Ton entfernt; Metin: der wird Kuss, nicht Zeig dich). Nachts gab es bis dahin keinen Kuss, damit ist er auch im Nachtoutfit möglich.
-- Medien 22.11.2026, 16:56 (kein Update nötig): nacht/zeigenlang8 (Clip 4198, 30 s, 4K, ungeschnitten, Ton entfernt). Acht lange Zeig dich Clips nachts.
+- Medien 22.11.2026, 17:00 (kein Update nötig): nacht/kuss ist Clip 4198 und nacht/zeigenlang9 ist Clip 4128 (Metin hat sie getauscht), beide 30 s, 4K, ungeschnitten, ohne Ton. Nachts gab es bis dahin keinen Kuss, damit ist er auch im Nachtoutfit möglich; dazu zeigenlang7 (Clip 4144) und zeigenlang9, also neun lange Zeig dich Clips.
 - Medien 22.11.2026, 16:55 (kein Update nötig): nacht/zeigenlang7 (Clip 4144, 30 s, 4K 2352x3520, ungeschnitten, Ton entfernt wie bei den anderen Zeig dich Clips, Bild unverändert kopiert). Nachts gibt es damit sieben lange Zeig dich Clips; die Kette nimmt sie automatisch, weil zeigenlang mit Nummer dazugehört.
 - Server 2.134.7 (22.11.2026, 16:45): Die Namensanzeige liegt unter dem Senden Knopf statt darüber.
 - Clips neu zu machen (Metin, 22.11., beim Durchsehen mit der Namensanzeige): kurz/freizeitgluecklich in 4K, 10 s, ruhig und süß statt ernst; gewählter Ablauf (Variante 3): leichtes Wiegen im Stand, Blinzeln, Lächeln, einmal kurz wegschauen und wieder zu ihm, Ende in der Anfangshaltung.
@@ -98,7 +91,6 @@ Diese Datei ist das Gedaechtnis des Projekts. Wer eine Sitzung beginnt, liest si
 - Abschied: Schreibweise Bay bay wird erkannt (2.55.14), Auflegen nach ca. 5 s.
 - Bereitzeit nach 2.55.x gemessen: 0,99 s und 1,29 s (Basis 0,97 s).
 - Wake Word Cutoff 99 Prozent wurde am 13 Nov 2026 per Netzwerk installiert, Ergebnis noch zu pruefen.
-
 ## Offen
 - Kalender (2.87.0, gebaut 15.11.2026 22:50, Metins Wunsch): Leyla verwaltet Metins Google Kalender, Termine erscheinen auf seinem Handy. Ansehen, Anlegen, Ändern und Löschen sofort ohne Karte (seit 2.87.2, Metins Logik Einwand) (Stimme nach Codewort und App Chat, Details in openai_realtime_voice/AGENTS.md unter agenda.py). Schritte für Metin vor dem Benutzen: 1. In der Google Cloud Konsole (Projekt Leyla, leyla-514815) die Google Calendar API einschalten. 2. In der Gedächtnis App im Menü Google verbinden, neu anmelden und alle Häkchen setzen (jetzt auch Kalender). Ohne das ist die Funktion aus und alles andere läuft unverändert. Offen: Test von Ansehen, Anlegen, Ändern, Löschen per Stimme und im Chat.
 - E-Mail aus Leyla (eingerichtet 15.11.2026, erste Testmail 18:04 an Metin selbst gesendet): Senden ueber die Gmail API mit Metins Google Anmeldung (Google Cloud Projekt "Leyla", ID leyla-514815, OAuth Client "Leyla" Typ Desktop, App "In Produktion" und nicht ueberprueft, deshalb beim Anmelden die Warnung: Erweitert, Leyla oeffnen). Startseite und Datenschutz Link im Branding zeigen auf das GitHub Repo und PRIVACY.md (Domain github.com). Add on Optionen google_client_id, google_client_secret (nur in Home Assistant, nie im Repo), email_contacts = Metin selbst; email_address, email_app_password leer. Seit 2.83.1 darf Leyla an alle Google Kontakte schreiben (196 Adressen inkl. weitere Kontakte, keine Hakenliste mehr, Metins Wunsch), jede Mail weiter nur nach seinem Tipp auf Senden. Verbindung neu: in der App Mit Google anmelden, 127.0.0.1 Adresse einfuegen, Verbinden. Zugriff entziehen: myaccount.google.com/permissions.
@@ -135,6 +127,5 @@ Diese Datei ist das Gedaechtnis des Projekts. Wer eine Sitzung beginnt, liest si
 - Gedaechtnisgrenze (14 Nov 2026, Metin): MEMORY_BLOCK_MAX_CHARS (main.py, jetzt 9000 Zeichen, eigene Sicherung, keine OpenAI Grenze; Anweisungen duerfen bis 16384 Token) spaeter auf 15000 Zeichen stellen. Erinnern ist gewuenscht, nur der Inhalt darf nicht zugemuellt sein (naechtliches Aufraeumen mit Vorschlag an Metin bleibt). Vorher die echte Groesse des Blocks lesen und pruefen, ob Bereitzeit und Antwortqualitaet gleich bleiben.
 - Stand 14 Nov 2026 04:20: MEMORY_BLOCK_MAX_CHARS im Code auf 15000 Zeichen (Zwischenstand, Version 2.54.7 noch nicht eingespielt, weil Metins PC aus ist). Metin meinte 15K Token, das passt nicht: Persona braucht etwa 3000 bis 3500 Token von 16384, fuer das Gedaechtnis bleiben hoechstens etwa 12900. Vorschlag mit Abstand: 11000 Token, etwa 33000 Zeichen, wartet auf Metins Ja.
 - Vorgehen Gedaechtnisgrenze (14 Nov 2026, von Metin bestaetigt, langsam und sicher): jetzt 15000 Zeichen (Version 2.54.7 noch einzuspielen). Weiter anheben nur, wenn der Block die Grenze wirklich erreicht; bei jeder Stufe Bereitzeit (Log Metrics ready, connect_to_ready_s, Vergleichswert etwa 0,97 s) und Antwortqualitaet pruefen, bei gleichen Werten naechste Stufe. Rechnerische Obergrenze etwa 12900 Token (etwa 35000 Zeichen), weil Persona etwa 3000 bis 3500 Token braucht und das Gesamtlimit 16384 Token ist.
-
 - Stand 14 Nov 2026 12:20: Add on 2.54.7 eingespielt (Gedaechtnisgrenze 15000 Zeichen). Neu 2.55.0: Gedaechtnis Seite auf Port 8082 (Haken pro Eintrag, Loeschen Knopf, ohne Anmeldung, nur Heimnetz, private Liste nie sichtbar). Wunsch von Metin: ohne HA App am Handy nutzbar.
 - Stand 14 Nov 2026 13:20: Test mit 2.55.x (13:11 bis 13:13, 138 s). connect_to_ready_s nicht lesbar, weil der Add on Log nur etwa die letzten 100 Zeilen haelt und der Start schon heraus war (naechstes Mal gleich nach dem Start lesen). Antwortzeit nach dem letzten Wort 0,04 bis 0,10 s. Fund: auf "Wie war heute dein Tag" fragte Leyla zweimal nach (Sprache Tuerkisch und Deutsch gemischt, Erkennung unsauber, dazu keine Persona Regel fuer persoenliche Fragen). Regel in app/persona.py ergaenzt (2.55.12). Liegt nicht an backend_reasoning_effort low, das gilt nur fuer das Backend.
