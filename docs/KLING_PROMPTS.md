@@ -158,3 +158,7 @@ Prompts ohne Buch und ohne das Wort glasses ("Her bare face ... stays exactly as
 ## R&B mit Darbuka (22.11.2026, kurz/freizeittanz2)
 
 Prompt Kern: "she dances in place to a slow, sensual R&B groove blended with Arabic darbuka drums, moving like a belly dancer: her hips sway wide and smoothly from side to side with soft hip drops on each drum beat, her upper body stays calm, her arms float gracefully". Kling tanzte trotzdem recht schnell (1,1 Schwünge pro Sekunde); auf 0,62 gebremst wirkten Gesicht und Mimik träge, Metin nahm 0,75. Nächstes Mal "slow, elegant" direkt in den Prompt, damit weniger gebremst werden muss.
+
+## Rückenansicht wie tanz8/9 (22.11.2026)
+
+Musikrichtungen (arabische Trommeln, R&B) brachten nur Tanzbewegungen mit schwebenden Armen, nicht die Haltung von tanz8/9 (sieben Versuche, rund 2.450 Credits). Am nächsten kam ein Prompt ohne Musik, der nur den Körper beschreibt (Clip 2634, nacht/tanz20): "with her back to the camera and her feet together on the same spot, she lets her arms hang down long, straight and relaxed beside her body. Slowly and smoothly her whole body moves in a soft serpentine wave: the wave starts at her shoulders, flows down through her waist into her hips, her hips swing out to one side and then the other, and her knees bend so that she sinks lower in a slow curving motion; then the wave flows back up ... as she rises again to full height. She repeats this ... twice". Metins Hinweis: genau beschreiben, keine Musiktanz Art. Alternative für echtes 1:1: Motion Control mit dem alten Clip als Vorlage.
