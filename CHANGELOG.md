@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.131.7 (22 Nov 2026)
+
+- Third night serpentine dance `nacht/tanz22` joins the night dance chain. Media only: `schwarz/umziehen` replaced by a 4K clip like `kurz/umziehen`.
+
 ## 2.131.6 (22 Nov 2026)
 
 - Second night serpentine dance `nacht/tanz21` joins the night dance chain (original tempo, 0.66 sways per second). Media only: `kurz/umziehen` replaced by a Kling 4.0 4K clip (walks out in the work dress, empty stage, walks back in the Freizeit dress).

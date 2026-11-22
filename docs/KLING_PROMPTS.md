@@ -166,3 +166,7 @@ Musikrichtungen (arabische Trommeln, R&B) brachten nur Tanzbewegungen mit schweb
 ## Gesichtsausdruck abwechseln (22.11.2026)
 
 Metin: Leyla guckt überall gleich, sehr monoton, keine schüchternen Blicke. Ursache: fast jeder Prompt hatte "warm smile" oder "flirty smile". Regel: in jedem Clip einen anderen, konkret beschriebenen Ausdruck, gern mit Wechsel innerhalb des Clips, zum Beispiel shy (eyes lowered to the floor, bashful smile, slowly lifts her gaze), mischievous (one eyebrow slightly raised), dreamy (half closed eyes, soft smile), laughing, sultry (slow look, lips slightly parted), surprised. Nie zweimal hintereinander denselben Ausdruck.
+
+## Kamerabewegung (22.11.2026)
+
+Metin will Zoom und Kamerabewegung. Regel: Die ersten und letzten 1 bis 1,5 s zeigen das Ganzkörperbild genau wie die Keyframes (sonst springt das Bild beim Übergang zum nächsten Clip); dazwischen z. B. "the camera slowly pushes in to a medium shot from the hips up ... then slowly pulls back to the full body framing of the keyframes" oder ein leichter Bogen zur Seite und zurück. Den Satz "the camera stays perfectly still on a tripod" dann weglassen.
