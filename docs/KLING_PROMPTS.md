@@ -246,3 +246,22 @@ Die Regel "vier Versuche pro Clip" gilt nicht mehr. Stattdessen Prompts nach dem
 ## Tempo im Prompt statt in der Nachbearbeitung (22.11.2026, Metins Idee)
 
 "slowly" und "slow and smooth" liefern Zeitlupe, das stand schon im Log. Umgekehrt hilft es, das normale Tempo ausdrücklich zu verlangen: "at natural, real-time speed, as if filmed live, never slow motion". Diese Zeile gehört in jeden Prompt, in dem es nicht ausdrücklich langsam sein soll. Zum Prüfen gibt es seit 2.135.0 den Tempo Tester unter /tempo: zwei Clips nebeneinander mit Schieber, Metin nennt den Faktor.
+
+## Takt haelt Kling nicht (gemessen 22./23.11.2026)
+
+Alle 301 Clips wurden gemessen (`app/motion.py`, Add on 2.137.x). Ergebnis: kein Clip hat
+einen Takt. Die Bewegungsmenge schwankt innerhalb eines Clips um das Zehnfache, nacht/tanz4
+geht von fast still auf voll und zurueck, nacht/tanz37 wandert ueber 30 Sekunden hin und her.
+librosa auf derselben Bewegungskurve findet ebenfalls nichts und liefert nur ihren
+Standardwert von 120 bpm. Metins Eindruck war also richtig: "Kling ai macht komische clips
+die zeitlich mal schnell mal langsam sind."
+
+Folgen fuer die Prompts:
+- Tempo in Worten ("at natural, real-time speed") hilft gegen Zeitlupe, erzeugt aber keinen
+  gleichmaessigen Takt. Es bleibt drin, reicht aber nicht.
+- Takt muss gezaehlt vorgegeben werden, nicht beschrieben: Anker ist Metins Musik mit
+  100 bpm, also ein Schlag alle 0,60 s und 16 Schlaege in 9,6 s. Eine Bewegung pro zwei
+  Schlaege heisst 8 Bewegungen im 10 s Clip.
+- Nachtraeglich korrigierbar ist nur, was wir im Browser ohne Neu Rendern machen koennen:
+  ein Tempo pro Clip (`r`) und eine Tempokurve fuer Stuecke im Clip (`k`), beides im Tempo
+  Tester unter /tempo einstellbar.
