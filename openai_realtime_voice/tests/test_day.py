@@ -48,9 +48,19 @@ def test_bad_answer_keeps_nothing(tmp_path, monkeypatch):
     assert dy.note() == ""
 
 
+def test_she_knows_mokka_only_after_the_surprise_has_played(tmp_path):
+    """Metin, 22.11.2026: she must not speak of Mokka before she has seen her."""
+    f, m = str(tmp_path / "flag"), str(tmp_path / "met")
+    assert day.pet_note(f, m) == "", "no cat in her rules before the surprise"
+    assert not day.pet_met(m)
+    assert day.pet_meet(m) and not day.pet_meet(m), "the app reports it once"
+    assert day.pet_met(m) and "Mokka" in day.pet_note(f, m)
+
+
 def test_pet_note_thanks_once(tmp_path):
-    f = str(tmp_path / "flag")
-    assert "Überraschung" in day.pet_note(f) and "Mokka" in day.pet_note(f)
+    f, m = str(tmp_path / "flag"), str(tmp_path / "met")
+    day.pet_meet(m)
+    assert "Überraschung" in day.pet_note(f, m) and "Mokka" in day.pet_note(f, m)
     assert not day.pet_seen("Wie war dein Tag?", f)
     assert day.pet_seen("Danke für Mokka, sie ist so süß!", f)
-    assert "schon bei Metin" in day.pet_note(f) and not day.pet_seen("Mokka schläft", f)
+    assert "schon bei Metin" in day.pet_note(f, m) and not day.pet_seen("Mokka schläft", f)

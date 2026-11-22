@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.133.1 (22 Nov 2026)
+
+- Leyla knows Mokka only once the surprise has really played on the stage (Metin: she said nothing about the cat and still had the rule that she had just discovered her). The page reports the moment the surprise clip starts (`POST /api/pet`, flag `/data/mokka_gesehen`); until then `day.pet_note` is empty and the cat is in none of her rules, in the chat, in a talk at home or in her own messages.
+
 ## 2.133.0 (22 Nov 2026)
 
 - Night solo `nacht/tanz37` (30 s, uncut, original tempo, clip 4055) joins the night dance chain; it is reachable from 33 dances and the long solos never follow each other.

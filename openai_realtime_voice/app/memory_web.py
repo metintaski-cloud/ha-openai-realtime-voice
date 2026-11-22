@@ -19,7 +19,7 @@ import time
 import os
 from typing import Optional
 
-from app import memory, ticker
+from app import day, memory, ticker
 
 logger = logging.getLogger(__name__)
 
@@ -514,7 +514,7 @@ let CVER={},MUSV={},PET=[],PETON=false,PETCAME=false;let OUTFIT='',NIGHT=[],NIGH
    clothes. She walks in from the right once (kommt), then plays her sitting loops (sitzt...). */
 function petUrl(n){return '/clips/mokka/'+n+'.webm?v='+(CVER.mokka||0);}
 const PETSIT=6.0;  /* 2.131.0: second of kommt.webm where Mokka sits like the first keyframe of the surprise clip */
-function petFreude(v,clip){try{localStorage.setItem('lmokka','1');}catch(e){}ZBUSY=Date.now()+20000;  /* the first time: Leyla discovers Mokka, cuddles her and puts her down (clip carries the cat) */
+function petFreude(v,clip){try{localStorage.setItem('lmokka','1');}catch(e){}post('/api/pet',{}).catch(()=>{});ZBUSY=Date.now()+20000;  /* the first time: Leyla discovers Mokka, cuddles her and puts her down (clip carries the cat) */
  v.style.transition='opacity .35s';v.classList.remove('on');setTimeout(()=>{v.pause();v.style.transition='';},400);
  stageShow(clip,false,()=>{const a=document.getElementById(SV?'svid2':'svid'),left=a&&a.duration?Math.max(0,(a.duration-a.currentTime)*1000-350):3000;
   setTimeout(()=>{if(PETON){petNext();v.classList.add('on');}},left);stageLoop(clipFor(STM));},true);}
@@ -1199,6 +1199,12 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
         elif path.startswith("/api/reach"):
             out = await _reach_api(reach, method, path, d, unlocked)
             await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
+        elif method == "POST" and path == "/api/pet":
+            # the stage has played the surprise: only now does Leyla know Mokka (2.133.1, Metin)
+            ok = bool(unlocked) and day.pet_meet()
+            if ok:
+                logger.info("Memory page: Leyla has discovered Mokka")
+            await _respond(writer, "200 OK", "application/json", json.dumps({"ok": ok}))
         elif method == "POST" and path == "/api/rose":
             out = mood.give_rose() if (unlocked and mood and hasattr(mood, "give_rose")) else {"ok": False}
             if out.get("ok") or out.get("rose") == "blocked":

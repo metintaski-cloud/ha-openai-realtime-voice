@@ -187,6 +187,7 @@ async def weather_text(api_url: str, token: str) -> str:
 
 # Mokka, her cat (2.131.0, Metin's surprise of 21 Nov 2026): a fact of her life like her book.
 PET_FLAG = "/data/mokka_thanked"
+PET_MET_FLAG = "/data/mokka_gesehen"  # the surprise has played on the stage (2.133.1)
 PET_NOTE = (
     "\n\nDEINE KATZE MOKKA (seit 21.11.2026, ein Geschenk von Metin)\n"
     "• Mokka ist deine Katze: eine silbergraue Britisch Kurzhaar mit weißer Brust, weißen Pfoten "
@@ -201,7 +202,26 @@ PET_LATER = "Du hast dich schon bei Metin für sie bedankt; erwähne das nicht i
 PET_RE = __import__("re").compile(r"mokka|katze|kedi", __import__("re").I)
 
 
-def pet_note(path: Optional[str] = None) -> str:
+def pet_met(path: Optional[str] = None) -> bool:
+    """Has the surprise really run on the stage? Before that Leyla does not know Mokka."""
+    return os.path.exists(path or os.environ.get("LEYLA_PET_MET", PET_MET_FLAG))
+
+
+def pet_meet(path: Optional[str] = None) -> bool:
+    """The app reports that Leyla has just discovered Mokka (2.133.1)."""
+    p = path or os.environ.get("LEYLA_PET_MET", PET_MET_FLAG)
+    if os.path.exists(p):
+        return False
+    os.makedirs(os.path.dirname(p) or ".", exist_ok=True)
+    open(p, "w").close()
+    return True
+
+
+def pet_note(path: Optional[str] = None, met_path: Optional[str] = None) -> str:
+    """Nothing at all until she has seen Mokka: until 2.133.1 she was told she had just
+    discovered her, even when the surprise had never played (Metin, 22.11.2026)."""
+    if not pet_met(met_path):
+        return ""
     thanked = os.path.exists(path or os.environ.get("LEYLA_PET_FLAG", PET_FLAG))
     return PET_NOTE.format(first=PET_LATER if thanked else PET_FIRST)
 
