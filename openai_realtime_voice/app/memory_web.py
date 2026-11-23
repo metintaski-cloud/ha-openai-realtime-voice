@@ -481,7 +481,9 @@ async function chatSend(){const ta=document.getElementById('ctext'),msg=ta.value
  let j=null;const t0=performance.now();try{j=await (await post('/api/chat',{history,message:msg,rtt:CRTT,light:lightNow()})).json();}catch(e){}
  CRTT=Math.round(performance.now()-t0);chatAnswer(j);chatSave();chatDraw();snd.drop();}
 const AUDIO=new Map();let REC=null,RECT=null,DIK=null,DIKT=null,DIKQ=false;  /* DIK: dictation, DIKQ: music stays off until he sends */
-function playAudio(id){try{const a=new Audio(AUDIO.get(id));let v=false;const off=()=>{stageTalk(false);if(v){v=false;voiceOn(false);}};a.onplay=()=>{stageTalk(true);if(!v){v=true;voiceOn(true);}};a.onended=a.onpause=off;a.play().catch(off);}catch(e){}}
+let VOUT=null;function voiceOut(){if(!VOUT){VCTX=VCTX||new (window.AudioContext||window.webkitAudioContext)();const g=VCTX.createGain(),l=VCTX.createDynamicsCompressor();
+ g.gain.value=1.05;l.threshold.value=-1;l.knee.value=0;l.ratio.value=20;l.attack.value=.003;l.release.value=.1;g.connect(l);l.connect(VCTX.destination);VOUT=g;}return VOUT;}  /* 2.142.5: her voice 5 % louder (Metin), a limiter keeps it from clipping */
+function playAudio(id){try{const a=new Audio(AUDIO.get(id));try{VCTX=VCTX||new (window.AudioContext||window.webkitAudioContext)();VCTX.resume();VCTX.createMediaElementSource(a).connect(voiceOut());}catch(e){}let v=false;const off=()=>{stageTalk(false);if(v){v=false;voiceOn(false);}};a.onplay=()=>{stageTalk(true);if(!v){v=true;voiceOn(true);}};a.onended=a.onpause=off;a.play().catch(off);}catch(e){}}
 let TALKING=false,DANCING=false;
 const DANCE_N=4;
 function zeigenChain(){if(!STM||STM.outfit!=='nacht')return null;const T=['ruhig','mittel','schnell'].filter(t=>clipVars('zeigen'+t).length);if(clipVars('zeigenlang').length&&(!T.length||Math.random()<.5))return ['zeigenlang'];if(!T.length)return null;const t=T[Math.floor(Math.random()*T.length)],f='zeigen'+t,o=[];
@@ -703,7 +705,7 @@ async function playStream(id,aid){let r;try{VCTX=VCTX||new (window.AudioContext|
  try{for(;;){const x=await rd.read();if(x.done)break;let u=x.value;if(rest){const m=new Uint8Array(rest.length+u.length);m.set(rest);m.set(u,rest.length);u=m;rest=null;}
   const k=u.length-(u.length%2);if(k<u.length)rest=u.slice(k);if(!k)continue;const p=u.slice(0,k);parts.push(p);n+=k;
   const s16=new Int16Array(p.buffer,0,k/2),f=new Float32Array(k/2);for(let i=0;i<f.length;i++)f[i]=s16[i]/32768;
-  const b=VCTX.createBuffer(1,f.length,24000);b.copyToChannel(f,0);const src=VCTX.createBufferSource();src.buffer=b;src.connect(VCTX.destination);
+  const b=VCTX.createBuffer(1,f.length,24000);b.copyToChannel(f,0);const src=VCTX.createBufferSource();src.buffer=b;src.connect(voiceOut());
   const now=VCTX.currentTime;if(!on){on=true;stageTalk(true);voiceOn(true);t=now+0.4;}else if(t<now+0.05)t=now+0.3;  /* a gap in the line: wait a little instead of stuttering */
   src.start(t);t+=b.duration;}}catch(e){}
  if(on)setTimeout(()=>{stageTalk(false);voiceOn(false);},Math.max(0,(t-VCTX.currentTime)*1000));

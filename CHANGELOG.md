@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.142.5 (23 Nov 2026)
+
+- Her voice replies play 5 % louder (Metin) through a gain and a limiter in Web Audio (`voiceOut`), for the streamed reply and for ▶ and touch replies alike.
+
 ## 2.142.4 (23 Nov 2026)
 
 - Music at 2 % of its volume while her voice plays (10 % was still too loud, Metin).
