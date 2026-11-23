@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.143.1 (24 Nov 2026)
+
+- Her voice replies in the chat show no text any more, only the play button (Metin); while the voice is still coming the bubble shows a speaker sign. The download link is gone with it. Without audio (after reloading the page, or when the voice failed) the text shows as before, and the history still stores the text.
+
 ## 2.143.0 (23 Nov 2026)
 
 - `feat`: the light copies are made at phone size (at most 1440 px wide, lanczos), and a phone always gets them, at home too (`PHONE` in the page: screen width times pixel ratio up to 1600). The phone got warm with the app: a 1080 px wide screen showed the 2352 x 3524 clips at less than half their pixels and still had to decode all of them, two at a time during a crossfade. Every clip wider than 1440 px now gets a copy, not only the heavy ones; the originals in the media folder stay untouched. localStorage `llight` = `aus` brings the originals back.

@@ -446,7 +446,9 @@ function chatDraw(wait){const log=document.getElementById('clog');log.innerHTML=
   if(m.role==='trash')return log.appendChild(trashCard(m,i));
   if(m.role==='remind')return log.appendChild(remindCard(m,i));
   const d=document.createElement('div');d.className='m '+(m.role==='user'?'u':'l');d.textContent=m.text;
-  if(m.aid&&AUDIO.has(m.aid)){const b=document.createElement('button');b.className='play';b.textContent='\u25B6';b.onclick=()=>playAudio(m.aid);d.appendChild(b);const sv=document.createElement('a');sv.className='play';sv.textContent='\u2B07';sv.title='Als Datei speichern';sv.href=AUDIO.get(m.aid);sv.download='leyla_'+m.aid+'.wav';d.appendChild(sv);}
+  /* 2.143.1 (Metin): her voice replies show no text, only the play button; while the voice is still coming a speaker sign. Without audio (after a reload, or when the voice failed) the text shows as before */
+  if(m.aid&&AUDIO.has(m.aid)){d.textContent='';const b=document.createElement('button');b.className='play';b.style.marginLeft='0';b.textContent='\u25B6';b.onclick=()=>playAudio(m.aid);d.appendChild(b);}
+  else if(m.aid&&VSTREAM.has(m.aid))d.textContent='🔊';
   if(m.rid&&m.voice){const b=document.createElement('button');b.className='play';b.textContent='\u25B6';b.onclick=()=>reachPlay(m.rid);d.appendChild(b);}
   if(m.role==='user')return log.appendChild(d);const r=document.createElement('div');r.className='lr';const im=document.createElement('img');im.src='/leyla.jpg';im.alt='';r.append(im,d);log.appendChild(r);});
  if(wait){const w=document.createElement('div');w.className='wait';w.textContent='Leyla schreibt ...';log.appendChild(w);}
@@ -480,7 +482,7 @@ async function chatSend(){const ta=document.getElementById('ctext'),msg=ta.value
  if(!ta.readOnly){const kb=document.getElementById('ckb');if(kb)kb.onclick();}  /* back to dictation after sending (2.140.0) */
  let j=null;const t0=performance.now();try{j=await (await post('/api/chat',{history,message:msg,rtt:CRTT,light:lightNow()})).json();}catch(e){}
  CRTT=Math.round(performance.now()-t0);chatAnswer(j);chatSave();chatDraw();snd.drop();}
-const AUDIO=new Map();let REC=null,RECT=null,DIK=null,DIKT=null,DIKQ=false;  /* DIK: dictation, DIKQ: music stays off until he sends */
+const AUDIO=new Map(),VSTREAM=new Set();let REC=null,RECT=null,DIK=null,DIKT=null,DIKQ=false;  /* DIK: dictation, DIKQ: music stays off until he sends */
 let VOUT=null;function voiceOut(){if(!VOUT){VCTX=VCTX||new (window.AudioContext||window.webkitAudioContext)();const g=VCTX.createGain(),l=VCTX.createDynamicsCompressor();
  g.gain.value=1.05;l.threshold.value=-1;l.knee.value=0;l.ratio.value=20;l.attack.value=.003;l.release.value=.1;g.connect(l);l.connect(VCTX.destination);VOUT=g;}return VOUT;}  /* 2.142.5: her voice 5 % louder (Metin), a limiter keeps it from clipping */
 function playAudio(id){try{const a=new Audio(AUDIO.get(id));try{VCTX=VCTX||new (window.AudioContext||window.webkitAudioContext)();VCTX.resume();VCTX.createMediaElementSource(a).connect(voiceOut());}catch(e){}let v=false;const off=()=>{stageTalk(false);if(v){v=false;voiceOn(false);}};a.onplay=()=>{stageTalk(true);if(!v){v=true;voiceOn(true);}};a.onended=a.onpause=off;a.play().catch(off);}catch(e){}}
@@ -685,7 +687,7 @@ async function moodLoad(){try{moodShow(await (await post('/api/mood',{})).json()
 setInterval(()=>{if(CODE&&document.getElementById('chat').style.display==='block'){moodLoad();remindPending();reachPending();}},60000);
 function chatAnswer(j){if(j&&j.silent){CHAT.push({role:'info',text:'🤐 Leyla antwortet gerade nicht.'});if(j.mood)moodShow(j.mood);return null;}
  if(!j||j.error||!j.reply){CHAT.push({role:'leyla',text:'Hmm, gerade komme ich nicht durch. Versuch es gleich nochmal.'});return null;}
- const m={role:'leyla',text:j.reply};if(j.audio||j.voice_id){m.aid='a'+Date.now();if(j.audio)AUDIO.set(m.aid,'data:audio/wav;base64,'+j.audio);}CHAT.push(m);
+ const m={role:'leyla',text:j.reply};if(j.audio||j.voice_id){m.aid='a'+Date.now();if(j.audio)AUDIO.set(m.aid,'data:audio/wav;base64,'+j.audio);else VSTREAM.add(m.aid);}CHAT.push(m);
  (j.lights||[]).forEach(t=>CHAT.push({role:'info',text:(/^(✉|📣|🧹)/.test(t)?'':'💡 ')+t}));if(j.scene)stageScene(j.scene);if(j.mood)moodShow(j.mood);if(j.email)CHAT.push({role:'mail',e:j.email});if(j.trash)CHAT.push({role:'trash',t:j.trash});(j.proposals||[]).forEach(p=>CHAT.push({role:'prop',p}));return m.aid||null;}
 function blobB64(b){return new Promise(r=>{const f=new FileReader();f.onload=()=>r(String(f.result).split(',')[1]||'');f.readAsDataURL(b);});}
 let VRTT=null;  /* 2.141.7: round trip of the last voice message */
@@ -702,8 +704,8 @@ function wavUrl(parts,n){const h=new DataView(new ArrayBuffer(44)),w=(o,t)=>{for
  w(0,'RIFF');h.setUint32(4,36+n,true);w(8,'WAVE');w(12,'fmt ');h.setUint32(16,16,true);h.setUint16(20,1,true);h.setUint16(22,1,true);
  h.setUint32(24,24000,true);h.setUint32(28,48000,true);h.setUint16(32,2,true);h.setUint16(34,16,true);w(36,'data');h.setUint32(40,n,true);
  return URL.createObjectURL(new Blob([h.buffer,...parts],{type:'audio/wav'}));}
-async function playStream(id,aid){let r;try{VCTX=VCTX||new (window.AudioContext||window.webkitAudioContext)();await VCTX.resume();r=await fetch('/api/voice/'+id);}catch(e){return;}
- if(!r.ok||!r.body)return;const rd=r.body.getReader(),parts=[];let rest=null,t=0,on=false,n=0;
+async function playStream(id,aid){let r;try{VCTX=VCTX||new (window.AudioContext||window.webkitAudioContext)();await VCTX.resume();r=await fetch('/api/voice/'+id);}catch(e){VSTREAM.delete(aid);chatDraw();return;}
+ if(!r.ok||!r.body){VSTREAM.delete(aid);chatDraw();return;}const rd=r.body.getReader(),parts=[];let rest=null,t=0,on=false,n=0;
  try{for(;;){const x=await rd.read();if(x.done)break;let u=x.value;if(rest){const m=new Uint8Array(rest.length+u.length);m.set(rest);m.set(u,rest.length);u=m;rest=null;}
   const k=u.length-(u.length%2);if(k<u.length)rest=u.slice(k);if(!k)continue;const p=u.slice(0,k);parts.push(p);n+=k;
   const s16=new Int16Array(p.buffer,0,k/2),f=new Float32Array(k/2);for(let i=0;i<f.length;i++)f[i]=s16[i]/32768;
@@ -711,7 +713,7 @@ async function playStream(id,aid){let r;try{VCTX=VCTX||new (window.AudioContext|
   const now=VCTX.currentTime;if(!on){on=true;stageTalk(true);voiceOn(true);t=now+0.4;}else if(t<now+0.05)t=now+0.3;  /* a gap in the line: wait a little instead of stuttering */
   src.start(t);t+=b.duration;}}catch(e){}
  if(on)setTimeout(()=>{stageTalk(false);voiceOn(false);},Math.max(0,(t-VCTX.currentTime)*1000));
- if(n){AUDIO.set(aid,wavUrl(parts,n));chatDraw();}}
+ if(n)AUDIO.set(aid,wavUrl(parts,n));VSTREAM.delete(aid);chatDraw();}
 document.querySelector('#chat .chead').appendChild(document.getElementById('cmic'));  // mic as a pill top right above Live (2.114.9, Metin)
 document.getElementById('cmic').onclick=async()=>{const b=document.getElementById('cmic');
  if(REC){REC.stop();return;}
