@@ -111,6 +111,8 @@ Diese Datei ist das Gedaechtnis des Projekts. Wer eine Sitzung beginnt, liest si
 - Bereitzeit nach 2.55.x gemessen: 0,99 s und 1,29 s (Basis 0,97 s).
 - Wake Word Cutoff 99 Prozent wurde am 13 Nov 2026 per Netzwerk installiert, Ergebnis noch zu pruefen.
 ## Offen
+- Geplant für 24.11.2026 (Metin, 23.11. abends): den Look Ordner "schwarz" in "lang" umbenennen, passend zu "kurz". Mit umziehen müssen: Ordner auf Z:\leyla, gespeicherte Tempo Werte und Kurven (Schlüssel "schwarz/..."), die Handy Kopien in /data/mobil samt Index, localStorage loutfit, die Liste der Looks in der Tempo Seite, Tests und Doku. Erst machen, wenn die Handy Kopien fertig gerechnet sind.
+- Offen seit 23.11.2026 abends: schwarz/freizeitpo (langes Freizeitkleid) soll durch einen passenden 4K Clip ersetzt werden, danach kurz/freizeitpo. Metin wählt den Inhalt aus drei Varianten.
 - Seit 2.141.3 Kopien mit 7 Mbit/s, Puffer 10M (Schnitt 7,4, Spitze 8,7, SSIM 99,04 %), weil bei 8 noch vereinzelt Mini Ruckler kamen.
 - Seit 2.141.4 entscheidet die stärkste Sekunde (über 9 Mbit/s), nicht der Schnitt: nacht/tanz14, 15, 23, 32, 33, 36 lagen im Schnitt unter 12, in der Spitze bei 11 bis 23 und ruckelten unterwegs.
 - Seit 2.142.0 kommt bei Sprachnachrichten der Text sofort und die Stimme spielt, während sie entsteht (vorher 15 bis 24 s Warten auf die ganze Stimme). Messwerte unter GET /api/timing.
