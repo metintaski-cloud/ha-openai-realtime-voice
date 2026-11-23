@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.142.3 (23 Nov 2026)
+
+- Music at 10 % of its volume while her voice plays (30 % was still too loud, Metin).
+
 ## 2.142.2 (23 Nov 2026)
 
 - Music at 30 % of its volume while her voice plays (half was still too loud, Metin).
