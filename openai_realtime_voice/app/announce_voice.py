@@ -53,7 +53,7 @@ class AnnounceVoiceMixin:
             await asyncio.sleep(0.1)
 
     async def _collect_speech(self, ws, prompt: str, max_s: float,
-                              instructions: str = SPEAK_INSTRUCTIONS) -> bytes:
+                              instructions: str = SPEAK_INSTRUCTIONS, on_chunk=None) -> bytes:
         """Start the speaking session on ws, send the prompt and collect the speech (PCM)."""
         pcm = bytearray()
         feeder = None
@@ -90,8 +90,12 @@ class AnnounceVoiceMixin:
                         last_audio = loop.time()
                         pcm += chunk_pcm
                         loud_end = len(pcm)
+                        if on_chunk:
+                            on_chunk(chunk_pcm)  # 2.142.0: the app plays it while she speaks
                     elif last_audio:
                         pcm += chunk_pcm  # pauses inside the speech
+                        if on_chunk:
+                            on_chunk(chunk_pcm)
                     if last_audio and loop.time() - last_audio > SPEECH_END_GAP_S:
                         break
                 elif t == "error":
@@ -106,13 +110,13 @@ class AnnounceVoiceMixin:
         return bytes(pcm[:loud_end + BYTES_PER_SEC // 4])  # drop trailing silence
 
     async def _speak_once(self, prompt: str, max_s: float = 40.0,
-                          instructions: str = SPEAK_INSTRUCTIONS) -> bytes:
+                          instructions: str = SPEAK_INSTRUCTIONS, on_chunk=None) -> bytes:
         """Let GPT Live speak one announcement without a listener; return 24 kHz PCM.
         `instructions`: who speaks; the default is the announcement voice, a voice reply in
         the app chat passes Leyla talking to Metin (2.98.7)."""
         ws, _ = await self._take_live()
         try:
-            pcm = await self._collect_speech(ws, prompt, max_s, instructions)
+            pcm = await self._collect_speech(ws, prompt, max_s, instructions, on_chunk)
         finally:
             await ws.close()
         logger.info("Announcement audio: %.1f s", len(pcm) / BYTES_PER_SEC)

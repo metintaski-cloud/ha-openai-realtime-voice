@@ -20,7 +20,7 @@ import time
 import os
 from typing import Optional
 
-from app import day, memory, ticker
+from app import day, memory, ticker, voice_stream
 
 logger = logging.getLogger(__name__)
 
@@ -680,15 +680,33 @@ async function moodLoad(){try{moodShow(await (await post('/api/mood',{})).json()
 setInterval(()=>{if(CODE&&document.getElementById('chat').style.display==='block'){moodLoad();remindPending();reachPending();}},60000);
 function chatAnswer(j){if(j&&j.silent){CHAT.push({role:'info',text:'🤐 Leyla antwortet gerade nicht.'});if(j.mood)moodShow(j.mood);return null;}
  if(!j||j.error||!j.reply){CHAT.push({role:'leyla',text:'Hmm, gerade komme ich nicht durch. Versuch es gleich nochmal.'});return null;}
- const m={role:'leyla',text:j.reply};if(j.audio){m.aid='a'+Date.now();AUDIO.set(m.aid,'data:audio/wav;base64,'+j.audio);}CHAT.push(m);
+ const m={role:'leyla',text:j.reply};if(j.audio||j.voice_id){m.aid='a'+Date.now();if(j.audio)AUDIO.set(m.aid,'data:audio/wav;base64,'+j.audio);}CHAT.push(m);
  (j.lights||[]).forEach(t=>CHAT.push({role:'info',text:(/^(✉|📣|🧹)/.test(t)?'':'💡 ')+t}));if(j.scene)stageScene(j.scene);if(j.mood)moodShow(j.mood);if(j.email)CHAT.push({role:'mail',e:j.email});if(j.trash)CHAT.push({role:'trash',t:j.trash});(j.proposals||[]).forEach(p=>CHAT.push({role:'prop',p}));return m.aid||null;}
 function blobB64(b){return new Promise(r=>{const f=new FileReader();f.onload=()=>r(String(f.result).split(',')[1]||'');f.readAsDataURL(b);});}
 let VRTT=null;  /* 2.141.7: round trip of the last voice message */
 async function voiceSend(blob,mime){const history=CHAT.filter(m=>m.role==='user'||m.role==='leyla').map(m=>({role:m.role,text:m.text}));
  const u={role:'user',text:'🎤 ...'};CHAT.push(u);chatSave();chatDraw(true);snd.on();
- let j=null;const t0=performance.now();try{j=await (await post('/api/chat_voice',{history,audio:await blobB64(blob),mime,rtt:VRTT,light:lightNow()})).json();}catch(e){}VRTT=Math.round(performance.now()-t0);
+ let j=null;const t0=performance.now();try{j=await (await post('/api/chat_voice',{history,audio:await blobB64(blob),mime,rtt:VRTT,light:lightNow(),stream:true})).json();}catch(e){}VRTT=Math.round(performance.now()-t0);
  if(j&&j.heard){u.text='🎤 '+j.heard;}else{u.text='🎤 (nicht verstanden)';}
- const aid=(j&&j.heard)?chatAnswer(j):null;chatSave();chatDraw();snd.drop();if(aid)playAudio(aid);}
+ const aid=(j&&j.heard)?chatAnswer(j):null;chatSave();chatDraw();snd.drop();if(aid&&j.voice_id)playStream(j.voice_id,aid);else if(aid)playAudio(aid);}
+/* 2.142.0 (Metin on the go: a voice reply took 20 to 30 s, of which 15 to 24 s the server waited for the whole voice):
+   the text comes at once and her voice plays while it is still being spoken, 24 kHz PCM from /api/voice/<id> through
+   Web Audio; at the end the whole reply is kept as a WAV for the play button and the download */
+let VCTX=null;
+function wavUrl(parts,n){const h=new DataView(new ArrayBuffer(44)),w=(o,t)=>{for(let i=0;i<4;i++)h.setUint8(o+i,t.charCodeAt(i));};
+ w(0,'RIFF');h.setUint32(4,36+n,true);w(8,'WAVE');w(12,'fmt ');h.setUint32(16,16,true);h.setUint16(20,1,true);h.setUint16(22,1,true);
+ h.setUint32(24,24000,true);h.setUint32(28,48000,true);h.setUint16(32,2,true);h.setUint16(34,16,true);w(36,'data');h.setUint32(40,n,true);
+ return URL.createObjectURL(new Blob([h.buffer,...parts],{type:'audio/wav'}));}
+async function playStream(id,aid){let r;try{VCTX=VCTX||new (window.AudioContext||window.webkitAudioContext)();await VCTX.resume();r=await fetch('/api/voice/'+id);}catch(e){return;}
+ if(!r.ok||!r.body)return;const rd=r.body.getReader(),parts=[];let rest=null,t=0,on=false,n=0;
+ try{for(;;){const x=await rd.read();if(x.done)break;let u=x.value;if(rest){const m=new Uint8Array(rest.length+u.length);m.set(rest);m.set(u,rest.length);u=m;rest=null;}
+  const k=u.length-(u.length%2);if(k<u.length)rest=u.slice(k);if(!k)continue;const p=u.slice(0,k);parts.push(p);n+=k;
+  const s16=new Int16Array(p.buffer,0,k/2),f=new Float32Array(k/2);for(let i=0;i<f.length;i++)f[i]=s16[i]/32768;
+  const b=VCTX.createBuffer(1,f.length,24000);b.copyToChannel(f,0);const src=VCTX.createBufferSource();src.buffer=b;src.connect(VCTX.destination);
+  const now=VCTX.currentTime;if(!on){on=true;stageTalk(true);t=now+0.4;}else if(t<now+0.05)t=now+0.3;  /* a gap in the line: wait a little instead of stuttering */
+  src.start(t);t+=b.duration;}}catch(e){}
+ if(on)setTimeout(()=>stageTalk(false),Math.max(0,(t-VCTX.currentTime)*1000));
+ if(n){AUDIO.set(aid,wavUrl(parts,n));chatDraw();}}
 document.querySelector('#chat .chead').appendChild(document.getElementById('cmic'));  // mic as a pill top right above Live (2.114.9, Metin)
 document.getElementById('cmic').onclick=async()=>{const b=document.getElementById('cmic');
  if(REC){REC.stop();return;}
@@ -1463,6 +1481,16 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                 _kurve_set(n, d.get("segs") or [])
                 logger.info("Tempo curve: %s -> %s", n, d.get("segs"))
             await _respond(writer, "200 OK", "application/json", json.dumps({"ok": bool(n)}))
+        elif method == "GET" and path.startswith("/api/voice/"):
+            st = voice_stream.get(path.rsplit("/", 1)[1])
+            if st is None:
+                await _respond(writer, "404 Not Found", "text/plain", "")
+            else:  # raw 24 kHz PCM as it is spoken, the end of the body is the end of the voice
+                writer.write(b"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\n"
+                             b"Cache-Control: no-store\r\nConnection: close\r\n\r\n")
+                async for chunk in st.read():
+                    writer.write(chunk)
+                    await writer.drain()
         elif method == "GET" and path == "/api/timing":
             await _respond(writer, "200 OK", "application/json", json.dumps(list(TIMING)))
         elif method == "GET" and path == "/api/mobil":
@@ -1539,7 +1567,8 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
             out = None
             if unlocked and voice:
                 try:
-                    out = await voice(d.get("history"), d.get("audio"), d.get("mime"))
+                    args = (d.get("history"), d.get("audio"), d.get("mime"))
+                    out = await (voice(*args, stream=True) if d.get("stream") else voice(*args))
                 except Exception as e:
                     logger.warning("Voice message failed: %s", e)
             if isinstance(out, dict):

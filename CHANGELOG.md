@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.142.0 (23 Nov 2026)
+
+- `feat`: voice messages in the app answer while Leyla is still speaking. Measured on the go: hearing about 1 s, answer 3 to 6 s, voice 15 to 24 s (the server waited for the whole reply), the line about 1 s. Now the text comes back at once with a `voice_id`, the voice is spoken in the background (`app/voice_stream.py`, `_speak_once(on_chunk=)`) and the phone plays the 24 kHz PCM from `GET /api/voice/<id>` through Web Audio as it arrives; at the end the whole reply is kept as a WAV for ▶ and ⬇. Tested in headless Chrome: her voice starts 0.24 s after the first piece arrives.
+
 ## 2.141.9 (23 Nov 2026)
 
 - `fix`: the timing in 2.141.7 landed in the dictation instead of the voice message, so every voice message failed with "t1 not defined" and showed "nicht verstanden". Fixed, with a test that runs the whole voice path.

@@ -36,7 +36,7 @@ import dotenv
 import websockets
 
 from app.audio_recorder import AudioRecorder
-from app import agenda, day, diary, gcontacts, textmodel, heart, ideas, inbox, mail, memory, memory_web, mood, reach, reminders, variety
+from app import agenda, day, diary, gcontacts, textmodel, heart, ideas, inbox, mail, memory, memory_web, mood, reach, reminders, variety, voice_stream
 
 # Scene concept 2.0 (2.104.0): her feelings come from what really happens (app/heart.py); env
 # LEYLA_HEART=0 brings back the old dice of app/mood.py as a safety net.
@@ -485,7 +485,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                     "understood" if heard else "nothing understood")
         return {"heard": heard}
 
-    async def _chat_voice(self, history, audio_b64, mime) -> Optional[dict]:
+    async def _chat_voice(self, history, audio_b64, mime, stream=False) -> Optional[dict]:
         """A voice message from Metin in the memory app: text, Leyla's answer, her voice."""
         try:
             audio = base64.b64decode(audio_b64 or "", validate=False)
@@ -505,10 +505,28 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         out["t"] = {"hoeren": int((t1 - t0) * 1000), "antwort": int((t2 - t1) * 1000)}
         if not out.get("reply"):
             return out  # she is silent: no voice either
+        prompt = chat.speak_prompt(out["reply"])
+        instructions = chat.voice_reply_instructions(self.mood.feeling(), UNLOCKED_LOVE)
+        if stream:
+            # 2.142.0: the text goes out now, the phone fetches the voice while it is spoken
+            sid, st = voice_stream.new()
+            out["voice_id"] = sid
+
+            async def speak():
+                try:
+                    pcm = await self._speak_once(prompt, max_s=60.0, instructions=instructions,
+                                                 on_chunk=st.push)
+                    logger.info("Voice reply streamed: %.1f s", len(pcm) / BYTES_PER_SEC)
+                except Exception as e:
+                    logger.warning("Voice reply could not be spoken: %s", e)
+                finally:
+                    st.finish()
+
+            self._voice_task = asyncio.create_task(speak())
+            out["t"]["stimme"] = 0
+            return out
         try:
-            pcm = await self._speak_once(
-                chat.speak_prompt(out["reply"]), max_s=60.0,
-                instructions=chat.voice_reply_instructions(self.mood.feeling(), UNLOCKED_LOVE))
+            pcm = await self._speak_once(prompt, max_s=60.0, instructions=instructions)
             if pcm:
                 out["audio"] = base64.b64encode(messages.pcm_to_wav(pcm)).decode("ascii")
         except Exception as e:
