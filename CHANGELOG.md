@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.141.4 (23 Nov 2026)
+
+- `fix`: whether a clip gets a light copy is now decided by its strongest second, not its average. nacht/tanz14 averages 10 Mbit/s (under the old limit of 12) but peaks at 16, tanz32/33/36 peak at 20 to 23, and they stalled on the go (Metin 23.11.2026). Every clip whose strongest second is above 9 Mbit/s now gets a copy; copies already made at 7M are kept.
+
 ## 2.137.2 (22 Nov 2026)
 
 - `fix`: the cadence was counted as peaks in the movement, which is too coarse for a dance (a dance keeps the change high all the way through and shows hardly any peaks), so the numbers came out far too small. It is now found the way a tempo detector works on music, by laying the signal over itself, and it comes with `conf`, how clear the repetition is. Only a clear cadence sets a factor.

@@ -18,7 +18,8 @@ import os
 
 logger = logging.getLogger(__name__)
 
-HEAVY = 12_000_000        # bit/s; clips below play smoothly on the go already
+HEAVY = 9_000_000         # bit/s in the strongest second (2.141.4: the average hid peaks; nacht/tanz36
+                          # averages 16 but peaks at 23, tanz14 averages 10 and peaks at 16, both stalled)
 MAX_RATE = "7M"           # 2.141.3: 8M still gave a mini stutter now and then; 7M averages 7.4 and peaks at
 BUF = "10M"               # 8.7 Mbit/s (2.141.1: 10M had peaked at 13, above Metin's limit of about 11)
 PROBE_TIMEOUT = 30.0
@@ -26,12 +27,27 @@ ENCODE_TIMEOUT = 1800.0
 RESCAN_S = 1800
 
 
+def peak_of(packets: str) -> int:
+    """ffprobe "pts_time,size" lines -> bit/s of the fullest one second window."""
+    per = {}
+    for line in packets.splitlines():
+        parts = line.strip().split(",")
+        if len(parts) < 2:
+            continue
+        try:
+            sec, size = int(float(parts[0])), int(parts[1])
+        except ValueError:
+            continue
+        per[sec] = per.get(sec, 0) + size
+    return max(per.values()) * 8 if per else 0
+
+
 class Mobil:
     def __init__(self, folder_of, out_dir: str = "/data/mobil"):
         self.folder_of = folder_of        # () -> {"look/clip": path of the original}
         self.out_dir = out_dir
         self.index_path = os.path.join(out_dir, "index.json")
-        self.index = {}                   # "look/clip" -> {"stamp": mtime, "rate": bit/s}
+        self.index = {}                   # "look/clip" -> {"stamp": mtime, "peak": bit/s, "cap": rate}
         self.busy = ""
         self.done = 0
         self.failed = []
@@ -73,23 +89,23 @@ class Mobil:
 
     def status(self) -> dict:
         paths = self.folder_of()
-        heavy = [n for n, m in self.index.items() if m.get("rate", 0) > HEAVY and n in paths]
+        heavy = [n for n, m in self.index.items() if m.get("peak", 0) > HEAVY and n in paths]
         ready = [n for n in heavy if self.copy_for(n, paths[n])]
         return {"heavy": len(heavy), "ready": len(ready), "busy": self.busy,
                 "failed": self.failed[-10:], "max_rate": MAX_RATE}
 
     # --- work -------------------------------------------------------------------
     async def _probe(self, path: str) -> int:
+        """Bit/s of the strongest second of the picture: that is what has to fit through the line."""
         try:
             p = await asyncio.create_subprocess_exec(
                 "ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries",
-                "stream=bit_rate:format=bit_rate", "-of", "csv=p=0", path,
+                "packet=pts_time,size", "-of", "csv=p=0", path,
                 stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL)
             out, _ = await asyncio.wait_for(p.communicate(), timeout=PROBE_TIMEOUT)
         except (OSError, asyncio.TimeoutError):
             return 0
-        nums = [int(x) for x in out.decode().replace("\n", ",").split(",") if x.strip().isdigit()]
-        return max(nums) if nums else 0
+        return peak_of(out.decode())
 
     async def _encode(self, src: str, dst: str) -> bool:
         os.makedirs(os.path.dirname(dst), exist_ok=True)
@@ -124,8 +140,11 @@ class Mobil:
             except OSError:
                 continue
             m = self.index.get(name)
-            if not m or m.get("stamp") != stamp:
-                self.index[name] = {"stamp": stamp, "rate": await self._probe(path)}
+            if not m or m.get("stamp") != stamp or "peak" not in m:
+                cap = m.get("cap") if m and m.get("stamp") == stamp else None
+                self.index[name] = {"stamp": stamp, "peak": await self._probe(path)}
+                if cap:
+                    self.index[name]["cap"] = cap
         for name in [n for n in self.index if n not in paths]:
             self.index.pop(name, None)
             try:
@@ -134,7 +153,7 @@ class Mobil:
                 pass
         self._save()
         for name, m in sorted(self.index.items()):
-            if m.get("rate", 0) <= HEAVY:
+            if m.get("peak", 0) <= HEAVY:
                 continue
             if self.copy_for(name, paths[name]) and m.get("cap") == MAX_RATE:
                 continue           # an older copy stays served until the new one is ready

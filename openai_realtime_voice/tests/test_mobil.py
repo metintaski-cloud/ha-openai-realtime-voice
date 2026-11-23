@@ -111,3 +111,34 @@ def test_copies_from_an_older_cap_are_made_again(tmp_path):
     asyncio.run(m.scan())
     assert made.count(paths["schwarz/schwer"]) == 2
     assert m.index["schwarz/schwer"]["cap"] == mobil.MAX_RATE
+
+
+def test_peak_not_average_decides(tmp_path):
+    """2.141.4: nacht/tanz14 averages 10 Mbit (under the old limit of 12) but peaks at 16 and stalled."""
+    lines = "\n".join(f"{i/24:.3f},{(80_000 if 48 <= i < 72 else 40_000)}" for i in range(240))
+    assert mobil.peak_of(lines) == 24 * 80_000 * 8
+    assert mobil.peak_of("") == 0 and mobil.peak_of("N/A,12\nbad") == 0
+
+
+def test_old_index_entries_are_measured_again_and_keep_their_copy(tmp_path):
+    m, paths = _setup(tmp_path)
+    made = []
+
+    async def probe(path):
+        return 16_000_000
+
+    async def encode(src, dst):
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        open(dst, "wb").write(b"light")
+        made.append(src)
+        return True
+
+    m._probe, m._encode = probe, encode
+    asyncio.run(m.scan())
+    made.clear()
+    for v in m.index.values():
+        v.pop("peak")
+        v["rate"] = 10_000_000
+    asyncio.run(m.scan())
+    assert all(v["peak"] == 16_000_000 for v in m.index.values())
+    assert made == [], "copies already made at the current cap are kept"
