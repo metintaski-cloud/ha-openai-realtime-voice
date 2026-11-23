@@ -19,8 +19,8 @@ import os
 logger = logging.getLogger(__name__)
 
 HEAVY = 12_000_000        # bit/s; clips below play smoothly on the go already
-MAX_RATE = "8M"           # 2.141.1: with 10M the copies still peaked at 13 Mbit/s in single seconds,
-BUF = "8M"                # above Metin's limit of about 11; a tight buffer keeps the peaks under 10
+MAX_RATE = "7M"           # 2.141.3: 8M still gave a mini stutter now and then; 7M averages 7.4 and peaks at
+BUF = "10M"               # 8.7 Mbit/s (2.141.1: 10M had peaked at 13, above Metin's limit of about 11)
 PROBE_TIMEOUT = 30.0
 ENCODE_TIMEOUT = 1800.0
 RESCAN_S = 1800
