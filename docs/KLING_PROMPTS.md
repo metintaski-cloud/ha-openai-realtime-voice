@@ -265,3 +265,111 @@ Folgen fuer die Prompts:
 - Nachtraeglich korrigierbar ist nur, was wir im Browser ohne Neu Rendern machen koennen:
   ein Tempo pro Clip (`r`) und eine Tempokurve fuer Stuecke im Clip (`k`), beides im Tempo
   Tester unter /tempo einstellbar.
+
+## Profi Wissen Kling 4.0 (sechste Recherche, 23.11.2026, Metin: "Nur Profi Wissen, nichts selbst erfinden")
+
+Gelesen wurden: die offizielle Kling 4.0 Anleitung (kling.ai/quickstart, vollständig), das offizielle API Handbuch und der offizielle Prompt Guide im Entwicklerbereich (dort stehen die Schreibregeln und die vollständigen Beispielprompts des Kling Teams), der offizielle Leitfaden zu Multiple Keyframes, die offizielle Motion Control Anleitung, die Anleitungen von fal.ai (API Anbieter, der Kling 4.0 produktiv betreibt) und acht GitHub Sammlungen. Jede Regel unten trägt ihre Herkunft: **[Kling]** = offizielle Kling Quelle, **[fal]** = fal.ai, **[Test]** = veröffentlichter Praxistest Dritter, **[GitHub]** = Community Handbuch, nur aufgenommen, wo es zu den offiziellen Aussagen passt. Was ich daraus für Leyla ableite, steht getrennt am Ende und ist als Ableitung gekennzeichnet.
+
+### 1. Erst die Steuerart wählen, dann schreiben
+
+Profis fragen zuerst, womit sich das Ergebnis steuern lässt, und erst danach, was im Text steht. **[fal]** nennt es so: jedes Eingangsmaterial bekommt genau eine Aufgabe.
+
+| Was vorliegt | Steuerart | Was der Text dann leisten muss |
+|---|---|---|
+| ein Startbild | Bild zu Video | was nach genau diesem Bild passiert |
+| Anfangs und Endzustand | erstes und letztes Bild | die Bewegung, die beide verbindet |
+| mehrere Momente, die sitzen müssen | mehrere Keyframes | Reihenfolge, Übergänge, was gleich bleibt |
+| Figur, Stil oder Bewegung als Vorlage | Omni Reference | was jede Vorlage steuert und was nicht |
+| fertiges Video, das geändert werden soll | Video bearbeiten | was sich ändert und was bleibt |
+
+Die App hat zwei Eingänge **[Kling]**: "Keyframes" (nur Bilder, bildgenaue Treue zu den Keyframes) und "Omni Reference" (Bilder, Videos, Elemente, Stimmen, bis 15 Vorlagen). Im Eingang Keyframes lassen sich keine Vorlagen hochladen. Omni Reference kann zusätzlich ein Bild als erstes Bild bekommen; das offizielle Beispiel schreibt sinngemäß: Bild 1 ist das erste Bild, Video 1 ist die Vorlage für Kamera, Bewegung, Timing und Schnitte.
+
+### 2. Zeitpunkt einer Bewegung: Keyframes, nicht Worte
+
+Das ist die wichtigste Stelle für unser Tempo Problem. **[Kling]** schreibt im API Handbuch unter Action and Expression: Wenn ein bestimmter Zeitpunkt nötig ist, bindet man ihn an Keyframes, Beispiel Hand heben in Sekunde 3, umdrehen in Sekunde 7. Ohne Keyframes entscheidet das Modell selbst über Reihenfolge und Zeitpunkt.
+
+- Zeitangaben im Text ("0 bis 3 s: ...") sind Regieanweisung und keine bildgenaue Zusage **[fal]**. Deshalb kamen unsere Sekundenangaben nie genau.
+- Bis zu 10 Keyframes, an beliebigen Stellen der Zeitachse. Offizielles Format für Zwischenbilder: pro Zeile der Zeitbereich und das zugehörige Bild, dann was an dieser Stelle passiert und wie die Kamera dorthin kommt, zum Beispiel `0–2.1s @Image1 ...`, `2.1–4.3s @Image2 ...` **[Kling]**.
+- Ein Keyframe ist ein Moment, den der Zuschauer an dieser Stelle sehen muss. Wenn sich nichts Wichtiges ändert, kein weiteres Keyframe; zu viele machen die Abfolge schwerer zu steuern **[Kling]**.
+- Vier Fehler, die Kling selbst nennt: zu viele Keyframes, zu viele Änderungen in einem Keyframe (Figur, Umgebung, Kamera, Licht zugleich), uneinheitliche Bilder, und ein Text, dessen Reihenfolge den Keyframes widerspricht. Erst die Zeitachse planen, dann den Text daran entlang schreiben **[Kling]**.
+- Aufgabenteilung in einem Satz: Keyframes zeigen die wichtigen Momente, der Text erklärt den Weg dazwischen **[Kling]**.
+
+### 3. Tempo, Takt und Choreografie: Referenzvideo, nicht Worte
+
+Für Bewegung nach Vorgabe gibt es bei Kling zwei Werkzeuge, und beide nehmen ein Video als Vorlage.
+
+**Omni Reference mit Bewegungsvideo (Kling 4.0)** **[Kling]**
+- Ein Referenzvideo kann Darstellung, Bewegung, Kamera und Erzähltempo vorgeben. Auch Videos aus einem untexturierten 3D Rohmodell (White Model) und Tiefenkarten Videos werden angenommen, für genauere Kontrolle über Bewegung, Kamera und Timing.
+- Offizielle Schreibweise für Bewegung: `Reference the fighting moves and attack timing in @Video1. Use @Image1 and @Image2 as the character design references.` Für die Kamera entsprechend Kamerapfad und Tempo von @Video1.
+- Jede Vorlage braucht eine Rolle, und es muss dastehen, was nicht übernommen werden soll (Person, Kleidung, Hintergrund des Videos). Ohne Rolle rät das Modell.
+- Bis 5 Videos, zusammen höchstens 30 s, jedes 3 bis 30 s.
+- Kreatives Nachbauen: Tempo, Bildaufbau oder Präsentationsart eines Videos übernehmen und Figur oder Produkt austauschen. Kürzeste offizielle Form: `Replace the subject in @Video1 with @Image1. Keep everything else unchanged.` Je näher Vorlage und Ziel im Tempo und Aufbau liegen, desto besser.
+- Ein Bewegungsvideo sichert das Aussehen nicht mit: Kling nennt für Videos Bewegung und Tempo als Aufgabe, nicht die Identität. Gesicht deshalb immer gegen das Bild prüfen **[fal]**.
+- Abrechnung mit Videoeingang über die API: Eingangs und Ausgangssekunden zählen, mindestens das Doppelte der Ausgangslänge **[fal]**. In der App vor Generate den Preis am Knopf lesen.
+
+**Motion Control (eigenes Werkzeug, Modell VIDEO 3.0)** **[Kling]**
+- Überträgt Bewegung und Mimik aus einem Video auf die Figur im Bild. Für Kling 4.0 gibt es kein eigenes Motion Control **[GitHub, aus der offiziellen Modellliste]**; in Metins Konto steht es unter Tools (geprüft 23.11.2026).
+- Vorlage: eine Person, ganzer Körper und Kopf sichtbar, ein durchgehender Take, keine Schnitte, keine Kamerabewegung, mäßiges Tempo, 3 bis 30 s. Zu schnelle oder komplexe Bewegung kann die Ausgabe kürzen, die Credits kommen dann nicht zurück.
+- Bild im gleichen Ausschnitt wie das Video (Ganzkörper zu Ganzkörper), genug Platz um die Figur für große Bewegungen.
+- Zwei Ausrichtungen **[Kling]**: der Vorlage folgen (Bewegung, Mimik, Kamera und Körperrichtung aus dem Video) oder dem Bild folgen (Richtung bleibt wie im Bild, Kamera über den Text). Für Tanz und Choreografie der Vorlage folgen, dann sind bis 30 s möglich, beim Bild folgen nur bis 10 s **[fal]**.
+- Der Text beschreibt hier Umgebung, Licht und Stil, nicht die Bewegung; Bewegung im Text ist der häufigste Fehler **[fal]**.
+- Gesichtstreue: "Bind Facial Element" unter dem Figurenbild, nutzt nur das Gesicht, Kleidung und Frisur kommen aus dem Bild.
+- Kosten **[Kling]**: 12 Credits pro Sekunde Professional, 9 Standard. Ausgabe 720p oder 1080p, kein 4K **[GitHub, maciejdzierzek, Modellübersicht November 2026]**; das widerspricht unserer 4K Regel und spricht für den Weg über Omni Reference.
+
+**Was Text allein bei Tanz leistet** **[Test]**: Ein Praxistest (ifeng, Oktober 2026, Tanz mit langen Ärmeln und Trommeln) bekam ein bestimmtes Choreografie Detail in Kling 4.0 auch nach sieben bis acht Runden nicht durchgehend hin, obwohl die Tester den Text immer genauer machten und die 15 Sekunden in Abschnitte zerlegten. Das deckt sich mit unserer Messung vom 22./23.11.: kein Clip hat einen Takt.
+
+### 4. So schreibt das Kling Team selbst
+
+Aus den vollständigen Beispielprompts im offiziellen Prompt Guide und den Schreibregeln im API Handbuch **[Kling]**:
+
+- **Kurz anfangen.** Erst ein Satz mit Subjekt, Szene, Handlung und Gefühl. Danach nur ergänzen, was das Ergebnis wirklich ändert: Kamera, Timing, Ton, was erhalten bleiben muss. Länger ist nicht besser.
+- **Sichtbares statt Wertungen.** Abstrakte Wörter (edel, filmisch, vintage) durch das ersetzen, was eine Kamera sieht: Lichtrichtung, Material, Farbe, Gegenstände. Zustand und Gefühl einer Figur über beobachtbare Handlungen beschreiben.
+- **Positiv statt Verbote.** Verneinungen vermeiden, sie können Fehler vermehren. Wirklich nötig sind nur zwei, weil das Modell beides von selbst hinzufügen kann: keine Untertitel, keine Hintergrundmusik. Statt "Gesicht nicht zeigen" schreibt man "im Profil".
+- **Feste Tatsachen statt Verbotslisten.** Die langen offiziellen Beispiele enden mit einem Block positiver Bedingungen in Tatsachenform (genau eine Figur, genau ein Gegenstand, das letzte Bild gleicht der Vorlage). Mengen werden zuerst festgenagelt.
+- **Zählen statt umschreiben.** Bewegungen stehen mit Anzahl da: drei gezielte Hammerschläge, die Finger einmal krümmen, einmal blinzeln, ein kleiner Schwung nach vorn und zurück in die Ruhe.
+- **Unterteilte Sekunden.** Innerhalb eines Abschnitts wird feiner gegliedert (zum Beispiel 0,0 bis 0,6 s greifen, 0,6 bis 1,5 s anheben, 1,5 bis 3,0 s wegtragen).
+- **Ausdrückliches Halten am Ende.** Die Beispiele reservieren das Ende für Stillstand: die letzte halbe Sekunde vollkommen ruhig, die Kamera setzt sich auf das letzte Bild, der Gegenstand liegt regungslos in der Endposition.
+- **Tempo als Eigenschaft der Bewegung.** Formulierungen aus den Beispielen: einzelne Handlungen behalten natürliches Gewicht und Tempo; die Kamera beschleunigt und bremst natürlich, ohne Schnitte und ohne Abspieltempo Effekte; natürliches Gehtempo und keine Zeitlupe; Tempo verringern vor dem Absetzen.
+- **Physik eigens benennen.** Gewicht, Kontakt, Trägheit, wer was stützt, was sich nicht durchdringt.
+- **Gliederung für große Aufnahmen.** Wiederkehrende Blöcke in den offiziellen Langbeispielen: Szene, aktive Vorlagen mit Rolle, Lageplan, erstes Bild und Stellung, Format, Optik, Kamera, Zeitablauf, Physik, Licht, Ton, Schauspiel, Stil, Qualität, positive Bedingungen. Das ist ein Muster, keine Pflicht.
+- **Aufbau für Omni Reference:** Rollen der Vorlagen, Gesamteinstellung (Szene, Stil, Kameraton), Ablauf in Zeitabschnitten, Ton.
+- **Offizielle Formel aus der Ankündigung:** Subjekt, Handlung, Ort, Kamera, Licht, Tempo, Ton.
+- **Eine Hauptbewegung der Kamera pro Einstellung**, und nie zwei, die sich widersprechen (fest und gleichzeitig Umkreisen) **[fal]**.
+- **Wenn das Ergebnis nicht passt** **[Kling]**: zuerst prüfen, ob jede Vorlage eine Rolle hat, dann abstrakte Wörter ersetzen, dann die @ Verweise kontrollieren.
+
+### 5. Start und Endbild wie in einer Produktion
+
+- **[fal]** Endbild zuerst erzeugen und das Startbild daraus ableiten (gleiche Kameraposition, nur der Zustand ändert sich), damit alles andere identisch bleibt. Im Text landet der Clip für die letzten zwei Sekunden auf dem Bildaufbau des Endbilds.
+- **[Kling]** Erstes Bild: beschreiben, was danach passiert. Letztes Bild: beschreiben, was davor passiert. Beide zusammen legen Anfang und Ende fest.
+- **[Kling]** Was sich gegenüber dem Bild stark unterscheidet, kann einen Schnitt auslösen; Bewegungen wählen, die zum Bild passen. Komplexe Physik (springender Ball, Wurfbahn) gelingt schlecht.
+- **[GitHub, Yuyyxz, passt zur offiziellen Logik von Zustand A nach B]** Das Modell rechnet von Zustand zu Zustand. Ein Startbild soll Spannung haben, aber noch keinen Höhepunkt zeigen. Pro Abschnitt eine Hauptänderung und höchstens eine Nebenänderung. Sind Start und Endbild fast gleich, fehlt dem Modell das Ziel, und es bewegt sich beliebig; dann braucht es Zwischenbilder oder eine Bewegungsvorlage.
+- **[GitHub, flaqai]** Die letzten ein bis zwei Sekunden für Abbremsen und ein brauchbares Endbild einplanen.
+- **Schleifen:** Die offiziellen Kling Quellen sagen dazu nichts. Belegt ist nur die Praxis gleiches Bild als Start und Ende plus kurze Überblendung von 0,3 bis 0,5 s **[GitHub, maciejdzierzek]**.
+
+### 6. Arbeitsweise
+
+- **[fal]** Gegen einen sichtbaren Fehler arbeiten und pro Versuch nur eine Sache ändern; Prompt, Vorlagen, Reihenfolge und Einstellungen zusammen aufheben.
+- **[fal]** Wirkt eine Szene gehetzt: ein Ereignis streichen, statt einen Absatz hinzuzufügen. Läuft das Tempo weg: die Zeitachse vereinfachen.
+- **[Kling]** Die ganze Abfolge prüfen, nicht Einzelbilder, und nur den Teil nachbessern, der es braucht.
+- **[fal, Kling]** Profis testen Bewegung billig (720p oder Flash) und rendern erst dann final. Flash kann aber kein letztes Bild und keine mehreren Keyframes. Metins Regel bleibt: bei uns direkt 4K, weil wir Start und Endbild brauchen.
+- Kling 4.0 gibt 24 Bilder pro Sekunde aus (API Doku laut **[GitHub, maciejdzierzek]**, von uns an den eigenen Dateien gemessen). Über die offizielle Schnittstelle erzeugte Dateien werden 30 Tage aufbewahrt **[Kling]**, also zeitnah sichern.
+- **[GitHub, Yuyyxz, als Beobachtung gekennzeichnet, deckt sich mit Kling]** Vorlagen wiegen dort, wo sie sich mit dem Text überschneiden, schwerer als der Text; der Text soll nur tragen, was ein Bild nicht kann: Zeit, Kamera, Ton, Bedingungen. Ein verneintes Wort ruft seinen Begriff trotzdem auf (unsere Brille vom 22.11.). Fehler wachsen mit der Cliplänge. Was klein im Bild ist (Gesicht in der Totalen, Hände), verliert zuerst Details.
+
+### 7. Was sich an unseren bisherigen Regeln ändert
+
+| Bisher im Dokument | Stand nach dieser Recherche |
+|---|---|
+| Musikrichtung im Prompt bestimmt den Rhythmus | Nicht belegt und von unserer Messung widerlegt. Rhythmus kommt aus einem Referenzvideo, Zeitpunkte aus Keyframes. |
+| Tempo Zeile "never slow motion" in jeden Prompt | Bleibt als Schutz vor Zeitlupe, aber positiv formuliert wie in den offiziellen Beispielen (natürliches Gewicht und Tempo jeder Handlung). Einen Takt erzeugt sie nicht. |
+| Sekundenangaben steuern den Ablauf | Sie sind Regie, keine Zusage. Was sitzen muss, bekommt ein Keyframe. |
+| Alte Clips 1:1 nachbauen über genauere Beschreibungen (sieben Versuche, rund 2.450 Credits) | Der offizielle Weg ist der alte Clip als Bewegungsvorlage. |
+| Vier Versuche pro Clip einplanen | Bleibt abgeschafft. Stattdessen pro Versuch genau eine Änderung gegen einen benannten Fehler. |
+
+### 8. Ableitung für Leyla (meine Anwendung der Quellen, noch nicht getestet)
+
+1. **Alte Lieblingsclips in 4K neu, ohne die Bewegung neu zu erfinden.** Alter Clip als @Video1, das 4K Outfitbild als @Image1, Rolle: Bewegung und Timing aus dem Video, Aussehen aus dem Bild, nichts sonst aus dem Video übernehmen. Das ist genau der Fall Action Reference beziehungsweise Kreatives Nachbauen. Betrifft die 217 alten Clips und den Nachbau von tanz8 und tanz9.
+2. **Ein Takt für alle Tänze.** Eine einzige Tanzvorlage im gewünschten Tempo (Metins Musik liegt bei 100 bpm) als Bewegungsvideo für alle Tanzclips einer Gruppe. Dann stammt der Takt aus derselben Quelle.
+3. **Das Skalpell.** Wenn eine Stelle im Clip zu einer bestimmten Sekunde sitzen muss, ein Zwischenbild für diese Sekunde setzen, statt hinterher Tempo zu verbiegen. Zwischenbilder lassen sich aus guten Clips ziehen (Extract Frames).
+4. **Beim ersten gemeinsamen Test zu prüfen, bevor Credits fließen:** ob Omni Reference in Metins Konto 4K anbietet, was ein Clip mit Videovorlage laut Generate Knopf kostet, und ob das erste Bild im Eingang Omni Reference so bildgenau sitzt wie im Eingang Keyframes (wichtig für unsere Übergänge).
+
+Quellen sechste Recherche: kling.ai/quickstart/kling-4-model-user-guide; kling.ai/document-api/api/usage-guide/kling-4-0 (Abschnitte 2.2, 6.2, 6.5, 6.9, 8, 10); kling.ai/document-api/api/usage-guide/kling-4-0-prompt-guide (Abschnitte 2, 3, 9); kling.ai/blog/kling-4-multiple-keyframes-guide; kling.ai/blog/kling-4-ai-video-model; kling.ai/quickstart/motion-control-user-guide; kling.ai/quickstart/image-to-video-guide; fal.ai/learn/devs/kling-4-prompting-guide; fal.ai/learn/tools/how-to-use-kling-4-0; fal.ai/learn/devs/kling-video-2-6-motion-control-prompt-guide; tech.ifeng.com/c/8xVjyJ3rBgP (Tanztest); chatcut.io/blog/kling-4-0-review. GitHub, vollständig gelesen: Yuyyxz/kling-prompt-engineering (Kapitel 07, 14, 15, 23), maciejdzierzek/kling-ai-prompt-generator (Stand November 2026, mit Quellenliste), kingvid-ai/kling-4-prompt-skill, flaqai/awesome-kling-4-0 (Prompt Guide und Rezepte), DSeaStar/awesome-kling, aedev-tools/kling-3-prompting-skill; BravoNeo/awesome-kling-4-0-prompts und kingvid-ai/awesome-kling-4-prompts sind reine Promptsammlungen ohne Regeln und wurden nur gesichtet.
