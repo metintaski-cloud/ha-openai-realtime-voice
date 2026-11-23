@@ -575,17 +575,20 @@ function rateAt(pth,t){const k=KURVE[pth];if(k)for(const s of k)if(t>=s[0]&&t<s[
  return rateOf(pth);}
 function rateFollow(v,pth){if(!KURVE[pth])return null;return()=>{const r=rateAt(pth,v.currentTime);
  if(Math.abs((v.playbackRate||1)-r)>0.001)v.playbackRate=r;};}
-let SV=0,STOK=0,CONT=false,SWAP=0;const PRELOAD_S=3;
+let SV=0,STOK=0,CONT=false,SWAP=0;const PRELOAD_S=3,PRELOAD_LIGHT_S=9;  /* 2.141.5: on the go a 7 Mbit copy needs about 7 s over an 11 Mbit line, so the next clip starts loading 9 s ahead, once the running one is fully loaded */
 let TIGHT=false;  /* a loop that replays the same clip blends only at the very end (2.133.5): nacht/eifersuechtig does not come all the way back to its start pose, and the wide blend showed both poses at once */
 function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name);const tight=TIGHT;TIGHT=false;const PRE=tight?0.25:0.8,OFF=tight?300:850;const s=document.getElementById('stage'),vs=[document.getElementById('svid'),document.getElementById('svid2')],a=vs[SV],b=vs[1-SV],tok=++STOK,cont=CONT;CONT=false;
  if(!name){s.classList.remove('vid');vs.forEach(v=>{v.classList.remove('on');setTimeout(()=>{if(tok===STOK){v.pause();v.removeAttribute('src');v.load();}},600);});return;}
  if(loop&&a.loop&&a.classList.contains('on')&&a.src.split('?')[0].endsWith('/'+name+'.mp4'))return;
- b.onended=null;b.ontimeupdate=null;b.loop=!!loop;b.muted=!snd||document.getElementById('chat').classList.contains('oncall');b.volume=.7;b.oncanplay=()=>{b.oncanplay=null;if(tok!==STOK)return;
+ b.onended=null;b.ontimeupdate=null;b.loop=!!loop;b.muted=!snd||document.getElementById('chat').classList.contains('oncall');b.volume=.7;let rdy=false;const ready=()=>{if(rdy)return;rdy=true;b.oncanplaythrough=null;if(tok!==STOK)return;
   if(cont&&a.classList.contains('on')&&a.duration&&!a.ended){const w=(a.duration-PRE-a.currentTime)*1000/(a.playbackRate||1);if(w>30){SWAP=tok;setTimeout(()=>{if(tok===STOK)go();},w);return;}}go();};
+ /* 2.141.5 (Metin on the go: each clip stalled on its first pass and ran smoothly on the second): start a clip only when the browser expects to play it through, not at the first frame; after 8 s it starts anyway */
+ b.oncanplaythrough=ready;setTimeout(ready,8000);
  const go=()=>{b.currentTime=0;b.play().catch(()=>{b.muted=true;b.play().catch(()=>{});});b.style.zIndex=1;a.style.zIndex=0;b.classList.add('on');s.classList.add('vid');SV=1-SV;
   setTimeout(()=>{if(tok===STOK)a.classList.remove('on');},OFF);setTimeout(()=>{if(!a.classList.contains('on'))a.pause();},OFF+150);let fired=false;const fire=()=>{if(fired||tok!==STOK||!done)return;fired=true;CONT=true;done();CONT=false;};
   const fol=rateFollow(b,b.dataset.pth||'');
-  b.ontimeupdate=()=>{if(fol)fol();if(b.duration&&b.currentTime>b.duration-PRELOAD_S)fire();};b.onended=fire;};
+  const pre=lightNow()?PRELOAD_LIGHT_S:PRELOAD_S,full=()=>{const r=b.buffered;return r.length&&r.end(r.length-1)>=b.duration-0.2;};
+  b.ontimeupdate=()=>{if(fol)fol();if(b.duration&&b.currentTime>b.duration-pre&&(full()||b.currentTime>b.duration-PRELOAD_S))fire();};b.onended=fire;};
  {const pth=name.includes('/')?name:OUTFIT+'/'+name;b.dataset.pth=pth;const rt=rateAt(pth,0);b.src='/clips/'+pth+'.mp4?v='+(CVER[pth.split('/')[0]]||0)+(lightNow()?'&m=1':'');if(!b.dataset.st){b.dataset.st='1';b.addEventListener('waiting',()=>{if(b.classList.contains('on')&&b.currentTime>0.3)stallSeen();});}b.playbackRate=rt;b.onratechange=null;b.onloadedmetadata=()=>{b.playbackRate=rateAt(pth,0);};}b.load();}
 function stageLoop(b){if(ZPEND){const f=ZPEND;ZPEND=null;return f();}ZBUSY=0;DANCING=false;if(!b)return stageShow(null);const v=clipVars(b),nx=()=>stageNext(b);if(v.length<2){TIGHT=true;return stageShow(v[0],false,nx);}
  const cur=document.getElementById(SV?'svid2':'svid').src.split('?')[0].split('/').pop().replace('.mp4','');const o=v.filter(n=>n.split('/').pop()!==cur);
