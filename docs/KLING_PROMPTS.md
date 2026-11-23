@@ -395,3 +395,11 @@ Herkunft der Teile (Metin fragte vor dem Klick: "hast du alle Profi Regel beacht
 Metins Vorgabe für das Ergebnis: Der Clip kommt unverändert als 4K Original in die App, ohne Schnitt und ohne Tempoänderung ("Wenn wir das wie Profis gemacht haben, brauchen wir keine Tempo Änderung"). Dieser Clip ist damit der Test, ob die Profi Schreibweise trägt. Ergebnis hier nachtragen.
 
 Bedienung (23.11.2026): Bei schmalem Browserfenster liegt der Einstellungsknopf "4K · 10s · Adaptive · 1" verdeckt unter dem Generate Knopf; die Knopfzeile lässt sich mit dem Mausrad seitlich schieben. Die Länge steht nach dem Öffnen einer neuen Aufgabe wieder auf 5 s (175 Credits) und muss im Feld auf 10 gestellt werden. Metin sieht mit, wenn der Tab im Vordergrund ist, und setzt die Bilder gern selbst; Claude prüft sie danach groß.
+
+Ergebnis (Clip 5030, 23.11.2026 12:48, Metin: "tempo ist falsch"): 2352 x 3524, 24 Bilder pro Sekunde, 10,04 s. Inhaltlich richtig: sie wiegt sich nach beiden Seiten, Arme gehen mit, Füße bleiben stehen, Blick bleibt in der Kamera, Schleife schließt gut (Abstand Anfang zu Ende 0,54). Aber deutlich zu langsam: Bewegungsmenge im Mittel 0,94 (Tänze liegen bei 2 bis 4), ein Schwung nach einer Seite dauert rund 2,5 s, bei Sekunde 5 steht sie fast still (0,25).
+
+Ursache liegt im Prompt, nicht bei Kling: Kling hat den Zeitplan weitgehend befolgt (Spitzen bei 2,5 s und 6 s), aber der Plan selbst war Zeitlupe. Zwei Fehler von Claude:
+1. Zu wenig Bewegung für 10 s: nur vier Gewichtswechsel, je zwei Sekunden lang. Ein natürliches Wiegen im Stand ist etwa doppelt so schnell.
+2. Bremswörter in fast jedem Satz ("gently", "slowly", "softly", "smoothly", "calm rhythm"), obwohl unser eigenes Log vom 21.11. genau davor warnt. Die Zeile "natural weight and real-time speed" kommt gegen diese Häufung nicht an.
+
+Lehre: Das Tempo steckt in der Anzahl der Bewegungen pro Sekunde und in den Verben, nicht in einer Tempo Zeile. Für ein ruhiges, aber lebendiges Wiegen etwa einen Gewichtswechsel pro Sekunde zählen und kein einziges Bremswort schreiben; "ruhig" entsteht durch kleine Ausschläge, nicht durch langsame Ausführung.
