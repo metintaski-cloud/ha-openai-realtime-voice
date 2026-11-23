@@ -344,7 +344,7 @@ button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 #ctype textarea.hoert{border-color:#ef4444;box-shadow:0 0 14px #ef444488;animation:recp 1s infinite}
 #ctype textarea{flex:1;min-height:44px;max-height:110px;height:48px;font:inherit;color:#fff;background:#000a;backdrop-filter:blur(4px);border:1px solid var(--bl);border-radius:10px;padding:9px;resize:none}#ctype #csend{width:auto;padding:0 12px;font-size:15px}
 #cin #cmic{width:64px;height:64px;padding:0;border-radius:50%;font-size:28px;box-shadow:0 0 18px #d946ef88}
-#clog{bottom:84px}#stage{top:0;bottom:0}body.chatfull{overflow:hidden;overscroll-behavior:none}body.chatfull #chat{position:fixed;inset:0;z-index:15;margin:0;border-radius:0;height:100vh!important;height:100dvh!important}body.chatfull #menu{position:fixed;top:56px;left:8px;right:8px;z-index:60;max-height:80vh;overflow-y:auto}#chat .chead .cav,#chat #mlabel,#chat .chead>div:nth-child(3){display:none!important}#chat .chead #clive,#chat .chead #crose,#chat .chead #cmus{position:absolute;right:10px;margin:0;z-index:3;min-width:52px;text-align:center}#chat .chead #cmic{position:absolute;right:10px;top:10px;margin:0;z-index:3;min-width:52px;width:auto;height:auto;padding:7px 12px!important;font-size:14px;line-height:normal;border-radius:999px;box-shadow:none;text-align:center}#chat .chead #clive{top:58px}#chat .chead #crose{top:106px}#chat .chead #cmus{top:154px}#chat .chead #csend,#chat .chead #cnew{position:absolute;margin:0;z-index:3;min-width:52px;width:auto;height:auto;padding:7px 12px;font-size:14px;line-height:normal;border-radius:999px;text-align:center;white-space:nowrap}#chat .chead #csend{left:10px;top:106px}#chat .chead #cnew{left:10px;top:154px}#chat .chead #cmenu{width:auto;padding:7px 11px;font-size:16px;background:#000a;border:1px solid #22d3ee66}#chat #clog{pointer-events:none}#chat #clog>*{pointer-events:auto}#clog .m,#clog .lr,#clog .wait{pointer-events:none}#clog .play{pointer-events:auto}#ztimer{display:none;position:absolute;z-index:4;left:14px;top:64px;width:30px;height:30px;cursor:pointer}#zname{display:none;position:absolute;z-index:4;left:8px;top:200px;max-width:60%;padding:3px 7px;border-radius:7px;background:#000a;color:#9fe8ff;font-size:12px;pointer-events:none}body.chatfull #ztimer{display:block}#ztimer circle{fill:none;stroke-width:4}#ztimer .bg{stroke:#ffffff26}#ztimer .fg{stroke:#ef4444;stroke-linecap:round;transform:rotate(-90deg);transform-origin:50% 50%;transition:stroke .2s}#ztimer.go .fg{stroke:#22c55e}#ztimer .dot{fill:#fff;stroke:none;opacity:0;transition:opacity .2s}#ztimer.hit .dot{opacity:.9}#ztimer.gold .dot{fill:#facc15;opacity:1}#stage .zring{position:absolute;z-index:6;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;border:2px solid #fffb;background:#ffffff1f;pointer-events:none;animation:zring .9s ease-out forwards}@keyframes zring{from{transform:scale(.5);opacity:1}to{transform:scale(1.4);opacity:0}}body.chatfull #chat{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}body.chatfull #chat textarea{-webkit-user-select:text;user-select:text}body.chatfull #clog{width:46%}body.chatfull #clog .m{font-size:13px;line-height:1.3;padding:6px 9px;border-radius:11px}body.chatfull #clog .wait{font-size:12px}#stage,#stage *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+#clog{bottom:84px}#stage{top:0;bottom:0}body.chatfull{overflow:hidden;overscroll-behavior:none}body.chatfull #chat{position:fixed;inset:0;z-index:15;margin:0;border-radius:0;height:100vh!important;height:100dvh!important}body.chatfull #menu{position:fixed;top:56px;left:8px;right:8px;z-index:60;max-height:80vh;overflow-y:auto}#chat .chead .cav,#chat #mlabel,#chat .chead>div:nth-child(3){display:none!important}#chat .chead #clive,#chat .chead #crose,#chat .chead #cmus{position:absolute;right:10px;margin:0;z-index:3;min-width:52px;text-align:center}#chat .chead #cmic{position:absolute;right:10px;top:10px;margin:0;z-index:3;min-width:52px;width:auto;height:auto;padding:7px 12px!important;font-size:14px;line-height:normal;border-radius:999px;box-shadow:none;text-align:center}#chat .chead #clive{top:58px}#chat .chead #crose{top:106px}#chat .chead #cmus{top:154px}#chat .chead #csend,#chat .chead #cnew{position:absolute;margin:0;z-index:3;min-width:52px;width:auto;height:auto;padding:7px 12px;font-size:14px;line-height:normal;border-radius:999px;text-align:center;white-space:nowrap}#chat .chead #csend{left:10px;top:106px}#chat .chead #cnew{left:10px;top:154px}#chat .chead #cmenu{width:auto;padding:7px 11px;font-size:16px;background:#000a;border:1px solid #22d3ee66}#chat #clog{pointer-events:none}#chat #clog>*{pointer-events:auto}#clog .m,#clog .lr,#clog .wait{pointer-events:none}#clog .play{pointer-events:auto}#ztimer{display:none;position:absolute;z-index:4;left:14px;top:64px;width:30px;height:30px;cursor:pointer}#zname{display:none;position:absolute;z-index:4;left:8px;top:200px;max-width:60%;padding:3px 7px;border-radius:7px;background:#000a;color:#9fe8ff;font-size:12px;pointer-events:auto}body.chatfull #ztimer{display:block}#ztimer circle{fill:none;stroke-width:4}#ztimer .bg{stroke:#ffffff26}#ztimer .fg{stroke:#ef4444;stroke-linecap:round;transform:rotate(-90deg);transform-origin:50% 50%;transition:stroke .2s}#ztimer.go .fg{stroke:#22c55e}#ztimer .dot{fill:#fff;stroke:none;opacity:0;transition:opacity .2s}#ztimer.hit .dot{opacity:.9}#ztimer.gold .dot{fill:#facc15;opacity:1}#stage .zring{position:absolute;z-index:6;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;border:2px solid #fffb;background:#ffffff1f;pointer-events:none;animation:zring .9s ease-out forwards}@keyframes zring{from{transform:scale(.5);opacity:1}to{transform:scale(1.4);opacity:0}}body.chatfull #chat{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}body.chatfull #chat textarea{-webkit-user-select:text;user-select:text}body.chatfull #clog{width:46%}body.chatfull #clog .m{font-size:13px;line-height:1.3;padding:6px 9px;border-radius:11px}body.chatfull #clog .wait{font-size:12px}#stage,#stage *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 </style></head><body>
 <div id="splash"><div class="sp"><img src="/icon.png?v=5" alt=""><svg viewBox="0 0 200 200"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#a855f7"/><stop offset="1" stop-color="#d946ef"/></linearGradient></defs><circle class="trk" cx="100" cy="100" r="90"/><circle class="rg" cx="100" cy="100" r="90" pathLength="100"/></svg></div></div>
 <header><button id="back">&#8249;</button><img id="micon" src="/icon.png?v=5" alt="Menü" title="Menü"><h1>Leyla Gedächtnis</h1></header><div id="menu"></div><div id="pulse" class="ok" title="Alles in Ordnung"><div class="tick" id="tick" style="display:none"><span></span></div><i class="spark" style="left:12%;top:30%;animation-delay:0s"></i><i class="spark" style="left:22%;top:68%;animation-delay:0.6s"></i><i class="spark" style="left:31%;top:22%;animation-delay:1.2s"></i><i class="spark" style="left:68%;top:74%;animation-delay:0.3s"></i><i class="spark" style="left:77%;top:28%;animation-delay:0.9s"></i><i class="spark" style="left:88%;top:60%;animation-delay:1.5s"></i><i class="spark" style="left:40%;top:80%;animation-delay:1.8s"></i><i class="spark" style="left:60%;top:18%;animation-delay:2.1s"></i><div class="beam"></div><svg viewBox="0 0 100 90"><defs><linearGradient id="hg" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#f43f5e"/></linearGradient><radialGradient id="hc"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#7dd3fc"/><stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/></radialGradient></defs><path d="M50 84C20 62 4 46 4 28C4 14 15 4 28 4C38 4 46 10 50 18C54 10 62 4 72 4C85 4 96 14 96 28C96 46 80 62 50 84Z" fill="#0b1650cc" stroke="url(#hg)" stroke-width="3.2" stroke-linejoin="round"/><path d="M14 40H34L40 28L47 54L53 34L58 44H86" fill="none" stroke="#e0f2fe" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/><circle cx="54" cy="38" r="9" fill="url(#hc)"/></svg></div><div id="chat"><div id="stage"><div class="fig"><img src="/leyla_body.jpg" alt=""></div><video id="svid" muted playsinline preload="auto"></video><video id="svid2" muted playsinline preload="auto"></video><video id="spet" class="pet" muted playsinline preload="auto"></video><div class="fog"><i class="fl"></i><i class="fr"></i><i class="ff"></i></div></div><div class="chead"><button id="cmenu" title="Menü">&#9776;</button><div class="cav"><img src="/leyla.jpg" alt=""><span id="mbadge"></span></div><div><h2>Chat mit Leyla</h2><div id="mlabel"></div><div id="ccount"></div></div><button id="crose" title="Rose schenken, einmal pro Woche">&#127801;</button><button id="cmus" title="Musik an oder aus">&#127925;</button><button id="clive" title="Live mit Leyla reden">&#128222; Live</button><div id="lpill"></div></div><div id="clog"></div><div id="ctype"><textarea id="ctext" readonly inputmode="none" placeholder="Tippen und sprechen ..."></textarea><button id="ckb" title="Tastatur statt Diktat">abc</button><button id="csend">Senden</button></div><div id="cin"><button id="cnew" title="Neuen Chat beginnen">N. Chat</button><button id="cmic" title="Sprachnachricht">&#127908; Mikro</button></div></div><div id="live"><img src="/leyla.jpg" alt=""><div id="lstat">Verbinde ...</div><button id="lend">Auflegen</button></div><div id="rules"><div class="top"><button id="rback">&#8249;</button><h1>So ist Leyla</h1></div><div id="rtext"></div></div><div id="root"></div><div id="gmail" style="display:none"></div><div id="lamps" style="display:none"></div>
@@ -532,7 +532,7 @@ function petUrl(n){return '/clips/mokka/'+n+'.webm?v='+(CVER.mokka||0);}
 const PETSIT=6.0;  /* 2.131.0: second of kommt.webm where Mokka sits like the first keyframe of the surprise clip */
 function petFreude(v,clip){try{localStorage.setItem('lmokka','1');}catch(e){}post('/api/pet',{}).catch(()=>{});ZBUSY=Date.now()+20000;  /* the first time: Leyla discovers Mokka, cuddles her and puts her down (clip carries the cat) */
  v.style.transition='opacity .35s';v.classList.remove('on');setTimeout(()=>{v.pause();v.style.transition='';},400);
- stageShow(clip,false,()=>{const a=document.getElementById(SV?'svid2':'svid'),left=a&&a.duration?Math.max(0,(a.duration-a.currentTime)*1000/(a.playbackRate||1)-350):3000;
+ stageShow(clip,false,()=>{const a=document.getElementById(SV?'svid2':'svid'),left=a&&a.duration?Math.max(0,(endOf(a)-a.currentTime)*1000/(a.playbackRate||1)-350):3000;
   setTimeout(()=>{if(PETON){petNext();v.classList.add('on');}},left);stageLoop(clipFor(STM));},true);}
 function petIdle(){const l=PET.filter(n=>n.startsWith('liegt'));return l.length?l:PET.filter(n=>n.startsWith('sitzt'));}  /* 2.130.0: after the walk in she sleeps (liegt), sitzt only as a fallback */
 function petNext(){const v=document.getElementById('spet');if(!v||!PETON)return;const idle=petIdle();if(!idle.length)return;
@@ -551,7 +551,7 @@ document.addEventListener('pointerdown',()=>{  /* 2.134.5: at every touch, not o
  if(want&&!document.fullscreenElement)goFull();},true);
 if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});  /* 2.134.3: only with a service worker does Chrome install the page as an app, and only then does the manifest's fullscreen apply */
 async function clipsLoad(){let outs={};try{outs=(await (await fetch('/clips.json')).json()).outfits||{};}catch(e){}
- for(const k in outs){CVER[k]=outs[k].v||0;const r=outs[k].r||{};for(const c in r)RATE[k+'/'+c]=r[c];const q=outs[k].k||{};for(const c in q)KURVE[k+'/'+c]=q[c];}  /* 2.136.0 (Metin): his tempo from the tester, the clip files stay untouched */
+ for(const k in outs){CVER[k]=outs[k].v||0;const r=outs[k].r||{};for(const c in r)RATE[k+'/'+c]=r[c];const q=outs[k].k||{};for(const c in q)KURVE[k+'/'+c]=q[c];const sc=outs[k].s||{};for(const c in sc)SCHNITT[k+'/'+c]=sc[c];}  /* 2.136.0 (Metin): his tempo from the tester, the clip files stay untouched */
 NIGHT=outs.nacht?outs.nacht.clips:[];NIGHTBODY=!!(outs.nacht&&outs.nacht.body);delete outs.nacht;PET=outs.mokka&&outs.mokka.alpha||[];delete outs.mokka;const names=Object.keys(outs);
  let last='',lday='',seen=0;try{last=localStorage.getItem('loutfit')||'';lday=localStorage.getItem('loutfitday')||'';seen=Number(localStorage.getItem('lseen')||0);}catch(e){}
  let mokpend=false;try{mokpend=!localStorage.getItem('lmokka');}catch(e){}
@@ -574,7 +574,10 @@ const PHONE=Math.min(screen.width,screen.height)*(window.devicePixelRatio||1)<=1
 function lightNow(){try{const o=localStorage.getItem('llight');if(o==='an')return true;if(o==='aus')return false;}catch(e){}
  const c=navigator.connection;return LIGHT||PHONE||!!(c&&(c.type==='cellular'||c.saveData));}
 function stallSeen(){if(lightNow())return;const t=Date.now();STALLS=STALLS.filter(x=>t-x<60000);STALLS.push(t);if(STALLS.length>=2)LIGHT=true;}
-let RATE={},KURVE={};
+let RATE={},KURVE={},SCHNITT={};
+/* 2.144.0 (Metin sets where a clip begins and ends, in the tester): the stage starts a clip at its mark, hands over at its end mark and holds the last picture there; the file stays whole */
+function cutStart(pth){const c=SCHNITT[pth];return c&&c[0]>0?c[0]:0;}
+function endOf(v){const d=v.duration||0,c=SCHNITT[v.dataset.pth||''];return c&&c[1]>0&&c[1]<d?c[1]:d;}
 function rateOf(pth){return RATE[pth]||1;}
 /* a clip can have its own speed for a stretch inside it (2.139.0, Metin: the whole clip is
    not too fast, one second in the middle is). The browser takes a new speed mid play, so
@@ -589,20 +592,23 @@ function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name);const tight=TI
  if(!name){s.classList.remove('vid');vs.forEach(v=>{v.classList.remove('on');setTimeout(()=>{if(tok===STOK){v.pause();v.removeAttribute('src');v.load();}},600);});return;}
  if(loop&&a.loop&&a.classList.contains('on')&&a.src.split('?')[0].endsWith('/'+name+'.mp4'))return;
  b.onended=null;b.ontimeupdate=null;b.loop=!!loop;b.muted=!snd||document.getElementById('chat').classList.contains('oncall');b.volume=.7;let rdy=false;const ready=()=>{if(rdy)return;rdy=true;b.oncanplaythrough=null;if(tok!==STOK)return;
-  if(cont&&a.classList.contains('on')&&a.duration&&!a.ended){const w=(a.duration-PRE-a.currentTime)*1000/(a.playbackRate||1);if(w>30){SWAP=tok;setTimeout(()=>{if(tok===STOK)go();},w);return;}}go();};
+  if(cont&&a.classList.contains('on')&&a.duration&&!a.ended){const w=(endOf(a)-PRE-a.currentTime)*1000/(a.playbackRate||1);if(w>30){SWAP=tok;setTimeout(()=>{if(tok===STOK)go();},w);return;}}go();};
  /* 2.141.5 (Metin on the go: each clip stalled on its first pass and ran smoothly on the second): start a clip only when the browser expects to play it through, not at the first frame; after 8 s it starts anyway */
  b.oncanplaythrough=ready;b.oncanplay=null;
  /* 2.141.8: Chrome does not always say it is on mobile data (through Tailscale it did not), so a clip that cannot play through after 2.5 s switches to the light copy; it starts once it shows a frame */
  setTimeout(()=>{if(rdy||tok!==STOK)return;if(!lightNow()&&!b.src.includes('&m=1')){LIGHT=true;b.src+='&m=1';b.load();}
   setTimeout(()=>{if(rdy||tok!==STOK)return;if(b.readyState>=3)ready();else b.oncanplay=()=>{b.oncanplay=null;ready();};},6000);},2500);
- const go=()=>{b.currentTime=0;b.play().catch(()=>{b.muted=true;b.play().catch(()=>{});});b.style.zIndex=1;a.style.zIndex=0;b.classList.add('on');s.classList.add('vid');SV=1-SV;
+ const go=()=>{const cs=cutStart(b.dataset.pth||'');if(Math.abs(b.currentTime-cs)>0.04)b.currentTime=cs;b.play().catch(()=>{b.muted=true;b.play().catch(()=>{});});b.style.zIndex=1;a.style.zIndex=0;b.classList.add('on');s.classList.add('vid');SV=1-SV;
   setTimeout(()=>{if(tok===STOK)a.classList.remove('on');},OFF);setTimeout(()=>{if(!a.classList.contains('on'))a.pause();},OFF+150);let fired=false;const fire=()=>{if(fired||tok!==STOK||!done)return;fired=true;CONT=true;done();CONT=false;};
   const fol=rateFollow(b,b.dataset.pth||'');
-  const pre=lightNow()?PRELOAD_LIGHT_S:PRELOAD_S,full=()=>{const r=b.buffered;return r.length&&r.end(r.length-1)>=b.duration-0.2;};
+  const pre=lightNow()?PRELOAD_LIGHT_S:PRELOAD_S,full=()=>{const r=b.buffered;return r.length&&r.end(r.length-1)>=endOf(b)-0.2;};
   /* 2.143.2 (Metin: the ends of the clips flicker): the early preload on the phone began about 1 s into a 10 s clip and loaded the next clip into the old video while it was still fading out (it stays visible up to 1.65 s). The early preload now waits 2.5 s after the swap */
   const t0=performance.now();
-  b.ontimeupdate=()=>{if(fol)fol();if(!b.duration)return;if(b.currentTime>b.duration-PRELOAD_S||(b.currentTime>b.duration-pre&&full()&&performance.now()-t0>2500))fire();};b.onended=fire;};
- {const pth=name.includes('/')?name:OUTFIT+'/'+name;b.dataset.pth=pth;const rt=rateAt(pth,0);b.src='/clips/'+pth+'.mp4?v='+(CVER[pth.split('/')[0]]||0)+(lightNow()?'&m=1':'');if(!b.dataset.st){b.dataset.st='1';b.addEventListener('waiting',()=>{if(b.classList.contains('on')&&b.currentTime>0.3)stallSeen();});}b.playbackRate=rt;b.onratechange=null;b.onloadedmetadata=()=>{b.playbackRate=rateAt(pth,0);};}b.load();}
+  const src0=b.src;let hold=0;
+  b.ontimeupdate=()=>{if(fol)fol();if(!b.duration)return;const e=endOf(b);
+   if(e<b.duration-0.05&&!hold&&b.currentTime>e-0.6)hold=setTimeout(()=>{if(b.src===src0&&!b.paused){b.pause();fire();}},Math.max(0,(e-b.currentTime)*1000/(b.playbackRate||1)));  /* hold the last picture at the end mark */
+   if(b.currentTime>e-PRELOAD_S||(b.currentTime>e-pre&&full()&&performance.now()-t0>2500))fire();};b.onended=fire;};
+ {const pth=name.includes('/')?name:OUTFIT+'/'+name;b.dataset.pth=pth;const rt=rateAt(pth,0);b.src='/clips/'+pth+'.mp4?v='+(CVER[pth.split('/')[0]]||0)+(lightNow()?'&m=1':'');if(!b.dataset.st){b.dataset.st='1';b.addEventListener('waiting',()=>{if(b.classList.contains('on')&&b.currentTime>0.3)stallSeen();});}b.playbackRate=rt;b.onratechange=null;b.onloadedmetadata=()=>{b.playbackRate=rateAt(pth,0);const cs=cutStart(pth);if(cs)b.currentTime=cs;};}b.load();}
 function stageLoop(b){if(ZPEND){const f=ZPEND;ZPEND=null;return f();}ZBUSY=0;DANCING=false;if(!b)return stageShow(null);const v=clipVars(b),nx=()=>stageNext(b);if(v.length<2){TIGHT=true;return stageShow(v[0],false,nx);}
  const cur=document.getElementById(SV?'svid2':'svid').src.split('?')[0].split('/').pop().replace('.mp4','');const o=v.filter(n=>n.split('/').pop()!==cur);
  /* 2.141.2 (Metin: shadow artifacts at the end of the loops): each variant closes well on itself (0.4 to 0.6) but
@@ -661,11 +667,12 @@ async function zGame(z,miss){if(!miss)ZGOLD=Date.now()+1500;let j=null;try{j=awa
  const nm=document.createElement('div');nm.id='zname';c.appendChild(nm);  /* 2.134.1 (Metin): a tap on the clip timer shows the name of the running clip, so he can say which one to replace */
  let show=false;try{show=localStorage.getItem('lzname')==='1';}catch(e){}
  nm.style.display=show?'block':'none';
+ nm.onclick=()=>{if(nm.textContent)location.href='/tempo?clip='+encodeURIComponent(nm.textContent);};  /* 2.144.0: a tap on the name opens this clip in the tester (tempo, begin and end) */
  d.onclick=()=>{show=!show;nm.style.display=show?'block':'none';try{localStorage.setItem('lzname',show?'1':'0');}catch(e){}};
  setInterval(()=>{if(c.style.display!=='block')return;const v=document.getElementById(SV?'svid2':'svid'),on=document.getElementById('stage').classList.contains('vid')&&v.classList.contains('on');
   const src=on?v.getAttribute('src')||'':'';if(src!==last){if(last)flash=Date.now()+1000;last=src;}
   if(show)nm.textContent=src?decodeURIComponent(src.split('?')[0].split('/clips/')[1]||'').replace('.mp4',''):'';
-  const free=!on||Date.now()<flash;let p=1;if(!free&&v.duration)p=Math.min(1,v.currentTime/Math.max(.1,v.duration-.8));
+  const free=!on||Date.now()<flash;let p=1;if(!free&&v.duration)p=Math.min(1,v.currentTime/Math.max(.1,endOf(v)-.8));
   d.classList.toggle('go',free);d.classList.toggle('hit',!!ZPEND||Date.now()<ZBUSY);d.classList.toggle('gold',Date.now()<ZGOLD);dot.style.fill=Date.now()<ZGOLD?'':ZCOLNOW;fg.setAttribute('stroke-dashoffset',(75.4*(1-(free?1:p))).toFixed(1));},100);})();  // the touch is noted at once and plays when the running clip hands over, so the poses match (2.114.7, Metin)
 let TOUCHT=0;function touchAsk(z){if(!CODE||Date.now()-TOUCHT<TOUCH_GAP)return null;TOUCHT=Date.now();return post('/api/chat_touch',{zone:z,history:CHAT.filter(m=>m.role==='user'||m.role==='leyla').slice(-20).map(m=>({role:m.role,text:m.text}))}).then(r=>r.json()).catch(()=>null);}
 const TOUCH_GAP=25000;/* she answers a touch at most every 25 s, so touches do not push the real chat out of her thread */
@@ -1062,6 +1069,12 @@ def list_outfits() -> dict:
         look, clip = name.split("/", 1)
         if look in out and clip in out[look]["clips"]:
             out[look].setdefault("k", {})[clip] = segs
+    for name, cut in _schnitt_read().items():
+        if "/" not in name:
+            continue
+        look, clip = name.split("/", 1)
+        if look in out and clip in out[look]["clips"]:
+            out[look].setdefault("s", {})[clip] = cut
     return out
 
 
@@ -1187,6 +1200,43 @@ def _kurve_read() -> dict:
         return {}
 
 
+SCHNITT_PATH = "/data/schnitt.json"
+
+
+def _schnitt_read() -> dict:
+    """Cut marks (2.144.0, Metin: "dass ich die Endungen selber einstellen und schneiden kann"):
+    where a clip begins and ends on the stage. Shape: {"schwarz/freizeitpo": [0.0, 8.5]} in
+    seconds, end 0 means up to the real end. The clip files stay untouched."""
+    try:
+        with open(os.environ.get("LEYLA_SCHNITT", SCHNITT_PATH), encoding="utf-8") as f:
+            d = json.load(f)
+        return d if isinstance(d, dict) else {}
+    except Exception:
+        return {}
+
+
+def _schnitt_set(name: str, start, end) -> bool:
+    """Store the marks of one clip; start 0 and end 0 removes them. False when they make no sense."""
+    try:
+        a_, b_ = round(max(0.0, float(start or 0)), 2), round(max(0.0, float(end or 0)), 2)
+    except (TypeError, ValueError):
+        return False
+    if b_ and b_ - a_ < 0.5:      # at least half a second must remain
+        return False
+    path = os.environ.get("LEYLA_SCHNITT", SCHNITT_PATH)
+    d = _schnitt_read()
+    if a_ or b_:
+        d[name] = [a_, b_]
+    else:
+        d.pop(name, None)
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(d, f, ensure_ascii=False)
+    os.replace(tmp, path)
+    return True
+
+
 def _kurve_set(name: str, segs: list) -> None:
     path = os.environ.get("LEYLA_KURVE", KURVE_PATH)
     d = _kurve_read()
@@ -1264,7 +1314,7 @@ def motion_runner():
 
 TEMPO_PAGE = """<!doctype html><html lang="de"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Tempo Tester</title><style>
+<title>Clip Tester</title><style>
 body{margin:0;background:#000;color:#eee;font:15px system-ui}
 h1{font-size:17px;margin:8px 10px}
 .wrap{display:flex;gap:10px;margin:0 10px;align-items:flex-start}
@@ -1279,13 +1329,13 @@ button{padding:6px 10px;border-radius:8px;background:#222;color:#eee;border:1px 
 .t.g{color:#5c9}
 #liste{margin:10px;padding:8px;border:1px solid #334;border-radius:10px;font-size:13px;color:#9ab}
 @media (max-width:720px){.wrap{flex-direction:column}video{max-height:34vh}}
-</style></head><body><h1>Tempo Tester</h1><div class="wrap" id="w"></div>
+</style></head><body><h1>Clip Tester: Tempo, Anfang und Ende</h1><div class="wrap" id="w"></div>
 <script>
 /* 2.138.0 (Metin: "Ich brauche Referenz vor Augen"): judging a clip on its own does not
    work, so the left side keeps playing one clip he picked as the reference and the right
    side is the clip under test. He steps with the mouse wheel or the arrows, sets the
    speed until the two match and presses merken, which takes the clip out of the list. */
-let NAMES=[],REF='',RATES={},KURVE={};
+let NAMES=[],ALL=[],REF='',RATES={},KURVE={},SCHNITT={};
 const med=a=>{a=a.slice().sort((x,y)=>x-y);return a.length?a[Math.floor(a.length/2)]:1;};
 function save(k,v){try{localStorage.setItem(k,v);}catch(e){}}
 function load(k){try{return localStorage.getItem(k)||'';}catch(e){return '';}}
@@ -1295,9 +1345,12 @@ async function build(){
  const looks=Object.keys(o).sort((a,b)=>(order.indexOf(a)+99)%100-(order.indexOf(b)+99)%100||a.localeCompare(b));
  for(const look of looks){const r=o[look].r||{};for(const c in r)RATES[look+'/'+c]=r[c];
   const q=o[look].k||{};for(const c in q)KURVE[look+'/'+c]=q[c];
+  const sc=o[look].s||{};for(const c in sc)SCHNITT[look+'/'+c]=sc[c];
   for(const c of (o[look].clips||[]).slice().sort())NAMES.push(look+'/'+c);}
+ ALL=NAMES.slice();
  let done=[];try{done=((await (await fetch('/api/tempo?t='+Date.now())).json()).items||[]).map(x=>x.name);}catch(e){}
  for(const n of done){const i=NAMES.indexOf(n);if(i>=0&&NAMES.length>2)NAMES.splice(i,1);}
+ const want=new URLSearchParams(location.search).get('clip')||'';if(ALL.includes(want)&&!NAMES.includes(want))NAMES.unshift(want);
  REF=load('lref');if(!NAMES.length)return;if(!REF)REF=NAMES[0];
  const w=document.getElementById('w');
  /* left: the reference, always running */
@@ -1323,7 +1376,9 @@ async function build(){
  const prev=document.createElement('button');prev.textContent='◀';
  const next=document.createElement('button');next.textContent='▶';
  const asref=document.createElement('button');asref.textContent='als Referenz';
- nav.append(prev,next,asref);
+ const pick=document.createElement('select');pick.style.cssText='max-width:100%;padding:6px;border-radius:8px;background:#222;color:#eee;border:1px solid #445';
+ for(const n of ALL){const op=document.createElement('option');op.value=n;op.textContent=n;pick.appendChild(op);}
+ nav.append(prev,next,asref,pick);
  const r=document.createElement('input');r.type='range';r.min='0.4';r.max='2';r.step='0.05';r.value='1';
  const lab=document.createElement('span');lab.className='v';lab.textContent='1.00';
  const row=document.createElement('div');row.className='row';
@@ -1342,14 +1397,50 @@ async function build(){
  const sclr=document.createElement('button');sclr.textContent='Kurve loeschen';
  const slist=document.createElement('div');slist.className='t';
  seg.append(only,sadd,sclr);
- d.append(pos,v,nav,r,row,slab,sfrom,slen,srate,seg,slist);
- let cur=NAMES.find(n=>n!==REF)||NAMES[0];
- const show=()=>{pos.textContent=cur+'   '+(NAMES.indexOf(cur)+1)+' von '+NAMES.length+' offen';};
+ /* begin and end (2.144.0, Metin: "dass ich die Endungen selber einstellen und schneiden kann"): two marks per clip,
+    stored by the server; the stage starts at the first and hands over at the second, the file stays whole */
+ const clab=document.createElement('div');clab.className='v';clab.style.fontSize='15px';clab.style.marginTop='10px';
+ const cfrom=document.createElement('input');cfrom.type='range';cfrom.min='0';cfrom.max='10';cfrom.step='0.01';cfrom.value='0';
+ const cto=document.createElement('input');cto.type='range';cto.min='0';cto.max='10';cto.step='0.01';cto.value='10';
+ const crow=document.createElement('div');crow.className='row';
+ const mkb=(txt)=>{const x=document.createElement('button');x.textContent=txt;return x;};
+ const am=mkb('Anfang -'),ap=mkb('Anfang +'),em=mkb('Ende -'),ep=mkb('Ende +');
+ const crow2=document.createElement('div');crow2.className='row';
+ const seam=mkb('Ende ansehen'),csave=mkb('Schnitt merken'),cclr=mkb('Schnitt weg');
+ crow.append(am,ap,em,ep);crow2.append(seam,csave,cclr);
+ d.append(pos,v,nav,r,row,clab,cfrom,cto,crow,crow2,slab,sfrom,slen,srate,seg,slist);
+ let cur=(ALL.includes(want)&&want)||NAMES.find(n=>n!==REF)||NAMES[0];
+ const show=()=>{pos.textContent=cur+'   '+(NAMES.indexOf(cur)+1)+' von '+NAMES.length+' offen';pick.value=cur;};
  const play=()=>{v.src='/clips/'+cur+'.mp4?t='+Date.now();v.playbackRate=Number(r.value);v.play().catch(()=>{});show();};
  v.onloadedmetadata=()=>{v.playbackRate=Number(r.value);};
  const step=k=>{const i=NAMES.indexOf(cur);cur=NAMES[((i<0?0:i)+k+NAMES.length)%NAMES.length];
   r.value=String(RATES[cur]||1);lab.textContent=Number(r.value).toFixed(2);play();segShow();};
  prev.onclick=()=>step(-1);next.onclick=()=>step(1);
+ pick.onchange=()=>{cur=pick.value;if(!NAMES.includes(cur))NAMES.push(cur);r.value=String(RATES[cur]||1);lab.textContent=Number(r.value).toFixed(2);play();segShow();};
+ /* --- begin and end --- */
+ let SEAM=false,DUR=10;const FR=1/24;
+ const cutA=()=>Number(cfrom.value),cutB=()=>Number(cto.value);
+ const cutShow=()=>{const c=SCHNITT[cur],sv=c&&Math.abs(c[0]-cutA())<0.011&&Math.abs((c[1]||DUR)-cutB())<0.011;
+  clab.textContent='Anfang '+cutA().toFixed(2)+' s   Ende '+cutB().toFixed(2)+' s von '+DUR.toFixed(2)+' s'+(sv?'   (gemerkt)':(cutA()>0||cutB()<DUR-0.03?'   (noch nicht gemerkt)':''))+(SEAM?'   Ansicht: Ende, dann Anfang':'');};
+ const cutLoad=()=>{DUR=v.duration||10;cfrom.max=cto.max=String(DUR);const c=SCHNITT[cur]||[0,0];cfrom.value=String(c[0]||0);cto.value=String(c[1]&&c[1]<DUR?c[1]:DUR);cutShow();};
+ const clampA=()=>{if(cutA()>cutB()-0.5)cfrom.value=String(Math.max(0,cutB()-0.5));};
+ const clampB=()=>{if(cutB()<cutA()+0.5)cto.value=String(Math.min(DUR,cutA()+0.5));};
+ cfrom.oninput=()=>{clampA();cutShow();v.currentTime=cutA();};
+ cto.oninput=()=>{clampB();cutShow();v.currentTime=Math.max(cutA(),cutB()-1.2);};
+ am.onclick=()=>{cfrom.value=String(Math.max(0,cutA()-FR));cfrom.oninput();};
+ ap.onclick=()=>{cfrom.value=String(cutA()+FR);cfrom.oninput();};
+ em.onclick=()=>{cto.value=String(cutB()-FR);cto.oninput();};
+ ep.onclick=()=>{cto.value=String(Math.min(DUR,cutB()+FR));cto.oninput();};
+ seam.onclick=()=>{SEAM=!SEAM;seam.style.borderColor=SEAM?'#2a6':'';if(SEAM)v.currentTime=Math.max(cutA(),cutB()-2);cutShow();};
+ const cutSave=async(a,b)=>{let ok=false;try{ok=(await (await fetch('/api/schnitt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:cur,start:a,end:b})})).json()).ok;}catch(e){}
+  if(ok){if(a||b)SCHNITT[cur]=[a,b];else delete SCHNITT[cur];}return ok;};
+ csave.onclick=async()=>{const a=Number(cutA().toFixed(2)),b=cutB()>=DUR-0.03?0:Number(cutB().toFixed(2));const ok=await cutSave(a,b);
+  csave.textContent=ok?'gemerkt':'ging nicht';setTimeout(()=>{csave.textContent='Schnitt merken';},1200);cutShow();};
+ cclr.onclick=async()=>{if(await cutSave(0,0)){cfrom.value='0';cto.value=String(DUR);}cutShow();};
+ /* the preview follows the marks picture by picture (timeupdate only comes every quarter second) */
+ const cutTick=()=>{if(!ONLY&&v.duration&&!v.paused){const A=cutA(),B=cutB(),t=v.currentTime;
+   if(t>=B-0.01||t<A-0.15)v.currentTime=A;else if(SEAM&&t>A+1.5&&t<B-2.05)v.currentTime=B-2;}
+  requestAnimationFrame(cutTick);};
  v.addEventListener('wheel',e=>{e.preventDefault();step(e.deltaY>0?1:-1);},{passive:false});
  r.oninput=()=>{v.playbackRate=Number(r.value);lab.textContent=Number(r.value).toFixed(2);};
  back.onclick=()=>{r.value='1';r.oninput();};
@@ -1382,8 +1473,8 @@ async function build(){
  sadd.onclick=()=>{const k=(KURVE[cur]||[]).filter(x=>x[1]<=segFrom()||x[0]>=segTo());
   k.push([Number(segFrom().toFixed(2)),Number(segTo().toFixed(2)),Number(srate.value)]);k.sort((a2,b2)=>a2[0]-b2[0]);kurveSave(k);};
  sclr.onclick=()=>kurveSave([]);
- v.addEventListener('loadedmetadata',()=>{sfrom.max=String(Math.max(1,(v.duration||10)-0.2));segShow();});
- w.append(rd,d);refShow();play();segShow();
+ v.addEventListener('loadedmetadata',()=>{sfrom.max=String(Math.max(1,(v.duration||10)-0.2));segShow();cutLoad();});
+ w.append(rd,d);refShow();play();segShow();requestAnimationFrame(cutTick);
 }
 async function liste(){let j={items:[]};try{j=await (await fetch('/api/tempo?t='+Date.now())).json();}catch(e){}
  let d=document.getElementById('liste');if(!d){d=document.createElement('div');d.id='liste';document.body.appendChild(d);}
@@ -1490,6 +1581,15 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                 _kurve_set(n, d.get("segs") or [])
                 logger.info("Tempo curve: %s -> %s", n, d.get("segs"))
             await _respond(writer, "200 OK", "application/json", json.dumps({"ok": bool(n)}))
+        elif method == "GET" and path == "/api/schnitt":
+            await _respond(writer, "200 OK", "application/json",
+                           json.dumps(_schnitt_read(), ensure_ascii=False))
+        elif method == "POST" and path == "/api/schnitt":
+            n = str(d.get("name") or "")[:60]
+            ok = bool(n) and _schnitt_set(n, d.get("start"), d.get("end"))
+            if ok:
+                logger.info("Cut marks: %s -> %s to %s", n, d.get("start"), d.get("end"))
+            await _respond(writer, "200 OK", "application/json", json.dumps({"ok": ok}))
         elif method == "GET" and path.startswith("/api/voice/"):
             st = voice_stream.get(path.rsplit("/", 1)[1])
             if st is None:

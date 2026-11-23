@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.144.0 (24 Nov 2026)
+
+- `feat`: Metin sets begin and end of every clip himself ("dass ich die Endungen selber einstellen und schneiden kann"). The tester (`/tempo`, now "Clip Tester") has two sliders Anfang and Ende, buttons for one picture earlier or later (1/24 s), "Ende ansehen" (plays the last 2 s up to the end mark and then the first 1.5 s from the begin mark), "Schnitt merken" and "Schnitt weg", plus a list to jump to any clip. The marks are stored by the server (`/data/schnitt.json`, GET and POST `/api/schnitt`, `s` per look in `/clips.json`); the files stay whole, so nothing is re-encoded and a mark can be changed or removed at any time. The stage starts a clip at its begin mark, hands over to the next clip at its end mark and holds the last picture there.
+- In the app a tap on the clip name (shown after a tap on the timer ring) opens this clip in the tester.
+- Tested in headless Chrome with two test clips: the preview stays inside the marks (1.00 to 2.99 s for marks 1 and 3), the stage starts at 1.00 s, swaps 0.25 s before the end mark and holds the old clip at exactly 3.00 s.
+
 ## 2.143.2 (24 Nov 2026)
 
 - `fix(app)`: the clips flickered at their change (Metin). Since 2.141.5 the phone loads the next clip up to 9 s ahead; in a 10 s clip that began about 1 s after the swap and put the next clip into the old video element while it was still fading out (visible up to 1.65 s). The early preload now waits 2.5 s after the swap.
