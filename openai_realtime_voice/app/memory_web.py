@@ -481,7 +481,7 @@ async function chatSend(){const ta=document.getElementById('ctext'),msg=ta.value
  let j=null;const t0=performance.now();try{j=await (await post('/api/chat',{history,message:msg,rtt:CRTT,light:lightNow()})).json();}catch(e){}
  CRTT=Math.round(performance.now()-t0);chatAnswer(j);chatSave();chatDraw();snd.drop();}
 const AUDIO=new Map();let REC=null,RECT=null,DIK=null,DIKT=null,DIKQ=false;  /* DIK: dictation, DIKQ: music stays off until he sends */
-function playAudio(id){try{const a=new Audio(AUDIO.get(id));a.onplay=()=>stageTalk(true);a.onended=a.onpause=()=>stageTalk(false);a.play().catch(()=>stageTalk(false));}catch(e){}}
+function playAudio(id){try{const a=new Audio(AUDIO.get(id));let v=false;const off=()=>{stageTalk(false);if(v){v=false;voiceOn(false);}};a.onplay=()=>{stageTalk(true);if(!v){v=true;voiceOn(true);}};a.onended=a.onpause=off;a.play().catch(off);}catch(e){}}
 let TALKING=false,DANCING=false;
 const DANCE_N=4;
 function zeigenChain(){if(!STM||STM.outfit!=='nacht')return null;const T=['ruhig','mittel','schnell'].filter(t=>clipVars('zeigen'+t).length);if(clipVars('zeigenlang').length&&(!T.length||Math.random()<.5))return ['zeigenlang'];if(!T.length)return null;const t=T[Math.floor(Math.random()*T.length)],f='zeigen'+t,o=[];
@@ -618,7 +618,8 @@ musDraw();document.getElementById('cmus').onclick=e=>{e.stopPropagation();MUSON=
 async function bgmIsLong(n){if(n in BGLONG)return BGLONG[n];let L=false;try{const r=await fetch('/clips/musik/'+n+'.m4a?v='+(MUSV[n]||0),{headers:{Range:'bytes=0-0'}});const m=(r.headers.get('Content-Range')||'').match(/[/]([0-9]+)/);L=m?+m[1]>4e6:false;}catch(e){}BGLONG[n]=L;return L;}  /* a long track (over 4 MB) streams through an audio element; a short loop is decoded for a gapless loop (2.117.6) */
 async function bgmBuf(n){if(BGBUF[n])return BGBUF[n];const b=await BGCTX.decodeAudioData(await (await fetch('/clips/musik/'+n+'.m4a?v='+(MUSV[n]||0))).arrayBuffer());
  const d=b.getChannelData(0);let a=0,e=d.length-1;while(a<e&&Math.abs(d[a])<1e-4)a++;while(e>a&&Math.abs(d[e])<1e-4)e--;b.ls=a/b.sampleRate;b.le=(e+1)/b.sampleRate;BGBUF[n]=b;return b;}
-function bgVol(){if(TALKING)return .05;const v=document.getElementById(SV?'svid2':'svid');return v&&!v.muted&&!v.paused?.22*.96:.22;}  /* 2.130.1: a clip with sound (her laugh) lowers the music from 100 to 96 % (Metin) */
+let VOICE=0;function voiceOn(on){VOICE=Math.max(0,VOICE+(on?1:-1));bgmTick();}  /* 2.142.1: her voice lowers the music at once and on its own, not through the talking clip (Metin could not understand her) */
+function bgVol(){if(TALKING||VOICE)return .22*.5;const v=document.getElementById(SV?'svid2':'svid');return v&&!v.muted&&!v.paused?.22*.96:.22;}  /* 2.130.1: a clip with sound (her laugh) lowers the music from 100 to 96 % (Metin) */
 function bgmTick(){const c=document.getElementById('chat');let n='';if(STM&&MUSIC.length){n=MUSIC.includes(STM.mood)?STM.mood:(STM.low?'traurig':'gut');if(!MUSIC.includes(n))n='';}  /* gapless loop through Web Audio, the audio element paused at its loop point (2.117.5, Metin) */
  const on=n&&MUSON&&soundOn&&CODE&&!REC&&!DIK&&!DIKQ&&!c.classList.contains('oncall')&&!document.hidden;  /* keeps playing in the menu and list pages, silent while he records or dictates (2.140.1, Metin) */
  if(!on){if(BGCTX&&BGCTX.state==='running')BGCTX.suspend().catch(()=>{});if(BGEL)BGEL.pause();return;}
@@ -703,9 +704,9 @@ async function playStream(id,aid){let r;try{VCTX=VCTX||new (window.AudioContext|
   const k=u.length-(u.length%2);if(k<u.length)rest=u.slice(k);if(!k)continue;const p=u.slice(0,k);parts.push(p);n+=k;
   const s16=new Int16Array(p.buffer,0,k/2),f=new Float32Array(k/2);for(let i=0;i<f.length;i++)f[i]=s16[i]/32768;
   const b=VCTX.createBuffer(1,f.length,24000);b.copyToChannel(f,0);const src=VCTX.createBufferSource();src.buffer=b;src.connect(VCTX.destination);
-  const now=VCTX.currentTime;if(!on){on=true;stageTalk(true);t=now+0.4;}else if(t<now+0.05)t=now+0.3;  /* a gap in the line: wait a little instead of stuttering */
+  const now=VCTX.currentTime;if(!on){on=true;stageTalk(true);voiceOn(true);t=now+0.4;}else if(t<now+0.05)t=now+0.3;  /* a gap in the line: wait a little instead of stuttering */
   src.start(t);t+=b.duration;}}catch(e){}
- if(on)setTimeout(()=>stageTalk(false),Math.max(0,(t-VCTX.currentTime)*1000));
+ if(on)setTimeout(()=>{stageTalk(false);voiceOn(false);},Math.max(0,(t-VCTX.currentTime)*1000));
  if(n){AUDIO.set(aid,wavUrl(parts,n));chatDraw();}}
 document.querySelector('#chat .chead').appendChild(document.getElementById('cmic'));  // mic as a pill top right above Live (2.114.9, Metin)
 document.getElementById('cmic').onclick=async()=>{const b=document.getElementById('cmic');
