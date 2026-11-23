@@ -1,4 +1,8 @@
-# Kling Prompts (Standard seit 21.11.2026)
+# Kling Prompts
+
+> **Zuerst lesen (Stand 23.11.2026):** Maßgeblich ist der Abschnitt "Profi Wissen Kling 4.0 (sechste Recherche, 23.11.2026)" weiter unten, samt der Tabelle "Was sich an unseren bisherigen Regeln ändert". Wo ein älterer Abschnitt dem widerspricht, gilt der neue. Metins Auftrag dazu: nur Profi Wissen aus offiziellen und professionellen Quellen, nichts selbst erfinden, und bei jedem Prompt offen sagen, welcher Teil aus den Quellen stammt und welcher aus unserem eigenen Log. Die Abschnitte davor bleiben als Verlauf und Erfahrungslog stehen.
+
+## Alter Standard vom 21.11.2026 (Verlauf)
 
 Ergebnis der Recherche vom 21.11.2026 (Metin: "Kling macht was es will"). Gilt für alle Leyla und Mokka Clips. Ersetzt den alten Standard vom 16.11.2026 (lange Grundregeln vorne im Prompt).
 
@@ -373,3 +377,21 @@ Aus den vollständigen Beispielprompts im offiziellen Prompt Guide und den Schre
 4. **Beim ersten gemeinsamen Test zu prüfen, bevor Credits fließen:** ob Omni Reference in Metins Konto 4K anbietet, was ein Clip mit Videovorlage laut Generate Knopf kostet, und ob das erste Bild im Eingang Omni Reference so bildgenau sitzt wie im Eingang Keyframes (wichtig für unsere Übergänge).
 
 Quellen sechste Recherche: kling.ai/quickstart/kling-4-model-user-guide; kling.ai/document-api/api/usage-guide/kling-4-0 (Abschnitte 2.2, 6.2, 6.5, 6.9, 8, 10); kling.ai/document-api/api/usage-guide/kling-4-0-prompt-guide (Abschnitte 2, 3, 9); kling.ai/blog/kling-4-multiple-keyframes-guide; kling.ai/blog/kling-4-ai-video-model; kling.ai/quickstart/motion-control-user-guide; kling.ai/quickstart/image-to-video-guide; fal.ai/learn/devs/kling-4-prompting-guide; fal.ai/learn/tools/how-to-use-kling-4-0; fal.ai/learn/devs/kling-video-2-6-motion-control-prompt-guide; tech.ifeng.com/c/8xVjyJ3rBgP (Tanztest); chatcut.io/blog/kling-4-0-review. GitHub, vollständig gelesen: Yuyyxz/kling-prompt-engineering (Kapitel 07, 14, 15, 23), maciejdzierzek/kling-ai-prompt-generator (Stand November 2026, mit Quellenliste), kingvid-ai/kling-4-prompt-skill, flaqai/awesome-kling-4-0 (Prompt Guide und Rezepte), DSeaStar/awesome-kling, aedev-tools/kling-3-prompting-skill; BravoNeo/awesome-kling-4-0-prompts und kingvid-ai/awesome-kling-4-prompts sind reine Promptsammlungen ohne Regeln und wurden nur gesichtet.
+
+## Erster Clip nach Profi Art: schwarz/freizeitgluecklich neu (23.11.2026, gestartet 12:43)
+
+Metin wollte die alte 1176 x 1764 Schleife im langen Freizeitkleid in 4K ersetzen: "ruhig aber beweglich", damit sie nicht mit einem Berührungsclip verwechselt wird (keine einzelne Reaktion wie Wegschauen oder Auflachen). Aus drei Varianten wählte er "Wiegen im Stand".
+
+Einstellungen: Kling 4.0, Eingang Keyframes, Start und Endbild dasselbe Favoritenbild (Leyla allein im langen schwarz goldenen Kleid, von Metin selbst gesetzt, von Claude groß geprüft), 4K, 10 s, Adaptive, 1 Ausgabe, 350 Credits.
+
+Prompt: "Use the first keyframe as the first frame and the last keyframe as the last frame. A single continuous shot with no cuts. The camera stays perfectly still on a tripod and keeps the full body framing of the keyframes; the background and the reflections on the floor stay exactly as they are. Exactly one woman; both of her feet stay planted on the same spot the whole time. She stands at her place and sways gently and continuously. Her eyes stay on the lens with a calm, warm smile and she blinks naturally. Every movement keeps natural weight and real-time speed. 0 to 1 seconds: she breathes in softly and her shoulders rise a little. 1 to 3 seconds: she shifts her weight slowly from her standing leg onto her other leg; her hips swing out to that side, her upper body follows with a slight lean, and her hair and the hem of her dress sway after the movement. 3 to 5 seconds: she shifts her weight smoothly back onto the first leg; her hips swing across, her arms hang loose and move along, her fingertips brush her dress. 5 to 7 seconds: she shifts her weight onto the other leg once more in the same calm rhythm. 7 to 9 seconds: she shifts back and returns to the stance of the first frame while her hair settles. 9 to 10 seconds: she holds exactly the pose of the last frame, completely still. No subtitles, no background music."
+
+Herkunft der Teile (Metin fragte vor dem Klick: "hast du alle Profi Regel beachtet und nicht selbst dazu erfunden?"):
+- Aus den Profi Quellen: ein durchgehender Take, Kamera positiv beschrieben, Menge und Stand als feste Tatsache, Ablauf in Zeitabschnitten, gezählte Gewichtswechsel, natürliches Gewicht und Tempo, ausdrücklicher Stillstand am Ende, nur die beiden offiziell nötigen Verbote.
+- Aus unserem eigenen Log, nicht aus Profi Quellen: die Fingerspitzen am Kleid (gegen den eingefrorenen Arm, 22.11.) und der erste Satz mit "first keyframe" statt der offiziellen Schreibweise mit @Image1 und @Image2.
+- Vor dem Klick gestrichen: der Vergleich "like someone waiting happily", weil er kein sichtbares Geschehen beschreibt und damit gegen die offizielle Regel verstößt.
+- Nicht anwendbar: feste Zeitpunkte über Zwischenbilder, weil es für das Wiegen keine gibt. Der gleichmäßige Rhythmus hängt deshalb weiter am Text, und Zeitangaben im Text sind laut fal.ai keine bildgenaue Zusage.
+
+Metins Vorgabe für das Ergebnis: Der Clip kommt unverändert als 4K Original in die App, ohne Schnitt und ohne Tempoänderung ("Wenn wir das wie Profis gemacht haben, brauchen wir keine Tempo Änderung"). Dieser Clip ist damit der Test, ob die Profi Schreibweise trägt. Ergebnis hier nachtragen.
+
+Bedienung (23.11.2026): Bei schmalem Browserfenster liegt der Einstellungsknopf "4K · 10s · Adaptive · 1" verdeckt unter dem Generate Knopf; die Knopfzeile lässt sich mit dem Mausrad seitlich schieben. Die Länge steht nach dem Öffnen einer neuen Aufgabe wieder auf 5 s (175 Credits) und muss im Feld auf 10 gestellt werden. Metin sieht mit, wenn der Tab im Vordergrund ist, und setzt die Bilder gern selbst; Claude prüft sie danach groß.

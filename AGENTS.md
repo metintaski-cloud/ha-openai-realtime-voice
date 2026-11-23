@@ -150,6 +150,8 @@ Optional scope in parentheses: `fix(client):`, `feat(server):`, `chore(build):`.
 
 Read `STATUS.md` first in every new session: it holds decisions, current state and open items. Update it whenever one of them changes.
 
+Before any work on Kling clips (prompts, settings, replacing clips), read `docs/KLING_PROMPTS.md`, starting with the note at its top: the section on professional Kling 4.0 knowledge of 23 Nov 2026 is the standard and overrides older sections. Metin asked for professional knowledge only, nothing invented, and wants to be told which part of a prompt comes from the sources and which from our own log. Every new clip, with prompt, settings and result, goes into that file.
+
 | What changed                         | Update |
 |--------------------------------------|--------|
 | Audio format, WebSocket protocol, control messages | This file (contract) |
