@@ -619,7 +619,7 @@ async function bgmIsLong(n){if(n in BGLONG)return BGLONG[n];let L=false;try{cons
 async function bgmBuf(n){if(BGBUF[n])return BGBUF[n];const b=await BGCTX.decodeAudioData(await (await fetch('/clips/musik/'+n+'.m4a?v='+(MUSV[n]||0))).arrayBuffer());
  const d=b.getChannelData(0);let a=0,e=d.length-1;while(a<e&&Math.abs(d[a])<1e-4)a++;while(e>a&&Math.abs(d[e])<1e-4)e--;b.ls=a/b.sampleRate;b.le=(e+1)/b.sampleRate;BGBUF[n]=b;return b;}
 let VOICE=0;function voiceOn(on){VOICE=Math.max(0,VOICE+(on?1:-1));bgmTick();}  /* 2.142.1: her voice lowers the music at once and on its own, not through the talking clip (Metin could not understand her) */
-function bgVol(){if(TALKING||VOICE)return .22*.1;const v=document.getElementById(SV?'svid2':'svid');return v&&!v.muted&&!v.paused?.22*.96:.22;}  /* 2.130.1: a clip with sound (her laugh) lowers the music from 100 to 96 % (Metin) */
+function bgVol(){if(TALKING||VOICE)return .22*.02;const v=document.getElementById(SV?'svid2':'svid');return v&&!v.muted&&!v.paused?.22*.96:.22;}  /* 2.130.1: a clip with sound (her laugh) lowers the music from 100 to 96 % (Metin) */
 function bgmTick(){const c=document.getElementById('chat');let n='';if(STM&&MUSIC.length){n=MUSIC.includes(STM.mood)?STM.mood:(STM.low?'traurig':'gut');if(!MUSIC.includes(n))n='';}  /* gapless loop through Web Audio, the audio element paused at its loop point (2.117.5, Metin) */
  const on=n&&MUSON&&soundOn&&CODE&&!REC&&!DIK&&!DIKQ&&!c.classList.contains('oncall')&&!document.hidden;  /* keeps playing in the menu and list pages, silent while he records or dictates (2.140.1, Metin) */
  if(!on){if(BGCTX&&BGCTX.state==='running')BGCTX.suspend().catch(()=>{});if(BGEL)BGEL.pause();return;}
