@@ -2,6 +2,16 @@
 
 > **Zuerst lesen (Stand 23.11.2026):** Maßgeblich ist der Abschnitt "Profi Wissen Kling 4.0 (sechste Recherche, 23.11.2026)" weiter unten, samt der Tabelle "Was sich an unseren bisherigen Regeln ändert". Wo ein älterer Abschnitt dem widerspricht, gilt der neue. Metins Auftrag dazu: nur Profi Wissen aus offiziellen und professionellen Quellen, nichts selbst erfinden, und bei jedem Prompt offen sagen, welcher Teil aus den Quellen stammt und welcher aus unserem eigenen Log. Die Abschnitte davor bleiben als Verlauf und Erfahrungslog stehen.
 
+## Pflichtprüfung vor jedem Generate (seit 23.11.2026, Metin: "darf nicht nochmal passieren")
+
+Anlass: Clip 5030 kam in Zeitlupe, 350 Credits. Kling hatte den Prompt befolgt, der Prompt selbst war langsam. Claude hatte ihn Metin als fertig gemeldet, ohne die Bewegungen pro Sekunde zu zählen, und Bremswörter verteilt, vor denen unser eigenes Log schon warnte. Deshalb gilt für jeden, der einen Kling Prompt schreibt, ohne Ausnahme:
+
+1. **Prompt durch das Prüfskript schicken:** `python3 tools/kling_check.py prompt.txt`. Es hält an bei mehr als einem Bremswort (slowly, gently, softly, smoothly, calm und Verwandte), bei Abschnitten mit weniger als einer eigenen Bewegung je 1,5 Sekunden, bei Verboten außer den erlaubten, bei abstrakten Wörtern, bei Vergleichen und bei den bekannten Fallen aus unserem Log (Brille, fremde Hand, Lippenbiss). Solange es STOP meldet, wird der Prompt nicht übergeben. Das Skript läuft auch in den Tests (`tests/test_kling_check.py`), mit dem echten Prompt von Clip 5030 als Gegenbeispiel (`tools/kling_beispiel_zu_langsam.txt`).
+2. **Bewegungen pro Sekunde selbst zählen und Metin nennen.** Richtwert: ein Gewichtswechsel, Schritt oder Schwung dauert etwa eine Sekunde. "Ruhig" heißt kleine Ausschläge bei normalem Tempo, nie große Bewegungen in halber Geschwindigkeit.
+3. **Gegen das eigene Erfahrungslog prüfen, nicht nur gegen die Profi Quellen.** Die Frage "woher stammt jede Regel" ersetzt nicht die Frage "was hat bei uns schon einmal nicht funktioniert".
+4. **Bilder groß prüfen, Einstellungen und Preis vom Knopf ablesen** (4K, Länge, Credits), wie im Abschnitt Bedienung beschrieben.
+5. **Erst dann Metin Bescheid geben**, mit Herkunft der Teile und der gezählten Bewegung. Er klickt Generate.
+
 ## Alter Standard vom 21.11.2026 (Verlauf)
 
 Ergebnis der Recherche vom 21.11.2026 (Metin: "Kling macht was es will"). Gilt für alle Leyla und Mokka Clips. Ersetzt den alten Standard vom 16.11.2026 (lange Grundregeln vorne im Prompt).
