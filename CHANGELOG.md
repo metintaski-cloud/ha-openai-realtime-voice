@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.141.9 (23 Nov 2026)
+
+- `fix`: the timing in 2.141.7 landed in the dictation instead of the voice message, so every voice message failed with "t1 not defined" and showed "nicht verstanden". Fixed, with a test that runs the whole voice path.
+
 ## 2.141.8 (23 Nov 2026)
 
 - `fix(app)`: after 2.141.5 the stage stayed black on the go. Chrome did not report mobile data through Tailscale, so the page asked for the 29 Mbit original, and since a clip now waits until it can play through, no stall was ever counted to switch to the light copy. A clip that cannot play through after 2.5 s now switches to the light copy, and it starts once it shows a frame.
