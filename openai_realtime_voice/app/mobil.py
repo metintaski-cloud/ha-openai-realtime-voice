@@ -19,8 +19,8 @@ import os
 logger = logging.getLogger(__name__)
 
 HEAVY = 12_000_000        # bit/s; clips below play smoothly on the go already
-MAX_RATE = "10M"          # just under Metin's measured limit of about 11 Mbit/s
-BUF = "20M"
+MAX_RATE = "8M"           # 2.141.1: with 10M the copies still peaked at 13 Mbit/s in single seconds,
+BUF = "8M"                # above Metin's limit of about 11; a tight buffer keeps the peaks under 10
 PROBE_TIMEOUT = 30.0
 ENCODE_TIMEOUT = 1800.0
 RESCAN_S = 1800
@@ -134,12 +134,16 @@ class Mobil:
                 pass
         self._save()
         for name, m in sorted(self.index.items()):
-            if m.get("rate", 0) <= HEAVY or self.copy_for(name, paths[name]):
+            if m.get("rate", 0) <= HEAVY:
                 continue
+            if self.copy_for(name, paths[name]) and m.get("cap") == MAX_RATE:
+                continue           # an older copy stays served until the new one is ready
             self.busy = name
             ok = await self._encode(paths[name], self.copy_path(name))
             self.busy = ""
             if ok:
+                m["cap"] = MAX_RATE
+                self._save()
                 self.done += 1
                 logger.info("Mobil: light copy of %s ready (%d so far)", name, self.done)
             else:

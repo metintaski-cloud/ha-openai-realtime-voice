@@ -88,3 +88,26 @@ def test_the_server_sends_the_copy_only_when_asked(tmp_path, monkeypatch):
 
     assert asyncio.run(get("/clips/schwarz/tanz.mp4?v=1")) == b"ORIGINAL"
     assert asyncio.run(get("/clips/schwarz/tanz.mp4?v=1&m=1")) == b"LIGHT"
+
+
+def test_copies_from_an_older_cap_are_made_again(tmp_path):
+    """2.141.1: the cap went from 10M to 8M, existing copies must be redone once."""
+    m, paths = _setup(tmp_path)
+    made = []
+
+    async def probe(path):
+        return 29_000_000 if "schwer" in path else 5_000_000
+
+    async def encode(src, dst):
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        open(dst, "wb").write(b"light")
+        made.append(src)
+        return True
+
+    m._probe, m._encode = probe, encode
+    asyncio.run(m.scan())
+    m.index["schwarz/schwer"]["cap"] = "10M"
+    asyncio.run(m.scan())
+    asyncio.run(m.scan())
+    assert made.count(paths["schwarz/schwer"]) == 2
+    assert m.index["schwarz/schwer"]["cap"] == mobil.MAX_RATE
