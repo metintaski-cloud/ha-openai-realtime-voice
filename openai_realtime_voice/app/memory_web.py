@@ -474,11 +474,11 @@ function propCard(m,i){const c=document.createElement('div');c.className='p';con
  row.append(y,n);c.appendChild(row);return c;}
 async function chatSend(){const ta=document.getElementById('ctext'),msg=ta.value.trim();if(!msg)return;
  const history=CHAT.filter(m=>m.role==='user'||m.role==='leyla').map(m=>({role:m.role,text:m.text}));
- CHAT.push({role:'user',text:msg});ta.value='';chatSave();chatDraw(true);snd.on();
+ CHAT.push({role:'user',text:msg});ta.value='';DIKQ=false;bgmTick();chatSave();chatDraw(true);snd.on();  /* music back on when he sends (2.140.1, Metin) */
  if(!ta.readOnly){const kb=document.getElementById('ckb');if(kb)kb.onclick();}  /* back to dictation after sending (2.140.0) */
  let j=null;try{j=await (await post('/api/chat',{history,message:msg})).json();}catch(e){}
  chatAnswer(j);chatSave();chatDraw();snd.drop();}
-const AUDIO=new Map();let REC=null,RECT=null;
+const AUDIO=new Map();let REC=null,RECT=null,DIK=null,DIKT=null,DIKQ=false;  /* DIK: dictation, DIKQ: music stays off until he sends */
 function playAudio(id){try{const a=new Audio(AUDIO.get(id));a.onplay=()=>stageTalk(true);a.onended=a.onpause=()=>stageTalk(false);a.play().catch(()=>stageTalk(false));}catch(e){}}
 let TALKING=false,DANCING=false;
 const DANCE_N=4;
@@ -603,7 +603,7 @@ async function bgmBuf(n){if(BGBUF[n])return BGBUF[n];const b=await BGCTX.decodeA
  const d=b.getChannelData(0);let a=0,e=d.length-1;while(a<e&&Math.abs(d[a])<1e-4)a++;while(e>a&&Math.abs(d[e])<1e-4)e--;b.ls=a/b.sampleRate;b.le=(e+1)/b.sampleRate;BGBUF[n]=b;return b;}
 function bgVol(){if(TALKING)return .05;const v=document.getElementById(SV?'svid2':'svid');return v&&!v.muted&&!v.paused?.22*.96:.22;}  /* 2.130.1: a clip with sound (her laugh) lowers the music from 100 to 96 % (Metin) */
 function bgmTick(){const c=document.getElementById('chat');let n='';if(STM&&MUSIC.length){n=MUSIC.includes(STM.mood)?STM.mood:(STM.low?'traurig':'gut');if(!MUSIC.includes(n))n='';}  /* gapless loop through Web Audio, the audio element paused at its loop point (2.117.5, Metin) */
- const on=n&&MUSON&&soundOn&&CODE&&!REC&&!c.classList.contains('oncall')&&!document.hidden;  /* keeps playing in the menu and list pages, silent while he records (2.117.7, Metin) */
+ const on=n&&MUSON&&soundOn&&CODE&&!REC&&!DIK&&!DIKQ&&!c.classList.contains('oncall')&&!document.hidden;  /* keeps playing in the menu and list pages, silent while he records or dictates (2.140.1, Metin) */
  if(!on){if(BGCTX&&BGCTX.state==='running')BGCTX.suspend().catch(()=>{});if(BGEL)BGEL.pause();return;}
  if(BGEL&&BGMN===n){BGEL.volume=bgVol();if(BGEL.paused)BGEL.play().catch(()=>{});return;}
  if(!BGCTX){try{BGCTX=new (window.AudioContext||window.webkitAudioContext)();BGGAIN=BGCTX.createGain();BGGAIN.connect(BGCTX.destination);}catch(e){return;}}
@@ -685,7 +685,6 @@ document.getElementById('cmic').onclick=async()=>{const b=document.getElementByI
    text umwandelt was ich dann nur noch senden muss"). The field is readonly, so Android
    keeps the keyboard shut; a tap records, a second tap stops, the text lands in the field
    and he presses Senden. The abc pill gives him the keyboard back when he wants it. */
-let DIK=null,DIKT=null;
 (function(){const ta=document.getElementById('ctext'),kb=document.getElementById('ckb');
  const say=t=>{ta.placeholder=t;};
  async function stopDik(){if(!DIK)return;const r=DIK;DIK=null;try{r.stop();}catch(e){}}
@@ -701,10 +700,10 @@ let DIK=null,DIKT=null;
    say('Tippen und sprechen ...');
    if(j&&j.heard){const old=ta.value.trim();ta.value=(old?old+' ':'')+j.heard;ta.scrollTop=ta.scrollHeight;}
    else say('nicht verstanden, nochmal tippen');};
-  DIK.start();bgmTick();ta.classList.add('hoert');say('hoert zu, zum Beenden nochmal tippen');
+  DIKQ=true;DIK.start();bgmTick();ta.classList.add('hoert');say('hoert zu, zum Beenden nochmal tippen');
   DIKT=setTimeout(()=>{if(DIK)stopDik();},60000);}
  ta.addEventListener('click',e=>{if(!ta.readOnly)return;e.preventDefault();if(DIK)stopDik();else startDik();});
- kb.onclick=()=>{if(DIK)stopDik();ta.readOnly=!ta.readOnly;
+ kb.onclick=()=>{if(DIK)stopDik();DIKQ=false;bgmTick();ta.readOnly=!ta.readOnly;
   if(ta.readOnly){ta.setAttribute('inputmode','none');kb.classList.remove('on');ta.placeholder='Tippen und sprechen ...';ta.blur();}
   else{ta.removeAttribute('inputmode');kb.classList.add('on');ta.placeholder='Schreib Leyla ...';ta.focus();}};
 })();
