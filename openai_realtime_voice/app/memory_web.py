@@ -560,6 +560,12 @@ function clipVars(b){const o=STM&&!CHANGE.includes(b)?STM.outfit:'';if(o==='nach
  const k=o==='freizeit'?'freizeit'+b:b;return CLIPS.filter(n=>n.replace(/[0-9]+$/,'')===k);}  // Freizeit: freizeit<name> clips (2.113.0), night: folder nacht (2.114.0)
 function clipFor(st){const lv=st.low&&st.level&&st.mood!=='eifersuechtig'?'traurig'+st.level:'';if(lv&&clipVars(lv).length)return lv;if(clipVars(st.mood).length)return st.mood;
  const g=(st.low?['traurigleicht','traurig','eifersuechtig'].concat(st.outfit&&st.outfit!=='arbeit'?['gluecklich']:[]):['gluecklich']).filter(n=>clipVars(n).length);return g.length?g[0]:null;}
+/* light copies on the go (2.141.0, Metin: the 4K clips stall on mobile data). Automatic:
+   on mobile data, or after a clip has stalled twice within a minute. */
+let LIGHT=false,STALLS=[];
+function lightNow(){try{const o=localStorage.getItem('llight');if(o==='an')return true;if(o==='aus')return false;}catch(e){}
+ const c=navigator.connection;return LIGHT||!!(c&&(c.type==='cellular'||c.saveData));}
+function stallSeen(){if(lightNow())return;const t=Date.now();STALLS=STALLS.filter(x=>t-x<60000);STALLS.push(t);if(STALLS.length>=2)LIGHT=true;}
 let RATE={},KURVE={};
 function rateOf(pth){return RATE[pth]||1;}
 /* a clip can have its own speed for a stretch inside it (2.139.0, Metin: the whole clip is
@@ -580,7 +586,7 @@ function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name);const tight=TI
   setTimeout(()=>{if(tok===STOK)a.classList.remove('on');},OFF);setTimeout(()=>{if(!a.classList.contains('on'))a.pause();},OFF+150);let fired=false;const fire=()=>{if(fired||tok!==STOK||!done)return;fired=true;CONT=true;done();CONT=false;};
   const fol=rateFollow(b,b.dataset.pth||'');
   b.ontimeupdate=()=>{if(fol)fol();if(b.duration&&b.currentTime>b.duration-PRELOAD_S)fire();};b.onended=fire;};
- {const pth=name.includes('/')?name:OUTFIT+'/'+name;b.dataset.pth=pth;const rt=rateAt(pth,0);b.src='/clips/'+pth+'.mp4?v='+(CVER[pth.split('/')[0]]||0);b.playbackRate=rt;b.onratechange=null;b.onloadedmetadata=()=>{b.playbackRate=rateAt(pth,0);};}b.load();}
+ {const pth=name.includes('/')?name:OUTFIT+'/'+name;b.dataset.pth=pth;const rt=rateAt(pth,0);b.src='/clips/'+pth+'.mp4?v='+(CVER[pth.split('/')[0]]||0)+(lightNow()?'&m=1':'');if(!b.dataset.st){b.dataset.st='1';b.addEventListener('waiting',()=>{if(b.classList.contains('on')&&b.currentTime>0.3)stallSeen();});}b.playbackRate=rt;b.onratechange=null;b.onloadedmetadata=()=>{b.playbackRate=rateAt(pth,0);};}b.load();}
 function stageLoop(b){if(ZPEND){const f=ZPEND;ZPEND=null;return f();}ZBUSY=0;DANCING=false;if(!b)return stageShow(null);const v=clipVars(b),nx=()=>stageNext(b);if(v.length<2){TIGHT=true;return stageShow(v[0],false,nx);}
  const cur=document.getElementById(SV?'svid2':'svid').src.split('?')[0].split('/').pop().replace('.mp4','');const o=v.filter(n=>n.split('/').pop()!==cur);stageShow(o[Math.floor(Math.random()*o.length)],false,nx);}
 const SPECIAL=[],SPECIAL_P=0;  // since 2.111.2 no dance by herself, only when Metin asks (Metin)
@@ -1041,9 +1047,12 @@ def list_music() -> list:
         return []
 
 
-async def _send_clip(writer, look: str, name: str, ext: str, lines: list) -> None:
-    """One clip or still of a look, with byte ranges, because Chrome asks for parts of a video."""
+async def _send_clip(writer, look: str, name: str, ext: str, lines: list, light: bool = False) -> None:
+    """One clip or still of a look, with byte ranges, because Chrome asks for parts of a video.
+    `light`: the page is on mobile data, send the light copy if there is one (2.141.0)."""
     fn = os.path.join(clips_dir(), look, f"{name}.{ext}")
+    if light and ext == "mp4":
+        fn = mobil_runner().copy_for(f"{look}/{name}", fn) or fn
     try:
         size = os.path.getsize(fn)
     except OSError:
@@ -1183,6 +1192,16 @@ def clip_paths() -> dict:
 
 
 MOTION = None
+MOBIL = None
+
+
+def mobil_runner():
+    """Light copies of the heavy 4K clips for the phone on the go (app/mobil.py, 2.141.0)."""
+    global MOBIL
+    if MOBIL is None:
+        from . import mobil
+        MOBIL = mobil.Mobil(clip_paths, os.environ.get("LEYLA_MOBIL_DIR", "/data/mobil"))
+    return MOBIL
 
 
 def motion_runner():
@@ -1353,6 +1372,7 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
         head = await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), timeout=10)
         lines = head.decode("latin-1").split("\r\n")
         method, path = (lines[0].split(" ") + ["", ""])[:2]
+        query = path.split("?", 1)[1] if "?" in path else ""
         path = path.split("?")[0]
         length = 0
         for ln in lines[1:]:
@@ -1393,7 +1413,8 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
             await _respond(writer, "200 OK", "application/json", json.dumps({"outfits": list_outfits(), "music": list_music(), "music_v": music_versions()}))
         elif method == "GET" and CLIP_RE.match(path):
             m = CLIP_RE.match(path)
-            await _send_clip(writer, m.group(1), m.group(2), m.group(3), lines)
+            await _send_clip(writer, m.group(1), m.group(2), m.group(3), lines,
+                             light="m=1" in query.split("&"))
         elif method == "GET" and path == "/manifest.json":
             await _respond(writer, "200 OK", "application/manifest+json", MANIFEST)
         elif method == "GET" and path == "/api/tempo":
@@ -1419,6 +1440,8 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                 _kurve_set(n, d.get("segs") or [])
                 logger.info("Tempo curve: %s -> %s", n, d.get("segs"))
             await _respond(writer, "200 OK", "application/json", json.dumps({"ok": bool(n)}))
+        elif method == "GET" and path == "/api/mobil":
+            await _respond(writer, "200 OK", "application/json", json.dumps(mobil_runner().status()))
         elif method == "GET" and path == "/api/motion":
             await _respond(writer, "200 OK", "application/json",
                            json.dumps(motion_runner().status()))
@@ -1654,4 +1677,6 @@ async def start_http(store: memory.MemoryStore, sync: Optional[object] = None,
                           inbox, mood, reminders, diary, chat_new, reach, touch, hear),
         host, port)
     logger.info("Memory page on port %d", port)
+    if os.environ.get("LEYLA_MOBIL", "1") == "1":
+        asyncio.get_running_loop().create_task(mobil_runner().run())
     return server
