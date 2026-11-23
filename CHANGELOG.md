@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.141.8 (23 Nov 2026)
+
+- `fix(app)`: after 2.141.5 the stage stayed black on the go. Chrome did not report mobile data through Tailscale, so the page asked for the 29 Mbit original, and since a clip now waits until it can play through, no stall was ever counted to switch to the light copy. A clip that cannot play through after 2.5 s now switches to the light copy, and it starts once it shows a frame.
+
 ## 2.141.7 (23 Nov 2026)
 
 - Voice messages in the app are timed too (Metin: typed answers come fast on the go, voice messages take forever): hearing, answer and voice on the server, the size up and down, and the round trip on the phone, at GET /api/timing.

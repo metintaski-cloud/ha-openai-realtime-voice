@@ -585,7 +585,10 @@ function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name);const tight=TI
  b.onended=null;b.ontimeupdate=null;b.loop=!!loop;b.muted=!snd||document.getElementById('chat').classList.contains('oncall');b.volume=.7;let rdy=false;const ready=()=>{if(rdy)return;rdy=true;b.oncanplaythrough=null;if(tok!==STOK)return;
   if(cont&&a.classList.contains('on')&&a.duration&&!a.ended){const w=(a.duration-PRE-a.currentTime)*1000/(a.playbackRate||1);if(w>30){SWAP=tok;setTimeout(()=>{if(tok===STOK)go();},w);return;}}go();};
  /* 2.141.5 (Metin on the go: each clip stalled on its first pass and ran smoothly on the second): start a clip only when the browser expects to play it through, not at the first frame; after 8 s it starts anyway */
- b.oncanplaythrough=ready;setTimeout(ready,8000);
+ b.oncanplaythrough=ready;b.oncanplay=null;
+ /* 2.141.8: Chrome does not always say it is on mobile data (through Tailscale it did not), so a clip that cannot play through after 2.5 s switches to the light copy; it starts once it shows a frame */
+ setTimeout(()=>{if(rdy||tok!==STOK)return;if(!lightNow()&&!b.src.includes('&m=1')){LIGHT=true;b.src+='&m=1';b.load();}
+  setTimeout(()=>{if(rdy||tok!==STOK)return;if(b.readyState>=3)ready();else b.oncanplay=()=>{b.oncanplay=null;ready();};},6000);},2500);
  const go=()=>{b.currentTime=0;b.play().catch(()=>{b.muted=true;b.play().catch(()=>{});});b.style.zIndex=1;a.style.zIndex=0;b.classList.add('on');s.classList.add('vid');SV=1-SV;
   setTimeout(()=>{if(tok===STOK)a.classList.remove('on');},OFF);setTimeout(()=>{if(!a.classList.contains('on'))a.pause();},OFF+150);let fired=false;const fire=()=>{if(fired||tok!==STOK||!done)return;fired=true;CONT=true;done();CONT=false;};
   const fol=rateFollow(b,b.dataset.pth||'');
