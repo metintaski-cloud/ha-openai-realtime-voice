@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.141.7 (23 Nov 2026)
+
+- Voice messages in the app are timed too (Metin: typed answers come fast on the go, voice messages take forever): hearing, answer and voice on the server, the size up and down, and the round trip on the phone, at GET /api/timing.
+
 ## 2.141.6 (23 Nov 2026)
 
 - Chat answers are timed: the server time of each answer and the round trip the phone saw, shown at GET /api/timing. Metin finds the answers far too slow on the go; this shows whether the wait is the model or the line.

@@ -480,7 +480,9 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             audio = base64.b64decode(audio_b64 or "", validate=False)
         except Exception:
             return None
+        t0 = time.monotonic()
         heard = await chat.transcribe(self.openai_api_key, audio, mime or "audio/webm")
+        t1 = time.monotonic()
         logger.info("Dictation in the app: %d bytes, %s", len(audio),
                     "understood" if heard else "nothing understood")
         return {"heard": heard}
@@ -499,6 +501,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         if not out:
             return {"heard": heard}
         out["heard"] = heard
+        t2 = time.monotonic()
+        out["t"] = {"hoeren": int((t1 - t0) * 1000), "antwort": int((t2 - t1) * 1000)}
         if not out.get("reply"):
             return out  # she is silent: no voice either
         try:
@@ -509,6 +513,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 out["audio"] = base64.b64encode(messages.pcm_to_wav(pcm)).decode("ascii")
         except Exception as e:
             logger.warning("Voice reply could not be spoken: %s", e)
+        out["t"]["stimme"] = int((time.monotonic() - t2) * 1000)
         logger.info("Voice message in the app: %d bytes heard, reply audio %s",
                     len(audio), "yes" if out.get("audio") else "no")
         return out

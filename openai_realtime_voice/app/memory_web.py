@@ -680,9 +680,10 @@ function chatAnswer(j){if(j&&j.silent){CHAT.push({role:'info',text:'🤐 Leyla a
  const m={role:'leyla',text:j.reply};if(j.audio){m.aid='a'+Date.now();AUDIO.set(m.aid,'data:audio/wav;base64,'+j.audio);}CHAT.push(m);
  (j.lights||[]).forEach(t=>CHAT.push({role:'info',text:(/^(✉|📣|🧹)/.test(t)?'':'💡 ')+t}));if(j.scene)stageScene(j.scene);if(j.mood)moodShow(j.mood);if(j.email)CHAT.push({role:'mail',e:j.email});if(j.trash)CHAT.push({role:'trash',t:j.trash});(j.proposals||[]).forEach(p=>CHAT.push({role:'prop',p}));return m.aid||null;}
 function blobB64(b){return new Promise(r=>{const f=new FileReader();f.onload=()=>r(String(f.result).split(',')[1]||'');f.readAsDataURL(b);});}
+let VRTT=null;  /* 2.141.7: round trip of the last voice message */
 async function voiceSend(blob,mime){const history=CHAT.filter(m=>m.role==='user'||m.role==='leyla').map(m=>({role:m.role,text:m.text}));
  const u={role:'user',text:'🎤 ...'};CHAT.push(u);chatSave();chatDraw(true);snd.on();
- let j=null;try{j=await (await post('/api/chat_voice',{history,audio:await blobB64(blob),mime})).json();}catch(e){}
+ let j=null;const t0=performance.now();try{j=await (await post('/api/chat_voice',{history,audio:await blobB64(blob),mime,rtt:VRTT,light:lightNow()})).json();}catch(e){}VRTT=Math.round(performance.now()-t0);
  if(j&&j.heard){u.text='🎤 '+j.heard;}else{u.text='🎤 (nicht verstanden)';}
  const aid=(j&&j.heard)?chatAnswer(j):null;chatSave();chatDraw();snd.drop();if(aid)playAudio(aid);}
 document.querySelector('#chat .chead').appendChild(document.getElementById('cmic'));  // mic as a pill top right above Live (2.114.9, Metin)
@@ -1538,6 +1539,12 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                     out = await voice(d.get("history"), d.get("audio"), d.get("mime"))
                 except Exception as e:
                     logger.warning("Voice message failed: %s", e)
+            if isinstance(out, dict):
+                t = out.pop("t", {})
+                TIMING.append({"at": time.strftime("%H:%M:%S"), "kind": "mikro", **t,
+                               "up_kb": len(d.get("audio") or "") * 3 // 4096,
+                               "down_kb": len(out.get("audio") or "") * 3 // 4096,
+                               "prev_rtt_ms": d.get("rtt"), "light": bool(d.get("light"))})
             await _respond(writer, "200 OK", "application/json",
                            json.dumps(out or {"error": True}, ensure_ascii=False))
         elif method == "POST" and path.startswith("/api/google/"):
