@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.143.2 (24 Nov 2026)
+
+- `fix(app)`: the clips flickered at their change (Metin). Since 2.141.5 the phone loads the next clip up to 9 s ahead; in a 10 s clip that began about 1 s after the swap and put the next clip into the old video element while it was still fading out (visible up to 1.65 s). The early preload now waits 2.5 s after the swap.
+
 ## 2.143.1 (24 Nov 2026)
 
 - Her voice replies in the chat show no text any more, only the play button (Metin); while the voice is still coming the bubble shows a speaker sign. The download link is gone with it. Without audio (after reloading the page, or when the voice failed) the text shows as before, and the history still stores the text.
