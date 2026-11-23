@@ -429,3 +429,21 @@ Ergebnis (Clip 5127, 23.11.2026 13:06, Metin: "ist gut geworden"): 2352 x 3524, 
 Damit ist belegt, dass die Schreibweise trägt, wenn die Bewegungen gezählt sind: ein Schwung pro Sekunde im Prompt ergab einen lebendigen Clip im richtigen Tempo beim ersten Versuch.
 
 Schleifen mit mehreren Varianten (23.11.2026, Metin: Schatten am Ende der Schleifen): Die App spielt nach einer Schleife absichtlich eine andere Variante derselben Stimmung. Gemessen bei schwarz/freizeitgluecklich 1 bis 3: jede Variante endet nah an ihrem eigenen Anfang (0,43 bis 0,64), aber weit weg vom Anfang der anderen (1,54 bis 1,99). Deshalb in 2.141.2 die Überblendung zwischen Varianten auf 0,25 s verkürzt. Für neue Varianten einer Stimmung gilt: alle mit demselben Start und Endbild erzeugen, dann passen sie auch untereinander nahtlos.
+
+## Po Berührung langes Freizeitkleid neu: schwarz/freizeitpo (24.11.2026, vorbereitet 00:10)
+
+Metin wollte den alten Clip schwarz/freizeitpo durch einen passenden 4K Clip ersetzen und gab den Inhalt selbst vor (Variante 4, nicht von Claude): sie wird verlegen, dreht sich um, macht einen Achterkreis mit dem Po, dreht sich zurück und zeigt, dass er ihren Po berührt hat. Den letzten Teil hat Claude als frechen Fingerzeig in die Kamera umgesetzt (Zeigefinger zweimal wackeln); das ist Claudes Deutung von Metins Satz und ihm vor dem Klick so gesagt.
+
+Einstellungen: Kling 4.0, Eingang Keyframes, Start und Endbild dasselbe Favoritenbild im langen Freizeitkleid wie bei den Schleifen vom 23.11., 4K, 10 s, Adaptive, 1 Ausgabe, 350 Credits (vom Knopf ablesen).
+
+Prompt (durch `tools/kling_check.py`, kein Bremswort, keine Verbote außer den beiden erlaubten): "Use the first keyframe as the first frame and the last keyframe as the last frame. A single continuous shot with no cuts. The camera stays fixed on a tripod and keeps the full body framing of the keyframes; the background and the reflections on the floor stay exactly as they are. Exactly one woman. Her bare face, eyes and hair stay exactly as in the keyframes the whole time. Every movement keeps natural weight and real-time speed. 0 to 1.5 seconds: she gasps with wide eyes, she lifts both shoulders and she presses one hand to her cheek; her eyes drop to the floor with a bashful smile. 1.5 to 3 seconds: she turns around on the spot with two small steps until her back faces the camera, and she sets both hands on her hips. 3 to 6 seconds: with her back to the camera and her hands on her hips she draws one big, wide figure eight with her hips: she swings her hips far out to her right, she rolls them around to the back, she swings them far out to her left and she rolls them back to the middle; the hem of her dress and her hair follow the movement. 6 to 7.5 seconds: she turns back to the front with two small steps and she looks straight into the lens with a cheeky grin, one eyebrow raised. 7.5 to 8.5 seconds: she points her right index finger at the lens and she wags it twice. 8.5 to 10 seconds: she lowers her arm, returns to the stance of the first frame and holds exactly the pose of the last frame, completely still. No subtitles, no background music."
+
+Gezählt: 15 eigene Bewegungen in 10 s. 0 bis 1,5 s verlegen (3), 1,5 bis 3 s umdrehen (2), 3 bis 6 s eine große Acht (4 Schwünge), 6 bis 7,5 s zurückdrehen (2), 7,5 bis 8,5 s Fingerzeig (2), 8,5 bis 10 s Arm senken und Stillstand.
+
+Herkunft der Teile:
+- Aus den Profi Quellen: ein Take, Kamera positiv, Menge als Tatsache, Zeitabschnitte, gezählte Bewegungen, natürliches Gewicht und Tempo, Stillstand am Ende, nur zwei Verbote.
+- Aus unserem Log: Hände an der Hüfte und "one big, wide figure eight ... far out to each side" (22.11., die Acht von hinten kam sonst nicht), im Rückenteil nur die Acht und kein Schulterblick (Brille beim Schulterblick, zu viele Handlungen im Rückenteil), Gesicht Satz ohne das Wort für Brille, Drehung mit zwei kleinen Schritten über 1,5 s (schnelle Drehungen wurden im langen Freizeitkleid hektisch), wechselnder Ausdruck (erst verlegen, dann frech), erste Handlung kurz gehalten (Kling lässt sie sonst stehen).
+- Risiko: fünf Abschnitte in 10 s sind viel. Wirkt der Clip gehetzt, nach fal.ai ein Ereignis streichen (zuerst den Fingerzeig), nicht Text hinzufügen.
+
+Ergebnis hier nachtragen.
+
