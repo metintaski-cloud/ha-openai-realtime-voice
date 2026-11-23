@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.142.2 (23 Nov 2026)
+
+- Music at 30 % of its volume while her voice plays (half was still too loud, Metin).
+
 ## 2.142.1 (23 Nov 2026)
 
 - `fix(app)`: Metin could not understand her voice replies over the music. The music was only lowered through the talking clip (`TALKING`, set by `stageTalk`); now every voice reply (`playAudio`, the streamed reply) lowers it at once on its own (`voiceOn`), to half the normal volume as Metin asked.
