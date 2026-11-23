@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.141.6 (23 Nov 2026)
+
+- Chat answers are timed: the server time of each answer and the round trip the phone saw, shown at GET /api/timing. Metin finds the answers far too slow on the go; this shows whether the wait is the model or the line.
+
+## 2.141.5 (23 Nov 2026)
+
+- `fix(app)`: on the go every clip stalled on its first pass and ran smoothly on the second. A clip now starts only when the browser expects to play it through (after 8 s at the latest), and on the go the next clip starts loading 9 s ahead, once the running one is fully loaded.
+
 ## 2.141.4 (23 Nov 2026)
 
 - `fix`: whether a clip gets a light copy is now decided by its strongest second, not its average. nacht/tanz14 averages 10 Mbit/s (under the old limit of 12) but peaks at 16, tanz32/33/36 peak at 20 to 23, and they stalled on the go (Metin 23.11.2026). Every clip whose strongest second is above 9 Mbit/s now gets a copy; copies already made at 7M are kept.

@@ -12,6 +12,7 @@ MemoryStore, so tests need no network.
 """
 import asyncio
 import base64
+import collections
 import json
 import re
 import logging
@@ -472,12 +473,13 @@ function propCard(m,i){const c=document.createElement('div');c.className='p';con
   if(ok){CHAT.splice(i,1);snd.save();}else CHAT[i].done='Ging nicht, der Eintrag hat sich inzwischen geändert';chatSave();chatDraw();last='';load();};
  n.onclick=()=>{CHAT.splice(i,1);snd.off();chatSave();chatDraw();};
  row.append(y,n);c.appendChild(row);return c;}
+let CRTT=null;  /* 2.141.6: round trip of the last chat answer, sent with the next one */
 async function chatSend(){const ta=document.getElementById('ctext'),msg=ta.value.trim();if(!msg)return;
  const history=CHAT.filter(m=>m.role==='user'||m.role==='leyla').map(m=>({role:m.role,text:m.text}));
  CHAT.push({role:'user',text:msg});ta.value='';DIKQ=false;bgmTick();chatSave();chatDraw(true);snd.on();  /* music back on when he sends (2.140.1, Metin) */
  if(!ta.readOnly){const kb=document.getElementById('ckb');if(kb)kb.onclick();}  /* back to dictation after sending (2.140.0) */
- let j=null;try{j=await (await post('/api/chat',{history,message:msg})).json();}catch(e){}
- chatAnswer(j);chatSave();chatDraw();snd.drop();}
+ let j=null;const t0=performance.now();try{j=await (await post('/api/chat',{history,message:msg,rtt:CRTT,light:lightNow()})).json();}catch(e){}
+ CRTT=Math.round(performance.now()-t0);chatAnswer(j);chatSave();chatDraw();snd.drop();}
 const AUDIO=new Map();let REC=null,RECT=null,DIK=null,DIKT=null,DIKQ=false;  /* DIK: dictation, DIKQ: music stays off until he sends */
 function playAudio(id){try{const a=new Audio(AUDIO.get(id));a.onplay=()=>stageTalk(true);a.onended=a.onpause=()=>stageTalk(false);a.play().catch(()=>stageTalk(false));}catch(e){}}
 let TALKING=false,DANCING=false;
@@ -1201,6 +1203,17 @@ MOTION = None
 MOBIL = None
 
 
+TIMING = collections.deque(maxlen=50)  # 2.141.6: chat times, server part against what the phone saw
+
+
+def _timing_add(server_ms, prev_rtt, light) -> None:
+    """Server time of this chat answer and the round trip the phone measured for the previous one."""
+    rtt = prev_rtt if isinstance(prev_rtt, int) and 0 < prev_rtt < 600000 else None
+    TIMING.append({"at": time.strftime("%H:%M:%S"), "server_ms": server_ms,
+                   "prev_rtt_ms": rtt, "light": bool(light)})
+    logger.info("Chat timing: server %d ms, phone saw %s ms for the previous one", server_ms, rtt)
+
+
 def mobil_runner():
     """Light copies of the heavy 4K clips for the phone on the go (app/mobil.py, 2.141.0)."""
     global MOBIL
@@ -1446,6 +1459,8 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                 _kurve_set(n, d.get("segs") or [])
                 logger.info("Tempo curve: %s -> %s", n, d.get("segs"))
             await _respond(writer, "200 OK", "application/json", json.dumps({"ok": bool(n)}))
+        elif method == "GET" and path == "/api/timing":
+            await _respond(writer, "200 OK", "application/json", json.dumps(list(TIMING)))
         elif method == "GET" and path == "/api/mobil":
             await _respond(writer, "200 OK", "application/json", json.dumps(mobil_runner().status()))
         elif method == "GET" and path == "/api/motion":
@@ -1487,11 +1502,13 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                            json.dumps({"text": text}, ensure_ascii=False))
         elif method == "POST" and path == "/api/chat":
             out = None
+            t0 = time.monotonic()
             if unlocked and chat:
                 try:
                     out = await chat(d.get("history"), d.get("message"))
                 except Exception as e:
                     logger.warning("Chat failed: %s", e)
+            _timing_add(int((time.monotonic() - t0) * 1000), d.get("rtt"), d.get("light"))
             await _respond(writer, "200 OK", "application/json",
                            json.dumps(out or {"error": True}, ensure_ascii=False))
         elif method == "POST" and path == "/api/chat_touch":
