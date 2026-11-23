@@ -567,8 +567,10 @@ function clipFor(st){const lv=st.low&&st.level&&st.mood!=='eifersuechtig'?'traur
 /* light copies on the go (2.141.0, Metin: the 4K clips stall on mobile data). Automatic:
    on mobile data, or after a clip has stalled twice within a minute. */
 let LIGHT=false,STALLS=[];
+/* 2.143.0: a phone always gets the copy at phone size (1440 px wide); its screen cannot show more and decoding 4K made it warm (Metin) */
+const PHONE=Math.min(screen.width,screen.height)*(window.devicePixelRatio||1)<=1600;
 function lightNow(){try{const o=localStorage.getItem('llight');if(o==='an')return true;if(o==='aus')return false;}catch(e){}
- const c=navigator.connection;return LIGHT||!!(c&&(c.type==='cellular'||c.saveData));}
+ const c=navigator.connection;return LIGHT||PHONE||!!(c&&(c.type==='cellular'||c.saveData));}
 function stallSeen(){if(lightNow())return;const t=Date.now();STALLS=STALLS.filter(x=>t-x<60000);STALLS.push(t);if(STALLS.length>=2)LIGHT=true;}
 let RATE={},KURVE={};
 function rateOf(pth){return RATE[pth]||1;}

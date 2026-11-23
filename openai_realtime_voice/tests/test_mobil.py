@@ -110,7 +110,7 @@ def test_copies_from_an_older_cap_are_made_again(tmp_path):
     asyncio.run(m.scan())
     asyncio.run(m.scan())
     assert made.count(paths["schwarz/schwer"]) == 2
-    assert m.index["schwarz/schwer"]["cap"] == mobil.MAX_RATE
+    assert m.index["schwarz/schwer"]["cap"] == mobil.CAP
 
 
 def test_peak_not_average_decides(tmp_path):
@@ -142,3 +142,25 @@ def test_old_index_entries_are_measured_again_and_keep_their_copy(tmp_path):
     asyncio.run(m.scan())
     assert all(v["peak"] == 16_000_000 for v in m.index.values())
     assert made == [], "copies already made at the current cap are kept"
+
+
+def test_a_wide_clip_gets_a_phone_sized_copy_even_when_light(tmp_path):
+    """2.143.0: a calm 4K clip (peak under 9 Mbit) still made the phone warm decoding 2352 px."""
+    m, paths = _setup(tmp_path)
+    made = []
+
+    async def probe(path):
+        return 5_000_000
+
+    async def width(path):
+        return 2352 if "schwer" in path else 1176
+
+    async def encode(src, dst):
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        open(dst, "wb").write(b"light")
+        made.append(src)
+        return True
+
+    m._probe, m._width, m._encode = probe, width, encode
+    asyncio.run(m.scan())
+    assert made == [paths["schwarz/schwer"]]

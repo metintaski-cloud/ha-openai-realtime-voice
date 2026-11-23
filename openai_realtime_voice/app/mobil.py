@@ -22,6 +22,9 @@ HEAVY = 9_000_000         # bit/s in the strongest second (2.141.4: the average 
                           # averages 16 but peaks at 23, tanz14 averages 10 and peaks at 16, both stalled)
 MAX_RATE = "7M"           # 2.141.3: 8M still gave a mini stutter now and then; 7M averages 7.4 and peaks at
 BUF = "10M"               # 8.7 Mbit/s (2.141.1: 10M had peaked at 13, above Metin's limit of about 11)
+MAX_W = 1440              # 2.143.0: the copies are made at phone size; a 1080 px wide screen showed the 2352 px
+                          # wide 4K clip at less than half its pixels and the phone got warm decoding it (Metin)
+CAP = f"{MAX_RATE}/{MAX_W}"   # what a copy was made with; a change makes every copy once more
 PROBE_TIMEOUT = 30.0
 ENCODE_TIMEOUT = 1800.0
 RESCAN_S = 1800
@@ -87,12 +90,17 @@ class Mobil:
             pass
         return ""
 
+    @staticmethod
+    def needs_copy(m: dict) -> bool:
+        """Too much for the line in its strongest second, or wider than a phone needs."""
+        return m.get("peak", 0) > HEAVY or m.get("w", 0) > MAX_W
+
     def status(self) -> dict:
         paths = self.folder_of()
-        heavy = [n for n, m in self.index.items() if m.get("peak", 0) > HEAVY and n in paths]
+        heavy = [n for n, m in self.index.items() if self.needs_copy(m) and n in paths]
         ready = [n for n in heavy if self.copy_for(n, paths[n])]
         return {"heavy": len(heavy), "ready": len(ready), "busy": self.busy,
-                "failed": self.failed[-10:], "max_rate": MAX_RATE}
+                "failed": self.failed[-10:], "max_rate": MAX_RATE, "max_w": MAX_W}
 
     # --- work -------------------------------------------------------------------
     async def _probe(self, path: str) -> int:
@@ -107,10 +115,21 @@ class Mobil:
             return 0
         return peak_of(out.decode())
 
+    async def _width(self, path: str) -> int:
+        try:
+            p = await asyncio.create_subprocess_exec(
+                "ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width",
+                "-of", "csv=p=0", path, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL)
+            out, _ = await asyncio.wait_for(p.communicate(), timeout=PROBE_TIMEOUT)
+            return int(out.decode().strip().split(",")[0] or 0)
+        except (OSError, asyncio.TimeoutError, ValueError):
+            return 0
+
     async def _encode(self, src: str, dst: str) -> bool:
         os.makedirs(os.path.dirname(dst), exist_ok=True)
         tmp = dst + ".part.mp4"
         cmd = ("nice", "-n", "19", "ffmpeg", "-v", "error", "-y", "-i", src, "-an",
+               "-vf", f"scale='min({MAX_W},iw)':-2:flags=lanczos",
                "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-profile:v", "high",
                "-level", "5.1", "-pix_fmt", "yuv420p", "-g", "48", "-bf", "3",
                "-maxrate", MAX_RATE, "-bufsize", BUF, "-movflags", "+faststart", tmp)
@@ -140,9 +159,10 @@ class Mobil:
             except OSError:
                 continue
             m = self.index.get(name)
-            if not m or m.get("stamp") != stamp or "peak" not in m:
+            if not m or m.get("stamp") != stamp or "peak" not in m or "w" not in m:
                 cap = m.get("cap") if m and m.get("stamp") == stamp else None
-                self.index[name] = {"stamp": stamp, "peak": await self._probe(path)}
+                self.index[name] = {"stamp": stamp, "peak": await self._probe(path),
+                                    "w": await self._width(path)}
                 if cap:
                     self.index[name]["cap"] = cap
         for name in [n for n in self.index if n not in paths]:
@@ -153,15 +173,15 @@ class Mobil:
                 pass
         self._save()
         for name, m in sorted(self.index.items()):
-            if m.get("peak", 0) <= HEAVY:
+            if not self.needs_copy(m):
                 continue
-            if self.copy_for(name, paths[name]) and m.get("cap") == MAX_RATE:
+            if self.copy_for(name, paths[name]) and m.get("cap") == CAP:
                 continue           # an older copy stays served until the new one is ready
             self.busy = name
             ok = await self._encode(paths[name], self.copy_path(name))
             self.busy = ""
             if ok:
-                m["cap"] = MAX_RATE
+                m["cap"] = CAP
                 self._save()
                 self.done += 1
                 logger.info("Mobil: light copy of %s ready (%d so far)", name, self.done)
