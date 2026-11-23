@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.144.1 (24 Nov 2026)
+
+- The black fade at the top edge of the stage is gone (`#stage::after`): it reached down to 7 % of the screen and covered the top of Leyla's head (Metin). The fades at the sides and at the bottom stay.
+
 ## 2.144.0 (24 Nov 2026)
 
 - `feat`: Metin sets begin and end of every clip himself ("dass ich die Endungen selber einstellen und schneiden kann"). The tester (`/tempo`, now "Clip Tester") has two sliders Anfang and Ende, buttons for one picture earlier or later (1/24 s), "Ende ansehen" (plays the last 2 s up to the end mark and then the first 1.5 s from the begin mark), "Schnitt merken" and "Schnitt weg", plus a list to jump to any clip. The marks are stored by the server (`/data/schnitt.json`, GET and POST `/api/schnitt`, `s` per look in `/clips.json`); the files stay whole, so nothing is re-encoded and a mark can be changed or removed at any time. The stage starts a clip at its begin mark, hands over to the next clip at its end mark and holds the last picture there.
