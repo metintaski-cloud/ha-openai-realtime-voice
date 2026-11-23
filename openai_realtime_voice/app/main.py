@@ -473,6 +473,18 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                     "yes" if out.get("audio") else "no")
         return out
 
+    async def _chat_hear(self, audio_b64, mime) -> Optional[dict]:
+        """Dictation for the memory app: his words as text, nothing else. He reads them in
+        the field and presses Senden himself (2.140.0, Metin)."""
+        try:
+            audio = base64.b64decode(audio_b64 or "", validate=False)
+        except Exception:
+            return None
+        heard = await chat.transcribe(self.openai_api_key, audio, mime or "audio/webm")
+        logger.info("Dictation in the app: %d bytes, %s", len(audio),
+                    "understood" if heard else "nothing understood")
+        return {"heard": heard}
+
     async def _chat_voice(self, history, audio_b64, mime) -> Optional[dict]:
         """A voice message from Metin in the memory app: text, Leyla's answer, her voice."""
         try:
@@ -1601,7 +1613,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                                             google=self.google, inbox=self.inbox,
                                             mood=self.mood, reminders=self.reminders,
                                             diary=self.diary, chat_new=self._chat_new,
-                                            reach=self.reach, touch=self._chat_touch)
+                                            reach=self.reach, touch=self._chat_touch,
+                                            hear=self._chat_hear)
             except Exception as e:
                 logger.warning("Memory page could not start: %s", e)
         if self.messages.available:

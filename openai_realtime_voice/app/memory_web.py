@@ -339,12 +339,14 @@ button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 #cin{position:absolute;z-index:2;left:8px;right:8px;bottom:8px;margin:0}
 #cin{display:grid;grid-template-columns:1fr auto 1fr;align-items:center}#cin #cnew{justify-self:start;margin:0;padding:9px 14px;font-size:14px}
 #ctype{display:flex;position:absolute;z-index:3;left:8px;right:auto;width:58%;bottom:8px;gap:6px;align-items:stretch}#chat #clog{bottom:70px}#ctype #cnew{width:auto;margin:0;padding:0 10px;font-size:13px;white-space:nowrap}#cin{display:none!important}
+#ctype #ckb{position:absolute;right:-2px;top:-30px;width:auto;padding:3px 9px;font-size:12px;border-radius:999px;background:#000a;border:1px solid #22d3ee66}#ctype #ckb.on{background:linear-gradient(90deg,#22d3ee,#8b5cf6);color:#04121e}
+#ctype textarea.hoert{border-color:#ef4444;box-shadow:0 0 14px #ef444488;animation:recp 1s infinite}
 #ctype textarea{flex:1;min-height:44px;max-height:110px;height:48px;font:inherit;color:#fff;background:#000a;backdrop-filter:blur(4px);border:1px solid var(--bl);border-radius:10px;padding:9px;resize:none}#ctype #csend{width:auto;padding:0 12px;font-size:15px}
 #cin #cmic{width:64px;height:64px;padding:0;border-radius:50%;font-size:28px;box-shadow:0 0 18px #d946ef88}
 #clog{bottom:84px}#stage{top:0;bottom:0}body.chatfull{overflow:hidden;overscroll-behavior:none}body.chatfull #chat{position:fixed;inset:0;z-index:15;margin:0;border-radius:0;height:100vh!important;height:100dvh!important}body.chatfull #menu{position:fixed;top:56px;left:8px;right:8px;z-index:60;max-height:80vh;overflow-y:auto}#chat .chead .cav,#chat #mlabel,#chat .chead>div:nth-child(3){display:none!important}#chat .chead #clive,#chat .chead #crose,#chat .chead #cmus{position:absolute;right:10px;margin:0;z-index:3;min-width:52px;text-align:center}#chat .chead #cmic{position:absolute;right:10px;top:10px;margin:0;z-index:3;min-width:52px;width:auto;height:auto;padding:7px 12px!important;font-size:14px;line-height:normal;border-radius:999px;box-shadow:none;text-align:center}#chat .chead #clive{top:58px}#chat .chead #crose{top:106px}#chat .chead #cmus{top:154px}#chat .chead #csend,#chat .chead #cnew{position:absolute;margin:0;z-index:3;min-width:52px;width:auto;height:auto;padding:7px 12px;font-size:14px;line-height:normal;border-radius:999px;text-align:center;white-space:nowrap}#chat .chead #csend{left:10px;top:106px}#chat .chead #cnew{right:10px;top:202px}#chat .chead #cmenu{width:auto;padding:7px 11px;font-size:16px;background:#000a;border:1px solid #22d3ee66}#chat #clog{pointer-events:none}#chat #clog>*{pointer-events:auto}#clog .m,#clog .lr,#clog .wait{pointer-events:none}#clog .play{pointer-events:auto}#ztimer{display:none;position:absolute;z-index:4;left:14px;top:64px;width:30px;height:30px;cursor:pointer}#zname{display:none;position:absolute;z-index:4;left:8px;top:152px;max-width:60%;padding:3px 7px;border-radius:7px;background:#000a;color:#9fe8ff;font-size:12px;pointer-events:none}body.chatfull #ztimer{display:block}#ztimer circle{fill:none;stroke-width:4}#ztimer .bg{stroke:#ffffff26}#ztimer .fg{stroke:#ef4444;stroke-linecap:round;transform:rotate(-90deg);transform-origin:50% 50%;transition:stroke .2s}#ztimer.go .fg{stroke:#22c55e}#ztimer .dot{fill:#fff;stroke:none;opacity:0;transition:opacity .2s}#ztimer.hit .dot{opacity:.9}#ztimer.gold .dot{fill:#facc15;opacity:1}#stage .zring{position:absolute;z-index:6;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;border:2px solid #fffb;background:#ffffff1f;pointer-events:none;animation:zring .9s ease-out forwards}@keyframes zring{from{transform:scale(.5);opacity:1}to{transform:scale(1.4);opacity:0}}body.chatfull #chat{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}body.chatfull #chat textarea{-webkit-user-select:text;user-select:text}body.chatfull #clog{width:46%}body.chatfull #clog .m{font-size:13px;line-height:1.3;padding:6px 9px;border-radius:11px}body.chatfull #clog .wait{font-size:12px}#stage,#stage *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 </style></head><body>
 <div id="splash"><div class="sp"><img src="/icon.png?v=5" alt=""><svg viewBox="0 0 200 200"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#a855f7"/><stop offset="1" stop-color="#d946ef"/></linearGradient></defs><circle class="trk" cx="100" cy="100" r="90"/><circle class="rg" cx="100" cy="100" r="90" pathLength="100"/></svg></div></div>
-<header><button id="back">&#8249;</button><img id="micon" src="/icon.png?v=5" alt="Menü" title="Menü"><h1>Leyla Gedächtnis</h1></header><div id="menu"></div><div id="pulse" class="ok" title="Alles in Ordnung"><div class="tick" id="tick" style="display:none"><span></span></div><i class="spark" style="left:12%;top:30%;animation-delay:0s"></i><i class="spark" style="left:22%;top:68%;animation-delay:0.6s"></i><i class="spark" style="left:31%;top:22%;animation-delay:1.2s"></i><i class="spark" style="left:68%;top:74%;animation-delay:0.3s"></i><i class="spark" style="left:77%;top:28%;animation-delay:0.9s"></i><i class="spark" style="left:88%;top:60%;animation-delay:1.5s"></i><i class="spark" style="left:40%;top:80%;animation-delay:1.8s"></i><i class="spark" style="left:60%;top:18%;animation-delay:2.1s"></i><div class="beam"></div><svg viewBox="0 0 100 90"><defs><linearGradient id="hg" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#f43f5e"/></linearGradient><radialGradient id="hc"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#7dd3fc"/><stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/></radialGradient></defs><path d="M50 84C20 62 4 46 4 28C4 14 15 4 28 4C38 4 46 10 50 18C54 10 62 4 72 4C85 4 96 14 96 28C96 46 80 62 50 84Z" fill="#0b1650cc" stroke="url(#hg)" stroke-width="3.2" stroke-linejoin="round"/><path d="M14 40H34L40 28L47 54L53 34L58 44H86" fill="none" stroke="#e0f2fe" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/><circle cx="54" cy="38" r="9" fill="url(#hc)"/></svg></div><div id="chat"><div id="stage"><div class="fig"><img src="/leyla_body.jpg" alt=""></div><video id="svid" muted playsinline preload="auto"></video><video id="svid2" muted playsinline preload="auto"></video><video id="spet" class="pet" muted playsinline preload="auto"></video><div class="fog"><i class="fl"></i><i class="fr"></i><i class="ff"></i></div></div><div class="chead"><button id="cmenu" title="Menü">&#9776;</button><div class="cav"><img src="/leyla.jpg" alt=""><span id="mbadge"></span></div><div><h2>Chat mit Leyla</h2><div id="mlabel"></div><div id="ccount"></div></div><button id="crose" title="Rose schenken, einmal pro Woche">&#127801;</button><button id="cmus" title="Musik an oder aus">&#127925;</button><button id="clive" title="Live mit Leyla reden">&#128222; Live</button><div id="lpill"></div></div><div id="clog"></div><div id="ctype"><textarea id="ctext" placeholder="Schreib Leyla ..."></textarea><button id="csend">Senden</button></div><div id="cin"><button id="cnew" title="Neuen Chat beginnen">Neuer Chat</button><button id="cmic" title="Sprachnachricht">&#127908; Mikro</button></div></div><div id="live"><img src="/leyla.jpg" alt=""><div id="lstat">Verbinde ...</div><button id="lend">Auflegen</button></div><div id="rules"><div class="top"><button id="rback">&#8249;</button><h1>So ist Leyla</h1></div><div id="rtext"></div></div><div id="root"></div><div id="gmail" style="display:none"></div><div id="lamps" style="display:none"></div>
+<header><button id="back">&#8249;</button><img id="micon" src="/icon.png?v=5" alt="Menü" title="Menü"><h1>Leyla Gedächtnis</h1></header><div id="menu"></div><div id="pulse" class="ok" title="Alles in Ordnung"><div class="tick" id="tick" style="display:none"><span></span></div><i class="spark" style="left:12%;top:30%;animation-delay:0s"></i><i class="spark" style="left:22%;top:68%;animation-delay:0.6s"></i><i class="spark" style="left:31%;top:22%;animation-delay:1.2s"></i><i class="spark" style="left:68%;top:74%;animation-delay:0.3s"></i><i class="spark" style="left:77%;top:28%;animation-delay:0.9s"></i><i class="spark" style="left:88%;top:60%;animation-delay:1.5s"></i><i class="spark" style="left:40%;top:80%;animation-delay:1.8s"></i><i class="spark" style="left:60%;top:18%;animation-delay:2.1s"></i><div class="beam"></div><svg viewBox="0 0 100 90"><defs><linearGradient id="hg" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#f43f5e"/></linearGradient><radialGradient id="hc"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#7dd3fc"/><stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/></radialGradient></defs><path d="M50 84C20 62 4 46 4 28C4 14 15 4 28 4C38 4 46 10 50 18C54 10 62 4 72 4C85 4 96 14 96 28C96 46 80 62 50 84Z" fill="#0b1650cc" stroke="url(#hg)" stroke-width="3.2" stroke-linejoin="round"/><path d="M14 40H34L40 28L47 54L53 34L58 44H86" fill="none" stroke="#e0f2fe" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/><circle cx="54" cy="38" r="9" fill="url(#hc)"/></svg></div><div id="chat"><div id="stage"><div class="fig"><img src="/leyla_body.jpg" alt=""></div><video id="svid" muted playsinline preload="auto"></video><video id="svid2" muted playsinline preload="auto"></video><video id="spet" class="pet" muted playsinline preload="auto"></video><div class="fog"><i class="fl"></i><i class="fr"></i><i class="ff"></i></div></div><div class="chead"><button id="cmenu" title="Menü">&#9776;</button><div class="cav"><img src="/leyla.jpg" alt=""><span id="mbadge"></span></div><div><h2>Chat mit Leyla</h2><div id="mlabel"></div><div id="ccount"></div></div><button id="crose" title="Rose schenken, einmal pro Woche">&#127801;</button><button id="cmus" title="Musik an oder aus">&#127925;</button><button id="clive" title="Live mit Leyla reden">&#128222; Live</button><div id="lpill"></div></div><div id="clog"></div><div id="ctype"><textarea id="ctext" readonly inputmode="none" placeholder="Tippen und sprechen ..."></textarea><button id="ckb" title="Tastatur statt Diktat">abc</button><button id="csend">Senden</button></div><div id="cin"><button id="cnew" title="Neuen Chat beginnen">Neuer Chat</button><button id="cmic" title="Sprachnachricht">&#127908; Mikro</button></div></div><div id="live"><img src="/leyla.jpg" alt=""><div id="lstat">Verbinde ...</div><button id="lend">Auflegen</button></div><div id="rules"><div class="top"><button id="rback">&#8249;</button><h1>So ist Leyla</h1></div><div id="rtext"></div></div><div id="root"></div><div id="gmail" style="display:none"></div><div id="lamps" style="display:none"></div>
 <div id="bar"><button id="del" disabled>Markierte löschen</button></div>
 <script>
 let CODE=null;
@@ -473,6 +475,7 @@ function propCard(m,i){const c=document.createElement('div');c.className='p';con
 async function chatSend(){const ta=document.getElementById('ctext'),msg=ta.value.trim();if(!msg)return;
  const history=CHAT.filter(m=>m.role==='user'||m.role==='leyla').map(m=>({role:m.role,text:m.text}));
  CHAT.push({role:'user',text:msg});ta.value='';chatSave();chatDraw(true);snd.on();
+ if(!ta.readOnly){const kb=document.getElementById('ckb');if(kb)kb.onclick();}  /* back to dictation after sending (2.140.0) */
  let j=null;try{j=await (await post('/api/chat',{history,message:msg})).json();}catch(e){}
  chatAnswer(j);chatSave();chatDraw();snd.drop();}
 const AUDIO=new Map();let REC=null,RECT=null;
@@ -677,6 +680,34 @@ document.getElementById('cmic').onclick=async()=>{const b=document.getElementByI
  REC.onstop=()=>{st.getTracks().forEach(t=>t.stop());clearTimeout(RECT);const mime=REC.mimeType||'audio/webm';REC=null;bgmTick();b.classList.remove('rec');b.innerHTML='&#127908; Mikro';
   const blob=new Blob(parts,{type:mime});if(blob.size>2000)voiceSend(blob,mime);};
  REC.start();bgmTick();b.classList.add('rec');b.innerHTML='&#9632; Stopp';snd.on();RECT=setTimeout(()=>{if(REC)REC.stop();},60000);};
+/* Dictation instead of the keyboard (2.140.0, Metin: "wenn ich unten auf chat zum
+   schreiben druecke die Tastatur nicht mehr erscheint aber dafuer mikro was Sprache zu
+   text umwandelt was ich dann nur noch senden muss"). The field is readonly, so Android
+   keeps the keyboard shut; a tap records, a second tap stops, the text lands in the field
+   and he presses Senden. The abc pill gives him the keyboard back when he wants it. */
+let DIK=null,DIKT=null;
+(function(){const ta=document.getElementById('ctext'),kb=document.getElementById('ckb');
+ const say=t=>{ta.placeholder=t;};
+ async function stopDik(){if(!DIK)return;const r=DIK;DIK=null;try{r.stop();}catch(e){}}
+ async function startDik(){
+  if(!navigator.mediaDevices||!window.MediaRecorder){say('Mikrofon ist hier nicht frei');return;}
+  let st;try{st=await navigator.mediaDevices.getUserMedia({audio:true});}catch(e){say('Kein Zugriff aufs Mikrofon');return;}
+  const parts=[];DIK=new MediaRecorder(st);DIK.ondataavailable=e=>{if(e.data.size)parts.push(e.data);};
+  DIK.onstop=async()=>{st.getTracks().forEach(t=>t.stop());clearTimeout(DIKT);const mime=DIK?DIK.mimeType:'audio/webm';DIK=null;
+   ta.classList.remove('hoert');say('Tippen und sprechen ...');bgmTick();
+   const blob=new Blob(parts,{type:mime||'audio/webm'});if(blob.size<2000)return;
+   say('schreibe mit ...');
+   let j=null;try{j=await (await post('/api/hoeren',{audio:await blobB64(blob),mime:mime||'audio/webm'})).json();}catch(e){}
+   say('Tippen und sprechen ...');
+   if(j&&j.heard){const old=ta.value.trim();ta.value=(old?old+' ':'')+j.heard;ta.scrollTop=ta.scrollHeight;}
+   else say('nicht verstanden, nochmal tippen');};
+  DIK.start();bgmTick();ta.classList.add('hoert');say('hoert zu, zum Beenden nochmal tippen');
+  DIKT=setTimeout(()=>{if(DIK)stopDik();},60000);}
+ ta.addEventListener('click',e=>{if(!ta.readOnly)return;e.preventDefault();if(DIK)stopDik();else startDik();});
+ kb.onclick=()=>{if(DIK)stopDik();ta.readOnly=!ta.readOnly;
+  if(ta.readOnly){ta.setAttribute('inputmode','none');kb.classList.remove('on');ta.placeholder='Tippen und sprechen ...';ta.blur();}
+  else{ta.removeAttribute('inputmode');kb.classList.add('on');ta.placeholder='Schreib Leyla ...';ta.focus();}};
+})();
 function mailCard(m,i){const c=document.createElement('div');c.className='mc';const e=m.e;
  const h=document.createElement('b');h.textContent='✉ E-Mail an '+e.to;c.appendChild(h);
  const a=document.createElement('div');a.className='meta';a.textContent=e.addr+'  ·  Betreff: '+e.subject;c.appendChild(a);
@@ -1318,7 +1349,7 @@ async def _reach_api(reach, method: str, path: str, d: dict, unlocked: bool) -> 
 async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "", rules=None,
                   chat=None, voice=None, mailer=None, google=None, inbox=None,
                   mood=None, reminders=None, diary=None, chat_new=None, reach=None,
-                  touch=None) -> None:
+                  touch=None, hear=None) -> None:
     try:
         head = await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), timeout=10)
         lines = head.decode("latin-1").split("\r\n")
@@ -1442,6 +1473,17 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                     out = await touch(d.get("history"), str(d.get("zone", "")))
                 except Exception as e:
                     logger.warning("Touch reaction failed: %s", e)
+            await _respond(writer, "200 OK", "application/json",
+                           json.dumps(out or {"error": True}, ensure_ascii=False))
+        elif method == "POST" and path == "/api/hoeren":
+            # dictation: only turn his speech into text, the sending stays his (2.140.0,
+            # Metin wants the keyboard gone and the words in the field before he sends)
+            out = None
+            if unlocked and hear:
+                try:
+                    out = await hear(d.get("audio"), d.get("mime"))
+                except Exception as e:
+                    logger.warning("Dictation failed: %s", e)
             await _respond(writer, "200 OK", "application/json",
                            json.dumps(out or {"error": True}, ensure_ascii=False))
         elif method == "POST" and path == "/api/chat_voice":
@@ -1605,11 +1647,12 @@ async def start_http(store: memory.MemoryStore, sync: Optional[object] = None,
                      host: str = "0.0.0.0", port: int = 8082, lamp: Optional[object] = None,
                      code_phrase: str = "", rules=None, chat=None, voice=None,
                      mailer=None, google=None, inbox=None, mood=None, reminders=None,
-                     diary=None, chat_new=None, reach=None, touch=None):
+                     diary=None, chat_new=None, reach=None, touch=None, hear=None):
     """`rules`: a function that returns Leyla's instructions without memory and without the
     code word; shown read only after the code word."""
     server = await asyncio.start_server(
         lambda r, w: _handle(store, sync, r, w, lamp, code_phrase, rules, chat, voice, mailer, google,
-                          inbox, mood, reminders, diary, chat_new, reach, touch), host, port)
+                          inbox, mood, reminders, diary, chat_new, reach, touch, hear),
+        host, port)
     logger.info("Memory page on port %d", port)
     return server

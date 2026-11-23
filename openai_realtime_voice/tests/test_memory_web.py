@@ -364,3 +364,36 @@ def test_clips_carry_the_curve(tmp_path, monkeypatch):
     memory_web._kurve_set("nacht/weg", [[1.0, 2.0, 1.3]])
     out = memory_web.list_outfits()["nacht"]
     assert out["k"] == {"tanz4": [[3.5, 5.0, 1.3]]}
+
+
+def test_dictation_turns_speech_into_text_without_sending(tmp_path, monkeypatch):
+    """Tapping the field dictates, the sending stays his (2.140.0, Metin: the keyboard
+    should not come up, the words should land in the field)."""
+    monkeypatch.setitem(memory_web._code_fails, "n", 0)
+    monkeypatch.setitem(memory_web._code_fails, "until", 0.0)
+    s = _store(tmp_path)
+    got = []
+
+    async def hear(audio, mime):
+        got.append((len(audio or ""), mime))
+        return {"heard": "hallo Leyla"}
+
+    async def go(code):
+        server = await memory_web.start_http(s, None, host="127.0.0.1", port=0,
+                                             code_phrase="Leyla Sonne Mond", hear=hear)
+        port = server.sockets[0].getsockname()[1]
+        body = json.dumps({"code": code, "audio": "A" * 4000, "mime": "audio/webm"}).encode()
+        r, w = await asyncio.open_connection("127.0.0.1", port)
+        w.write(b"POST /api/hoeren HTTP/1.1\r\nContent-Length: %d\r\n\r\n" % len(body) + body)
+        await w.drain()
+        data = await r.read()
+        w.close()
+        server.close()
+        return json.loads(data.split(b"\r\n\r\n", 1)[1])
+
+    assert asyncio.run(go("falsch")) == {"error": True} and not got
+    assert asyncio.run(go("Sonne Mond")) == {"heard": "hallo Leyla"}
+    assert got == [(4000, "audio/webm")]
+    assert 'id="ckb"' in memory_web.PAGE, "the pill back to the keyboard"
+    assert 'readonly inputmode="none"' in memory_web.PAGE, "no keyboard by default"
+    assert "/api/hoeren" in memory_web.PAGE
