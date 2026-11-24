@@ -16,6 +16,18 @@ Anlass: Clip 5030 kam in Zeitlupe, 350 Credits. Kling hatte den Prompt befolgt, 
 
 Metin um 16:31 zu `schwarz/freizeitbrust`: "hängt am Ende sehr auffallend". Gemessen: von 8,5 bis 10 s keine Bewegung (Bewegungsmenge 0,15, dann 0,02 und 0,01), also 1,5 s eingefrorenes Bild, bevor die App übergibt. Unsere Prompts seit dem 23.11. schrieben am Ende "8.5 to 10 seconds: she holds ... completely still" vor; die offiziellen Kling Beispiele reservieren nur die letzte halbe Sekunde. Ab jetzt: Stillstand nur von 9,5 bis 10 s, die Rückkehr in die Grundpose füllt die Zeit davor. `tools/kling_check.py` hält bei mehr als 0,75 s Stillstand an. Für Clips, die schon so entstanden sind, setzt Claude nach Metins Ja eine Endmarke (`POST /api/schnitt`, Datei bleibt unverändert): `schwarz/freizeitbrust` endet seit 16:34 bei 8,6 s. Die drei Clips von heute Nachmittag (gluecklich2, begruessung, brust im langen Arbeitskleid) haben noch 1,5 s Stillstand im Prompt: nach dem Download messen und Metin eine Endmarke vorschlagen.
 
+## Ausdruck: Kling dreht jedes Gefühlswort auf (seit 24.11.2026, 17:05)
+
+Metin um 17:01 zu den drei Clips von heute Nachmittag (5902 gluecklich2, 5912 begruessung, 5932 brust, zusammen 1.050 Credits): "die sind alle ein wenig verrückt, zu stark emotional". Am Gesichtsbogen (1 Bild pro Sekunde) bestätigt: die Begrüßung lacht sechs Sekunden mit weit offenem Mund und beugt sich in die Kamera; der Brust Clip beginnt mit einem erschrockenen Gesicht, wirft bei einem Kopfschütteln die Haare und lacht mit dem Kopf im Nacken; die Leseschleife beugt sich tief über das Buch. Die alten Clips, die nachgebaut werden sollten, waren ruhig: ein Lächeln, ein Blick, eine kleine Bewegung.
+
+Ursache im Prompt, nicht bei Kling: in jedem standen vier oder mehr starke Ausdruckswörter ("wide happy laugh", "eyebrows jump up", "quick gasp", "laughs once with her head tipping back", "shakes her head twice", "leans her upper body toward the lens", "grin"). Dazu kam der Eifer, jede Sekunde mit einer eigenen Bewegung zu füllen (Lehre aus Clip 5030); Bewegung zählen heißt aber nicht Gefühl steigern.
+
+Regel ab jetzt:
+1. Höchstens ein Ausdruckswort pro Clip, und ein mildes: "she smiles", "her smile grows". Kein Lachen mit offenem Mund, kein Erschrecken, kein Kopf im Nacken, kein Kopfschütteln, kein Vorbeugen zur Kamera, außer Metin wünscht genau das.
+2. Die gezählten Bewegungen sind kleine Körperbewegungen (Gewicht wechseln, Kopf neigen, Hand heben, Haare zurückstreichen), keine Gefühlsausbrüche.
+3. Bei einem Nachbau gibt der alte Clip auch die Stärke des Ausdrucks vor, nicht nur die Abfolge.
+4. `tools/kling_check.py` hält bei mehr als einem starken Ausdruckswort an (Liste `STRONG`).
+
 ## Alter Standard vom 21.11.2026 (Verlauf)
 
 Ergebnis der Recherche vom 21.11.2026 (Metin: "Kling macht was es will"). Gilt für alle Leyla und Mokka Clips. Ersetzt den alten Standard vom 16.11.2026 (lange Grundregeln vorne im Prompt).

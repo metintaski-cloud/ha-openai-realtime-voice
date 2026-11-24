@@ -23,6 +23,15 @@ BRAKES = ("slowly", "slow", "gently", "gentle", "softly", "soft", "smoothly", "s
           "delicate", "delicately", "lazily", "leisurely", "languid")
 MAX_BRAKES = 1
 
+# Words that make Kling overact. On 24 Nov 2026 three clips (5902, 5912, 5932) came out
+# "ein wenig verrückt, zu stark emotional" (Metin): six seconds of open mouthed laughing, a
+# gasp, hair flying from a head shake, the body leaning into the lens. Each prompt had four
+# or more of these. Kling turns every expression word up; one mild one per clip is enough.
+STRONG = ("wide", "gasp", "laughs", "laugh", "jump", "tipping back", "tips her head back", "grin",
+          "toward the lens", "towards the lens", "shakes her head", "widen", "burst", "beams",
+          "excited", "thrilled", "giggl")
+MAX_STRONG = 1
+
 # The stillness at the end. The official Kling examples reserve the last half second; from
 # 23 to 24 Nov 2026 our prompts asked for 1.5 s, and the clips stood frozen that long before
 # the app handed over (measured on schwarz/freizeitbrust: no movement from 8.5 s to 10 s).
@@ -65,6 +74,11 @@ def check(text: str) -> tuple:
                         "speed, not big movements at half speed.")
     elif brakes:
         notes.append(f"one brake word: {brakes[0]} (fine if exactly this movement should be slow)")
+
+    strong = [w for w in STRONG if w in low]
+    if len(strong) > MAX_STRONG:
+        problems.append(f"{len(strong)} strong expression words ({', '.join(strong)}): Kling overacts "
+                        "(24.11.: 'zu stark emotional'). Keep one mild expression, e.g. 'she smiles'.")
 
     cleaned = low
     for ok in ALLOWED_NEGATIVES:

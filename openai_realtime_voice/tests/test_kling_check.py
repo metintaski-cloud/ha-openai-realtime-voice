@@ -47,3 +47,15 @@ def test_a_long_hold_at_the_end_is_stopped():
             "2 to 3.5 seconds: she holds the pose of the last frame, completely still.")
     problems, _ = kling_check.check(text)
     assert any("a hold of 1.5 s" in p for p in problems)
+
+
+def test_overacting_words_are_stopped():
+    """24 Nov 2026: three clips for 1050 credits came out overacted; each prompt asked for a
+    wide laugh, a gasp, a head shake or a lean into the lens."""
+    text = ("0 to 1.5 seconds: her eyes widen, her lips part in a quick gasp and she pulls both shoulders up. "
+            "1.5 to 3 seconds: she laughs once with her head tipping back, then she shakes her head twice.")
+    problems, _ = kling_check.check(text)
+    assert any("strong expression words" in p for p in problems)
+    calm = ("0 to 1.5 seconds: she lifts her free hand beside her shoulder and she smiles. "
+            "1.5 to 3 seconds: she waves her hand three times and she tilts her head to her right.")
+    assert not any("strong expression" in p for p in kling_check.check(calm)[0])
