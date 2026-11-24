@@ -352,3 +352,19 @@ def test_the_window_is_what_the_note_shows(tmp_path):
     assert not diary.may_know({"who": "Metin", "privat": True}, "Metin", False)
     assert not diary.may_know({"who": "Gülfikar Taskiran"}, "Metin", True)
     assert diary.may_know({"who": ""}, "Seher", False)
+
+
+def test_unnamed_chat_entries_become_metins_and_leave_the_open_household_notes(tmp_path):
+    dy = diary.Diary(str(tmp_path / "d.json"))
+    dy.add(entry(lang="Jemand, dessen Namen ich nicht kenne, fragte mich nach dem Ausflug.",
+                 mittel="Jemand, dessen Namen ich nicht kenne, fragte nach dem Ausflug."), "", "chat", now=NOW - 60)
+    dy.add(entry(lang="Jemand, dessen Namen ich nicht kenne, fragte nach dem Bus.",
+                 mittel="Jemand fragte nach dem Bus."), "", "stimme", now=NOW - 30)
+    assert "Ausflug" in dy.unknown_note(now=NOW)            # before: open to every voice at home
+    assert dy.repair_chat_person("Metin") == 1 and dy.repair_chat_person("Metin") == 0
+    chat_e, home_e = dy.entries()
+    assert chat_e["who"] == "Metin" and chat_e["lang"] == "Metin fragte mich nach dem Ausflug."
+    assert home_e["who"] == "" and "Jemand" in home_e["lang"]
+    assert "Ausflug" not in dy.unknown_note(now=NOW) and "Bus" in dy.unknown_note(now=NOW)
+    assert [e["who"] for e in dy.archived()] == ["Metin", ""]
+    assert "Ausflug" not in dy.note("Seher", now=NOW) and "Ausflug" in dy.note("Metin", now=NOW)

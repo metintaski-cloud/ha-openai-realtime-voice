@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.147.1 (24 Nov 2026)
+
+- First measurement of 2.147.0 on the real diary (22 questions about things Metin told her in 8 days, texts stay on the server): the needed memory was before her in 1 of 22 cases until now, with the new recall in 17 of 22 (16 came to mind by themselves, 1 is a kept entry). The word search she used when the model asked for it found 14 of 22. Asking the service takes about 0.2 s per message.
+- The threshold is 0.48 now (0.35 let four memories through for every message, also for "Guten Morgen": with this diary unrelated messages reach 0.35 to 0.49, fitting ones 0.50 to 0.68).
+- `fix`: chat entries without a person belong to Metin (`Diary.repair_chat_person`, at every start). The diary model often called him "jemand, dessen Namen ich nicht kenne" in the chat; such an entry counted as an unnamed household entry and was open to every speaker at home, though only Metin can chat. The phrase is replaced by his name in those entries.
+- `fix`: the repeat check ignores the words every entry shares and judges only entries with at least six own words (two different short entries of an unknown speaker looked like a repeat).
+- Model and vector size of the recall are settings now (`model`, `dims`), an optional `word_bonus` adds the share of the question's words an entry holds, everyday messages can be stored as cases without an entry ("noise": they should bring nothing), and `POST /api/kopf/compare` scores the four combinations in `recall.COMPARE` with each bonus in the background, in memory only. Reason: a German question did not find an entry written in Turkish (rank 231), so a stronger model has to be measured, not guessed.
+
 ## 2.147.0 (24 Nov 2026)
 
 First part of Leyla's new mind (`docs/LEYLA_SEELE.md`; Metin: she seems unreal, has trouble remembering, shall be a human with a soul, not a robot).

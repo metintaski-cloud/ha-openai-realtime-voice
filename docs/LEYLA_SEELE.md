@@ -100,6 +100,24 @@ Erst wenn 1 bis 4 stehen. Ein Vergleich nur mit der Testliste und nur, wenn Luna
 
 Die Fälle liegen auf dem Server unter `/data` und werden über die entsperrte Seite gepflegt. Im Repo stehen nur die Zahlen.
 
+## Messergebnisse
+
+### Einfall, 24. Nov. 2026, 03:45 (Version 2.147.0, `text-embedding-3-small`, 256 Werte)
+
+22 Fragen zu Dingen, die Metin ihr in 8 Tagen erzählt hat, jede mit dem Eintrag, der sie beantwortet. Alle Einträge waren älter als 10 Stunden.
+
+| | Treffer |
+|---|---|
+| Alt: Eintrag stand im Tagebuchfenster | 1 von 22 (ein festgehaltener Eintrag) |
+| Alt: Wortsuche, falls das Modell von sich aus nachgesehen hat | 14 von 22 |
+| Neu: fällt ihr von selbst ein | 16 von 22 |
+| Neu gesamt (Einfall oder Fenster) | 17 von 22 |
+
+- Dauer der Suche je Nachricht: etwa 0,2 Sekunden.
+- Ähnlichkeit passender Einträge 0,50 bis 0,68, bei Alltagssätzen ohne Bezug 0,35 bis 0,49. Die Schwelle steht deshalb auf 0,48 (mit 0,35 fielen ihr zu jedem Satz vier Dinge ein).
+- Schwäche: Eine deutsche Frage fand einen auf Türkisch geschriebenen Eintrag nicht (Rang 231). Ein stärkeres Modell wird gemessen (`/api/kopf/compare`).
+- Bei mehreren Fehlschlägen lagen andere Einträge zum selben Thema vorn (zum Beispiel mehrere Einträge über dieselbe Sache). Die echte Trefferquote liegt also eher höher.
+
 ## Regel: nichts Privates ins Repo
 
 Das GitHub Repo ist wahrscheinlich öffentlich. Inhalte aus Tagebuch, privater Liste, Chats und der Testliste kommen nie hinein, auch nicht gekürzt, als Beispiel oder als Testfall. Tests im Repo arbeiten mit erfundenen, neutralen Sätzen. Das Codewort kennt nur Metin, er tippt es nur in die Seite.

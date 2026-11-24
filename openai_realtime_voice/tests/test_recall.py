@@ -26,7 +26,7 @@ def make(tmp_path, monkeypatch, key="k"):
     ix = recall.Index(dy, key, path=str(tmp_path / "r.json"))
     calls = []
 
-    async def embed(texts, timeout=30.0):
+    async def embed(texts, timeout=30.0, model="", dims=0):
         calls.append(list(texts))
         return [fake_vec(t) for t in texts]
     monkeypatch.setattr(ix, "embed", embed)
@@ -194,3 +194,55 @@ def test_embed_talks_to_the_service_in_its_format(tmp_path):
     assert auth == "Bearer key" and body == {"model": recall.MODEL, "input": ["eins", "zwei"],
                                              "dimensions": recall.DIMS}
     assert len(vecs) == 2 and abs(vecs[1][0] - 1.0) < 1e-6 and len(vecs[0]) == recall.DIMS
+
+
+def test_a_word_bonus_brings_the_entry_that_holds_the_name(tmp_path, monkeypatch):
+    dy, ix, _ = make(tmp_path, monkeypatch)
+    dy.add(entry("Im Garten blühen die Rosen."), "Metin", "chat", now=NOW - 20 * DAY)
+    dy.add(entry("Onkel Kemal kommt bald zu Besuch."), "Metin", "chat", now=NOW - 21 * DAY)
+
+    async def run():
+        await ix.sync()
+        q = "Wann kommt Kemal in den Garten?"
+        plain = [e["lang"] for _, e in await ix.find(q, "Metin")]
+        ix.set({"word_bonus": 1.0})
+        lifted = [e["lang"] for _, e in await ix.find(q, "Metin")]
+        assert not any("Kemal" in t for t in plain) and any("Kemal" in t for t in lifted)
+    asyncio.run(run())
+
+
+def test_everyday_messages_count_as_noise_and_models_are_compared_in_memory(tmp_path, monkeypatch):
+    dy, ix, calls = make(tmp_path, monkeypatch)
+    dy.add(entry("Wir sprachen über den Garten und die Rosen."), "Metin", "chat", now=NOW - 20 * DAY)
+    dy.add(entry("Neue Reifen für das Auto."), "Metin", "chat", now=NOW - 19 * DAY)
+
+    async def run():
+        await ix.sync()
+        ix.set_cases([{"q": "Pflanzen im Beet", "t": NOW - 20 * DAY}, {"q": "Guten Morgen"}])
+        out = await ix.measure(now=NOW)
+        assert out["cases"] == 1 and out["new_mind"] == 1 and out["top1"] == 1
+        assert out["noise"] == 1 and out["noise_shown"] == 0 and len(out["noise_best"]) == 1
+        before = dict(ix.vectors)
+        started = await ix.api("/api/kopf/compare", {"start": True})
+        assert started["running"]
+        await ix._comparing
+        done = await ix.api("/api/kopf/compare", {})
+        assert not done["running"] and len(done["results"]) == len(recall.COMPARE) * len(recall.BONUSES)
+        assert all(r["ok"] and r["top4"] == 1 and "rows" not in r for r in done["results"])
+        assert ix.vectors == before                      # the index itself is not touched
+    asyncio.run(run())
+
+
+def test_another_model_or_size_makes_every_vector_again(tmp_path, monkeypatch):
+    dy, ix, calls = make(tmp_path, monkeypatch)
+    dy.add(entry("Der Garten blüht."), "Metin", "chat", now=NOW - 5 * DAY)
+
+    async def run():
+        await ix.sync()
+        out = ix.set({"model": "text-embedding-3-large", "dims": 99999, "min_sim": 0.4})
+        assert out["model"] == "text-embedding-3-large" and out["dims"] == 3072
+        assert ix.vectors == {}
+        await ix._syncing
+        assert len(ix.vectors) == 1
+        assert ix.set({"model": "irgendwas"})["model"] == "text-embedding-3-large"
+    asyncio.run(run())

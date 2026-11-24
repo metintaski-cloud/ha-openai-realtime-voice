@@ -201,6 +201,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self.variety = variety.Variety()  # her last openings, so she never sounds the same
         self.diary = diary.Diary()  # what she talked about in the last month, fading
         # what comes to her mind by itself, for the chat and at home alike (2.147.0)
+        self.diary.repair_chat_person("Metin")  # chat entries the diary model left unnamed
         self.recall = recall.Index(self.diary, self.openai_api_key)
         self.day = day.Day(self.diary, ask=self._day_ask, weather=self._day_weather)  # her own day
         self._forget_sol_evening()

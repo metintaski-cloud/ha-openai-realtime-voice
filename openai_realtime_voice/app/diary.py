@@ -15,6 +15,7 @@ chat. Mama's confidences are never written down. Entries are never logged.
 import json
 import logging
 import os
+import re
 import time
 from typing import Optional
 
@@ -86,13 +87,20 @@ def _norm(word: str) -> str:
 
 
 def _stems(text: str) -> set:
-    import re
     return {_norm(w)[:5] for w in re.findall(r"\w{3,}", str(text or ""))}
 
 
 STOP = _stems("und oder aber der die das den dem des ein eine einen einem mit von über was wie "
               "wer wann hast habe hat ich du er sie wir ihr mir dir mich dich mal noch schon "
               "erzählt gesagt weißt erinnerst bana sana ben sen bir")
+
+
+def word_hits(want: set, text: str) -> int:
+    """How many of the wanted word stems the text holds (a stem may be the start of the other)."""
+    have = _stems(text)
+    return sum(1 for w in want if any(h.startswith(w) or w.startswith(h) for h in have
+                                      if len(h) >= 4 or h == w))
+
 
 FOLLOW_AFTER_S = 3600        # with a time: ask from one hour after it
 FOLLOW_EVENING_H = 18        # only a day: ask from 18 o'clock that day
@@ -166,6 +174,8 @@ BEFORE_RULE = ("\n- Das hast du heute schon aufgeschrieben. Wiederhole nichts da
                "was neu ist, und steht nichts Neues im Gespräch, antworte mit einer leeren Liste:\n{lines}")
 SAME_SHARE = 0.7     # an entry sharing this much of its words with one of the last day is a repeat
 SAME_WITHIN_S = DAY
+# words every entry shares; they must not make two different entries look like a repeat
+FORMULA = _stems("jemand dessen namen nicht kenne person sagte fragte meinte wollte metin leyla")
 TOUCH_SRC = "beruehrung"
 TOUCH_NAMES = {"gesicht": "im Gesicht", "brust": "an der Brust", "bauch": "am Bauch", "po": "am Po"}
 
@@ -297,9 +307,7 @@ class Diary:
         for e in self.archived():
             if not may_know(e, who, private):
                 continue
-            have = _stems(e.get("lang") or e.get("mittel") or "")
-            hits = sum(1 for w in want if any(h.startswith(w) or w.startswith(h) for h in have
-                                              if len(h) >= 4 or h == w))
+            hits = word_hits(want, e.get("lang") or e.get("mittel") or "")
             if hits:
                 scored.append((hits, e.get("t", 0), e))
         scored.sort(key=lambda x: (-x[0], -x[1]))
@@ -324,13 +332,13 @@ class Diary:
     def _repeats(self, text: str, who: str, now: float) -> bool:
         """True when an entry of the last day about this person already says this: most of
         its words are there (24 Nov 2026: 36 of 277 entries nearly repeated their neighbour)."""
-        words = _stems(text) - STOP
-        if len(words) < 4:
+        words = _stems(text) - STOP - FORMULA
+        if len(words) < 6:  # too short to tell a repeat from a new thing
             return False
         for e in self.entries():
             if now - e.get("t", 0) > SAME_WITHIN_S or _first(e.get("who", "")) != _first(who):
                 continue
-            have = _stems(e.get("lang", "")) - STOP
+            have = _stems(e.get("lang", "")) - STOP - FORMULA
             if len(words & have) >= SAME_SHARE * len(words):
                 return True
         return False
@@ -419,6 +427,40 @@ class Diary:
                 + ". Frag von dir aus einmal kurz und herzlich, wie es war, so wie jemand, der an "
                 "ihn gedacht hat; erst nachdem du seine Bitte erledigt hast, und nicht noch "
                 "einmal, wenn er es schon erzählt hat.")
+
+    def repair_chat_person(self, name: str) -> int:
+        """Chat entries without a person get the one who wrote (2.147.1). Only Metin can chat,
+        behind the code word, but the diary model often called him "jemand, dessen Namen ich
+        nicht kenne"; such an entry counted as an unnamed household entry, open to every
+        speaker at home. Safe to run at every start; returns how many entries changed."""
+        unknown = re.compile(r"[Jj]emand(?:em|en)?, dessen Namen? ich nicht kenne,?")
+
+        def fix(e: dict) -> bool:
+            if e.get("src") != "chat" or e.get("who"):
+                return False
+            e["who"] = name
+            for k in LIMITS:
+                if isinstance(e.get(k), str):
+                    e[k] = unknown.sub(_first(name).capitalize(), e[k])
+            return True
+        items = self.entries()
+        n = sum(fix(e) for e in items)
+        if n:
+            self._save(items)
+        try:
+            if os.path.exists(self.archive_path):
+                rest = self.archived()
+                if sum(fix(e) for e in rest):
+                    tmp = self.archive_path + ".tmp"
+                    with open(tmp, "w", encoding="utf-8") as f:
+                        for e in rest:
+                            f.write(json.dumps(e, ensure_ascii=False) + "\n")
+                    os.replace(tmp, self.archive_path)
+        except Exception as e:
+            logger.warning("Diary: archive not repaired: %s", e)
+        if n:
+            logger.info("Diary: %d chat entries without a person now belong to %s", n, _first(name))
+        return n
 
     def delete(self, stamps) -> int:
         """Metin deletes entries in the app folder; an entry is named by its time stamp."""
