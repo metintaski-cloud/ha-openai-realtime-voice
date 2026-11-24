@@ -557,4 +557,6 @@ Gezählt: Kinn senken und Hand heben (2), zwölfmal klein winken in 6 s, Kopf ne
 
 Herkunft: Abfolge aus dem alten Clip (Hand heben, winken, Kopf leicht neigen, Hand senken). Von Metin gewünscht: schüchternes Lächeln statt Lachen, zierlich und feminin (umgesetzt als "Every movement is small" und Winken aus dem Handgelenk). Aufbau aus den Profi Quellen. Nichts sonst hinzugefügt.
 
+Gestartet 24.11.2026 um 17:32 von Metin selbst ("läuft"), 350 Credits. Nur dieser eine Clip läuft; der nächste erst nach seinem Urteil.
+
 Ergebnis hier nachtragen.
