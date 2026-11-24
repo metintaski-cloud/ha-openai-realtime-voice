@@ -139,6 +139,25 @@ async def test_in_a_browser_loops_run_in_order_and_a_touch_cuts_in_and_hands_bac
             assert await page.evaluate("()=>document.getElementById(SV?'v1':'v0').paused") is False
             await page.click("#weiter")
             await page.wait_for_function("()=>!SOLO&&!PAUSED&&CUR.startsWith('freizeitgluecklich')", timeout=9000)
+            # which loops take part: a tap takes one out or back in, the round goes on with the others
+            await page.click("button[data-loop='3']")
+            assert await page.evaluate("()=>Object.keys(OFF)") == ["freizeitgluecklich3"]
+            await page.click("#seq")  # at random
+            part = set()
+            for _ in range(3):
+                await page.click("#nxt")
+                await asyncio.sleep(0.9)
+                part.add(await page.evaluate("()=>CUR"))
+            assert part == {"freizeitgluecklich", "freizeitgluecklich2"}  # never the third, never twice in a row
+            await page.click("#seq")
+            await page.click("button[data-loop='1']")
+            await page.click("button[data-loop='2']")  # the last one cannot be taken out
+            assert await page.evaluate("()=>Object.keys(OFF).sort()") == ["freizeitgluecklich", "freizeitgluecklich3"]
+            await page.wait_for_function("()=>CUR==='freizeitgluecklich2'", timeout=6000)
+            assert (await page.inner_text("button[data-loop='2']")).startswith("▶")
+            await page.click("button[data-loop='1']")
+            await page.click("button[data-loop='3']")
+            assert await page.evaluate("()=>Object.keys(OFF)") == []
             # fine tempo steps of one hundredth, and back to 1
             await page.click("#rp")
             await page.click("#rp")
@@ -156,8 +175,10 @@ async def test_in_a_browser_loops_run_in_order_and_a_touch_cuts_in_and_hands_bac
             state = await watch(1.0)
             assert state["cur"] == "freizeithinten" and state["muted"] is False  # she turns first, with sound
             await watch(9.0)
-            turn = seen.index("freizeithinten")  # then the touch clip, then back to a loop
-            assert seen[turn + 1] == "freizeitpo8" and seen[turn + 2].startswith("freizeitgluecklich")
+            turn = seen.index("freizeithinten")  # then the touch clip, then on with the loop after the last one
+            order = ["freizeitgluecklich", "freizeitgluecklich2", "freizeitgluecklich3"]
+            assert seen[turn + 1] == "freizeitpo8"
+            assert seen[turn + 2] == order[(order.index(seen[turn - 1]) + 1) % 3]
             assert (await page.evaluate("()=>document.getElementById(SV?'v1':'v0').muted")) is True
             await page.evaluate("()=>{const r=document.getElementById('rate');r.value='1.5';r.oninput();}")
             await page.click("#mk")
@@ -190,6 +211,19 @@ async def test_in_a_browser_loops_run_in_order_and_a_touch_cuts_in_and_hands_bac
             picked = await page.evaluate("()=>[Number(document.getElementById('sfrom').value),Number(document.getElementById('sto').value)]")
             assert abs(picked[0] - 1.0) < 0.06 and abs(picked[1] - 2.0) < 0.06, picked
             assert "von " + f"{picked[0]:.2f}" in await page.inner_text("#slab")
+            # quieter and louder: heard at once here, kept for the app with "Lautstärke merken"
+            await page.click("#vm")
+            await page.click("#vm")
+            assert "90 %" in await page.inner_text("#vlab")
+            await asyncio.sleep(0.15)
+            assert abs(await page.evaluate("()=>document.getElementById(SV?'v1':'v0').volume") - 0.63) < 0.001
+            await page.click("#vsave")
+            await page.wait_for_function("()=>document.getElementById('vsave').textContent==='gemerkt'")
+            assert ganzes_page.ton_read()["laut"] == {"kurz/freizeitpo8": 0.9}
+            await page.click("#v1b")
+            await page.click("#vsave")
+            await asyncio.sleep(0.4)
+            assert ganzes_page.ton_read()["laut"] == {}
             await page.click("#tonb")
             await page.wait_for_function("()=>MUTE['kurz/freizeitpo8']===1")
             assert ganzes_page.ton_read()["aus"] == ["kurz/freizeitpo8"]
@@ -237,7 +271,8 @@ async def test_in_a_browser_loops_run_in_order_and_a_touch_cuts_in_and_hands_bac
 
 def test_random_loops_never_repeat_the_clip_that_just_ran():
     js = script()
-    assert "const o=v.length>1?v.filter(x=>x!==CUR):v" in js  # as stageLoop of the app does
+    assert "const o=v.length>1?v.filter(x=>x!==LAST):v" in js  # as stageLoop of the app does
+    assert "sel=all.filter(n=>!OFF[n])" in js                 # and only among the loops that take part
 
 
 async def test_the_tester_has_fine_steps_for_every_slider(tmp_path, monkeypatch):
@@ -323,10 +358,11 @@ def test_reset_puts_tempo_curve_and_cut_of_all_clips_back(values):
     memory_web._kurve_set("nacht/tanz4", [])
     ganzes_page.ton_set("kurz/brust", True)
     ganzes_page.ton_stumm("kurz/po", [[1, 2]])
+    ganzes_page.ton_laut("kurz/neu", 0.4)
     out = ganzes_page.stand_restore()
     assert out["ok"] and out["zurueck"] == ["kurz/brust", "kurz/neu", "kurz/po", "kurz/tanz", "nacht/tanz4",
                                             "schwarz/po"]
-    assert ganzes_page.ton_read() == {"aus": [], "stumm": {}}
+    assert ganzes_page.ton_read() == {"aus": [], "stumm": {}, "laut": {}}
     assert out["geaendert"] == []
     assert (ganzes_page._rates(memory_web._tempo_read()), memory_web._kurve_read(),
             memory_web._schnitt_read()) == before
@@ -382,14 +418,22 @@ async def test_the_reset_point_over_http_and_taken_at_the_first_start(values):
 
 # ---- sound: off for a whole clip, or silent for a stretch that keeps its length ----
 def test_sound_off_and_silent_stretches_are_kept_per_clip(tmp_path):
-    assert ganzes_page.ton_read() == {"aus": [], "stumm": {}}
+    assert ganzes_page.ton_read() == {"aus": [], "stumm": {}, "laut": {}}
     assert ganzes_page.ton_set("kurz/freizeitbrust2", True) and ganzes_page.ton_set("schwarz/brust2", True)
     assert ganzes_page.ton_stumm("kurz/po2", [[3, 5], [1, 2.5], [2, 3.2], ["x", 1], [4, 4.01], [-1, 2]])
-    assert ganzes_page.ton_read() == {"aus": ["kurz/freizeitbrust2", "schwarz/brust2"],
+    assert ganzes_page.ton_read() == {"aus": ["kurz/freizeitbrust2", "schwarz/brust2"], "laut": {},
                                       "stumm": {"kurz/po2": [[1.0, 5.0]]}}  # sorted, joined, nonsense left out
     assert ganzes_page.ton_set("schwarz/brust2", False)
     assert ganzes_page.ton_stumm("kurz/po2", [])
-    assert ganzes_page.ton_read() == {"aus": ["kurz/freizeitbrust2"], "stumm": {}}
+    assert ganzes_page.ton_read() == {"aus": ["kurz/freizeitbrust2"], "stumm": {}, "laut": {}}
+    # quieter or louder: a factor, 1 is normal and leaves no entry
+    assert ganzes_page.ton_laut("kurz/po2", 0.5) and ganzes_page.ton_laut("kurz/brust", 1.4)
+    assert ganzes_page.ton_read()["laut"] == {"kurz/brust": 1.4, "kurz/po2": 0.5}
+    assert ganzes_page.ton_laut("kurz/po2", 1) and ganzes_page.ton_read()["laut"] == {"kurz/brust": 1.4}
+    for wrong in (0, 0.05, 1.5, "0.5", None, True):
+        assert not ganzes_page.ton_laut("kurz/po2", wrong)
+    assert ganzes_page.ton_read()["aus"] == ["kurz/freizeitbrust2"]  # the other parts stay
+    assert ganzes_page.ton_laut("kurz/brust", 1.0)
     for bad in ("", "kurz", "../etc/passwd", "kurz/Po 2", None):
         assert not ganzes_page.ton_set(bad, True) and not ganzes_page.ton_stumm(bad, [[1, 2]])
     assert not ganzes_page.ton_stumm("kurz/po2", "1-2")
@@ -404,11 +448,13 @@ def test_the_app_is_told_which_clips_are_silent(tmp_path, monkeypatch):
     ganzes_page.ton_set("kurz/brust", True)
     ganzes_page.ton_set("kurz/gibtesnicht", True)
     ganzes_page.ton_stumm("kurz/po", [[2, 4]])
+    ganzes_page.ton_laut("kurz/po", 0.6)
     look = memory_web.list_outfits()["kurz"]
-    assert look["m"] == ["brust"] and look["ms"] == {"po": [[2.0, 4.0]]}
+    assert look["m"] == ["brust"] and look["ms"] == {"po": [[2.0, 4.0]]} and look["mv"] == {"po": 0.6}
+    assert "b.volume=Math.min(1,.7*(VOL[" in open(memory_web.__file__, encoding="utf-8").read()
     src = open(memory_web.__file__, encoding="utf-8").read()
     assert "&&!MUTE[name.includes('/')?name:OUTFIT+'/'+name]" in src  # the stage leaves the sound of these off
-    assert "b.volume=st.some(x=>t>=x[0]&&t<x[1])?0:.7" in src        # and is silent inside a stretch
+    assert "b.volume=st.some(x=>t>=x[0]&&t<x[1])?0:v0" in src        # and is silent inside a stretch
 
 
 # ---- the picture of the sound ----

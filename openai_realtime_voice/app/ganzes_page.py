@@ -6,6 +6,8 @@ for face, chest and bottom in between, the way the app plays them. This page doe
 the same hand over as the stage of the app (memory_web.stageShow): the next loop clip is
 loaded PRELOAD_S before the end and fades in 0.25 s before it, a touch clip starts at once
 with a 0.35 s fade and with its sound, and stored tempo, tempo curve and cut marks apply.
+The loop buttons do not jump to a loop: a tap takes a loop out of the round or back in
+(Metin, 00:41: he wants to let loop 1 and loop 2 run, not pick one), one always stays.
 The page is grouped (Metin, 00:10: "alles übersichtlich und zugeordnet"): Kleid, Schleifen,
 Berührung, then everything that can be set for the running clip (tempo in steps of one
 hundredth, begin and end, sound off) and the reset for all clips. The clip never leaves the
@@ -33,6 +35,9 @@ clip, the stretches [from, to] in seconds that are silent. Nothing is cut out an
 moves: the stage of the app plays the clip as it is and turns the volume to zero for those
 stretches (`m` and `ms` per look in /clips.json, `MUTE` and `STUMM` in the page). The file
 keeps its sound, so everything can be undone. Both are part of the reset point.
+Quieter or louder (Metin, 00:39): `laut` holds a factor per clip, 1 is the normal loudness of
+the stage (volume 0.7), from 0.1 up to LAUT_MAX (1.4, which is the full volume of the phone);
+`mv` per look in /clips.json, `VOL` in the page.
 
 The picture of the sound (Metin, 00:16: "ich muss Ton visuell lang ziehen und schneiden
 können"): `wave(path)` lets ffmpeg decode only the sound track of a clip (mono, 4000 Hz) and
@@ -88,6 +93,7 @@ NAME_RE = re.compile(r"^[a-z0-9]{2,20}/[a-z]{2,30}[0-9]{0,2}$")  # look/clip, as
 
 
 MAX_STUMM = 20  # silent stretches of one clip
+LAUT_MIN, LAUT_MAX = 0.1, 1.4  # loudness factor of a clip: 1 = as always, 1.4 = all the phone gives
 
 
 def _stretches(segs) -> list:
@@ -120,11 +126,17 @@ def ton_read() -> dict:
     d = d if isinstance(d, dict) else {}
     off = d.get("aus") if isinstance(d.get("aus"), list) else []
     quiet = d.get("stumm") if isinstance(d.get("stumm"), dict) else {}
-    out = {"aus": sorted({n for n in off if isinstance(n, str) and NAME_RE.match(n)}), "stumm": {}}
+    out = {"aus": sorted({n for n in off if isinstance(n, str) and NAME_RE.match(n)}), "stumm": {}, "laut": {}}
     for name in sorted(quiet):
         segs = _stretches(quiet[name])
         if isinstance(name, str) and NAME_RE.match(name) and segs:
             out["stumm"][name] = segs
+    loud = d.get("laut") if isinstance(d.get("laut"), dict) else {}
+    for name in sorted(loud):
+        f = loud[name]
+        if (isinstance(name, str) and NAME_RE.match(name) and isinstance(f, (int, float))
+                and not isinstance(f, bool) and LAUT_MIN <= f <= LAUT_MAX and round(f, 2) != 1.0):
+            out["laut"][name] = round(float(f), 2)
     return out
 
 
@@ -135,7 +147,22 @@ def ton_set(name: str, off: bool) -> bool:
     d = ton_read()
     names = set(d["aus"])
     (names.add if off else names.discard)(name)
-    _write(os.environ.get("LEYLA_TON", TON_PATH), {"aus": sorted(names), "stumm": d["stumm"]})
+    _write(os.environ.get("LEYLA_TON", TON_PATH), dict(d, aus=sorted(names)))
+    return True
+
+
+def ton_laut(name: str, factor) -> bool:
+    """Make one clip quieter or louder: a factor from LAUT_MIN to LAUT_MAX, 1 is the normal loudness
+    (and removes the entry). False for a name that is no clip name or a factor out of range."""
+    if (not NAME_RE.match(name or "") or not isinstance(factor, (int, float)) or isinstance(factor, bool)
+            or not LAUT_MIN <= factor <= LAUT_MAX):
+        return False
+    d = ton_read()
+    if round(float(factor), 2) == 1.0:
+        d["laut"].pop(name, None)
+    else:
+        d["laut"][name] = round(float(factor), 2)
+    _write(os.environ.get("LEYLA_TON", TON_PATH), d)
     return True
 
 
@@ -189,8 +216,9 @@ def _changed(a: dict, b: dict) -> list:
     """Names of the clips whose tempo, curve, cut or sound differs between two states."""
     ta, tb = a.get("ton") or {}, b.get("ton") or {}
     names = set(ta.get("aus") or []) ^ set(tb.get("aus") or [])
-    qa, qb = ta.get("stumm") or {}, tb.get("stumm") or {}
-    names |= {n for n in set(qa) | set(qb) if qa.get(n) != qb.get(n)}
+    for key in ("stumm", "laut"):
+        qa, qb = ta.get(key) or {}, tb.get(key) or {}
+        names |= {n for n in set(qa) | set(qb) if qa.get(n) != qb.get(n)}
     for x, y in ((_rates(a.get("tempo")), _rates(b.get("tempo"))),
                  (a.get("kurve") or {}, b.get("kurve") or {}),
                  (a.get("schnitt") or {}, b.get("schnitt") or {})):
@@ -207,7 +235,7 @@ def stand_read() -> Optional[dict]:
     ok = (isinstance(d, dict) and isinstance(d.get("t"), (int, float)) and isinstance(d.get("tempo"), list)
           and isinstance(d.get("kurve"), dict) and isinstance(d.get("schnitt"), dict)
           and isinstance(d.get("ton", {}), dict))
-    return dict(d, ton=d.get("ton") or {"aus": [], "stumm": {}}) if ok else None
+    return dict(d, ton=d.get("ton") or {"aus": [], "stumm": {}, "laut": {}}) if ok else None
 
 
 def stand_save() -> dict:
@@ -224,7 +252,8 @@ def stand_info() -> dict:
         d = stand_read()
     return {"ok": True, "t": int(d["t"]), "wann": time.strftime("%d.%m. %H:%M", time.localtime(d["t"])),
             "tempo": len(_rates(d["tempo"])), "kurve": len(d["kurve"]), "schnitt": len(d["schnitt"]),
-            "ton": len(d["ton"].get("aus") or []) + len(d["ton"].get("stumm") or {}),
+            "ton": len(set(d["ton"].get("aus") or []) | set(d["ton"].get("stumm") or {})
+                       | set(d["ton"].get("laut") or {})),
             "geaendert": _changed(d, _now())}
 
 
@@ -296,7 +325,10 @@ label{display:flex;gap:4px;align-items:center}
 <div class="bar"><button id="csave">Schnitt merken</button><button id="cclr">Schnitt weg</button><a id="cut" href="/tempo" class="t">im Clip Tester</a></div>
 <h3>Ton</h3>
 <div class="bar"><button id="tonb">Ton dieses Clips</button></div><div class="t" id="toninfo"></div>
-<div id="tonstk"><div class="t">Unten am Rand ist das Bild vom Ton: mit dem Finger über das Stück ziehen, das stumm sein soll. Rot ist schon stumm, die weiße Linie zeigt, wo der Clip ist. Einmal tippen springt an die Stelle.</div>
+<div id="tonstk"><div class="t" id="vlab"></div>
+<div class="bar"><span class="z">Laut</span><input type="range" id="vol" min="10" max="140" step="1" value="100"></div>
+<div class="bar"><button id="vm">leiser</button><button id="vp">lauter</button><button id="v1b">normal</button><button id="vsave">Lautstärke merken</button></div>
+<div class="t">Unten am Rand ist das Bild vom Ton: mit dem Finger über das Stück ziehen, das stumm sein soll. Rot ist schon stumm, die weiße Linie zeigt, wo der Clip ist. Einmal tippen springt an die Stelle.</div>
 <div class="t" id="slab"></div>
 <div class="bar"><span class="z">von</span><input type="range" id="sfrom" min="0" max="10" step="0.01" value="0"><button id="sm1">− 0,01</button><button id="sp1">+ 0,01</button></div>
 <div class="bar"><span class="z">bis</span><input type="range" id="sto" min="0" max="10" step="0.01" value="1"><button id="sm2">− 0,01</button><button id="sp2">+ 0,01</button></div>
@@ -310,7 +342,7 @@ const OUT=[['Kurzes Arbeitskleid','kurz',''],['Kurzes Freizeitkleid','kurz','fre
 const ZONES=[['Gesicht',['gesicht']],['Brust',['brust']],['Bauch',['bauch','mix']],['Po',['po','povorne','mix']]];
 const PRELOAD_S=3,LOOP_PRE=0.25,LOOP_OFF=300,FAST_OFF=450;
 const $=id=>document.getElementById(id);
-let LOOK='',PRE='',CL=[],VER={},RATE={},KURVE={},SCHNITT={},SAVED={},MUTE={},STUMM={},SV=0,TOK=0,CUR='',CURSND=false,LI=0,BUSY=false,SEQ=true,SOLO=false,PAUSED=false,SCRUB=false;
+let LOOK='',PRE='',CL=[],VER={},RATE={},KURVE={},SCHNITT={},SAVED={},MUTE={},STUMM={},VOL={},OFF={},SV=0,TOK=0,CUR='',CURSND=false,LAST='',BUSY=false,SEQ=true,SOLO=false,PAUSED=false,SCRUB=false;
 const base=n=>n.replace(/[0-9]+$/,'');
 const vars=b=>CL.filter(n=>base(n)===PRE+b);
 const pthNow=()=>LOOK+'/'+CUR;
@@ -320,14 +352,17 @@ const rateAt=(p,t)=>{const k=KURVE[p];if(k)for(const s of k)if(t>=s[0]&&t<s[1])r
 const vis=()=>$(SV?'v1':'v0');
 const quiet=(p,t)=>(STUMM[p]||[]).some(x=>t>=x[0]&&t<x[1]);
 /* a silent stretch: the clip plays on, only the volume is zero there, so the time line stays */
-function volFollow(v,p){const s0=v.src,f=()=>{if(v.src!==s0)return;v.volume=quiet(p,v.currentTime)?0:.7;if(!v.ended)requestAnimationFrame(f);};f();}
+const volOf=p=>Math.min(1,.7*(VOL[p]||1));  /* 1 = the normal loudness of the stage, 1.4 = all the phone gives */
+function volFollow(v,p){const s0=v.src,f=()=>{if(v.src!==s0)return;v.volume=quiet(p,v.currentTime)?0:volOf(p);if(!v.ended)requestAnimationFrame(f);};f();}
 const sameCut=(a,b)=>Math.abs(((a||[])[0]||0)-((b||[])[0]||0))<0.006&&Math.abs(((a||[])[1]||0)-((b||[])[1]||0))<0.006;
 function cutShow(){const p=pthNow(),d=vis().duration||0,a=Number($('cfrom').value),b=Number($('cto').value);
  $('clab').textContent='Anfang '+a.toFixed(2)+' s, Ende '+b.toFixed(2)+' s von '+d.toFixed(2)+' s'+(sameCut(SCHNITT[p],SAVED[p])?(SAVED[p]?'  (gemerkt)':''):'  (noch nicht gemerkt)');}
 function tonShow(){const p=pthNow(),off=!!MUTE[p];$('tonb').disabled=!CURSND;$('tonb').classList.toggle('on',CURSND&&off);
  $('tonb').textContent=!CURSND?'Schleifen laufen immer ohne Ton':(off?'Ton dieses Clips ist AUS (wieder einschalten)':'Ton dieses Clips ausschalten');
  $('toninfo').textContent=CURSND?(off?'In der App läuft dieser Clip stumm. Die Datei behält ihren Ton.':'In der App läuft dieser Clip mit seinem Ton.'):'';
- $('tonstk').style.display=CURSND&&!off?'block':'none';document.body.classList.toggle('wave',CURSND&&!off);const d=vis().duration||10;$('sfrom').max=$('sto').max=String(d);stkShow();waveLoad();}
+ $('tonstk').style.display=CURSND&&!off?'block':'none';document.body.classList.toggle('wave',CURSND&&!off);const d=vis().duration||10;$('sfrom').max=$('sto').max=String(d);stkShow();waveLoad();
+ $('vol').value=String(Math.round((VOL[p]||1)*100));volShow();}
+function volShow(){const n=Number($('vol').value);$('vlab').textContent='Lautstärke dieses Clips: '+n+' % (100 ist normal, 140 ist das Lauteste)';}
 /* the picture of the sound: loudness over time from the server, his selection, the silent stretches, the play line */
 let WAVE={},WSEL=null;
 async function waveLoad(){const p=pthNow();if(!CURSND||WAVE[p])return;WAVE[p]={peaks:[],dauer:0,wait:true};
@@ -360,7 +395,9 @@ function label(){const p=pthNow(),c=SCHNITT[p],v=vis(),d=v.duration||10;$('name'
  $('cfrom').max=$('cto').max=String(d);$('cfrom').value=String(c&&c[0]||0);$('cto').value=String(c&&c[1]&&c[1]<d?c[1]:d);
  $('info').textContent=(KURVE[p]?'mit Tempo Kurve  ':'')+(v.duration?v.duration.toFixed(1)+' s lang':'');
  cutShow();tonShow();$('solobar').style.display=SOLO?'flex':'none';
- document.querySelectorAll('button[data-n]').forEach(b=>b.classList.toggle('on',b.dataset.n===CUR));}
+ document.querySelectorAll('button[data-n]').forEach(b=>{const run=b.dataset.n===CUR;
+  if(b.dataset.loop){b.classList.toggle('on',!OFF[b.dataset.n]);b.style.opacity=OFF[b.dataset.n]?'.5':'1';b.textContent=(run?'▶ ':'')+'Schleife '+b.dataset.loop;}
+  else b.classList.toggle('on',run);});}
 /* one clip on the stage. opt.cont: it follows the running clip and fades in `pre` seconds before
    that one ends; otherwise it starts as soon as it can play. `done` is called PRELOAD_S before
    its own end, so the next clip can load in time (as on the stage of the app). */
@@ -385,8 +422,9 @@ function show(name,opt,done){const vs=[$('v0'),$('v1')],a=vs[SV],b=vs[1-SV],tok=
  b.onloadedmetadata=()=>{b.playbackRate=rateAt(pth,0);const cs=cutStart(pth);if(cs)b.currentTime=cs;};
  b.src='/clips/'+pth+'.mp4?v='+(VER[LOOK]||0);b.playbackRate=rateAt(pth,0);b.load();}
 /* the loop: clip, clip, clip. In order, or like the app a random other one each time */
-function loopNext(cont,fast){BUSY=false;const v=vars('gluecklich');if(!v.length){$('name').textContent='Dieses Kleid hat noch keine Schleife.';return;}
- let n;if(SEQ){n=v[LI%v.length];LI++;}else{const o=v.length>1?v.filter(x=>x!==CUR):v;n=o[Math.floor(Math.random()*o.length)];}
+function loopNext(cont,fast){BUSY=false;const all=vars('gluecklich'),sel=all.filter(n=>!OFF[n]),v=sel.length?sel:all;if(!v.length){$('name').textContent='Dieses Kleid hat noch keine Schleife.';return;}
+ let n;if(SEQ){const i=v.indexOf(LAST);n=v[(i+1)%v.length];}else{const o=v.length>1?v.filter(x=>x!==LAST):v;n=o[Math.floor(Math.random()*o.length)];}
+ LAST=n;
  show(n,{cont:cont,fast:fast},()=>loopNext(true,false));}
 /* a touch clip starts at once, with its sound; a clip from behind first turns her (hinten), as in the app */
 function touch(zone,n){if(BUSY&&!SOLO)return;BUSY=true;const turn=zone==='Po'&&!/povorne|mix/.test(n)?vars('hinten'):[];
@@ -401,16 +439,19 @@ function soloTick(){if(SOLO){const v=vis(),p=v.dataset.pth||'';if(v.duration){co
  requestAnimationFrame(soloTick);}
 function draw(){const L=$('loops'),T=$('touch');L.innerHTML='';T.innerHTML='';
  const btn=(txt,n,fn)=>{const b=document.createElement('button');b.textContent=txt;b.dataset.n=n;b.title=LOOK+'/'+n;b.onclick=fn;return b;};
- vars('gluecklich').forEach((n,i)=>L.appendChild(btn('Schleife '+(i+1),n,()=>{LI=i+1;BUSY=false;show(n,{fast:true},()=>loopNext(true,false));})));
+ /* a tap takes a loop out of the round or back in (Metin, 00:41: not pick one, but let loop 1 and 2 run); one always stays */
+ vars('gluecklich').forEach((n,i)=>{const b=btn('Schleife '+(i+1),n,()=>{const left=vars('gluecklich').filter(x=>!OFF[x]);
+   if(OFF[n])delete OFF[n];else if(left.length>1)OFF[n]=1;label();if(OFF[CUR]&&!SOLO){BUSY=false;loopNext(false,true);}});b.dataset.loop=String(i+1);L.appendChild(b);});
+ if(L.children.length>1){const h=document.createElement('div');h.className='t';h.style.flexBasis='100%';h.textContent='Tippen: die Schleife macht mit (grün) oder setzt aus.';L.appendChild(h);}
  for(const [zone,kinds] of ZONES){const names=[].concat(...kinds.map(vars));if(!names.length)continue;
   const row=document.createElement('div');row.className='bar';row.innerHTML='<span class="z">'+zone+'</span>';
   names.forEach((n,i)=>row.appendChild(btn(zone+(names.length>1?' '+(i+1):''),n,()=>touch(zone,n))));T.appendChild(row);}
  if(!T.children.length)T.innerHTML='<div class="t">Dieses Kleid hat noch keine Berührungs Clips.</div>';}
-function pick(i){const o=OUT[i];LOOK=o[1];PRE=o[2];CL=(window.J.outfits[LOOK]||{}).clips||[];LI=0;CUR='';try{localStorage.setItem('lganz',String(i));}catch(e){}draw();loopNext(false,true);}
+function pick(i){const o=OUT[i];LOOK=o[1];PRE=o[2];CL=(window.J.outfits[LOOK]||{}).clips||[];LAST='';CUR='';OFF={};try{localStorage.setItem('lganz',String(i));}catch(e){}draw();loopNext(false,true);}
 async function start(){const j=await (await fetch('/clips.json?t='+Date.now())).json();window.J=j;const o=j.outfits||{};
  for(const look in o){VER[look]=o[look].v||0;for(const c in (o[look].r||{}))RATE[look+'/'+c]=o[look].r[c];
   for(const c in (o[look].k||{}))KURVE[look+'/'+c]=o[look].k[c];for(const c of (o[look].m||[]))MUTE[look+'/'+c]=1;
-  for(const c in (o[look].ms||{}))STUMM[look+'/'+c]=o[look].ms[c];
+  for(const c in (o[look].ms||{}))STUMM[look+'/'+c]=o[look].ms[c];for(const c in (o[look].mv||{}))VOL[look+'/'+c]=o[look].mv[c];
   for(const c in (o[look].s||{})){SCHNITT[look+'/'+c]=o[look].s[c].slice();SAVED[look+'/'+c]=o[look].s[c].slice();}}
  const s=$('look');OUT.forEach((x,i)=>{if(!o[x[1]])return;const op=document.createElement('option');op.value=String(i);op.textContent=x[0];s.appendChild(op);});
  s.onchange=()=>pick(Number(s.value));
@@ -440,6 +481,7 @@ $('seq').onclick=()=>{SEQ=!SEQ;try{localStorage.setItem('lgseq',SEQ?'1':'0');}ca
 /* tempo, in steps of one hundredth (Metin: buttons with 0,01 steps) */
 $('rate').oninput=()=>{if(!CUR)return;const p=pthNow(),r=Number($('rate').value);RATE[p]=r;$('rlab').textContent=r.toFixed(2);if(!KURVE[p])vis().playbackRate=r;};
 const nudge=(id,d)=>{const r=$(id);r.value=String(Math.min(Number(r.max),Math.max(Number(r.min),Math.round((Number(r.value)+d)*100)/100)));r.oninput();};
+const nudgeBy=(id,d)=>{const r=$(id);r.value=String(Math.min(Number(r.max),Math.max(Number(r.min),Number(r.value)+d)));r.oninput();};
 $('rm').onclick=()=>nudge('rate',-0.01);$('rp').onclick=()=>nudge('rate',0.01);$('r1').onclick=()=>{$('rate').value='1';$('rate').oninput();};
 $('mk').onclick=async()=>{if(!CUR)return;const j=await post('/api/tempo',{name:pthNow(),rate:Number($('rate').value)});flash($('mk'),j&&j.ok,'Tempo merken');standLater();};
 /* begin and end: the marks apply at once on this page, the app gets them with "Schnitt merken" */
@@ -455,6 +497,10 @@ $('cclr').onclick=async()=>{if(!CUR)return;const p=pthNow(),j=await post('/api/s
 /* the sound of this clip in the app: off or on again, the file keeps it */
 $('tonb').onclick=async()=>{if(!CUR||!CURSND)return;const p=pthNow(),off=!MUTE[p],j=await post('/api/ton',{name:p,aus:off});
  if(j&&j.ok){if(off)MUTE[p]=1;else delete MUTE[p];vis().muted=off||!$('ton').checked;}tonShow();standLater();};
+/* quieter or louder: at once on this page, in the app after "Lautstärke merken" */
+$('vol').oninput=()=>{if(!CUR||!CURSND)return;const p=pthNow(),f=Number($('vol').value)/100;if(f===1)delete VOL[p];else VOL[p]=f;volShow();};
+$('vm').onclick=()=>nudgeBy('vol',-5);$('vp').onclick=()=>nudgeBy('vol',5);$('v1b').onclick=()=>nudgeBy('vol',100-Number($('vol').value));
+$('vsave').onclick=async()=>{if(!CUR||!CURSND)return;const j=await post('/api/ton',{name:pthNow(),laut:Number($('vol').value)/100});flash($('vsave'),j&&j.ok,'Lautstärke merken');standLater();};
 /* a stretch of the sound without sound: from, to, in steps of one hundredth */
 $('sfrom').oninput=()=>{const f=$('sfrom'),t=$('sto');if(Number(t.value)<Number(f.value)+0.02)t.value=String(Math.min(Number(t.max),Number(f.value)+0.5));stkShow();};
 $('sto').oninput=()=>{const f=$('sfrom'),t=$('sto');if(Number(t.value)<Number(f.value)+0.02)f.value=String(Math.max(0,Number(t.value)-0.5));stkShow();};

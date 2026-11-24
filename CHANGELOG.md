@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.164.0 (25 Nov 2026)
+
+- `feat`: a clip can be made quieter or louder (Metin, 00:39). On the page "Outfit als Ganzes", under Ton: a slider from 10 to 140 percent with the buttons leiser, lauter, normal and "Lautstärke merken". 100 is the loudness the stage always had (volume 0.7), 140 is all the phone gives. Kept as a factor per clip in `/data/clip_ton.json` (`laut`, `POST /api/ton` with `laut`), given to the app as `mv` in `/clips.json` (`VOL` in the page, used by `stageShow`); a silent stretch stays silent and the rest of the clip plays at the chosen loudness. Part of the reset point. The file is not changed.
+- `feat`: which loops take part (Metin, 00:41: not pick loop 1 or loop 2, but let loop 1 and loop 2 run at random). The loop buttons no longer jump to a loop: a tap takes a loop out of the round or back in (green = takes part, ▶ marks the one that runs), one always stays, and the round goes on, in order or at random, only with those. After a touch the round continues with the loop after the last one.
+- 725 tests; the browser test also sets the loudness, takes loops out and checks the order after a touch.
+
 ## 2.163.2 (25 Nov 2026)
 
 - `feat`: pause, picture by picture and dragging through the clip on the page "Outfit als Ganzes". Metin (00:34): that was still missing. A bar that is always at the bottom, right above the picture of the sound: pause or play, one picture back, one picture on (1/24 s), a slider to drag through the clip and the time ("2.50 / 10.04 s"). Using one of them keeps only this clip on the stage until "weiter mit den Schleifen"; a tap on the picture of the sound or "Stück anhören" plays from there. 725 tests, the browser test now also pauses, steps and drags.

@@ -604,7 +604,7 @@ window.addEventListener('beforeinstallprompt',e=>{INST=e;diag('installable');});
 window.addEventListener('appinstalled',()=>{INST=null;diag('installed');});
 setTimeout(()=>diag('open'),4000);  /* 2.134.3: only with a service worker does Chrome install the page as an app, and only then does the manifest's fullscreen apply */
 async function clipsLoad(){let outs={};try{outs=(await (await fetch('/clips.json')).json()).outfits||{};}catch(e){}
- MUTE={};STUMM={};for(const k in outs){for(const c of (outs[k].m||[]))MUTE[k+'/'+c]=1;for(const c in (outs[k].ms||{}))STUMM[k+'/'+c]=outs[k].ms[c];CVER[k]=outs[k].v||0;const r=outs[k].r||{};for(const c in r)RATE[k+'/'+c]=r[c];const q=outs[k].k||{};for(const c in q)KURVE[k+'/'+c]=q[c];const sc=outs[k].s||{};for(const c in sc)SCHNITT[k+'/'+c]=sc[c];}  /* 2.136.0 (Metin): his tempo from the tester, the clip files stay untouched */
+ MUTE={};STUMM={};VOL={};for(const k in outs){for(const c in (outs[k].mv||{}))VOL[k+'/'+c]=outs[k].mv[c];for(const c of (outs[k].m||[]))MUTE[k+'/'+c]=1;for(const c in (outs[k].ms||{}))STUMM[k+'/'+c]=outs[k].ms[c];CVER[k]=outs[k].v||0;const r=outs[k].r||{};for(const c in r)RATE[k+'/'+c]=r[c];const q=outs[k].k||{};for(const c in q)KURVE[k+'/'+c]=q[c];const sc=outs[k].s||{};for(const c in sc)SCHNITT[k+'/'+c]=sc[c];}  /* 2.136.0 (Metin): his tempo from the tester, the clip files stay untouched */
 NIGHT=outs.nacht?outs.nacht.clips:[];NIGHTBODY=!!(outs.nacht&&outs.nacht.body);delete outs.nacht;PET=outs.mokka&&outs.mokka.alpha||[];delete outs.mokka;const names=Object.keys(outs);LOOKS=names.slice().sort();
  let last='',lday='',seen=0;try{last=localStorage.getItem('loutfit')||'';lday=localStorage.getItem('loutfitday')||'';seen=Number(localStorage.getItem('lseen')||0);}catch(e){}
  let mokpend=false;try{mokpend=!localStorage.getItem('lmokka');}catch(e){}
@@ -627,7 +627,7 @@ const PHONE=Math.min(screen.width,screen.height)*(window.devicePixelRatio||1)<=1
 function lightNow(){try{const o=localStorage.getItem('llight');if(o==='an')return true;if(o==='aus')return false;}catch(e){}
  const c=navigator.connection;return LIGHT||PHONE||!!(c&&(c.type==='cellular'||c.saveData));}
 function stallSeen(){if(lightNow())return;const t=Date.now();STALLS=STALLS.filter(x=>t-x<60000);STALLS.push(t);if(STALLS.length>=2)LIGHT=true;}
-let RATE={},KURVE={},SCHNITT={},MUTE={},STUMM={};  /* MUTE: clips whose sound Metin switched off on the page /ganzes, STUMM: silent stretches [from,to] inside a clip (2.163.0); the files keep their sound and their length */
+let RATE={},KURVE={},SCHNITT={},MUTE={},STUMM={},VOL={};  /* VOL: loudness factor of a clip, 1 = normal (2.164.0) */  /* MUTE: clips whose sound Metin switched off on the page /ganzes, STUMM: silent stretches [from,to] inside a clip (2.163.0); the files keep their sound and their length */
 /* 2.144.0 (Metin sets where a clip begins and ends, in the tester): the stage starts a clip at its mark, hands over at its end mark and holds the last picture there; the file stays whole */
 function cutStart(pth){const c=SCHNITT[pth];return c&&c[0]>0?c[0]:0;}
 function endOf(v){const d=v.duration||0,c=SCHNITT[v.dataset.pth||''];return c&&c[1]>0&&c[1]<d?c[1]:d;}
@@ -644,7 +644,7 @@ let TIGHT=false;  /* a loop that replays the same clip blends only at the very e
 function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name)&&!MUTE[name.includes('/')?name:OUTFIT+'/'+name];const tight=TIGHT;TIGHT=false;const PRE=tight?0.25:0.8,OFF=tight?300:850;const s=document.getElementById('stage'),vs=[document.getElementById('svid'),document.getElementById('svid2')],a=vs[SV],b=vs[1-SV],tok=++STOK,cont=CONT;CONT=false;
  if(!name){s.classList.remove('vid');vs.forEach(v=>{v.classList.remove('on');setTimeout(()=>{if(tok===STOK){v.pause();v.removeAttribute('src');v.load();}},600);});return;}
  if(loop&&a.loop&&a.classList.contains('on')&&a.src.split('?')[0].endsWith('/'+name+'.mp4'))return;
- b.onended=null;b.ontimeupdate=null;b.loop=!!loop;b.muted=!snd||document.getElementById('chat').classList.contains('oncall');b.volume=.7;let rdy=false;const ready=()=>{if(rdy)return;rdy=true;b.oncanplaythrough=null;if(tok!==STOK)return;
+ b.onended=null;b.ontimeupdate=null;b.loop=!!loop;b.muted=!snd||document.getElementById('chat').classList.contains('oncall');b.volume=Math.min(1,.7*(VOL[name.includes('/')?name:OUTFIT+'/'+name]||1));let rdy=false;const ready=()=>{if(rdy)return;rdy=true;b.oncanplaythrough=null;if(tok!==STOK)return;
   if(cont&&a.classList.contains('on')&&a.duration&&!a.ended){const w=(endOf(a)-PRE-a.currentTime)*1000/(a.playbackRate||1);if(w>30){SWAP=tok;setTimeout(()=>{if(tok===STOK)go();},w);return;}}go();};
  /* 2.141.5 (Metin on the go: each clip stalled on its first pass and ran smoothly on the second): start a clip only when the browser expects to play it through, not at the first frame; after 8 s it starts anyway */
  b.oncanplaythrough=ready;b.oncanplay=null;
@@ -654,7 +654,7 @@ function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name)&&!MUTE[name.in
  const go=()=>{const cs=cutStart(b.dataset.pth||'');if(Math.abs(b.currentTime-cs)>0.04)b.currentTime=cs;b.play().catch(()=>{b.muted=true;b.play().catch(()=>{});});b.style.zIndex=1;a.style.zIndex=0;b.classList.add('on');s.classList.add('vid');SV=1-SV;
   setTimeout(()=>{if(tok===STOK)a.classList.remove('on');},OFF);setTimeout(()=>{if(!a.classList.contains('on'))a.pause();},OFF+150);let fired=false;const fire=()=>{if(fired||tok!==STOK||!done)return;fired=true;CONT=true;done();CONT=false;};
   const fol=rateFollow(b,b.dataset.pth||'');
-  {const st=STUMM[b.dataset.pth||''];if(st&&!b.muted){const s0=b.src,vf=()=>{if(b.src!==s0)return;const t=b.currentTime;b.volume=st.some(x=>t>=x[0]&&t<x[1])?0:.7;if(!b.ended)requestAnimationFrame(vf);};vf();}}  /* a silent stretch: the clip plays on, only its volume is zero there, nothing shifts */
+  {const st=STUMM[b.dataset.pth||''];if(st&&!b.muted){const s0=b.src,v0=b.volume,vf=()=>{if(b.src!==s0)return;const t=b.currentTime;b.volume=st.some(x=>t>=x[0]&&t<x[1])?0:v0;if(!b.ended)requestAnimationFrame(vf);};vf();}}  /* a silent stretch: the clip plays on, only its volume is zero there, nothing shifts */
   const pre=lightNow()?PRELOAD_LIGHT_S:PRELOAD_S,full=()=>{const r=b.buffered;return r.length&&r.end(r.length-1)>=endOf(b)-0.2;};
   /* 2.143.2 (Metin: the ends of the clips flicker): the early preload on the phone began about 1 s into a 10 s clip and loaded the next clip into the old video while it was still fading out (it stays visible up to 1.65 s). The early preload now waits 2.5 s after the swap */
   const t0=performance.now();
@@ -1159,6 +1159,10 @@ def list_outfits() -> dict:
         look, _, clip = name.partition("/")
         if look in out and clip in out[look]["clips"]:
             out[look].setdefault("ms", {})[clip] = segs
+    for name, factor in sound["laut"].items():  # mv: loudness factor of a clip, 1 = normal
+        look, _, clip = name.partition("/")
+        if look in out and clip in out[look]["clips"]:
+            out[look].setdefault("mv", {})[clip] = factor
     return out
 
 
@@ -1742,10 +1746,13 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                 ok = True
             elif "stumm" in d:
                 ok = ganzes_page.ton_stumm(n, d.get("stumm"))
+            elif "laut" in d:
+                ok = ganzes_page.ton_laut(n, d.get("laut"))
             else:
                 ok = isinstance(d.get("aus"), bool) and ganzes_page.ton_set(n, d["aus"])
             if method == "POST" and ok:
                 logger.info("Clip sound: %s %s", n, "silent stretches set" if "stumm" in d
+                            else "loudness %s" % d.get("laut") if "laut" in d
                             else "off" if d["aus"] else "on")
             await _respond(writer, "200 OK", "application/json",
                            json.dumps({"ok": ok, **ganzes_page.ton_read()}, ensure_ascii=False))
