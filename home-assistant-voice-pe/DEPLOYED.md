@@ -1,6 +1,6 @@
 # Deployed device config: differences to the repo template
 
-Checked against the live file on the Mini PC on 13 Nov 2026 (1397 lines, template has 1386); `leyla_voice:` block read again on 24 Nov 2026 (1403 lines now). The live file is `voice_pe_config.yaml` in the ESPHome Device Builder add on (slug `5c53de3b_esphome`). The repo file `voice_pe_config.yaml` is only the template.
+Checked against the live file on the Mini PC on 13 Nov 2026 (1397 lines, template has 1386); `leyla_voice:` block read again on 24 Nov 2026 (1426 lines now). The live file is `voice_pe_config.yaml` in the ESPHome Device Builder add on (slug `5c53de3b_esphome`). The repo file `voice_pe_config.yaml` is only the template.
 
 The template was synced with the live file on the same day (wake word, component source, full duplex, auto stop timeout, ready sound switch). What is still different is listed here.
 
@@ -14,6 +14,7 @@ The template was synced with the live file on the same day (wake word, component
 
 - Extra diagnostic sensors in the live `sensor:` block (added 13 Nov 2026, for the baseline): `platform: debug` (free heap, largest free block, loop time; `debug: update_interval: 5s` already existed), `wifi_signal`, `uptime`, all named "Leyla ..." and `entity_category: diagnostic`. They show up in Home Assistant with history, so memory trends, WiFi quality and reboots can be read over days.
 - `preroll: 4000ms` under `leyla_voice:` (2500ms flashed 24 Nov 2026 at 11:47, 4000ms at 12:29; needs add on 2.157.0 or newer) and, as the first action of `on_wake_word_detected`, `- lambda: 'id(leyla_voice_ws).note_wake();'` (flashed 12:29; the header of the history then carries `wake_ms`). The template still uses the old component `voice_assistant_websocket` and has neither. To undo: remove both and install again.
+- The silent collector (flashed 24 Nov 2026, 13:36, compiled 13:24; needs add on 2.158.0 or newer; `docs/WECKWORT.md`): under `leyla_voice:` `preroll_channel: 1`, `preroll_gain: 4`, `collect_host: 192.168.2.240`; under `micro_wake_word: models:` a second entry `model: https://raw.githubusercontent.com/metintaski-cloud/ha-openai-realtime-voice/main/hallo_leyla_sammler.json`, `id: leyla_sammler`, `internal: true`, `probability_cutoff: 70%`, `sliding_window_size: 6`; in `on_boot` `micro_wake_word.enable_model: leyla_sammler`; and `on_wake_word_detected` is one `if` on `wake_word == "Leyla Sammler"` (then only `id(leyla_voice_ws).collect();`), with everything it did before in the `else`. The model is given by its full address because the `github://` shorthand keeps a copy of the repository for a day and the editor refused the new file ("Not a valid model name ..."). After the flash: free heap 153 700 B (154 932 before), largest block 139 264 B, loop 17 ms: the second model costs nothing measurable. To undo: remove these lines, put the old body of `on_wake_word_detected` back at its old indent, install.
 
 ## Keep this file true
 - Whenever the live config is changed (by Claude or by hand), update the list above in the same session and commit it.
