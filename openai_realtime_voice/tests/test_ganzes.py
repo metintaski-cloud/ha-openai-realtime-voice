@@ -119,6 +119,26 @@ async def test_in_a_browser_loops_run_in_order_and_a_touch_cuts_in_and_hands_bac
             assert not await page.is_visible("#panel")  # the whole clip
             await page.click("#tog")
             assert await page.is_visible("#panel")
+            # pause, one picture on and back, and dragging through the clip: it stays on this clip
+            await page.click("#pp")
+            held = await page.evaluate("()=>[PAUSED,SOLO,document.getElementById(SV?'v1':'v0').paused,CUR]")
+            assert held[:3] == [True, True, True]
+            t0 = await page.evaluate("()=>document.getElementById(SV?'v1':'v0').currentTime")
+            await page.click("#ff")
+            await page.click("#ff")
+            await page.click("#fb")
+            t1 = await page.evaluate("()=>document.getElementById(SV?'v1':'v0').currentTime")
+            assert abs((t1 - t0) - 1 / 24) < 0.005
+            await page.evaluate("()=>{const p=document.getElementById('pos');p.value='2.5';p.oninput();p.onchange();}")
+            await asyncio.sleep(0.4)
+            now = await page.evaluate("()=>[document.getElementById(SV?'v1':'v0').currentTime,document.getElementById(SV?'v1':'v0').paused,CUR]")
+            assert abs(now[0] - 2.5) < 0.01 and now[1] is True and now[2] == held[3]  # paused where he dragged it
+            assert "2.50 / 4.0" in await page.inner_text("#ptime")
+            await page.click("#pp")
+            await asyncio.sleep(0.5)
+            assert await page.evaluate("()=>document.getElementById(SV?'v1':'v0').paused") is False
+            await page.click("#weiter")
+            await page.wait_for_function("()=>!SOLO&&!PAUSED&&CUR.startsWith('freizeitgluecklich')", timeout=9000)
             # fine tempo steps of one hundredth, and back to 1
             await page.click("#rp")
             await page.click("#rp")
@@ -160,6 +180,8 @@ async def test_in_a_browser_loops_run_in_order_and_a_touch_cuts_in_and_hands_bac
             await page.wait_for_function("()=>(WAVE['kurz/freizeitpo8']||{peaks:[]}).peaks.length>100")
             box = await page.locator("#wave").bounding_box()
             assert box["width"] == 400 and box["y"] + box["height"] == 800  # a strip over the full width at the bottom
+            bar = await page.locator("#trans").bounding_box()
+            assert bar["y"] + bar["height"] == box["y"] and bar["width"] == 400  # pause and drag sit right above it
             await page.mouse.move(box["x"] + box["width"] * 0.25, box["y"] + 20)
             await page.mouse.down()
             await page.mouse.move(box["x"] + box["width"] * 0.4, box["y"] + 20, steps=4)

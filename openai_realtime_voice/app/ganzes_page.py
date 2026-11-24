@@ -12,7 +12,9 @@ hundredth, begin and end, sound off) and the reset for all clips. The clip never
 view (Metin, 00:29: scrolling down to the settings he lost sight of it, all of it must lie on
 the left in the clip): the stage fills the screen like in the app, the groups are a see
 through column on its left that scrolls by itself, ☰ hides it, and the picture of the sound
-is a strip over the full width at the bottom. Nothing here changes a
+is a strip over the full width at the bottom. Above it, always there (Metin, 00:34): pause,
+one picture back or on, and a slider to drag through the clip; using one of them keeps only
+this clip on the stage (`solo`) until "weiter mit den Schleifen". Nothing here changes a
 clip file: tempo, cut and "sound off" are values the app reads from /clips.json.
 
 The script is a raw string: keep it free of backslashes and check it with node --check
@@ -250,8 +252,13 @@ a{color:#9fe8ff}
 #st{position:fixed;top:0;right:0;height:100%;aspect-ratio:2/3;max-width:100vw;overflow:hidden;background:#000}
 #st video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .8s}
 #st video.on{opacity:1}
-#panel{position:fixed;top:0;left:0;bottom:0;width:min(58vw,360px);overflow-y:auto;background:rgba(0,0,0,.30);padding-bottom:10px;z-index:3}
-body.wave #panel{bottom:92px}
+#panel{position:fixed;top:0;left:0;bottom:46px;width:min(58vw,360px);overflow-y:auto;background:rgba(0,0,0,.30);padding-bottom:10px;z-index:3}
+body.wave #panel{bottom:138px}
+/* pause, picture by picture and dragging through the clip (Metin, 00:34), always at the bottom */
+#trans{position:fixed;left:0;right:0;bottom:0;height:46px;z-index:4;background:rgba(0,0,0,.6);display:flex;gap:6px;align-items:center;padding:0 6px;box-sizing:border-box}
+body.wave #trans{bottom:92px}
+#trans button{padding:6px 9px;white-space:nowrap}
+#ptime{min-width:74px;text-align:right;font-size:12px;color:#cde}
 body.hide #panel{display:none}
 @media (min-aspect-ratio:1/1){#panel{width:calc(100vw - 100vh*2/3);max-width:none;background:#000}}
 #top{position:fixed;top:6px;right:6px;z-index:4;display:flex;gap:6px;align-items:center;flex-direction:row-reverse;max-width:42vw;flex-wrap:wrap}
@@ -296,13 +303,14 @@ label{display:flex;gap:4px;align-items:center}
 <div class="bar"><button id="sadd">Stück stumm schalten</button><button id="shear">Stück anhören</button></div><div class="t" id="slist"></div></div></div>
 <div class="card"><h2>5. Reset für alle Clips</h2><div class="bar"><button id="rst">Reset</button><button id="rnew" style="font-size:11px;color:#9ab">Stand neu merken</button></div>
 <div class="t" id="rinfo"></div></div></div>
+<div id="trans"><button id="pp">⏸</button><button id="fb">◀ Bild</button><button id="ff">Bild ▶</button><input type="range" id="pos" min="0" max="10" step="0.01" value="0"><span id="ptime">0.00 s</span></div>
 <div id="wavebar"><canvas id="wave"></canvas></div>
 <script>
 const OUT=[['Kurzes Arbeitskleid','kurz',''],['Kurzes Freizeitkleid','kurz','freizeit'],['Langes Arbeitskleid','schwarz',''],['Langes Freizeitkleid','schwarz','freizeit'],['Nachtkleid','nacht','']];
 const ZONES=[['Gesicht',['gesicht']],['Brust',['brust']],['Bauch',['bauch','mix']],['Po',['po','povorne','mix']]];
 const PRELOAD_S=3,LOOP_PRE=0.25,LOOP_OFF=300,FAST_OFF=450;
 const $=id=>document.getElementById(id);
-let LOOK='',PRE='',CL=[],VER={},RATE={},KURVE={},SCHNITT={},SAVED={},MUTE={},STUMM={},SV=0,TOK=0,CUR='',CURSND=false,LI=0,BUSY=false,SEQ=true,SOLO=false;
+let LOOK='',PRE='',CL=[],VER={},RATE={},KURVE={},SCHNITT={},SAVED={},MUTE={},STUMM={},SV=0,TOK=0,CUR='',CURSND=false,LI=0,BUSY=false,SEQ=true,SOLO=false,PAUSED=false,SCRUB=false;
 const base=n=>n.replace(/[0-9]+$/,'');
 const vars=b=>CL.filter(n=>base(n)===PRE+b);
 const pthNow=()=>LOOK+'/'+CUR;
@@ -339,7 +347,7 @@ function waveDraw(){const c=$('wave');if(document.body.classList.contains('wave'
  c.onpointerdown=e=>{c.setPointerCapture(e.pointerId);x0=e.clientX;t0=tAt(e);drag=false;WSEL=true;};
  c.onpointermove=e=>{if(!WSEL)return;if(Math.abs(e.clientX-x0)>5)drag=true;if(!drag)return;const t=tAt(e),a=Math.min(t0,t),b=Math.max(t0,t);
   $('sfrom').value=String(a.toFixed(2));$('sto').value=String(Math.max(a+0.02,b).toFixed(2));stkShow();};
- c.onpointerup=c.onpointercancel=e=>{if(!WSEL)return;WSEL=null;if(!drag){solo();const v=vis();v.muted=!!MUTE[pthNow()]||!$('ton').checked;v.currentTime=tAt(e);v.play().catch(()=>{});}};})();
+ c.onpointerup=c.onpointercancel=e=>{if(!WSEL)return;WSEL=null;if(!drag){solo();PAUSED=false;const v=vis();v.muted=!!MUTE[pthNow()]||!$('ton').checked;v.currentTime=tAt(e);v.play().catch(()=>{});}};})();
 function stkShow(){const p=pthNow(),a=Number($('sfrom').value),b=Number($('sto').value);
  $('slab').textContent='Ein Stück ohne Ton, gleich lang, nichts verschiebt sich: von '+a.toFixed(2)+' bis '+b.toFixed(2)+' s';
  $('slist').innerHTML=(STUMM[p]||[]).map((x,i)=>'stumm: '+x[0].toFixed(2)+' bis '+x[1].toFixed(2)+' s <a href="#" data-i="'+i+'">weg</a>').join('<br>')||'Kein Stück ist stumm.';
@@ -356,7 +364,7 @@ function label(){const p=pthNow(),c=SCHNITT[p],v=vis(),d=v.duration||10;$('name'
 /* one clip on the stage. opt.cont: it follows the running clip and fades in `pre` seconds before
    that one ends; otherwise it starts as soon as it can play. `done` is called PRELOAD_S before
    its own end, so the next clip can load in time (as on the stage of the app). */
-function show(name,opt,done){const vs=[$('v0'),$('v1')],a=vs[SV],b=vs[1-SV],tok=++TOK,pth=LOOK+'/'+name;SOLO=false;
+function show(name,opt,done){const vs=[$('v0'),$('v1')],a=vs[SV],b=vs[1-SV],tok=++TOK,pth=LOOK+'/'+name;SOLO=false;PAUSED=false;
  const pre=opt.fast?0:LOOP_PRE,off=opt.fast?FAST_OFF:LOOP_OFF;
  b.onended=null;b.ontimeupdate=null;b.oncanplaythrough=null;b.dataset.pth=pth;b.muted=!(opt.snd&&$('ton').checked&&!MUTE[pth]);b.volume=.7;
  let rdy=false;
@@ -388,7 +396,7 @@ function touch(zone,n){if(BUSY&&!SOLO)return;BUSY=true;const turn=zone==='Po'&&!
 function solo(){if(SOLO)return;SOLO=true;++TOK;BUSY=false;const v=vis();v.ontimeupdate=null;v.onended=null;v.loop=false;$('solobar').style.display='flex';
  [$('v0'),$('v1')].forEach(x=>{if(x!==v){x.classList.remove('on');x.pause();}});}
 function soloTick(){if(SOLO){const v=vis(),p=v.dataset.pth||'';if(v.duration){const A=cutStart(p),B=endOf(v),t=v.currentTime;
-   if(t>=B-0.01||t<A-0.15||v.ended)v.currentTime=A;if(v.paused)v.play().catch(()=>{});
+   if(!PAUSED&&!SCRUB){if(t>=B-0.01||t<A-0.15||v.ended)v.currentTime=A;if(v.paused)v.play().catch(()=>{});}
    const r=rateAt(p,t);if(Math.abs((v.playbackRate||1)-r)>0.001)v.playbackRate=r;}}
  requestAnimationFrame(soloTick);}
 function draw(){const L=$('loops'),T=$('touch');L.innerHTML='';T.innerHTML='';
@@ -414,6 +422,17 @@ const post=async(url,body)=>{try{return await (await fetch(url,{method:'POST',he
 const flash=(b,ok,txt)=>{b.textContent=ok?'gemerkt':'ging nicht';setTimeout(()=>{b.textContent=txt;},1200);};
 $('tog').onclick=()=>document.body.classList.toggle('hide');  /* the panel away: the whole clip */
 $('nxt').onclick=()=>{BUSY=false;loopNext(false,true);};$('weiter').onclick=()=>{BUSY=false;loopNext(false,true);};
+/* pause, one picture back or on, and dragging through the clip; from then on only this clip is on the stage */
+const FRAME=1/24;
+function posTick(){const v=vis(),d=v.duration||0;if(d){if(!SCRUB){$('pos').max=String(d);$('pos').value=String(v.currentTime);}
+  $('ptime').textContent=v.currentTime.toFixed(2)+' / '+d.toFixed(2)+' s';}$('pp').textContent=PAUSED?'▶':'⏸';requestAnimationFrame(posTick);}
+const halt=()=>{solo();PAUSED=true;vis().pause();};
+$('pp').onclick=()=>{if(!CUR)return;if(PAUSED){PAUSED=false;solo();vis().play().catch(()=>{});}else halt();};
+$('fb').onclick=()=>{if(!CUR)return;halt();const v=vis();v.currentTime=Math.max(0,v.currentTime-FRAME);};
+$('ff').onclick=()=>{if(!CUR)return;halt();const v=vis();v.currentTime=Math.min((v.duration||0)-0.001,v.currentTime+FRAME);};
+$('pos').oninput=()=>{if(!CUR)return;solo();SCRUB=true;vis().currentTime=Number($('pos').value);};
+$('pos').onchange=()=>{SCRUB=false;};$('pos').onpointerup=()=>{SCRUB=false;};$('pos').onpointercancel=()=>{SCRUB=false;};
+requestAnimationFrame(posTick);
 /* the loops in order (clip 1, 2, 3, 1 ...) or at random like the app, where never the same one follows itself */
 function seqShow(){$('seq').textContent=SEQ?'Schleifen: der Reihe nach':'Schleifen: zufällig wie in der App';$('seq').classList.toggle('on',!SEQ);}
 try{SEQ=localStorage.getItem('lgseq')!=='0';}catch(e){}seqShow();
@@ -441,7 +460,7 @@ $('sfrom').oninput=()=>{const f=$('sfrom'),t=$('sto');if(Number(t.value)<Number(
 $('sto').oninput=()=>{const f=$('sfrom'),t=$('sto');if(Number(t.value)<Number(f.value)+0.02)f.value=String(Math.max(0,Number(t.value)-0.5));stkShow();};
 $('sm1').onclick=()=>nudge('sfrom',-0.01);$('sp1').onclick=()=>nudge('sfrom',0.01);$('sm2').onclick=()=>nudge('sto',-0.01);$('sp2').onclick=()=>nudge('sto',0.01);
 $('sadd').onclick=()=>{if(!CUR||!CURSND)return;const k=(STUMM[pthNow()]||[]).slice();k.push([Number($('sfrom').value),Number($('sto').value)]);stkSave(k);};
-$('shear').onclick=()=>{if(!CUR)return;solo();const v=vis();v.muted=!!MUTE[pthNow()]||!$('ton').checked;v.currentTime=Math.max(0,Number($('sfrom').value)-1);v.play().catch(()=>{});};
+$('shear').onclick=()=>{if(!CUR)return;solo();PAUSED=false;const v=vis();v.muted=!!MUTE[pthNow()]||!$('ton').checked;v.currentTime=Math.max(0,Number($('sfrom').value)-1);v.play().catch(()=>{});};
 /* the reset point: tempo, curve, cut and sound of all clips as they were at one moment */
 function standShow(j){if(!j||!j.ok)return;const n=(j.geaendert||[]).length;window.STAND=j;
  $('rst').textContent='Reset: alles wie am '+j.wann+' Uhr';$('rst').disabled=!n;

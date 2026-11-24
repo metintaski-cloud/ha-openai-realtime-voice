@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.163.2 (25 Nov 2026)
+
+- `feat`: pause, picture by picture and dragging through the clip on the page "Outfit als Ganzes". Metin (00:34): that was still missing. A bar that is always at the bottom, right above the picture of the sound: pause or play, one picture back, one picture on (1/24 s), a slider to drag through the clip and the time ("2.50 / 10.04 s"). Using one of them keeps only this clip on the stage until "weiter mit den Schleifen"; a tap on the picture of the sound or "Stück anhören" plays from there. 725 tests, the browser test now also pauses, steps and drags.
+
 ## 2.163.1 (25 Nov 2026)
 
 - `fix`: on the page "Outfit als Ganzes" the clip never leaves the view. Metin right after the first look (00:29): scrolling down to the settings he no longer saw the clip, all of it must lie on the left in the clip. Now the stage fills the screen like in the app and does not scroll; the groups (Kleid, Schleifen, Berührung, the settings of the running clip, reset) are a see through column on its left that scrolls by itself, ☰ at the top right hides it for the whole clip, the name of the running clip stays at the top right, and the picture of the sound is a strip over the full width at the bottom (wider, so a finger can pick a stretch more exactly). On a wide screen the column takes the space left of the clip. Looked at in phone size and in a wide window. 725 tests.
