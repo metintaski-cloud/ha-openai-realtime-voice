@@ -292,3 +292,79 @@ async def test_speed_is_sent_again_when_ignored(monkeypatch):
     ctl = _fan_ctl(monkeypatch, f)
     r = await ctl.run({"action": "stufe", "speed": 3, "hours": None})
     assert f.speed == 3 and f.sent == ["stufe3_1", "stufe3_2"] and "checked" in r
+
+
+async def test_a_light_press_the_fan_did_not_take_is_pressed_again(tmp_path, monkeypatch):
+    """24 Nov 2026, 16:19: the sunset automation sent "ventilator aus" and "licht_an" together;
+    the light frame went out 0.4 s after the stop frame, the meter saw nothing and the light
+    stayed off, with only one press. Without a change in watts the toggle did not happen, so
+    it is pressed again, with the next capture."""
+    monkeypatch.setattr(fan, "SETTLE_S", 0.0)
+    monkeypatch.setattr(fan, "RECHECK_S", 0.0)
+    monkeypatch.setattr(fan, "FRAME_GAP_S", 0.0)
+    m = _Meter()
+    ctl = _metered(tmp_path, monkeypatch, m)
+    presses = []
+
+    async def send_rotating(name):
+        presses.append(name)
+        if name == "licht" and len(presses) >= 2:   # the fan ignores the first frame
+            m.light = not m.light
+        return {"sent": name}
+
+    ctl.remote.send_rotating = send_rotating
+    r = await ctl.run({"action": "licht_an"})
+    assert m.light and presses == ["licht", "licht"] and r["done"] == "Licht an" and "2. Drücken" in r["note"]
+    # no power at the wall switch: three presses, then an honest answer, and nothing is assumed
+    m.light = False
+    ctl.light_on = None
+    presses.clear()
+
+    async def dead(name):
+        presses.append(name)
+        return {"sent": name}
+
+    ctl.remote.send_rotating = dead
+    ctl.describe = lambda watts: {"licht": "unklar"}
+    r = await ctl.run({"action": "licht_an"})
+    assert presses == ["licht"] * 3 and "keine Änderung" in r["note"] and ctl.light_on is None
+
+
+async def test_frames_to_the_fan_keep_their_distance(tmp_path, monkeypatch):
+    import asyncio
+    import time
+    monkeypatch.setattr(fan, "FRAME_GAP_S", 0.15)
+    real_sleep = asyncio.sleep
+    m = _Meter()
+    ctl = _metered(tmp_path, monkeypatch, m)
+    monkeypatch.setattr(fan.asyncio, "sleep", real_sleep)   # _metered makes every sleep a zero
+    sent = []
+
+    async def send_rotating(name):
+        sent.append((name, time.monotonic()))
+        return {"sent": name}
+
+    ctl.remote.send_rotating = send_rotating
+    await asyncio.gather(ctl._send("stop"), ctl._send("licht"), ctl._send("stufe3"))
+    assert [n for n, _ in sent] == ["stop", "licht", "stufe3"]
+    assert all(b - a >= 0.14 for (_, a), (_, b) in zip(sent, sent[1:]))
+
+
+async def test_automation_commands_for_one_device_run_in_their_order():
+    """The sunset automation fires licht_an and then aus; each event is its own task, and the
+    quicker one used to overtake (24 Nov 2026)."""
+    import asyncio
+    from app import main as m
+    bridge = m.LiveVoiceBridge.__new__(m.LiveVoiceBridge)
+    done = []
+
+    class Fan:
+        async def run(self, args):
+            await asyncio.sleep(0.05 if args["action"] == "licht_an" else 0)
+            done.append(args["action"])
+            return {"ok": True}
+
+    bridge.fan = Fan()
+    await asyncio.gather(bridge._automation_command({"device": "ventilator", "action": "licht_an"}),
+                         bridge._automation_command({"device": "ventilator", "action": "aus"}))
+    assert done == ["licht_an", "aus"]

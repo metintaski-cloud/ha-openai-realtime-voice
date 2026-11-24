@@ -58,6 +58,15 @@ JUMP_W = 12.5       # a change this big within JUMP_WINDOW_S is the light switch
 SPIKE_S = 1.5        # the fan kicks up to 12 W for a second when it starts
 JUMP_WINDOW_S = 3.5  # the light needs 2 to 3 s; the fan ramps 1 to 2 W per second
 SETTLE_S = 3.0      # the light needs about 2 s to reach its power
+# 24 Nov 2026, 16:19: the sunset automation sent "ventilator aus" and "licht_an" at the same
+# moment; the stop frame went out first, the light frame 0.4 s later, the meter saw no change
+# and the light stayed off. The fan does not act on every frame (one right after another, or
+# one it takes for a repeat), so frames keep a distance, and a light press the meter did not
+# see is pressed again with the next capture: without a change in watts the toggle did not
+# happen, so a second press cannot switch the light back.
+FRAME_GAP_S = 0.8   # at least this long between two radio frames to the fan
+RECHECK_S = 1.5     # no clear change yet: look at the meter once more after this
+LIGHT_TRIES = 3     # presses of the light button until the meter sees the light move
 
 
 def candidates(watts: float, light_w: Optional[float] = None) -> list[tuple[bool, int]]:
@@ -180,6 +189,8 @@ class FanController:
         self.speed: Optional[int] = None      # what we know about the fan, 0 = stopped
         self.light_w: Optional[float] = None  # measured power of the light
         self._recent: deque = deque()         # (time, watts) of the last few seconds
+        self._send_lock = asyncio.Lock()      # one frame at a time, FRAME_GAP_S apart
+        self._sent_at = 0.0
         self._last_w: Optional[float] = None
         self._pending: Optional[tuple[float, float, float]] = None  # rise: time, level, low
         # Remembered across restarts, used only while the power still fits
@@ -431,16 +442,32 @@ class FanController:
         self._save()
         return out
 
+    async def _send(self, button: str) -> dict:
+        """One radio frame to the fan, never closer than FRAME_GAP_S to the one before."""
+        async with self._send_lock:
+            wait = FRAME_GAP_S - (time.monotonic() - self._sent_at)
+            if wait > 0:
+                await asyncio.sleep(wait)
+            try:
+                return await self.remote.send_rotating(button)
+            finally:
+                self._sent_at = time.monotonic()
+
     async def _press_light(self) -> Optional[float]:
         """Press the light button; return the power change it caused, None without meter."""
         before = await self.power()
-        await self.remote.send_rotating("licht")
+        await self._send("licht")
         if before is None:
             return None
         await asyncio.sleep(SETTLE_S)
         after = await self.power()
         if after is None:
             return None
+        if abs(after - before) < STEP_W:  # a late reading? once more before it counts as no change
+            await asyncio.sleep(RECHECK_S)
+            after = await self.power()
+            if after is None:
+                return None
         delta = after - before
         if abs(delta) >= STEP_W:
             self.light_on = delta > 0
@@ -456,23 +483,35 @@ class FanController:
     async def set_light(self, on: bool) -> dict:
         watts = await self.power()
         if watts is None:
-            await self.remote.send_rotating("licht")
+            await self._send("licht")
             return {"pressed": "licht", "note": "Lichttaste gedrückt, kein Strommesser."}
         state = self.describe(watts).get("licht")
         if state == ("an" if on else "aus"):
             return {"done": f"Das Licht ist schon {'an' if on else 'aus'}.",
                     "watt": round(watts, 1)}
-        for attempt in range(2):
+        wrong = unseen = 0
+        for attempt in range(LIGHT_TRIES):
             delta = await self._press_light()
-            if delta is None or abs(delta) < STEP_W:
-                self.light_on = None
-                return {"pressed": "licht", "note": "Lichttaste gedrückt, der Strommesser hat "
-                        "keine klare Änderung gesehen."}
+            if delta is None:
+                break
+            if abs(delta) < STEP_W:
+                unseen += 1   # the fan did not act on this frame: once more with the next capture
+                logger.info("Fan light: press %d changed nothing on the meter", attempt + 1)
+                continue
             if self.light_on == on:
-                return {"done": f"Licht {'an' if on else 'aus'}",
-                        "note": "Vom Strommesser bestätigt." if attempt == 0 else
-                        "Es war schon " + ("an" if on else "aus") + ", jetzt stimmt es wieder."}
-        return {"error": "Das Licht hat nicht wie erwartet reagiert."}
+                if unseen:
+                    note = f"Vom Strommesser bestätigt, beim {attempt + 1}. Drücken."
+                elif wrong:
+                    note = "Es war schon " + ("an" if on else "aus") + ", jetzt stimmt es wieder."
+                else:
+                    note = "Vom Strommesser bestätigt."
+                return {"done": f"Licht {'an' if on else 'aus'}", "note": note}
+            wrong += 1
+            if wrong > 1:
+                return {"error": "Das Licht hat nicht wie erwartet reagiert."}
+        self.light_on = None
+        return {"pressed": "licht", "note": f"Lichttaste {max(unseen, 1)} Mal gedrückt, der Strommesser "
+                "hat keine Änderung gesehen. Hat das Licht am Wandschalter Strom?"}
 
     @property
     def available(self) -> bool:
@@ -506,7 +545,7 @@ class FanController:
         before = await self.power() if checked else None
         expected = self.describe(before) if before is not None else {}
         try:
-            result = await self.remote.send_rotating(button)
+            result = await self._send(button)
         except KeyError as e:
             return {"error": str(e).strip("'\"")}
         except Exception as e:
@@ -522,7 +561,7 @@ class FanController:
             while ok is False and tries < 3:
                 logger.info("Fan: %s (%s) had no effect, sending again", button,
                             result.get("sent"))
-                result = await self.remote.send_rotating(button)
+                result = await self._send(button)
                 ok = await self._worked(action, args, before, expected)
                 tries += 1
             if ok is False and action == "aus" and expected.get("licht") == "unklar":

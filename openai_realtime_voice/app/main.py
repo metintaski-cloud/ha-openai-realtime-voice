@@ -1034,12 +1034,18 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         args = {k: v for k, v in data.items() if k != "device"}
         args.setdefault("speed", None)
         args.setdefault("hours", None)
+        # One command per device at a time, in the order the automation sent them: each event
+        # starts its own task, and "ventilator aus" used to overtake the "licht_an" before it
+        # (24 Nov 2026, the sunset automation; asyncio locks are handed out in turn).
+        lock = self.__dict__.setdefault("_command_locks", {}).setdefault(device, asyncio.Lock())
         if device in ("ventilator", "fan"):
-            result = await self.fan.run(args)
+            async with lock:
+                result = await self.fan.run(args)
         elif device in ("fernseher", "tv"):
             args.setdefault("channel", None)
             args.setdefault("steps", None)
-            result = await self.tv.run(args)
+            async with lock:
+                result = await self.tv.run(args)
         else:
             result = {"error": f"unknown device {device}"}
         logger.info("Automation command %s -> %s", data, result)
