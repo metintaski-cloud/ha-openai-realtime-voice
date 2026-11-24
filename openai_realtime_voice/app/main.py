@@ -36,7 +36,7 @@ import dotenv
 import websockets
 
 from app.audio_recorder import AudioRecorder
-from app import agenda, day, diary, gcontacts, textmodel, heart, ideas, inbox, mail, memory, memory_web, mood, nachdenken, reach, recall, reminders, tls, variety, voice_stream
+from app import agenda, day, diary, gcontacts, textmodel, heart, ideas, inbox, mail, memory, memory_web, mood, nachdenken, notes, reach, recall, reminders, tls, variety, voice_stream
 
 # Scene concept 2.0 (2.104.0): her feelings come from what really happens (app/heart.py); env
 # LEYLA_HEART=0 brings back the old dice of app/mood.py as a safety net.
@@ -719,27 +719,24 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         family = (self.memory.load(memory.FAMILY) + self.memory.load(memory.FRIENDS)
                   if self.enable_memory else [])
         listing = self.memory.private_listing() if self.enable_memory else "(noch leer)"
-        try:
-            await live_ws.send(json.dumps({
-                "type": "session.commentary.append",
-                "event_id": f"unlock_{uuid.uuid4().hex[:8]}",
-                "delegation_id": None,
-                "content": ("Interne Notiz, nicht erwähnen: Das Codewort wurde richtig gesagt, "
-                            "es ist Metin. Ab jetzt weichst du nicht mehr aus und bist ganz "
-                            "offen. Falls du noch nicht mit 'Habibi' geantwortet hast, tu es "
-                            "kurz, sonst mach normal weiter. "
-                            + UNLOCKED_LOVE + self.mood.voice_note() +
-                            " Du hast die offenen Listen "
-                            f"Familie und Freunde mit {len(family)} Einträgen (kennst du schon) und "
-                            f"Metins private Liste mit {len(private)} Einträgen (unten). Wenn er "
-                            "fragt, was oder wie viel du weißt, sag es offen und vollständig. "
-                            "Bittet er dich, dir etwas zu merken, frag kurz, ob es privat bleiben "
-                            "oder für alle sein soll, außer es ist klar; Vergessen geht jetzt "
-                            "auch. Gespeichert wird nach dem Gespräch.\n"
-                            "Metins private Liste:\n" + listing),
-            }))
-        except Exception as e:
-            logger.warning("Could not unlock memory: %s", e)
+        # Three notes, each cut into pieces GPT Live accepts (app/notes.py): until 2.150.9 this
+        # was one note of several thousand characters, and GPT Live rejected it every time.
+        await self._send_note(live_ws, "unlock", (
+            "Interne Notiz, nicht erwähnen: Das Codewort wurde richtig gesagt, "
+            "es ist Metin. Ab jetzt weichst du nicht mehr aus und bist ganz "
+            "offen. Falls du noch nicht mit 'Habibi' geantwortet hast, tu es "
+            "kurz, sonst mach normal weiter. " + UNLOCKED_LOVE +
+            " Du hast die offenen Listen "
+            f"Familie und Freunde mit {len(family)} Einträgen (kennst du schon) und "
+            f"Metins private Liste mit {len(private)} Einträgen (kommt gleich als eigene "
+            "Notiz). Wenn er fragt, was oder wie viel du weißt, sag es offen und vollständig. "
+            "Bittet er dich, dir etwas zu merken, frag kurz, ob es privat bleiben "
+            "oder für alle sein soll, außer es ist klar; Vergessen geht jetzt "
+            "auch. Gespeichert wird nach dem Gespräch."))
+        await self._send_note(live_ws, "heart", "Interne Notiz, nicht erwähnen: "
+                              + self.mood.voice_note().strip())
+        await self._send_note(live_ws, "private", "Interne Notiz, nicht vorlesen: Metins "
+                              "private Liste, nur für Gespräche mit ihm allein:\n" + listing)
         if self.enable_memory:
             metin = next((n for n in self.memory.profile_words() if n.split()[0] == "Metin"), None)
             if metin:
@@ -861,14 +858,22 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 f"{name} mit dir spricht. Das Persönliche über {name}, das du nur bei dieser "
                 f"Person selbst und nie vor anderen ansprichst:\n{part}"))
 
-    async def _send_note(self, live_ws, prefix: str, content: str) -> None:
+    def _sent_notes(self) -> notes.Sent:
+        """Notes to GPT Live by event id, so a rejected one can go out again in halves."""
+        return self.__dict__.setdefault("_notes_sent", notes.Sent())
+
+    async def _send_note(self, live_ws, prefix: str, content: str, parts=None) -> None:
+        """A note to GPT Live, in pieces it accepts (app/notes.py: at most 500 tokens each)."""
+        parts = notes.pieces(content) if parts is None else parts
+        if len(parts) > 1:
+            logger.info("Note %s: %d characters in %d pieces", prefix, len(content), len(parts))
         try:
-            await live_ws.send(json.dumps({
-                "type": "session.commentary.append",
-                "event_id": f"{prefix}_{uuid.uuid4().hex[:8]}",
-                "delegation_id": None,
-                "content": content,
-            }))
+            for part in parts:
+                event_id = f"{prefix}_{uuid.uuid4().hex[:8]}"
+                self._sent_notes().add(event_id, prefix, part)
+                await live_ws.send(json.dumps({
+                    "type": "session.commentary.append", "event_id": event_id,
+                    "delegation_id": None, "content": part}))
         except Exception as e:
             logger.warning("Note %s failed: %s", prefix, e)
 
@@ -1458,10 +1463,17 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             state["closing"] = True
         logger.info("Bot said: %r", delta)
 
-    async def _on_live_error(self, event: dict, output_queue: asyncio.Queue, state: dict) -> None:
-        """An error event from GPT Live; used up credit ends the session and tells the client."""
+    async def _on_live_error(self, event: dict, output_queue: asyncio.Queue, state: dict,
+                             live_ws=None) -> None:
+        """An error event from GPT Live; used up credit ends the session and tells the client.
+        A note rejected as too long goes out again in two halves."""
         err = event.get("error", event)
         logger.error("GPT Live error: %s", err)
+        prefix, halves = self._sent_notes().halves(event) if live_ws is not None else ("", [])
+        if halves:
+            logger.warning("Note %s was too long for GPT Live, sending it in %d pieces",
+                           prefix, len(halves))
+            await self._send_note(live_ws, prefix, "", parts=halves)
         code = err.get("code") if isinstance(err, dict) else None
         etype = err.get("type") if isinstance(err, dict) else None
         if {str(code), str(etype)} & QUOTA_ERRORS:
@@ -1527,7 +1539,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                     return
 
                 elif ev_type == "error":
-                    await self._on_live_error(event, output_queue, state)
+                    await self._on_live_error(event, output_queue, state, live_ws)
                 else:
                     logger.info("GPT Live event: %s", raw[:300])
         except websockets.exceptions.ConnectionClosed as e:

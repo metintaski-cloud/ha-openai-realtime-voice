@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.150.10 (24 Nov 2026)
+
+- `fix`: in a spoken talk Leyla never got what the code word should hand her. GPT Live rejects a note of more than 500 tokens ("Context append text must not exceed 500 tokens."), the bridge only logged it. The add on log (back to 17 Nov, 77 talks): the note after the code word rejected 6 of 6 times (Metin's private list, their closeness, her mood), her diary note 20 times, a personal part once. This also hit live talk in the app, which sends the code word note at once. New `app/notes.py`: a long note is cut at line ends (a long line at sentence ends) into pieces of at most 1000 characters, later pieces under a line that says the note continues; `_send_note` sends the pieces and logs `Note <kind>: N characters in M pieces`. The code word now sends three notes (`unlock`, `heart`, `private`) instead of one. A piece GPT Live still rejects goes out again in two halves (`notes.Sent`, `_on_live_error`). Tests: `tests/test_notes.py`, `tests/test_code_phrase.py`.
+
 ## 2.150.9 (24 Nov 2026)
 
 - `fix`: voice replies without sound, cause found. Measured with `/api/kopf/stimme` on 2.150.8 (7 runs, 2 silent, with and without mood and closeness in the instructions): in a silent session GPT Live confirms the note (`session.commentary.appended`), then sends only zero audio and no word of transcript; it does not take its turn. When she speaks, the first word comes within a second. Now the same note goes out once more in the same session when no word came after 3 s (`NUDGE_AFTER_S`), a session without speech is given up after 8 s (`FIRST_AUDIO_S`, was 12), and up to three sessions are tried (`SPEAK_TRIES`, was 2).
