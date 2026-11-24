@@ -22,7 +22,7 @@ Ergebnis: Clip 360, Metin "super geworden", unverändert als `kurz/begruessung` 
 
 "0–3s: Happy to see him, she takes two small playful steps in place with a sweet, affectionate smile. 3–6s: She waves warmly with one hand, alternating her leg movements and gently lifting her heels. 6–8s: She shyly draws her shoulders inward, lightly taps one foot on the floor and smiles bashfully. 8–10s: She shifts her weight again, looks lovingly into the camera and returns to her initial pose. Continuous, gentle leg and foot movements throughout the scene. Natural hip and upper body movements. She remains in the same area without walking away. Sweet, shy, feminine and affectionate body language. Static camera, full body visible, unchanged background."
 
-Ergebnis: gestartet von Metin etwa 18:38 im kurzen Arbeitskleid, hier nachtragen.
+Ergebnis: Clip 395 (`kling_20261125_VIDEO_0_3s__Happ_395_0.mp4`, Download 18:53, Original in Leyla Kling Originale). Am Kontaktbogen: 0 bis 1,5 s zwei verspielte Schritte auf der Stelle; 2 bis 5 s Winken mit offener Hand, Handfläche zur Kamera, dabei gehen die Fersen hoch; 5 bis 7,5 s dreht sie sich etwa eine Vierteldrehung zur Seite, zieht die Schultern ein, die Hand bleibt als lockere Faust vor der Schulter, Blick verlegen nach unten, ein Fuß auf der Spitze; ab 7,5 s dreht sie zurück, senkt die Hand und steht ab 8,5 s in der Grundpose. Gesicht und Brille stabil, Buch im Arm, kein Mann im Bild. Bewegungsmenge im Mittel 2,83 (Clip 360: 0,73), je Sekunde 2,0 / 3,5 / 3,6 / 3,5 / 3,4 / 3,3 / 2,9 / 2,4 / 3,0 / 0,8, Beine allein 1,2 bis 2,1 in jeder Sekunde, Naht 0,60, letzte halbe Sekunde 0,35. Das Muster trägt: kein toter Anfang, der ganze Körper lebt, oben und unten verschieden. Nicht im Text und von Kling dazugegeben: die Drehung zur Seite und die Faust im dritten Takt. Metins Urteil hier nachtragen.
 
 **Vorlage 3, Berührung an der Brust (24.11.2026, 18:53, von Metin mitgebracht, noch nicht gelaufen):**
 
@@ -93,7 +93,7 @@ Dieser Baukasten folgt Vorlage 2. Bestätigt ihr Clip das Muster nicht, wird er 
 | Clip | Datei in der App | Prompt | Ergebnis |
 |---|---|---|---|
 | 360 | `kurz/begruessung` | Vorlage 1 | Metin: "super geworden". Bewegungsmenge 0,73, Naht 0,68, ruhiger Anfang. Eingebaut 18:37, Originaltempo. |
-| läuft | kurzes Arbeitskleid | Vorlage 2 | gestartet etwa 18:38, Ergebnis nachtragen |
+| 395 | noch nicht eingebaut | Vorlage 2 | Bewegungsmenge 2,83, Naht 0,60, lebendig ab Sekunde 0, richtiges Winken; im dritten Takt Drehung zur Seite mit Faust. Metins Urteil offen. |
 
 Bereit, noch nicht gelaufen (geschrieben 18:34 nach Vorlage 1; vor dem Start nach dem Baukasten um die Bewegung unten ergänzen, wenn Vorlage 2 sitzt):
 
