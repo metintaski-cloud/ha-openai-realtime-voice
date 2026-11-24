@@ -30,7 +30,7 @@ FAST = {"reasoning": {"effort": "none"}, "max_output_tokens": 16}  # one word ne
 PHRASE_RE = re.compile(
     r"\b(?:denk\w*\s+(?:\w+\s+){0,3}?(?:genau|gut|gründlich|scharf|richtig)\s+(?:darüber\s+)?nach"
     r"|überleg\w*\s+(?:\w+\s+){0,3}?(?:genau|gut|gründlich|richtig)"
-    r"|(?:iyi|iyice|dikkatli|dikkatlice|derin|derinlemesine|güzelce)\s+düşün\w*)",
+    r"|(?:iyi|iyice|dikkatli|dikkatlice|derin|derinlemesine|güzelce)\s+düşün(?!üyor|ce|d)\w*)",
     re.IGNORECASE)
 
 PROMPT = (

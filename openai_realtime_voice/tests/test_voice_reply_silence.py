@@ -214,3 +214,31 @@ def test_a_silent_try_with_the_recording_falls_back_to_the_plain_note(monkeypatc
     assert len(pcm) >= 0.5 * av.BYTES_PER_SEC and sp.fed_bytes == [4800, 0]
     said = lambda live: [m["content"] for m in live.sent if m.get("event_id", "").startswith("announce_")]
     assert said(silent) == ["after hearing"] and said(talks) == ["plain"]
+
+
+def test_a_first_word_just_before_the_limit_is_not_cut_off(monkeypatch):
+    """Review of 24 Nov 2026: the limit for "she did not start" ended a reply she had just begun."""
+    monkeypatch.setattr(av, "FIRST_AUDIO_S", 0.3)
+    monkeypatch.setattr(av, "NUDGE_AFTER_S", 5.0)
+    monkeypatch.setattr(av, "SPEECH_END_GAP_S", 0.3)
+
+    class Late(FakeLive):
+        async def recv(self):
+            if self.events and self.events[0]["type"] != "session.started":
+                await asyncio.sleep(0.14)      # she begins shortly before the limit, in small pieces
+            return await super().recv()
+    live = Late([{"type": "session.started"}] + [
+        {"type": "session.output_audio.delta", "delta": loud(0.1)} for _ in range(6)])
+    pcm = asyncio.run(Speaker([live])._collect_speech(live, "sag es", 10.0))
+    assert len(pcm) >= 0.6 * av.BYTES_PER_SEC
+
+
+def test_nothing_to_say_ends_the_listening_before_the_recording_is_through():
+    live = FakeLive([{"type": "session.started"}])
+    sp = Hears([live], runs_s=30.0)             # a long recording
+
+    async def run():
+        fut = asyncio.get_event_loop().create_future()
+        fut.set_result("")
+        return await asyncio.wait_for(sp._collect_speech(live, fut, 60.0, heard=b"\x01\x00" * 2400), 2)
+    assert asyncio.run(run()) == b""

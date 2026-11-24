@@ -59,7 +59,8 @@ FRESH_START_TIMEOUT_S = 6.0
 HISTORY_MAX_TURNS, HISTORY_MAX_CHARS = 24, 6000
 ITEM_ORDER = ("unlock", "heart", "mood", "known", "open", "day", "pet", "follow", "chat",
               "diary", "private")
-ONCE_KINDS = ("unlock", "heart", "mood", "known", "chat", "diary", "private")
+ONCE_KINDS = ("unlock", "heart", "mood", "chat", "private")  # there is one of each in a talk
+FOLLOWUP_WAIT_S = 2.5
 START_CHARS = 4500  # notes at the start of a talk, in characters (about 3 s of not hearing)
 PROBE_INSTRUCTIONS = "Du hörst nur still zu, liest Notizen und sagst nichts."
 HEAR_INSTRUCTIONS = ("Du bist Leyla und redest mit Metin. Notizen liest du still. Wenn er etwas "
@@ -158,7 +159,7 @@ class TalkNotesMixin:
         rest.append(self._private_note())
         if self._fresh_wanted(live_ws, state):
             self._start_fresh(live_ws, state, self._code_notes(app, at_start=True) + rest,
-                              self._code_notes(app) + rest)
+                              self._code_notes(app) + rest, renew=("known", "diary"))
         else:
             await self._send_items(live_ws, state, self._code_notes(app) + rest)
 
@@ -218,7 +219,10 @@ class TalkNotesMixin:
             if mine:  # a noted plan of this person is over: she asks how it went (2.121.0)
                 items.append(("follow", "Interne Notiz, nicht erwähnen." + mine))
             if metin:  # how did his appointment go? (once per appointment)
-                follow = await self.reminders.followup_note()
+                try:  # it reads the calendar: never keep the start of a talk waiting for it
+                    follow = await asyncio.wait_for(self.reminders.followup_note(), FOLLOWUP_WAIT_S)
+                except Exception:
+                    follow = ""
                 if follow:
                     items.append(("follow", "Interne Notiz, nicht erwähnen." + follow))
         return items + self._past_notes(name, unlocked)
@@ -241,12 +245,16 @@ class TalkNotesMixin:
         return (bool(settings.get("frisch")) and hasattr(live_ws, "swap")
                 and not state.get("closing") and not state.get("start_refused"))
 
-    def _start_fresh(self, live_ws, state: dict, items: list, fallback: list) -> None:
+    def _start_fresh(self, live_ws, state: dict, items: list, fallback: list,
+                     renew: tuple = ()) -> None:
         """Remember what she now may know and exchange the session in the background; when
-        that does not work, hand `fallback` over as notes, as without the setting."""
+        that does not work, hand `fallback` over as notes, as without the setting. `renew`:
+        kinds that take the place of what was there (the code word hands his personal part
+        and her memory over again, now with what is private); other kinds of a second person
+        in the same talk are added."""
         have = state.setdefault("start_items", [])
         for kind, text in items:
-            if kind in ONCE_KINDS:
+            if kind in ONCE_KINDS or kind in renew:
                 have[:] = [(k, t) for k, t in have if k != kind]
             if kind == "unlock":  # the code word: the note for "known by his words" is over
                 have[:] = [(k, t) for k, t in have if k != "mood"]

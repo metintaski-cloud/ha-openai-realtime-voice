@@ -398,7 +398,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             # Developer message so the greeting instruction is known from the start; the
             # commentary.append after session.started makes GPT Live actually speak first.
             messages_in.append({
-                "role": "developer",
+                "type": "message", "role": "developer",
                 "content": [{"type": "input_text", "text": self.greeting}],
             })
         if messages_in:

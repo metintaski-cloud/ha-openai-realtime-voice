@@ -173,9 +173,19 @@ def test_the_setting_decides_and_the_code_word_replaces_the_note_for_a_known_met
         home, state = Home(None), quiet_state()
         home._start_fresh(line, state, [("mood", "M"), ("known", "K1"), ("diary", "open part")], [])
         home._start_fresh(line, state, [("unlock", "U"), ("known", "K2"), ("diary", "with private"),
-                                        ("private", "P")], [])
+                                        ("private", "P")], [], renew=("known", "diary"))
         await asyncio.wait_for(state["fresh_task"], 3)
         return state["start_items"], home.sent_items
     items, sent = asyncio.run(go())
     assert items == [("unlock", "U"), ("known", "K2"), ("diary", "with private"), ("private", "P")]
     assert len(sent) == 1        # only the newest request hands over its notes when it fails
+
+
+def test_a_second_person_in_the_same_talk_is_added_not_put_in_place_of_the_first():
+    async def go():
+        line, home, state = live_link.LiveLine(Conn("old")), Home(None), quiet_state()
+        home._start_fresh(line, state, [("known", "about the first"), ("diary", "her days with the first")], [])
+        home._start_fresh(line, state, [("known", "about the second"), ("diary", "her days with the second")], [])
+        await asyncio.wait_for(state["fresh_task"], 3)
+        return state["start_items"]
+    assert [t for k, t in asyncio.run(go()) if k == "known"] == ["about the first", "about the second"]
