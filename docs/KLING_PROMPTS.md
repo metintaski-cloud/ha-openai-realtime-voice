@@ -150,6 +150,12 @@ Von Metin gestartet etwa 19:58. **Ergebnis (Clip 747, `kling_20261125_VIDEO_0_3s
 
 In Kling eingesetzt um 20:05 (beide Bilder `5_lang_arbeit.png`, 4K, 10 s, Adaptive, 1, 350 Credits) und von Metin sofort gestartet. Ergebnis hier nachtragen.
 
+**Berührung im Gesicht, langes Arbeitskleid (Metin, 20:07: "mit deiner Fantasie sind wir besser als das Muster, und das beweisen wir jetzt hintereinander").** Eigene Szene, anders als im kurzen Arbeitskleid (dort Schmollmund und Wange an die Schulter): hier versteckt sie ihr Lächeln hinter dem Buch und schaut über den Rand.
+
+"0–2s: She reacts with sweet delight to an unexpected gentle sensation on her cheek, her eyes closing for a moment as she shifts her weight onto one leg. 2–5s: Blushing, she raises her book in front of her mouth to hide her smile and peeks at him over its edge with sparkling, shy eyes, gently swaying her hips. 5–8s: She slowly lowers the book, tilts her head and gives him a tender, bashful smile, shifting her weight onto the other leg. 8–10s: She looks at him with loving eyes, brings the book back to her side and returns to her initial pose. Soft, feminine, natural body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
+
+Geschrieben 20:09, Bilder dafür: Favorit 1 (`5_lang_arbeit.png`). Offenes Risiko, Metin gesagt: das Gesicht ist kurz halb verdeckt und muss hinter dem Buch unverändert wieder hervorkommen. Ergebnis hier nachtragen.
+
 ## Was am 24.11.2026 sonst noch entstand
 
 - `kurz/gluecklich5` (Clip 308, Haarsträhne, Metin: "ist für die Schleife von Arbeit kurz glücklich"): unverändert im Originaltempo eingebaut, Bewegungsmenge 1,15, Naht 0,64, Gesicht stabil, der ganze Körper lebt. Geschrieben noch in Claudes Zwischenform (verschiedene Handlungen je einmal, ein Satz, dass der Körper mitgeht, keine Klemmsätze). Der Clip ist gut, die Form ist trotzdem abgelöst; neue Schleifen entstehen nach dem Baukasten.
