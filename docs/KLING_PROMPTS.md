@@ -307,61 +307,61 @@ Von Claude eingesetzt (beide Bilder `7_nacht.png`, 4K, 10 s, Adaptive, 1, 350 Cr
 
 "0–2s: She reacts with sweet surprise to an unexpected playful sensation on her chest, gives a tiny gasp and shifts her weight onto one leg. 2–5s: Quick and playful, she lifts her book in front of her chest like a little shield and looks into the camera over it with a scolding, amused smile, her hips swaying gently. 5–8s: Slowly she lowers the book again with a seductive, shy smile, tilting her head and shifting her weight onto the other leg. 8–10s: She brings the book back to her side, smiles at him lovingly and returns to her initial pose. Soft, feminine, sensual body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-Vorgesehen als `kurz/brust2`. Ergebnis hier nachtragen.
+Von Claude eingesetzt (beide Bilder und "4K · 10s · Adaptive · 1", 350 Credits abgelesen) und um 21:47 gestartet. Vorgesehen als `kurz/brust2`. Ergebnis hier nachtragen.
 
 **Brust 2, kurzes Freizeitkleid: gespielt beleidigt (21:46).** Große Augen, dann stemmt sie gespielt beleidigt die Hände in die Hüften und schmollt; sie hält es nicht durch, das Schmollen wird ein verführerisch schüchternes Lächeln, sie neigt sich mit einer Schulter leicht zu ihm.
 
 "0–2s: She reacts with sweet surprise to an unexpected playful sensation on her chest, her eyes widening, and shifts her weight onto one leg. 2–5s: Pretending to be offended, she sets both hands on her hips and pouts at him, her hips swaying slowly from side to side. 5–8s: She cannot keep it up, her pout melts into a seductive, shy smile and she leans slightly toward him with one shoulder forward, looking into the camera from under her lashes. 8–10s: She straightens up, lets her hands sink, smiles at him lovingly and returns to her initial pose. Soft, feminine, sensual body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-Vorgesehen als `kurz/freizeitbrust2`. Ergebnis hier nachtragen.
+Von Claude eingesetzt (beide Bilder und "4K · 10s · Adaptive · 1", 350 Credits abgelesen) und um 21:48 gestartet. Vorgesehen als `kurz/freizeitbrust2`. Ergebnis hier nachtragen.
 
 **Brust 2, langes Arbeitskleid: Zwinkern (21:46).** Kurzer Blick nach unten, dann hebt sie wissend eine Braue, zwinkert ihm langsam und verspielt zu und zuckt mit einer Schulter, als sagte sie: du Frecher.
 
 "0–2s: She reacts with sweet surprise to an unexpected playful sensation on her chest, glances down for a moment and shifts her weight onto one leg. 2–5s: She looks into the camera, raises one eyebrow with a knowing smile and gives him a slow, playful wink, her hips swaying gently. 5–8s: With a small shrug of one shoulder and a seductive, shy smile she tilts her head, as if saying 'cheeky you', and shifts her weight onto the other leg. 8–10s: She smiles at him lovingly and returns to her initial pose. Soft, feminine, sensual body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-Vorgesehen als `schwarz/brust2`. Ergebnis hier nachtragen.
+Von Claude eingesetzt (beide Bilder und "4K · 10s · Adaptive · 1", 350 Credits abgelesen) und um 21:48 gestartet. Vorgesehen als `schwarz/brust2`. Ergebnis hier nachtragen.
 
 **Brust 2, langes Freizeitkleid: als wäre nichts gewesen (21:46).** Sie schließt einen Moment lächelnd die Augen, ertappt sich, macht große Augen, nimmt die Hände hinter den Rücken und wiegt sich unschuldig, schaut ihn dann wissend an.
 
 "0–2s: She feels an unexpected playful sensation on her chest, closes her eyes with a soft smile for a moment and shifts her weight onto one leg. 2–5s: Catching herself, she opens her eyes wide, presses her lips together bashfully, clasps her hands behind her back and sways innocently from side to side, glancing away. 5–8s: She looks into the camera again with a seductive, shy, knowing smile, softly turning her shoulders. 8–10s: She brings her hands forward again, smiles at him lovingly and returns to her initial pose. Soft, feminine, sensual body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-Vorgesehen als `schwarz/freizeitbrust2`. Ergebnis hier nachtragen.
+Von Claude eingesetzt (beide Bilder und "4K · 10s · Adaptive · 1", 350 Credits abgelesen) und um 21:49 gestartet. Vorgesehen als `schwarz/freizeitbrust2`. Ergebnis hier nachtragen.
 
 **Brust 2, Nachtkleid: Hände an die Taille (21:46).** Sie holt leise Luft, lässt beide Hände langsam an der Taille zu den Hüften gleiten, kreist einmal langsam mit der Hüfte, beißt sich sanft auf die Lippe und schaut ihn von unten an.
 
 "0–2s: She reacts with sweet surprise to an unexpected playful sensation on her chest, draws in a soft breath and shifts her weight onto one leg. 2–5s: With a seductive, shy smile she lets both hands glide slowly down along her waist to her hips and moves her hips in one slow, round circle. 5–8s: She softly bites her lip, tilts her head and looks into the camera from under her lashes, her weight sinking onto the other leg. 8–10s: She lets her hands sink, smiles at him lovingly and returns to her initial pose. Soft, feminine, sensual body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-Vorgesehen als `nacht/brust2`. Ergebnis hier nachtragen.
+Von Claude eingesetzt (beide Bilder und "4K · 10s · Adaptive · 1", 350 Credits abgelesen) und um 21:49 gestartet. Vorgesehen als `nacht/brust2`. Ergebnis hier nachtragen.
 
 **Po 2, kurzes Arbeitskleid: das Buch hinter dem Rücken (21:46).** Kleiner Hüpfer, sie nimmt flink das Buch hinter den Rücken und hält es schützend vor den Po, lächelt gespielt streng, dreht sich etwas zur Seite und schaut über die Schulter.
 
 "0–2s: She reacts with a sweet little jump to an unexpected playful sensation on her bottom and looks into the camera with wide, amused eyes. 2–5s: Quickly she moves her book behind her back to cover her bottom, holding it there with both hands, and gives him a playful, scolding smile, swaying her hips slowly. 5–8s: She turns a little to one side, still shielding herself with the book, and looks at him over her shoulder with a seductive, shy smile. 8–10s: She turns back to face him, brings the book to her side, smiles at him lovingly and returns to her initial pose. Soft, feminine, sensual body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-Vorgesehen als `kurz/po2`. Ergebnis hier nachtragen.
+Von Claude eingesetzt (beide Bilder und "4K · 10s · Adaptive · 1", 350 Credits abgelesen) und um 21:51 gestartet. Vorgesehen als `kurz/po2`. Ergebnis hier nachtragen.
 
 **Po 2, kurzes Freizeitkleid: wo war das? (21:46).** Sie zuckt, schaut neugierig erst über die eine, dann über die andere Schulter, als wollte sie ihren eigenen Po sehen, streicht dann das Kleid über den Hüften glatt und wiegt einmal langsam die Hüfte.
 
 "0–2s: She reacts with sweet surprise to an unexpected playful sensation on her bottom, gives a tiny start and shifts her weight onto one leg. 2–5s: Curious and amused, she looks back over one shoulder and then over the other, twisting softly at the waist as if trying to see her own bottom, her hips swaying with each turn. 5–8s: She stops, smooths her dress over her hips with both hands and, with a seductive, shy smile, gives him one slow, playful sway of her hips, looking into the camera. 8–10s: She lets her hands sink, smiles at him lovingly and returns to her initial pose. Soft, feminine, sensual body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-Vorgesehen als `kurz/freizeitpo9`. Ergebnis hier nachtragen.
+Von Claude eingesetzt (beide Bilder und "4K · 10s · Adaptive · 1", 350 Credits abgelesen) und um 21:51 gestartet. Vorgesehen als `kurz/freizeitpo9`. Ergebnis hier nachtragen.
 
 **Po 2, langes Arbeitskleid: die strenge Lehrerin (21:46).** Sie drückt das Buch an sich, dreht sich schräg von hinten zu ihm, hebt das Buch neben der Schulter wie eine strenge Lehrerin und schaut tadelnd über die Schulter; der Blick schmilzt, sie senkt das Buch und wiegt langsam die Hüfte.
 
 "0–2s: She reacts with sweet surprise to an unexpected playful sensation on her bottom, hugs her book a little closer and glances back over her shoulder. 2–5s: Slowly she turns until he sees her from behind at an angle, and playfully raises the book beside her shoulder like a strict teacher, giving him a scolding, amused look over her shoulder. 5–8s: Her strict look melts into a seductive, shy smile, she lowers the book and sways her hips slowly from side to side, her long hair moving along her back. 8–10s: She turns back to face him, smiles at him lovingly and returns to her initial pose. Soft, feminine, sensual body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-Vorgesehen als `schwarz/po2`. Ergebnis hier nachtragen.
+Von Claude eingesetzt (beide Bilder und "4K · 10s · Adaptive · 1", 350 Credits abgelesen) und um 21:52 gestartet. Vorgesehen als `schwarz/po2`. Ergebnis hier nachtragen.
 
 **Po 2, langes Freizeitkleid: das Haar über die Schulter (21:46).** Kleiner Schreck, wissendes Lächeln; sie dreht ihm langsam den Rücken zu, legt das lange Haar mit einer Hand nach vorn über eine Schulter, schaut über die freie Schulter und wiegt die Hüfte je einmal zu jeder Seite.
 
 "0–2s: She reacts with a sweet little start to an unexpected playful sensation on her bottom and smiles knowingly, her eyes on the camera. 2–5s: Slowly she turns her back to him and with one hand gathers her long hair forward over one shoulder, revealing her back, her weight sinking onto one leg. 5–8s: She looks at him over her bare shoulder with a seductive, shy smile and sways her hips softly once to each side. 8–10s: She lets her hair fall back, turns to face him again, smiles at him lovingly and returns to her initial pose. Soft, feminine, sensual body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-Vorgesehen als `schwarz/freizeitpo2`. Ergebnis hier nachtragen.
+Von Claude eingesetzt (beide Bilder und "4K · 10s · Adaptive · 1", 350 Credits abgelesen) und um 21:52 gestartet. Vorgesehen als `schwarz/freizeitpo2`. Ergebnis hier nachtragen.
 
 **Po 2, Nachtkleid: auf die Zehenspitzen (21:46).** Sie zuckt, dreht ihm verspielt den Rücken zu, Hände an den Hüften, hebt sich langsam auf die Zehenspitzen und senkt sich wieder, zweimal, mit Blick über die Schulter.
 
 "0–2s: She reacts with sweet surprise to an unexpected playful sensation on her bottom, gives a tiny start and looks into the camera with an amused smile. 2–5s: Playfully she turns her back to him, sets both hands on her hips and rises slowly onto her toes, then sinks back down, looking at him over her shoulder. 5–8s: Once more she rises slowly onto her toes and lowers herself, her smile seductive and shy, her hair swaying along her back. 8–10s: She turns back to face him, smiles at him lovingly and returns to her initial pose. Soft, feminine, sensual body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-Vorgesehen als `nacht/po8`. Ergebnis hier nachtragen.
+Von Claude eingesetzt (beide Bilder und "4K · 10s · Adaptive · 1", 350 Credits abgelesen) und um 21:53 gestartet. Vorgesehen als `nacht/po8`. Ergebnis hier nachtragen.
 
 ## Was am 24.11.2026 sonst noch entstand
 
