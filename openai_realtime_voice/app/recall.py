@@ -82,8 +82,8 @@ SETTINGS = {"min_sim": 0.48, "top": 4, "ask_min_sim": 0.38, "ask_top": 6, "word_
             # may know about that person takes the place of the running one
             # (talk_notes._go_fresh); 0: notes within the budget, as before
             "frisch": 0,
-            # was she really called? (wakecheck.py) 0: no check, 1: watch and log, 2: with the
-            # TV running and her name not heard before the wake word, no talk begins
+            # was she really called? (wakecheck.py) 0: no check, 1: watch and log (nothing is
+            # turned away any more, see wakecheck.py)
             "weckpruefung": 1,
             # the ways of listening that count for it, joined with + (wakecheck.WAYS): she is
             # called when any of them heard her name

@@ -88,26 +88,26 @@ def run_check(monkeypatch, mode, tv, heard, frames=None, use="ganz"):
 
 def test_with_the_tv_off_nobody_is_asked_and_she_is_taken_as_called(monkeypatch):
     out, state, asked = run_check(monkeypatch, 2, tv=False, heard="television")
-    assert out["named"] is None and not out["reject"] and not asked and out["pre"] == 4.0
+    assert out["named"] is None and not asked and out["pre"] == 4.0
     assert state["preroll"][1] == 16000        # the history is there for a later false wake
 
 
-def test_watching_never_ends_a_talk_and_acting_does_when_her_name_is_missing(monkeypatch):
+def test_her_name_is_looked_for_only_when_the_setting_says_so(monkeypatch):
     out, _, asked = run_check(monkeypatch, 1, tv=True, heard="Biz dinleyicilerimiz")
-    assert out["named"] is False and not out["reject"] and asked
+    assert out["named"] is False and asked
     out, _, _ = run_check(monkeypatch, 2, tv=True, heard="Biz dinleyicilerimiz")
-    assert out["named"] is False and out["reject"]
+    assert out["named"] is False and "reject" not in out            # nothing is turned away any more
     out, _, _ = run_check(monkeypatch, 2, tv=True, heard="... Hallo Leyla")
-    assert out["named"] is True and not out["reject"]
+    assert out["named"] is True
     out, _, asked = run_check(monkeypatch, 0, tv=True, heard="x")      # switched off: only taken off the line
-    assert not asked and not out["reject"] and out["pre"] == 4.0
+    assert not asked and out["pre"] == 4.0
 
 
 def test_in_doubt_she_is_taken_as_called(monkeypatch):
     out, _, _ = run_check(monkeypatch, 2, tv=True, heard=RuntimeError("down"))
-    assert out["named"] is None and not out["reject"]
+    assert out["named"] is None
     out, _, asked = run_check(monkeypatch, 2, tv=True, heard="x", frames=[])    # no history at all
-    assert not out["reject"] and not asked and out["pre"] == 0.0
+    assert not asked and out["pre"] == 0.0
 
 
 def test_the_call_is_cut_out_where_the_device_says_the_wake_word_was():
@@ -151,18 +151,18 @@ def test_the_television_drowned_him_in_the_whole_but_not_in_the_call(monkeypatch
     heard = {(False, False): "Hafif bir ses", (False, True): "Hafif bir ses",
              (True, False): "", (True, True): "Hallo Leyla"}
     out, _, asked = run_check(monkeypatch, 2, tv=True, heard=heard)
-    assert out["reject"] and out["wake"] == 0.6
+    assert out["named"] is False and out["wake"] == 0.6
     assert out["v"] == {"ganz": False, "ganz_kw": False, "ruf": False, "ruf_kw": True}
     assert len(asked) == 4 and sorted(asked)[0] < sorted(asked)[-1]      # all four ways were heard
     out, _, _ = run_check(monkeypatch, 2, tv=True, heard=heard, use="ganz_kw+ruf_kw")
-    assert out["named"] is True and not out["reject"] and "Hallo Leyla" in out["heard"]
+    assert out["named"] is True and "heard" not in out               # what was heard is not passed on
 
 
-def test_a_talk_the_wake_word_did_not_start_is_never_turned_away(monkeypatch):
+def test_a_talk_the_wake_word_did_not_start_is_heard_whole_only(monkeypatch):
     """The button, a talk she started herself, older firmware: nobody had to say her name."""
     frames = [head(80000), b"\x01\x00" * 40000]                        # no wake_ms in the header
     out, _, asked = run_check(monkeypatch, 2, tv=True, heard="Biz dinleyicilerimiz", frames=frames)
-    assert out["named"] is False and not out["reject"] and out["wake"] is None
+    assert out["named"] is False and out["wake"] is None
     assert len(asked) == 2 and out["v"] == {"ganz": False, "ganz_kw": False}    # only the whole history
 
 

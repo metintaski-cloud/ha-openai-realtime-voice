@@ -46,6 +46,14 @@ Recherche vom 24.11.2026, 12:50, nachdem Metin sagte: "Vielleicht sollst du dich
 - Fernsehen von echtem Ruf unterscheiden kann bei den gesammelten Clips sicher nur ein Mensch. Regel bei uns: endete das Wecken ohne Gespräch, ist es ein Gegenbeispiel; wurde es ein echtes Gespräch, ist es ein Ruf. Zweifelsfälle hört Metin im Trainer an (Reiter Captured Audio: "This is good" oder "False wake").
 - Die Prüfung per Spracherkennung auf dem Server bleibt nur als Zähler im Protokoll. Abweisen und stilles Zuhören sind verworfen (STATUS.md, 24.11.2026).
 
+## Der leise Sammler (gebaut am 24.11.2026 mit Metins Ja von 12:57, Server 2.158.0)
+
+- Auf dem Gerät läuft das Modell ein zweites Mal mit Schwelle 0,70 (`hallo_leyla_sammler.json`, Weckwort "Leyla Sammler"). Spricht es an, startet nichts; das Gerät schickt nur die letzten 4 Sekunden des Mikrofons an den Server (Kanal 1 mit Faktor 4, also genau der Ton, den das Modell hört).
+- Der Server legt jeden Clip 15 Sekunden später in `/data/near_wakes` ab: `beinahe_<Tag>_<Zeit>_n0_f0.wav`. Verworfen wird er, wenn innerhalb von 3 Sekunden ein Gespräch per Weckwort begann (dessen Vorlauf ist derselbe Ton). `f1`: innerhalb von 15 Sekunden kam noch ein Beinahe Treffer oder ein Wecken (jemand hat vielleicht noch einmal gerufen). `n1`: eine Spracherkennung mit ihrem Namen als Stichwort hat ihren Namen gehört.
+- Ins Training dürfen ungehört nur `n0_f0`. Alles andere muss sich ein Mensch anhören, denn ein echter Ruf als Gegenbeispiel würde dem Modell beibringen, ihren Namen zu überhören.
+- Zählen: `GET http://192.168.2.240:8082/api/wakestats`, Feld `beinahe` (gesammelt, sauber, prüfen, pro Tag).
+- Die Vorläufe echter Fehlwecker (`/data/false_wakes/..._vorher_w<ms>.wav`) kommen seit derselben Umstellung auch vom richtigen Kanal; die vom 24.11. vor der Umstellung (Kanal 0) nicht mitnehmen.
+
 ## Plan (mit Metin abzustimmen, immer ein Schritt)
 
 1. In `C:\mww` nachsehen, was schon da ist: wie viele echte Rufe, wie viele Gegenbeispiele, mit welcher Trainer Version das Modell vom 2.11. entstand.

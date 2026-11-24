@@ -1,0 +1,18 @@
+{
+  "type": "micro",
+  "wake_word": "Leyla Sammler",
+  "author": "Tater Totterson",
+  "website": "https://github.com/metintaski-cloud/ha-openai-realtime-voice/blob/main/docs/WECKWORT.md",
+  "model": "hallo_leyla.tflite",
+  "trained_languages": [
+    "de"
+  ],
+  "version": 2,
+  "micro": {
+    "probability_cutoff": 0.70,
+    "sliding_window_size": 5,
+    "feature_step_size": 10,
+    "tensor_arena_size": 30000,
+    "minimum_esphome_version": "2024.7.0"
+  }
+}

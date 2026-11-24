@@ -36,7 +36,7 @@ import dotenv
 import websockets
 
 from app.audio_recorder import AudioRecorder
-from app import agenda, befehle, day, diary, falsewakes, gcontacts, textmodel, heart, ideas, inbox, mail, memory, memory_web, mood, nachdenken, reach, recall, reminders, schwer, tls, variety, voice_in, voice_stream, wakecheck
+from app import agenda, befehle, day, diary, falsewakes, gcontacts, textmodel, heart, ideas, inbox, mail, memory, memory_web, mood, nachdenken, reach, recall, reminders, sammler, schwer, tls, variety, voice_in, voice_stream, wakecheck
 
 # Scene concept 2.0 (2.104.0): her feelings come from what really happens (app/heart.py); env
 # LEYLA_HEART=0 brings back the old dice of app/mood.py as a safety net.
@@ -126,6 +126,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
     def _init_settings(self) -> None:
         """Options from the environment (config.yaml, run.sh)."""
         self.openai_api_key = os.environ.get("OPENAI_API_KEY", "")
+        sammler.collector().api_key = self.openai_api_key  # near wakes are checked for her name
         self.websocket_host = os.environ.get("WEBSOCKET_HOST", "0.0.0.0")
         self.websocket_port = int(os.environ.get("WEBSOCKET_PORT", "8080"))
         # Leyla's instructions are built in app/persona.py; this option only adds rules
@@ -1743,15 +1744,14 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         logger.info("Client connected: %s", client_id)
         start_time = time.monotonic()
         # The Voice PE may send the microphone history from before the wake word first
-        # (wakecheck.py). It is taken off the line while the GPT Live session opens; with the
-        # setting weckpruefung 2 nothing shows before it is clear that she was called.
+        # (wakecheck.py). It is taken off the line while the GPT Live session opens. The check
+        # only counts; no talk is turned away (that cost real calls on 24 Nov 2026).
         wake_mode = 0 if app else int(self.recall.settings.get("weckpruefung") or 0)
         wake_state: dict = {}
         wake_task = None if app else asyncio.create_task(wakecheck.check(
             client_ws, wake_state, wake_mode, self.tv.playing, self.openai_api_key,
             self.recall.settings.get("weckart")))
-        held = wake_mode >= 2
-        if not app and not held:  # the phone app may be anywhere: no TV ducking, no lamp show
+        if not app:  # the phone app may be anywhere: no TV ducking, no lamp show
             self._show_listening()
 
         old_ws = self._active_sessions.get(client_id)
@@ -1806,24 +1806,20 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 if verdict["pre"]:
                     marks = " ".join("%s=%s" % (n, {True: 1, False: 0, None: "?"}[v])
                                      for n, v in (verdict.get("v") or {}).items())
-                    logger.info("Wake check: %.1f s of history%s, TV %s, her name %s (%.2f s)%s%s%s",
+                    logger.info("Wake check: %.1f s of history%s, TV %s, her name %s (%.2f s)%s",
                                 verdict["pre"],
                                 "" if verdict.get("wake") is None else
                                 ", wake word %.2f s before its end" % verdict["wake"],
                                 "on" if verdict["tv"] else "off",
                                 {True: "heard", False: "not heard", None: "not looked for"}[verdict["named"]],
-                                verdict["s"], " [" + marks + "]" if marks else "",
-                                ", heard: " + verdict["heard"] if verdict.get("heard") else "",
-                                " -> no talk" if verdict["reject"] else "")
+                                verdict["s"], " [" + marks + "]" if marks else "")
                     metrics.record("wake_check", tv=verdict["tv"], named=verdict["named"],
-                                   reject=verdict["reject"], s=verdict["s"], wake=verdict.get("wake"),
+                                   s=verdict["s"], wake=verdict.get("wake"),
                                    **({"v": verdict["v"]} if verdict.get("v") else {}))
+                    if verdict.get("wake") is not None:  # near wakes of the same moment are dropped
+                        sammler.collector().wake()
                     state["wake_named"] = verdict["named"]
                     state["wake_v"] = verdict.get("v")  # logged again with how the talk ended
-                if verdict["reject"]:
-                    raise wakecheck.FalseWake()
-                if held:
-                    self._show_listening()
             await client_ws.send(json.dumps({"type": "ready"}))
             logger.info("Sent ready signal to client")
             if app and state.get("start_refused"):  # then as notes, as far as the budget goes
@@ -1834,12 +1830,6 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             state["input_clock"] = time.monotonic()
             state["last_activity"] = time.monotonic()
             await self._forward_until_done(client_ws, live_ws, output_queue, end_reason, state)
-        except wakecheck.FalseWake:  # the TV woke her: no greeting, no lamps, back to sleep
-            end_reason["reason"] = "false_wake"
-            try:
-                await client_ws.send(json.dumps({"type": "disconnect", "reason": "false_wake"}))
-            except Exception:
-                pass
         except Exception as e:
             logger.error("Session error: %s", e, exc_info=True)
             end_reason["reason"] = "session_error"
@@ -1858,12 +1848,14 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
 
     async def _false_wakes_api(self, d: dict) -> dict:
         """/api/kopf/fehlwecker (code word): what is on the kept false wake recordings; with
-        `probe`, which way of listening of the wake check hears her name in them."""
+        `probe`, which way of listening of the wake check hears her name in them; with
+        `beinahe`, the same for the collected near wakes (app/sammler.py)."""
+        folder = sammler.collector().folder if d.get("beinahe") else self.false_wake_dir
         if d.get("probe"):
-            return await falsewakes.probe(self.false_wake_dir, self.openai_api_key,
+            return await falsewakes.probe(folder, self.openai_api_key,
                                           int(d.get("offset") or 0), int(d.get("limit") or 20),
                                           text=bool(d.get("text")), pre=d.get("vorher"))
-        return await falsewakes.analyse(self.false_wake_dir, self.openai_api_key,
+        return await falsewakes.analyse(folder, self.openai_api_key,
                                         int(d.get("offset") or 0), int(d.get("limit") or 25),
                                         text=d.get("text", True) is not False)
 
@@ -1901,7 +1893,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         is kept."""
         pcm, rate = state.pop("preroll", None) or (b"", 0)
         if (not pcm or not self.record_false_wakes or state.get("followup")
-                or reason not in ("no_speech", "false_wake")):
+                or reason != "no_speech"):
             return
         try:
             os.makedirs(self.false_wake_dir, exist_ok=True)

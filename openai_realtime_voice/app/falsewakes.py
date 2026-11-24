@@ -88,7 +88,9 @@ def clip(path: str) -> tuple:
         if w.getsampwidth() != 2 or w.getnchannels() != 1:
             raise ValueError("not 16 bit mono")
         pcm = w.readframes(w.getnframes())
-    return (pcm if "_vorher" in os.path.basename(path) else pcm[:int(rate * PROBE_S) * 2]), rate
+    name = os.path.basename(path)   # a near wake (sammler.py) is a history too
+    whole = "_vorher" in name or name.startswith("beinahe_")
+    return (pcm if whole else pcm[:int(rate * PROBE_S) * 2]), rate
 
 
 async def probe(folder: str, api_key: str, offset: int = 0, limit: int = 20,

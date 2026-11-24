@@ -1579,7 +1579,7 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
         body = await asyncio.wait_for(reader.readexactly(length), timeout=10) if length else b""
         lamp_reply = await _lamp_api(lamp, method, path, body) if path.startswith("/api/lamp") else None
         d = {}
-        if method == "POST" and not path.startswith("/api/lamp"):
+        if method == "POST" and not path.startswith("/api/lamp") and path != "/api/weckton":
             d = json.loads(body or b"{}") or {}
             if not isinstance(d, dict):
                 d = {}
@@ -1587,6 +1587,11 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
         titles = TITLES + (PRIVATE_TITLE,) if unlocked else TITLES
         if lamp_reply is not None:
             await _respond(writer, "200 OK", "application/json", json.dumps(lamp_reply, ensure_ascii=False))
+        elif method == "POST" and path == "/api/weckton":
+            # raw samples from the Voice PE: the sound that almost woke her (app/sammler.py)
+            from app import sammler
+            await _respond(writer, "200 OK", "application/json",
+                           json.dumps(sammler.collector().take(body, query)))
         elif method == "GET" and path == "/":
             await _respond(writer, "200 OK", "text/html", PAGE)
         elif method == "GET" and path in ("/icon.png", "/icon-maskable.png"):
@@ -1792,7 +1797,9 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                 files = len([f for f in os.listdir(folder) if f.endswith(".wav")])
             except OSError:
                 files = 0
-            out = {"tage": metrics.wake_stats(metrics.load()), "aufnahmen": files}
+            from app import sammler
+            out = {"tage": metrics.wake_stats(metrics.load()), "aufnahmen": files,
+                   "beinahe": sammler.collector().stats()}
             await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
         elif method == "POST" and path == "/api/game_reset":
             out = mood.game_reset() if (mood and hasattr(mood, "game_reset")) else {"ok": False}

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.158.0 (24 Nov 2026)
+
+- `feat`: near wakes are collected for training the wake word (`app/sammler.py`, `docs/WECKWORT.md`). Research of the same day: the model on the device was trained on 2 Nov with 121 real calls but no real false wakes at all (the trainer's log says so), the trainer itself rated it "Needs attention" (87.6 percent of calls heard, 0.21 false wakes an hour, which is the 5 a day we count), and a threshold cannot teach a model what to ignore. What helps is training with the sound that fooled it.
+- Firmware (`leyla_voice`): the microphone history now comes from the channel and gain the wake word model listens with (`preroll_channel`, `preroll_gain`; Voice PE: 1 and 4; before it was channel 0 with the chip's automatic gain, not what the model hears). `collect()` sends a copy of the history as `POST /api/weckton?rate=16000` to `collect_host`:`collect_port` from its own task and starts nothing; a talk that begins within half a second cancels it. `ring_buffer.h: copy_newest`, 88 checks.
+- A second, silent copy of the wake word model with a low cutoff (`hallo_leyla_sammler.json`, wake word "Leyla Sammler", 0.70) calls `collect()` from `on_wake_word_detected`.
+- Server: every clip is settled 15 s later and filed in `/data/near_wakes` as `beinahe_<day>_<time>_n?_f?.wav`: dropped when a talk by the wake word began within 3 s (that talk's own history is the same sound), `f1` when another near wake or wake came within 15 s (somebody may have called again), `n1` when a recogniser with her name as keyword hears her name. Only `n0_f0` clips are meant for training as they are. `GET /api/wakestats` shows the counts under `beinahe`; `/api/kopf/fehlwecker` takes `beinahe`.
+- Removed: turning a talk away (`weckpruefung` 2, `FalseWake`, the `disconnect` reason `false_wake`). Measured at 12:38 to 12:41 on nine real calls with the TV on: her name heard in 5 of 9 at best. What the recogniser hears is no longer written to the log.
+- Tests: `tests/test_sammler.py` (616 tests).
+
 ## 2.157.2 (24 Nov 2026)
 
 - Measured with the probe of 2.157.1: with her name as a keyword the recogniser found one of the two real calls that were turned away, and invented her name in 0 of the 69 kept television recordings (first 2.5 s each). The plain way found neither call, the last 1.5 s found neither as well.

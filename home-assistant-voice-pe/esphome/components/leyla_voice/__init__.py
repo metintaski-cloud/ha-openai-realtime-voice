@@ -30,6 +30,10 @@ CONF_MIC_AUTO_GAIN_MAX = "mic_auto_gain_max"
 CONF_MIC_AUTO_GAIN_TARGET = "mic_auto_gain_target"
 CONF_MIC_NOISE_FLOOR = "mic_noise_floor"
 CONF_PREROLL = "preroll"
+CONF_PREROLL_CHANNEL = "preroll_channel"
+CONF_PREROLL_GAIN = "preroll_gain"
+CONF_COLLECT_HOST = "collect_host"
+CONF_COLLECT_PORT = "collect_port"
 
 # Same names as the old component, the number is the index in LeylaVoice::set_trigger
 TRIGGERS = {
@@ -60,6 +64,14 @@ CONFIG_SCHEMA = cv.Schema(
         # opens, so it can check what woke her (0s = none; needs add on 2.157.0 or newer).
         cv.Optional(CONF_PREROLL, default="0s"): cv.All(
             cv.positive_time_period_milliseconds, cv.Range(max=cv.TimePeriod(seconds=4))),
+        # Where the history comes from: the microphone channel and gain micro_wake_word listens with
+        # (Voice PE: channel 1, gain 4), so collected sound is what the wake word model heard.
+        cv.Optional(CONF_PREROLL_CHANNEL, default=0): cv.int_range(min=0, max=3),
+        cv.Optional(CONF_PREROLL_GAIN, default=1): cv.int_range(min=1, max=16),
+        # Near wakes (leyla_voice.collect from a silent second copy of the wake word model) are
+        # sent there as POST /api/weckton; no host = off. Needs add on 2.158.0 or newer.
+        cv.Optional(CONF_COLLECT_HOST): cv.string,
+        cv.Optional(CONF_COLLECT_PORT, default=8082): cv.port,
         **{
             cv.Optional(key): automation.validate_automation(
                 {cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(EventTrigger)}, single=True
@@ -88,6 +100,9 @@ async def to_code(config):
     cg.add(var.set_auto_stop_timeout(config[CONF_AUTO_STOP_TIMEOUT]))
     cg.add(var.set_full_duplex(config[CONF_FULL_DUPLEX]))
     cg.add(var.set_preroll(config[CONF_PREROLL]))
+    cg.add(var.set_preroll_source(config[CONF_PREROLL_CHANNEL], config[CONF_PREROLL_GAIN]))
+    if CONF_COLLECT_HOST in config:
+        cg.add(var.set_collect(config[CONF_COLLECT_HOST], config[CONF_COLLECT_PORT]))
     cg.add(
         var.set_mic_gain(
             config[CONF_MIC_AUTO_GAIN_MAX],

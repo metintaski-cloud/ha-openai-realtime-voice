@@ -81,6 +81,14 @@ class RingBuffer {
     size_ -= n;
     return n;
   }
+  // A copy of the newest bytes, oldest first; the buffer keeps them. For a snapshot of the microphone
+  // history that somebody else sends while the history goes on.
+  size_t copy_newest(uint8_t *out, size_t len) const {
+    size_t n = len < size_ ? len : size_;
+    size_t skip = size_ - n;
+    for (size_t i = 0; i < n; i++) out[i] = buf_[(head_ + skip + i) % cap_];
+    return n;
+  }
   void clear() { head_ = 0; size_ = 0; }
   size_t size() const { return size_; }
   size_t capacity() const { return cap_; }

@@ -50,6 +50,22 @@ class LeylaVoice : public Component {
   // The microphone history kept before the wake word and sent to the server when the socket opens,
   // so the server can check what woke her (0 = none). At most 4 s.
   void set_preroll(uint32_t ms) { this->pre_bytes_ = (size_t) (ms > 4000 ? 4000 : ms) * kMicRate / 1000 * 2; }
+  // Which microphone channel the history is taken from and how much it is amplified. For training
+  // the wake word the history must be the very sound micro_wake_word hears: on the Voice PE that is
+  // channel 1 with gain 4 (channel 0, with the chip's automatic gain, is what the talk itself uses).
+  void set_preroll_source(uint8_t channel, uint8_t gain) {
+    this->pre_channel_ = channel;
+    this->pre_gain_ = gain == 0 ? 1 : gain;
+  }
+  // Where collect() sends the history (the add on's page port); empty host = collecting is off.
+  void set_collect(const std::string &host, uint16_t port) {
+    this->collect_host_ = host;
+    this->collect_port_ = port;
+  }
+  // The wake word was nearly heard (a second, silent copy of the model with a low cutoff fired): send
+  // the history to the server and start nothing. These near wakes are what the wake word model is
+  // trained with afterwards (docs/WECKWORT.md). Does nothing while a talk runs or one is on its way.
+  void collect();
   void set_mic_gain(float max_gain, float target, float floor) { this->gain_.configure(max_gain, target, floor); }
   void set_trigger(uint8_t index, EventTrigger *trigger) {
     if (index < kTriggers) this->triggers_[index] = trigger;
@@ -76,6 +92,8 @@ class LeylaVoice : public Component {
   static constexpr size_t kTriggers = 10;
   static constexpr uint32_t kMicRate = 16000, kWireRate = 24000;
   static constexpr uint32_t kWakeToStartMs = 1500;  // a wake word older than this did not start the talk
+  static constexpr uint32_t kCollectGapMs = 3000;   // at most one near wake in this time
+  static constexpr uint32_t kCollectWaitMs = 500;   // a near wake waits this long: did a talk begin?
   static constexpr size_t kRxBytes = 48000;       // 1 s of reply audio at 24 kHz, 16 bit
   static constexpr size_t kTxBytes = 24000;       // 0.5 s of microphone audio
   static constexpr size_t kPlayChunk = 2048;
@@ -97,6 +115,7 @@ class LeylaVoice : public Component {
 
   static void socket_event_(void *args, esp_event_base_t base, int32_t id, void *data);
   static void cleanup_task_(void *handle);
+  static void collect_task_(void *job);
   void on_socket_event_(int32_t id, esp_websocket_event_data_t *d);
 
   // Configuration
@@ -118,6 +137,12 @@ class LeylaVoice : public Component {
   size_t pre_left_{0};        // bytes of the history still to send for this conversation
   std::atomic<bool> pre_frozen_{false};  // while it is being sent the microphone does not write into it
   uint32_t wake_at_ms_{0};    // millis() when the wake word was heard (odd, so never 0), 0 = not by wake word
+  uint8_t pre_channel_{0}, pre_gain_{1};  // where the history comes from (set_preroll_source)
+  std::string collect_host_;
+  uint16_t collect_port_{8082};
+  std::atomic<bool> collecting_{false};      // one near wake is on its way to the server
+  std::atomic<bool> collect_cancel_{false};  // a talk began meanwhile: its own history covers it
+  uint32_t collect_last_ms_{0};
   SemaphoreHandle_t lock_{nullptr};
 
   // Socket

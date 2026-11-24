@@ -75,5 +75,5 @@ def wake_stats(entries: list, days: int = 14) -> list:
         day = time.strftime("%Y-%m-%d", time.localtime(e.get("ts", 0)))
         d = by_day.setdefault(day, {"tag": day, "geweckt": 0, "fehlstarts": 0})
         d["geweckt"] += 1
-        d["fehlstarts"] += e.get("reason") in ("no_speech", "false_wake")
+        d["fehlstarts"] += e.get("reason") in ("no_speech", "false_wake")  # false_wake: 24 Nov 2026 only
     return [by_day[k] for k in sorted(by_day, reverse=True)[:days]]

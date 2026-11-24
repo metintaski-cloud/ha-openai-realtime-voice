@@ -3,9 +3,12 @@
 #include "leyla_voice.h"
 
 #include <cstring>
+#include <new>
 
 #include <esp_heap_caps.h>
 #include <esp_system.h>
+#include <lwip/netdb.h>
+#include <lwip/sockets.h>
 
 #include "esphome/components/audio/audio.h"
 #include "esphome/core/hal.h"
@@ -52,8 +55,11 @@ void LeylaVoice::dump_config() {
   ESP_LOGCONFIG(TAG, "  Server: %s", this->url_.c_str());
   ESP_LOGCONFIG(TAG, "  Auto stop: %u ms, full duplex: %s", (unsigned) this->config_.auto_stop_ms,
                 YESNO(this->full_duplex_));
-  ESP_LOGCONFIG(TAG, "  Microphone history before the wake word: %u ms",
-                (unsigned) (this->pre_bytes_ / 2 * 1000 / kMicRate));
+  ESP_LOGCONFIG(TAG, "  Microphone history before the wake word: %u ms (channel %u, gain %u)",
+                (unsigned) (this->pre_bytes_ / 2 * 1000 / kMicRate), (unsigned) this->pre_channel_,
+                (unsigned) this->pre_gain_);
+  if (!this->collect_host_.empty())
+    ESP_LOGCONFIG(TAG, "  Near wakes go to %s:%u", this->collect_host_.c_str(), (unsigned) this->collect_port_);
   ESP_LOGCONFIG(TAG, "  Microphone gain: %s (max %.1f)", this->gain_.enabled() ? "on" : "off", this->gain_.gain());
 }
 
@@ -61,6 +67,7 @@ void LeylaVoice::dump_config() {
 
 void LeylaVoice::start() {
   uint32_t now = millis();
+  this->collect_cancel_ = true;  // a near wake still waiting is dropped: this talk's history covers it
   // a wake word heard longer ago did not start this talk (the button did, or she herself)
   if (this->wake_at_ms_ != 0 && now - this->wake_at_ms_ > kWakeToStartMs) this->wake_at_ms_ = 0;
   xSemaphoreTake(this->lock_, portMAX_DELAY);
@@ -301,19 +308,26 @@ void LeylaVoice::on_mic_data_(const std::vector<uint8_t> &data) {
   size_t frames = data.size() / (bytes * channels);
   if (frames == 0) return;
   this->mono_.resize(frames);
-  for (size_t i = 0; i < frames; i++) {  // first channel only
-    const uint8_t *src = data.data() + i * channels * bytes;
+  // The talk takes the first channel as it is. The history takes the channel and gain the wake word
+  // model listens with (set_preroll_source), so what is collected is what the model heard.
+  size_t channel = active ? 0 : (this->pre_channel_ < channels ? this->pre_channel_ : channels - 1);
+  int32_t gain = active ? 1 : this->pre_gain_;
+  for (size_t i = 0; i < frames; i++) {
+    const uint8_t *src = data.data() + (i * channels + channel) * bytes;
+    int32_t sample;
     if (bytes == 4) {
       int32_t v;
       memcpy(&v, src, 4);
-      this->mono_[i] = (int16_t) (v >> 16);
+      sample = v >> 16;
     } else {
       int16_t v;
       memcpy(&v, src, 2);
-      this->mono_[i] = v;
+      sample = v;
     }
+    sample *= gain;
+    this->mono_[i] = (int16_t) (sample > 32767 ? 32767 : (sample < -32768 ? -32768 : sample));
   }
-  if (!active) {  // nobody talks to her: keep the last seconds as they came, for the server's check
+  if (!active) {  // nobody talks to her: keep the last seconds, for the server's check and for training
     if (xSemaphoreTake(this->lock_, pdMS_TO_TICKS(5)) != pdTRUE) return;
     if (!this->pre_frozen_.load())
       this->pre_.write_keep_newest(reinterpret_cast<const uint8_t *>(this->mono_.data()), frames * 2);
@@ -353,6 +367,98 @@ void LeylaVoice::start_preroll_() {
   else
     snprintf(msg, sizeof(msg), "{\"type\":\"preroll\",\"rate\":%u,\"bytes\":%u}", rate, (unsigned) this->pre_left_);
   this->send_text_(msg);
+}
+
+// ---------- near wakes ----------
+
+struct CollectJob {
+  LeylaVoice *self;
+  uint8_t *data;
+  size_t len;
+  unsigned rate;
+  std::string host;
+  uint16_t port;
+};
+
+void LeylaVoice::collect() {
+  uint32_t now = millis();
+  if (this->collect_host_.empty() || this->pre_bytes_ == 0) return;
+  if (this->machine_.running() || this->collecting_.load()) return;
+  if (this->collect_last_ms_ != 0 && now - this->collect_last_ms_ < kCollectGapMs) return;
+  uint8_t *data = psram_alloc(this->pre_bytes_);
+  if (data == nullptr) return;
+  xSemaphoreTake(this->lock_, portMAX_DELAY);
+  size_t len = this->pre_.copy_newest(data, this->pre_bytes_) & ~((size_t) 1);
+  xSemaphoreGive(this->lock_);
+  auto info = this->mic_->get_audio_stream_info();
+  unsigned rate = info.get_sample_rate() ? info.get_sample_rate() : kMicRate;
+  auto *job = len >= rate ? new (std::nothrow) CollectJob{this, data, len, rate, this->collect_host_,
+                                                         this->collect_port_}
+                          : nullptr;  // less than half a second of history is not worth sending
+  if (job == nullptr) {
+    psram_free(data);
+    return;
+  }
+  this->collect_last_ms_ = now | 1;
+  this->collect_cancel_ = false;
+  this->collecting_ = true;
+  if (xTaskCreate(&LeylaVoice::collect_task_, "leyla_collect", 4096, job, 1, nullptr) != pdPASS) {
+    psram_free(data);
+    delete job;
+    this->collecting_ = false;
+  }
+}
+
+// Own task, so the loop never waits for the network: a plain HTTP POST of the raw samples.
+void LeylaVoice::collect_task_(void *arg) {
+  auto *job = static_cast<CollectJob *>(arg);
+  vTaskDelay(pdMS_TO_TICKS(kCollectWaitMs));
+  bool sent = false;
+  int sock = -1;
+  struct addrinfo *res = nullptr;
+  if (!job->self->collect_cancel_.load()) {
+    struct addrinfo hints = {};
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    char port[8];
+    snprintf(port, sizeof(port), "%u", (unsigned) job->port);
+    if (lwip_getaddrinfo(job->host.c_str(), port, &hints, &res) == 0 && res != nullptr)
+      sock = lwip_socket(res->ai_family, res->ai_socktype, 0);
+  }
+  if (sock >= 0) {
+    struct timeval tv = {4, 0};
+    lwip_setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+    lwip_setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+    if (lwip_connect(sock, res->ai_addr, res->ai_addrlen) == 0) {
+      char head[224];
+      int n = snprintf(head, sizeof(head),
+                       "POST /api/weckton?rate=%u HTTP/1.1\r\nHost: %s\r\n"
+                       "Content-Type: application/octet-stream\r\nContent-Length: %u\r\n"
+                       "Connection: close\r\n\r\n",
+                       job->rate, job->host.c_str(), (unsigned) job->len);
+      sent = n > 0 && n < (int) sizeof(head) && lwip_send(sock, head, n, 0) == n;
+      size_t off = 0;
+      while (sent && off < job->len && !job->self->collect_cancel_.load()) {
+        size_t want = job->len - off < 4096 ? job->len - off : 4096;
+        int w = lwip_send(sock, job->data + off, want, 0);
+        if (w <= 0) sent = false;
+        else off += (size_t) w;
+      }
+      sent = sent && off == job->len;
+      if (sent) {
+        char reply[16];
+        lwip_recv(sock, reply, sizeof(reply), 0);  // let the server finish before the socket closes
+      }
+    }
+  }
+  if (res != nullptr) lwip_freeaddrinfo(res);
+  if (sock >= 0) lwip_close(sock);
+  ESP_LOGD(TAG, "Near wake: %u bytes of history %s", (unsigned) job->len, sent ? "sent" : "not sent");
+  LeylaVoice *self = job->self;
+  psram_free(job->data);
+  delete job;
+  self->collecting_ = false;
+  vTaskDelete(nullptr);
 }
 
 void LeylaVoice::pump_preroll_() {

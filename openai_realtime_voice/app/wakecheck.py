@@ -13,9 +13,8 @@ the talk. While the GPT Live session is being opened anyway (about 1.3 s), the s
 transcribes that history when the TV is running and looks for her name in it.
 
 Server setting `weckpruefung`: 0 = the history is only taken off the line; 1 = watch (default):
-the verdict is logged and counted, nothing changes; 2 = act: when the TV runs and her name was
-not heard, the talk ends before it began, without greeting, lamps or a quieter TV. In doubt (no
-history, the check too slow, an error) she is taken as called. The history of a false wake is
+the verdict is logged and counted, nothing changes. (Until 2.157.2 a value of 2 ended the talk
+before it began; that is gone, see below.) The history of a false wake is
 kept next to the other recordings, as the real trigger sound for training.
 
 2.157.1: acting was switched on for three minutes on 24 Nov 2026 and turned away two of three
@@ -35,8 +34,16 @@ thinking: the device freezes the history when the socket opens, not at the wake 
 call lies an unknown stretch before the end and can even fall out of 2.5 s. So the firmware
 (leyla_voice 2.158.0) now says where it is: `"wake_ms": N` in the header, the time from the
 wake word to the end of the history, and only when the wake word started the talk. The ways
-"ruf" and "ruf_kw" hear just the two seconds around it. A talk without `wake_ms` (the button,
-a talk she started herself, older firmware) is never turned away: nobody had to say her name.
+"ruf" and "ruf_kw" hear just the two seconds around it.
+
+2.158.0: nine real calls by Metin with the TV on, 12:38 to 12:41 on 24 Nov 2026: the wake word
+lies 0.02 to 0.08 s before the end of the history (the socket opens at once, my guess about a
+late freeze was wrong too), and her name was heard in 5 of 9 by `ganz_kw`, 2 of 9 by `ruf_kw`,
+1 of 9 by `ganz`, 0 of 9 by `ruf`. A recogniser does not tell his call from the television
+reliably enough, so TURNING AWAY IS GONE: the code for it was removed, `weckpruefung` 2 is the
+same as 1, and what is heard is no longer written to the log. Listening without a greeting was
+refused by Metin ("Ich muss schon hören, dass sie da ist"). The check stays as a counter; the
+real cure is a wake word model trained with this room's sound (docs/WECKWORT.md, app/sammler.py).
 """
 import asyncio
 import io
@@ -65,10 +72,6 @@ KEYWORDS = ("Hallo Leyla", "Leyla")
 # way of listening: (only the call, where the device said the wake word was; her name as a keyword)
 WAYS = {"ganz": (False, False), "ganz_kw": (False, True),
         "ruf": (True, False), "ruf_kw": (True, True)}
-
-
-class FalseWake(Exception):
-    """The talk ends before it began: nobody called her."""
 
 
 def header(message) -> int:
@@ -224,13 +227,13 @@ def verdict(texts: dict, use: tuple):
 
 async def check(ws, state: dict, mode: int, tv_playing, api_key: str, use="ganz_kw") -> dict:
     """Take the history off the line and, with the TV running, look for her name in it.
-    {"pre": seconds, "tv": bool, "named": bool or None, "reject": bool, "s": seconds, "v": {way:
-    bool or None}, "wake": seconds from the wake word to the end of the history or None}; never
-    raises. `tv_playing`: async function, True when the TV is on and not muted. `use`: the ways
-    that count (setting `weckart`); all ways are heard and reported. Only a talk the wake word
-    started (the device sent `wake_ms`) can be turned away."""
+    {"pre": seconds, "tv": bool, "named": bool or None, "s": seconds, "v": {way: bool or None},
+    "wake": seconds from the wake word to the end of the history or None}; never raises.
+    `tv_playing`: async function, True when the TV is on and not muted. `use`: the ways that
+    count for `named` (setting `weckart`); all ways are heard and reported. The result is only
+    logged and counted: no talk is turned away and none starts differently because of it."""
     started = time.monotonic()
-    out = {"pre": 0.0, "tv": False, "named": None, "reject": False}
+    out = {"pre": 0.0, "tv": False, "named": None}
     try:
         pcm, rate = await read(ws, state)
         wake_ms = state.get("wake_ms")
@@ -246,10 +249,8 @@ async def check(ws, state: dict, mode: int, tv_playing, api_key: str, use="ganz_
                     texts = await hear(pcm, rate, api_key, client, wake_ms)
                 out["v"] = {n: (None if t is None else named(t)) for n, t in texts.items()}
                 out["named"] = verdict(texts, use)
-                out["heard"] = " | ".join((texts.get(n) or "")[:80] for n in use if n in texts)
-                out["reject"] = mode >= 2 and out["named"] is False and wake_ms is not None
     except Exception as e:
         logger.info("Wake check not finished (%s): she is taken as called", e or type(e).__name__)
-        out["named"], out["reject"] = None, False
+        out["named"] = None
     out["s"] = round(time.monotonic() - started, 2)
     return out

@@ -137,9 +137,18 @@ static void test_ring() {
     CHECK(pre.read(out, 2) == 2 && out[0] == 1);  // reading in between keeps the order
     pre.write_keep_newest(in2, 4);
     CHECK(pre.size() == 8 && pre.read(out, 8) == 8 && out[0] == 3 && out[3] == 6 && out[4] == 7);
+    {  // a copy of the newest for a near wake: in order, and the history keeps everything
+      RingBuffer snap(8);
+      uint8_t c[8] = {0};
+      snap.write_keep_newest(in1, 6);
+      snap.write_keep_newest(in2, 4);  // holds 3..10, wrapped around
+      CHECK(snap.copy_newest(c, 4) == 4 && c[0] == 7 && c[3] == 10 && snap.size() == 8);
+      CHECK(snap.copy_newest(c, 20) == 8 && c[0] == 3 && c[7] == 10);  // asked for more than there is
+      CHECK(snap.read(out, 8) == 8 && out[0] == 3 && snap.copy_newest(c, 4) == 0);
+    }
     RingBuffer none(0);
     none.write_keep_newest(in1, 6);  // no memory: nothing happens
-    CHECK(none.size() == 0);
+    CHECK(none.size() == 0 && none.copy_newest(out, 4) == 0);
   }
   // memory only held while in use: released buffer is safe to touch, acquire gives it back
   rb.release();
