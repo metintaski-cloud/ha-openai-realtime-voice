@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.146.1 (24 Nov 2026)
+
+- The phone copies are checked every 2 minutes instead of every 30 (Metin: a newly installed clip must not stutter on the go). A new or replaced clip gets its copy at phone size within about 3 minutes; until then the phone would get the 4K original.
+
 ## 2.146.0 (24 Nov 2026)
 
 - Tidy buttons on the stage (Metin: "damit es ordentlich aussieht"): every button is a symbol without text, all the same size and look, in one column at the right edge from the top down: menu, microphone, live, rose, music, new chat, below them the clip timer and the clip name. Send is a symbol alone at the right edge at the height of Leyla's calves. The left side is free now except for the chat bubbles and the text field. Live turns red while a call runs, the microphone while it records.

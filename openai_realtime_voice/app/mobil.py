@@ -27,7 +27,8 @@ MAX_W = 1440              # 2.143.0: the copies are made at phone size; a 1080 p
 CAP = f"{MAX_RATE}/{MAX_W}"   # what a copy was made with; a change makes every copy once more
 PROBE_TIMEOUT = 30.0
 ENCODE_TIMEOUT = 1800.0
-RESCAN_S = 1800
+RESCAN_S = 120            # 2.146.1: was 30 min; a clip Metin has just swapped in then played as the 4K original on
+                          # the phone for up to half an hour. A scan only looks at file times, so it is cheap
 
 
 def peak_of(packets: str) -> int:
