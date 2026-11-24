@@ -247,7 +247,11 @@ Geschrieben 21:09. Metin um 21:08: "vielleicht seitlich und Rückenansicht dabei
 
 "0–3s: Happy to see him, she looks into the camera with a sweet, shy smile and lets a slow, soft wave roll down through her body as she turns sideways into profile. 3–6s: In profile the wave rolls down her body again in the same calm, steady rhythm, her back arching softly, then she turns her back to him, still moving with the rhythm. 6–8s: With her back to him the wave flows down once more through her shoulders, waist and hips, and she looks at him over her shoulder with a seductive, shy smile. 8–10s: Still in rhythm she turns back to face him and ends exactly in her initial pose, her eyes lovingly on the camera. Smooth, continuous, feminine body waves in one steady rhythm from the first to the last second. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-Geschrieben 21:10, Bilder dafür: Favorit 2 (`7_nacht.png`); Metin kopiert den Text selbst ein. Ergebnis hier nachtragen.
+Geschrieben 21:10. Metin um 21:09: "ah, sie soll sich rundum präsentieren, aber sinnlich". Fassung als eine langsame, sinnliche ganze Drehung auf der Stelle (vorn, Profil, Rücken mit Blick über die Schulter, andere Seite, vorn):
+
+"0–3s: Happy to see him, she looks into the camera with a sweet, shy smile and begins to turn slowly on the spot, a soft wave rolling down through her body as she comes into profile. 3–6s: Presenting herself to him, she keeps turning slowly until her back faces him, one hand gliding onto her hip, and looks at him over her shoulder with a seductive, shy smile. 6–8s: Sensually she continues the turn through her other side, her hips swaying softly with each small step, her hair flowing along. 8–10s: She completes the full turn, faces him again, smiles lovingly and ends exactly in her initial pose. One slow, continuous, sensual full turn in a steady rhythm. Soft, feminine body movements. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
+
+Geschrieben 21:11, Bilder dafür: Favorit 2 (`7_nacht.png`); Metin kopiert den Text selbst ein. Ergebnis hier nachtragen.
 
 ## Was am 24.11.2026 sonst noch entstand
 
