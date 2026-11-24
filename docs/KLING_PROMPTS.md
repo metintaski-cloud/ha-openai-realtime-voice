@@ -22,7 +22,7 @@ Ergebnis: Clip 360, Metin "super geworden", unverändert als `kurz/begruessung` 
 
 "0–3s: Happy to see him, she takes two small playful steps in place with a sweet, affectionate smile. 3–6s: She waves warmly with one hand, alternating her leg movements and gently lifting her heels. 6–8s: She shyly draws her shoulders inward, lightly taps one foot on the floor and smiles bashfully. 8–10s: She shifts her weight again, looks lovingly into the camera and returns to her initial pose. Continuous, gentle leg and foot movements throughout the scene. Natural hip and upper body movements. She remains in the same area without walking away. Sweet, shy, feminine and affectionate body language. Static camera, full body visible, unchanged background."
 
-Ergebnis: Clip 395 (`kling_20261125_VIDEO_0_3s__Happ_395_0.mp4`, Download 18:53, Original in Leyla Kling Originale). Am Kontaktbogen: 0 bis 1,5 s zwei verspielte Schritte auf der Stelle; 2 bis 5 s Winken mit offener Hand, Handfläche zur Kamera, dabei gehen die Fersen hoch; 5 bis 7,5 s dreht sie sich etwa eine Vierteldrehung zur Seite, zieht die Schultern ein, die Hand bleibt als lockere Faust vor der Schulter, Blick verlegen nach unten, ein Fuß auf der Spitze; ab 7,5 s dreht sie zurück, senkt die Hand und steht ab 8,5 s in der Grundpose. Gesicht und Brille stabil, Buch im Arm, kein Mann im Bild. Bewegungsmenge im Mittel 2,83 (Clip 360: 0,73), je Sekunde 2,0 / 3,5 / 3,6 / 3,5 / 3,4 / 3,3 / 2,9 / 2,4 / 3,0 / 0,8, Beine allein 1,2 bis 2,1 in jeder Sekunde, Naht 0,60, letzte halbe Sekunde 0,35. Das Muster trägt: kein toter Anfang, der ganze Körper lebt, oben und unten verschieden. Nicht im Text und von Kling dazugegeben: die Drehung zur Seite und die Faust im dritten Takt. Metins Urteil hier nachtragen.
+Ergebnis: Clip 395 (`kling_20261125_VIDEO_0_3s__Happ_395_0.mp4`, Download 18:53, Original in Leyla Kling Originale). Am Kontaktbogen: 0 bis 1,5 s zwei verspielte Schritte auf der Stelle; 2 bis 5 s Winken mit offener Hand, Handfläche zur Kamera, dabei gehen die Fersen hoch; 5 bis 7,5 s dreht sie sich etwa eine Vierteldrehung zur Seite, zieht die Schultern ein, die Hand bleibt als lockere Faust vor der Schulter, Blick verlegen nach unten, ein Fuß auf der Spitze; ab 7,5 s dreht sie zurück, senkt die Hand und steht ab 8,5 s in der Grundpose. Gesicht und Brille stabil, Buch im Arm, kein Mann im Bild. Bewegungsmenge im Mittel 2,83 (Clip 360: 0,73), je Sekunde 2,0 / 3,5 / 3,6 / 3,5 / 3,4 / 3,3 / 2,9 / 2,4 / 3,0 / 0,8, Beine allein 1,2 bis 2,1 in jeder Sekunde, Naht 0,60, letzte halbe Sekunde 0,35. Das Muster trägt: kein toter Anfang, der ganze Körper lebt, oben und unten verschieden. Nicht im Text und von Kling dazugegeben: die Drehung zur Seite und die Faust im dritten Takt. **Metins Urteil (19:00): "zu hektisch, wie auch beschrieben im Text". Nicht eingebaut.**
 
 **Vorlage 3, Berührung an der Brust (24.11.2026, 18:53, von Metin mitgebracht, noch nicht gelaufen):**
 
@@ -42,6 +42,10 @@ Gleicher Bau wie Vorlage 2 (vier Takte, Gefühl plus oben plus unten, kein toter
 8. **Die Art steckt in den Beiwörtern:** gently, warmly, sweet, shy, bashfully, playfully, lovingly.
 9. **Nach den Takten drei kurze Zeilen:** der ganze Körper lebt die ganze Zeit ("Continuous, gentle leg and foot movements throughout the scene. Natural hip and upper body movements."), der Ort als Erlaubnis ("She remains in the same area without walking away."), die Körpersprache ("Sweet, shy, feminine and affectionate body language."), dann die Kamera Zeile.
 10. **Rund 90 bis 110 Wörter.** Das Outfit wird nicht beschrieben, es kommt aus Metins Bild.
+
+## Wie viel Bewegung (Metin, 24.11.2026, 19:00)
+
+Gemessen an drei Clips mit seinem Urteil: Clip 360 mit 0,73 und Clip 308 mit 1,15 fand er "super", Clip 395 mit 2,83 "zu hektisch". Sein Maß liegt also bei etwa 0,7 bis 1,2. Was Clip 395 hektisch machte, steht im Text selbst: Schritte auf der Stelle, Beine wechseln, Fersen heben, mit dem Fuß tippen und dazu die Zeile "Continuous, gentle leg and foot movements throughout the scene". Die Schicht unten bleibt (kein toter Anfang, Beine und Arme nicht gleich), aber ruhig: sanftes Wiegen und Gewicht verlagern, höchstens ein kleiner Schritt im ganzen Clip. Die Schlusszeile für ruhige Clips ist die aus Vorlage 1: "Soft, feminine, natural body movements. Both feet remain in place." Die Zeile mit "Continuous ... leg and foot movements" nur, wenn Metin einen lebhaften Clip will.
 
 ## Baukasten
 
@@ -93,11 +97,11 @@ Dieser Baukasten folgt Vorlage 2; ihr Clip 395 hat das Muster bestätigt (lebend
 | Clip | Datei in der App | Prompt | Ergebnis |
 |---|---|---|---|
 | 360 | `kurz/begruessung` | Vorlage 1 | Metin: "super geworden". Bewegungsmenge 0,73, Naht 0,68, ruhiger Anfang. Eingebaut 18:37, Originaltempo. |
-| 395 | noch nicht eingebaut | Vorlage 2 | Bewegungsmenge 2,83, Naht 0,60, lebendig ab Sekunde 0, richtiges Winken; im dritten Takt Drehung zur Seite mit Faust. Metins Urteil offen. |
+| 395 | nicht eingebaut | Vorlage 2 | Bewegungsmenge 2,83, Naht 0,60, richtiges Winken, aber Metin: "zu hektisch". |
 
 Bereit, noch nicht gelaufen. Von Claude am 24.11.2026 um 18:58 nach dem Baukasten geschrieben (Metin um 18:56: "kannst du nun anhand dieser neuen Regel auch solche erstellen?"); die Inhalte hatte Metin um 17:34 gewählt. Für die Beine nur Bewegungen aus seinen Vorlagen (wiegen, Ferse heben, Gewicht verlagern, kleiner Schritt), in jedem Takt eine andere:
 
-Stand 18:58: "Blick senken" steht in Kling bereit, beide Bilder `6_kurz_arbeit.png` (groß geprüft), 4K, 10 s, Adaptive, 1, 350 Credits am Knopf. Generate klickt Metin. Ergebnis hier nachtragen.
+"Blick senken" wurde von Metin etwa um 18:59 gestartet (350 Credits). Der Text enthält noch in jedem Takt eine Beinbewegung und die Zeile "Continuous ... leg and foot movements"; nach Metins Urteil zu Clip 395 kann er zu lebhaft ausfallen. Ergebnis hier nachtragen, "Buch an die Brust" vor dem Start entsprechend beruhigen.
 
 **Schleife Blick senken, kurzes Arbeitskleid** (121 Wörter): "0–3s: Happy that he is looking at her, she gently sways from one leg to the other with a sweet, shy smile. 3–6s: She bashfully lowers her gaze to the floor, softly lifts her shoulders and gently raises one heel. 6–8s: She looks back up at him with an affectionate smile, tilts her head and lightly shifts her weight onto the other leg. 8–10s: She holds his gaze with loving eyes, takes a small step in place and returns to her initial pose. Continuous, gentle leg and foot movements throughout the scene. Natural hip and upper body movements. She remains in the same area without walking away. Sweet, shy, feminine and affectionate body language. Static camera, full body visible, unchanged background."
 
