@@ -84,3 +84,14 @@ async def test_private_list_only_after_code(tmp_path, monkeypatch):
     sent.clear()
     await bridge._unlock(WS(), {}, app=True)   # typed in the app: nothing to answer aloud
     assert "Habibi" not in sent[0]["content"] and "App" in sent[0]["content"]
+    # 2.152.1: while GPT Live takes notes it does not hear, so a long list waits (invented lines)
+    from app import talk_notes
+    bridge.memory.save_all({"family": ["Person: Ayşe (Metins Schwester)."],
+                            "private": [f"Der Garten bekommt im Sommer Wasser, Punkt {i}." for i in range(200)]})
+    sent.clear()
+    state = {}
+    await bridge._unlock(WS(), state, app=True)
+    kinds = [x["event_id"].split("_")[0] for x in sent]
+    assert "unlock" in kinds and "heart" in kinds and "private" not in kinds
+    assert state["notes_held"]["private"] > talk_notes.START_CHARS
+    assert sum(len(x["content"]) for x in sent) < talk_notes.START_CHARS + 600

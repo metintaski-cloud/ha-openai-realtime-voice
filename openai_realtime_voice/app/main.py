@@ -44,6 +44,7 @@ FEELINGS = heart if os.environ.get("LEYLA_HEART", "1") != "0" else mood
 from app import context
 from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, pcm_level
 from app.live_link import END_CONVERSATION_TOOL
+from app import talk_notes
 from app.talk_notes import MOOD_WITHOUT_CODE, UNLOCKED_LOVE, TalkNotesMixin  # noqa: F401
 from app.phrases import (END_TALK_RE, RECALL_NUDGE, RECALL_RE, NAME_NUDGE, NAME_NUDGE_AFTER_S, NAME_NUDGE_COOLDOWN_S, NAME_RE, PROMISE_NUDGE, PROMISE_NUDGE_AFTER_S, PROMISE_RE, NAME_SAID_RE, WHO_ASKED_RE, WHO_NUDGE, COUPLE_NUDGE, COUPLE_WORD_RE, PET_NUDGE, PET_WORD_RE, addressed_by_name, contains_goodbye, greeting_instruction, parse_greeting_words, pick_greeting)
 from app import (reach_link, chat, lamp_show, metrics, output_link, session_end, tool_link, after_talk, announce_voice, live_link, night, cleanup, costs, fan, health, lights, messages, persona, purifier, rf, technik, todo_sync,
@@ -198,7 +199,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self.recall.reflect = self.reflect
         self.recall.think = lambda: self._reflect_tick(force=True)
         self.recall.speak = self._voice_probe
-        self.recall.notes = self._notes_probe
+        self.recall.notes = self._notes_hear_probe
         self.day = day.Day(self.diary, ask=self._day_ask, weather=self._day_weather)  # her own day
         self._forget_sol_evening()
         self._init_reach(UNLOCKED_LOVE)  # she writes to Metin on her own (app/reach.py)
@@ -733,6 +734,18 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             return out
         return await self._speak_test(text, chat.voice_reply_instructions(mood, love),
                                       chat.speak_prompt(text))
+
+    async def _notes_hear_probe(self, d: dict) -> dict:
+        """/api/kopf/notizen: sizes -> how GPT Live takes the notes; hears ([[channel, budget],
+        ...]) -> does she hear a recording that starts right after the notes, and know them?"""
+        pcm = b""
+        if isinstance(d.get("hears"), list):
+            asked = "Sag genau diesen einen Satz und sonst nichts: «" + talk_notes.PROBE_QUESTION + "»"
+            await self._speak_test(asked, announce_voice.SPEAK_INSTRUCTIONS, asked)
+            pcm = getattr(self, "_last_test_pcm", b"")
+            if len(pcm) < BYTES_PER_SEC:
+                return {"ok": False, "why": "no test recording"}
+        return await self._notes_probe(d.get("sizes"), d.get("hears"), pcm)
 
     def _instructions_with_memory(self) -> str:
         devices, has_fan, has_tv, has_messages = getattr(

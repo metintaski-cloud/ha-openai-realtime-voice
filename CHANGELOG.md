@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.152.1 (24 Nov 2026)
+
+- `fix`: live talk was broken since 2.150.10 (05:52). With the notes no longer rejected, all 27 950 characters went out at the start of a talk, and while GPT Live takes notes it does not hear: in Metin's talk of 06:26 he spoke loudly for 14 s (mic peak 27 000), not one word arrived, she talked about the notes, and the bridge ended the talk as "nobody spoke" (the same at 05:59, twice). Until 2.150.10 this never showed because the long notes were rejected. Stopgap: only `START_CHARS` (4500 characters, server setting `start_chars`) of notes go out at the start, in the order of 2.152.0; a note that does not fit is held back and logged (`Notes held back at the start`). So in a live talk she has again what she had before today plus the code word note, her heart and Metin's personal part; the diary and the private list wait for the right channel.
+- Cause, read in OpenAI's guide on 24 Nov: `session.commentary.append` is for what she shall say aloud. Silent context belongs in `session.thinking.append` or in the session's `instructions` (up to 16 384 tokens) and startup `input` (up to 8 192 tokens); the context window is 128 000 tokens. Nothing has to be left out; Metin decided at 06:36: not shorter, she shall remember everything.
+- `/api/kopf/notizen {hears:[[channel, budget], ...]}` measures it: notes on one channel (`commentary`, `thinking`, `instructions`, or `start` = inside the session instructions), a test word as the last note, then a recording that asks for the word; it reports when she heard, when she answered and whether she knew the word.
+
 ## 2.152.0 (24 Nov 2026)
 
 - `feat`: the notes at the start of a spoken talk go out in the order she needs them. GPT Live takes a note piece by piece on its audio clock, about half a second each; with 38 pieces Metin's personal part and the last chat arrived about 19 s into the talk, behind the private list (14 pieces) and the diary (17). New order: who it is and their closeness, her heart, his personal part, the small notes of today, the last chat (now its own note `chat`), her diary, and the private list last. Nothing is left out (Metin, 06:20: "Kürzen hört sich nach wenig an").

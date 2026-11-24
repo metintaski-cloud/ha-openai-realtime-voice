@@ -68,7 +68,10 @@ SETTINGS = {"min_sim": 0.48, "top": 4, "ask_min_sim": 0.38, "ask_top": 6, "word_
             "hoeren": 1,
             # the largest piece of a note to GPT Live in characters (0 = notes.NOTE_MAX_CHARS),
             # measured with /api/kopf/notizen
-            "note_chars": 0}
+            "note_chars": 0,
+            # how many characters of notes go out at the start of a spoken talk
+            # (0 = talk_notes.START_CHARS); while GPT Live takes notes it does not hear
+            "start_chars": 0}
 COMPARE = (("text-embedding-3-small", 256), ("text-embedding-3-small", 1536),
            ("text-embedding-3-large", 256), ("text-embedding-3-large", 1024))
 BONUSES = (0.0, 0.05, 0.1)
@@ -490,7 +493,7 @@ class Index:
             return {"ok": True, "done": done, "due": len(self.reflect.due()),
                     **(self.reflect.listing() if d.get("read") else {})}
         if path == "/api/kopf/notizen" and self.notes:
-            return await self.notes(d.get("sizes"))
+            return await self.notes(d)
         if path == "/api/kopf/stimme" and self.speak:
             return await self.speak(str(d.get("text", ""))[:600], d.get("how"), d)
         if path == "/api/kopf/find":
