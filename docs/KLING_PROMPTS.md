@@ -89,7 +89,7 @@ Dieser Baukasten folgt Vorlage 2; ihr Clip 395 hat das Muster bestätigt (lebend
 - Claude stellt Modus, Auflösung und Länge ein, setzt die Bilder über First frame oder Last frame > Asset > Uploads > Favorites und tippt den Prompt. Hochladen neuer Bilder und Speichern unter beim Download braucht Metins Hand.
 - Favoriten: 1 langes Arbeitskleid mit Buch (`5_lang_arbeit.png`), 2 Nacht, 3 kurzes Arbeitskleid mit Buch (`6_kurz_arbeit.png`), 4 langes Freizeitkleid, 5 kurzes Freizeitkleid. Den Dateinamen liest Claude aus der Bildadresse, das Bild selbst wird vor dem Start groß angesehen.
 - Bei schmalem Fenster liegt der Einstellungsknopf unter dem Generate Knopf; er lässt sich per Skript anklicken, die Länge dann im aufgeklappten Feld wählen.
-- Solange Metin einen Clip in der Großansicht offen hat, tippt Claude nichts in die Seite.
+- Solange Metin einen Clip in der Großansicht offen hat, tippt und klickt Claude nichts in der Seite. Vor jeder Klickfolge unmittelbar davor prüfen, ob die Adresse `materialId` enthält (am 24.11. um 20:03 gingen vier Klicks in seine Großansicht, weil die Prüfung eine Minute alt war).
 - Der Medienordner ist als Laufwerk Z: verbunden (`Z:\leyla\<look>\`), Claude legt Clips selbst dort ab: Bildstrom unverändert kopieren (`-c:v copy`), Schleifen und Begrüßungen ohne Ton, Berührungs Clips mit Ton, md5 des Bildstroms gegen den Download prüfen.
 - Jeder Clip direkt in 4K, keine Tests in niedriger Auflösung (Metin, 21.11.2026).
 - Kling benennt Downloads nach Pekinger Datum (am Abend des 24.11. heißen sie schon `kling_20261125_...`).
@@ -141,6 +141,12 @@ Generate klickt Metin. Ergebnis hier nachtragen.
 "0–3s: Dreamy and happy to see him, she clasps her hands behind her back and gently sways from one leg to the other with a sweet smile. 3–6s: She bashfully glances to the side, her shoulders turning softly along, and gently raises one heel. 6–8s: She looks back at him with a sweet, affectionate smile, tilts her head and shifts her weight onto the other leg. 8–10s: She lets her hands come forward again, looks at him with loving eyes and returns to her initial pose. Continuous, gentle leg and foot movements throughout the scene. Natural hip and upper body movements. She remains in the same area without walking away. Sweet, shy, feminine and affectionate body language. Static camera, full body visible, unchanged background."
 
 Generate klickt Metin. Ergebnis hier nachtragen.
+
+**Berührung am Po, langes Arbeitskleid (Metin, 20:02: "läuft, nächste").** Eigene Szene, anders als im kurzen Arbeitskleid (dort Rückenansicht mit Hüftwiegen): hier Profil, die Hand streicht am Kleid über die Hüfte, Blick über den Brillenrand, mit Sexappeal nach Punkt 12:
+
+"0–2s: She reacts with sweet surprise to an unexpected playful sensation on her bottom, hugs her book a little closer and gives him a playful, scolding little smile. 2–5s: Slowly she turns sideways into profile, one hand gliding down over her hip along the dress, her weight sinking onto her back leg. 5–8s: In profile she looks at him over the rim of her glasses with a seductive, shy smile and slowly rolls her hips once, her hair falling over her shoulder. 8–10s: She turns back to face him, smiles bashfully and lovingly and returns to her initial pose. Soft, feminine, sensual body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
+
+Geschrieben 20:04, noch nicht in Kling eingesetzt: Metin hatte gerade die Großansicht der fertigen Freizeit Schleife offen. Bilder dafür: Favorit 1 (`5_lang_arbeit.png`). Ergebnis hier nachtragen.
 
 ## Was am 24.11.2026 sonst noch entstand
 
