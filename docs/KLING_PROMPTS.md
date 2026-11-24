@@ -42,6 +42,7 @@ Gleicher Bau wie Vorlage 2 (vier Takte, Gefühl plus oben plus unten, kein toter
 8. **Die Art steckt in den Beiwörtern:** gently, warmly, sweet, shy, bashfully, playfully, lovingly.
 9. **Nach den Takten drei kurze Zeilen:** der ganze Körper lebt die ganze Zeit ("Continuous, gentle leg and foot movements throughout the scene. Natural hip and upper body movements."), der Ort als Erlaubnis ("She remains in the same area without walking away."), die Körpersprache ("Sweet, shy, feminine and affectionate body language."), dann die Kamera Zeile.
 10. **Rund 90 bis 110 Wörter.** Das Outfit wird nicht beschrieben, es kommt aus Metins Bild.
+11. **Nie dieselbe Szene zweimal (Metin, 24.11.2026, 19:54: "bei allen anderen, wo Po fehlt, darf es nie gleich sein").** Jedes Kleid bekommt für dieselbe Berührung seine eigene kleine Geschichte: anderer Auslöser, andere Geste, anderer Schluss. Vor dem Schreiben die schon vorhandenen Szenen derselben Berührung in dieser Datei nachlesen und sagen, worin sich die neue unterscheidet. Das gilt für Po, Brust und Gesicht ebenso wie für die Schleifen. Was es nur in einem Kleid gibt, nutzen (Buch und Brille im Arbeitskleid, freie Hände im Freizeitkleid).
 
 ## Wie viel Bewegung (Metin, 24.11.2026, 19:00)
 
@@ -126,7 +127,7 @@ Dieser Nachbau lief nicht. Metin um 19:44: "jetzt, wo wir die Muster Regel verst
 
 Generate klickt Metin. Ergebnis hier nachtragen.
 
-**Berührung an der Brust, kurzes Freizeitkleid (Metin, 19:49 "kurz freizeit po", "ah und Gesicht fehlt"; Claude wies darauf hin, dass Po und Gesicht dort schon in 4K liegen und Brust und eine dritte Schleife fehlen; Metin wählte "Brust (fehlt)").** Derselbe Text wie beim kurzen Arbeitskleid (Clip 636, "nehmen wir"): Vorlage 3 mit ruhigen Beinen und Zeigefinger; ein Buch kommt im Text nicht vor. In Kling eingesetzt um 19:53: beide Bilder Favorit 5 (kurzes Freizeitkleid, ohne Brille und Buch, groß geprüft, Datei endet auf `...6bdc8210912b5.png`), 4K, 10 s, Adaptive, 1, 350 Credits am Knopf. Generate klickt Metin. Ergebnis hier nachtragen.
+**Berührung an der Brust, kurzes Freizeitkleid (Metin, 19:49 "kurz freizeit po", "ah und Gesicht fehlt"; Claude wies darauf hin, dass Po und Gesicht dort schon in 4K liegen und Brust und eine dritte Schleife fehlen; Metin wählte "Brust (fehlt)").** Derselbe Text wie beim kurzen Arbeitskleid (Clip 636, "nehmen wir"): Vorlage 3 mit ruhigen Beinen und Zeigefinger; ein Buch kommt im Text nicht vor. In Kling eingesetzt um 19:53: beide Bilder Favorit 5 (kurzes Freizeitkleid, ohne Brille und Buch, groß geprüft, Datei endet auf `...6bdc8210912b5.png`), 4K, 10 s, Adaptive, 1, 350 Credits am Knopf. Von Metin etwa um 19:53 gestartet, bevor die Regel "nie gleich" kam; dieser eine Clip hat deshalb denselben Text wie das kurze Arbeitskleid. Claudes eigene Szene dafür (Hand leicht über den Ausschnitt, Schultern zur Seite, Blick von unten) steht bereit, falls Metin den Clip ersetzen will. Ergebnis hier nachtragen.
 
 ## Was am 24.11.2026 sonst noch entstand
 
