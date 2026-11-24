@@ -516,7 +516,7 @@ Herkunft: Aufbau, feste Tatsachen (eine Frau, ein Buch, Buch bleibt im selben Ar
 
 Gestartet 24.11.2026 um 16:05 von Claude (Metins Ja von 16:05), 350 Credits, Guthaben danach etwa 5.000.
 
-Ergebnis (Clip 5912, 24.11.2026): 2352 x 3524, 241 Bilder. Sie winkt, lacht aber rund sechs Sekunden mit weit offenem Mund und beugt sich zur Kamera; Metin: "krank lachen", zu stark. Sein Rettungsversuch um 17:09: etwas schneller abspielen. Deshalb nicht als Ersatz, sondern als zweite Begrüßung `schwarz/begruessung2.mp4` eingebaut (Bildstrom bitgleich, ohne Ton) mit Abspielfaktor 1,3 als Startwert (`/api/tempo`, verlustfrei); die alte `begruessung` bleibt. Metin stellt das Tempo im Tempo Tester nach und entscheidet, ob der Clip bleibt.
+Ergebnis (Clip 5912, 24.11.2026): 2352 x 3524, 241 Bilder. Sie winkt, lacht aber rund sechs Sekunden mit weit offenem Mund und beugt sich zur Kamera; Metin: "krank lachen", zu stark. Sein Rettungsversuch um 17:09: etwas schneller abspielen. Deshalb nicht als Ersatz, sondern als zweite Begrüßung `schwarz/begruessung2.mp4` eingebaut (Bildstrom bitgleich, ohne Ton) mit Abspielfaktor 1,3 als Startwert (`/api/tempo`, verlustfrei); die alte `begruessung` blieb zunächst. Um 17:22 ließ Metin die alte entfernen (Kopie `schwarz_begruessung_alt.mp4` in Leyla aussortiert), `begruessung2` ist damit die einzige Begrüßung im langen Arbeitskleid; das Tempo stellt er im Tempo Tester nach.
 
 ## Brust Berührung langes Arbeitskleid neu in 4K: schwarz/brust (24.11.2026, gestartet 16:11)
 
