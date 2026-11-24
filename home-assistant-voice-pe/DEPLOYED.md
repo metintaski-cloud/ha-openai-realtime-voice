@@ -1,6 +1,6 @@
 # Deployed device config: differences to the repo template
 
-Checked against the live file on the Mini PC on 13 Nov 2026 (1397 lines, template has 1386). The live file is `voice_pe_config.yaml` in the ESPHome Device Builder add on (slug `5c53de3b_esphome`). The repo file `voice_pe_config.yaml` is only the template.
+Checked against the live file on the Mini PC on 13 Nov 2026 (1397 lines, template has 1386); `leyla_voice:` block read again on 24 Nov 2026 (1400 lines now). The live file is `voice_pe_config.yaml` in the ESPHome Device Builder add on (slug `5c53de3b_esphome`). The repo file `voice_pe_config.yaml` is only the template.
 
 The template was synced with the live file on the same day (wake word, component source, full duplex, auto stop timeout, ready sound switch). What is still different is listed here.
 
@@ -13,6 +13,7 @@ The template was synced with the live file on the same day (wake word, component
 - `voice_kit` `channel_0_stage` stays `AGC` (stock). Test with `NS` on 13 Nov 2026 failed: the raw voice was only about rms 100 to 250, even the software gain of up to 6x could not lift it, GPT Live heard nothing and Leyla hung up (`no_speech`). With `AGC` the level to the server is high (rms 19000 to 25000, peaks to 32766) but she understands everyone reliably. Next idea if the level must come down: keep `AGC` and lower it on the server side or find a middle XMOS setting, not `NS`.
 
 - Extra diagnostic sensors in the live `sensor:` block (added 13 Nov 2026, for the baseline): `platform: debug` (free heap, largest free block, loop time; `debug: update_interval: 5s` already existed), `wifi_signal`, `uptime`, all named "Leyla ..." and `entity_category: diagnostic`. They show up in Home Assistant with history, so memory trends, WiFi quality and reboots can be read over days.
+- `preroll: 2500ms` under `leyla_voice:` (added and flashed 24 Nov 2026, 11:47; needs add on 2.157.0 or newer). The template leaves the option out, so there it is off. To undo: remove the line and install again.
 
 ## Keep this file true
 - Whenever the live config is changed (by Claude or by hand), update the list above in the same session and commit it.
