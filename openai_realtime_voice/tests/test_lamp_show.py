@@ -58,6 +58,8 @@ def _show(monkeypatch, tmp_path, fail=None):
     monkeypatch.setattr(ls, "MIN_INTERVAL_S", 0.02)
     monkeypatch.setattr(ls, "AUDIO_LEAD_S", 0.0)
     monkeypatch.setattr(ls, "RESTORE_WAIT_S", 0.01)
+    monkeypatch.setattr(ls, "SETTLE_S", 0.0)
+    monkeypatch.setattr(ls, "OFF_AGAIN_S", 0.03)
     monkeypatch.setattr(ls, "VERIFY_WAIT_S", 0.0)
     monkeypatch.setattr(ls, "LEVEL_TAU_S", 0.0001)
     monkeypatch.setattr(ls, "RETRY_DELAYS_S", (0.05, 0.05))
@@ -90,8 +92,10 @@ async def test_show_follows_phases_and_restores(monkeypatch, tmp_path):
     assert after.index(a_on) < [i for i, c in enumerate(after) if c[0] == "turn_off"][0]
     b_on = [c for c in after if c[0] == "turn_on" and c[1]["entity_id"] == "light.b"][0]
     assert b_on[1]["color_temp_kelvin"] == 6000 and b_on[1]["brightness"] == 180
-    await asyncio.sleep(0.05)
-    assert len(calls) == n + 3  # the show has stopped
+    assert a_on[1]["transition"] == 0 and "transition" not in [c for c in after if c[0] == "turn_off"][0][1]
+    await asyncio.sleep(0.08)
+    # the show has stopped; the lamp that went off was told so a second time (2.159.2), and only it
+    assert len(calls) == n + 4 and calls[-1] == ("turn_off", {"entity_id": ["light.a"]})
 
 
 async def test_speech_ends_back_to_listening(monkeypatch, tmp_path):
@@ -366,3 +370,54 @@ def test_learned_states_of_an_older_file_are_learned_afresh(tmp_path):
     show._last_on = {"light.a": {"state": "on", "brightness": 200, "color_mode": "color_temp", "color_temp_kelvin": 2700}}
     show._save_memory()
     assert ls.LampShow(["light.a"], token="t", memory_path=str(path))._last_on["light.a"]["brightness"] == 200
+
+
+async def test_the_end_of_a_show_never_races_its_own_last_look(monkeypatch, tmp_path):
+    """24 Nov 2026, 15:22: after tests from the app Home Assistant reported the rear lamps off
+    while they stood on in white. The end of a show cut the look that was on its way (Home
+    Assistant still sent it), put the old white on with a fade and switched off 1.2 s later
+    with another fade: commands that overtake each other in the lamp. Now the last look is
+    finished first, the white comes without a fade, the off is a plain off, and it is said a
+    second time, but never into a new show and never to a lamp somebody switched on."""
+    show, calls = _show(monkeypatch, tmp_path)
+    flying = {"n": 0, "max_while_restoring": 0}
+    orig = show._service
+
+    async def service(name, data, timeout=None):
+        if "rgb_color" in data:           # a look of the show: slow, like Matter over Thread
+            flying["n"] += 1
+            await asyncio.sleep(0.05)
+            await orig(name, data, timeout)
+            flying["n"] -= 1
+        else:                             # a command that puts a lamp back
+            flying["max_while_restoring"] = max(flying["max_while_restoring"], flying["n"])
+            await orig(name, data, timeout)
+
+    monkeypatch.setattr(show, "_service", service)
+    await show.begin()
+    await asyncio.sleep(0.01)             # the first look is on its way
+    await show.end()
+    assert flying["max_while_restoring"] == 0
+    assert show.lamps["light.a"]["state"] == "off" and show._pending == {}
+    # a new show within the wait: no second off into it
+    await show.begin()
+    n = len([c for c in calls if c[0] == "turn_off"])
+    await asyncio.sleep(0.08)
+    assert len([c for c in calls if c[0] == "turn_off"]) == n
+    await show.end()
+    # somebody switches the lamp on right after the show: it stays on
+    show.lamps["light.a"] = {"state": "on", "brightness": 200, "color_mode": "color_temp", "color_temp_kelvin": 2700}
+    await asyncio.sleep(0.08)
+    assert show.lamps["light.a"]["state"] == "on"
+
+
+async def test_reset_also_tells_lamps_reported_off(monkeypatch, tmp_path):
+    show, calls = _show(monkeypatch, tmp_path)
+    show._last_on = {}
+    assert await show.reset() == "ok"
+    # reported off: on in a neutral white (nothing learned yet), then off; a bare off did nothing
+    # on 24 Nov 2026 for lamps that stood on while Home Assistant said off
+    mine = [c for c in calls if c[1]["entity_id"] == "light.a"]
+    assert mine[0][0] == "turn_on" and mine[0][1]["color_temp_kelvin"] == 6000 and mine[0][1]["transition"] == 0
+    assert mine[1] == ("turn_off", {"entity_id": "light.a"})
+    assert not [c for c in calls if c[1]["entity_id"] == "light.b"]   # on in his white: left alone

@@ -54,7 +54,14 @@ MIN_INTERVAL_S = 0.5      # at most two commands a second: Matter over Thread ch
 LEVEL_STEPS = 4           # loudness in 5 steps, so small changes send nothing
 LEVEL_TAU_S = 0.25        # the loudness is smoothed over about a syllable
 TRANSITION_S = 0.35
-RESTORE_WAIT_S = 1.2      # a lamp that was off fades to its old strength before it is switched off
+RESTORE_WAIT_S = 1.5      # a lamp that was off is set to its old strength, this long, then switched off
+SETTLE_S = 0.6            # after the last look of the show, before the lamps are put back
+# What a lamp is set to before it is switched off when no normal state of it is known yet
+# (Metin's rear lamps as they were seen on most often). Without it the lamp would keep the last
+# look of the show for its next normal switch on, and the on before the off is also what makes
+# a lamp obey whose own on/off state got out of step with its light (see _restore_one).
+NEUTRAL = {"state": "on", "brightness": 153, "color_mode": "color_temp", "color_temp_kelvin": 6000}
+OFF_AGAIN_S = 3.0         # a lamp that was switched off is told so a second time after this
 SPEECH_HOLD_S = 0.7       # no audio for this long: Leyla stopped speaking, back to listening
 AUDIO_LEAD_S = 0.2        # the audio is sent this far ahead of playback, so the light waits as long
 SHOW_TIMEOUT_S = 5.0      # one show step may be dropped, the next one follows
@@ -160,14 +167,16 @@ def same_look(state: dict, key: str) -> bool:
 
 
 def restore_data(entity: str, before: dict) -> tuple[str, dict]:
-    """Service and data that bring one lamp back to its state before the show."""
+    """Service and data that bring one lamp back to its state before the show. Off is a plain
+    off without a fade: an off that has to overtake a fade still running in the lamp can lose
+    (24 Nov 2026: Home Assistant said off, the lamps stood on in white)."""
     if before.get("state") != "on":
-        return "turn_off", {"entity_id": entity, "transition": 1}
+        return "turn_off", {"entity_id": entity}
     return "turn_on", _on_data(entity, before)
 
 
-def _on_data(entity: str, before: dict) -> dict:
-    data: dict = {"entity_id": entity, "transition": 1}
+def _on_data(entity: str, before: dict, transition: float = 1) -> dict:
+    data: dict = {"entity_id": entity, "transition": transition}
     if before.get("brightness"):
         data["brightness"] = before["brightness"]
     if before.get("color_mode") == "color_temp" and before.get("color_temp_kelvin"):
@@ -201,6 +210,8 @@ class LampShow:
         self._sent = None           # what the lamps last got
         self._worker: Optional[asyncio.Task] = None
         self._retry: Optional[asyncio.Task] = None
+        self._again: Optional[asyncio.Task] = None   # the second off after a show
+        self._quit = asyncio.Event()                 # ends the worker of the running show
         self._lock: Optional[asyncio.Lock] = None
 
     @property
@@ -356,6 +367,12 @@ class LampShow:
                 if st.get("state") == "on" and self._leftover(st):
                     if await self._restore_one(entity, {"state": "off"}):
                         fixed.append(entity)
+            # A lamp can stand on while Home Assistant says off (seen 24 Nov 2026): the button
+            # also puts every lamp that is reported off through on and off once (they flash
+            # for a moment). Lamps reported on in a normal state are his and stay.
+            dark = [e for e, st in states.items() if st.get("state") == "off"]
+            done = await asyncio.gather(*(self._restore_one(e, {"state": "off"}) for e in dark))
+            fixed += [e + " (reported off)" for e, ok in zip(dark, done) if ok]
         logger.info("Lamp show: reset from the app (%s)", ", ".join(fixed) or "nothing stuck")
         return "ok" if not self._pending else "failed"
 
@@ -430,7 +447,8 @@ class LampShow:
             await self._restore_all()
             return
         self._mode, self._level, self._sent = "listen", 0.0, None
-        self._worker = asyncio.create_task(self._run())
+        self._quit = asyncio.Event()
+        self._worker = asyncio.create_task(self._run(self._quit))
 
     def set_mood(self, low: Optional[bool]) -> None:
         """Leyla's mood in a talk with Metin: while she is low the show uses its second set of
@@ -474,8 +492,16 @@ class LampShow:
         self.mood_low = None
         worker, self._worker = self._worker, None
         if worker:
-            worker.cancel()
-            await asyncio.gather(worker, return_exceptions=True)
+            # Never cut a look that is on its way: Home Assistant would still send it, and it
+            # could reach the lamp after the commands that put the lamp back. The worker ends
+            # after the call it is in, then the lamp gets a moment for its last fade.
+            self._quit.set()
+            try:
+                await asyncio.wait_for(asyncio.shield(worker), SHOW_TIMEOUT_S + 1.0)
+            except Exception:
+                worker.cancel()
+                await asyncio.gather(worker, return_exceptions=True)
+            await asyncio.sleep(SETTLE_S)
         await self._restore_all()
 
     async def recover(self) -> None:
@@ -491,21 +517,51 @@ class LampShow:
                 return  # a new conversation took over; it restores when it ends
             todo = list(self._pending.items())
             done = await asyncio.gather(*(self._restore_one(e, b) for e, b in todo))  # all lamps at once
-            for (entity, _), ok in zip(todo, done):
+            dark = []
+            for (entity, before), ok in zip(todo, done):
                 if ok:
                     self._pending.pop(entity, None)
+                    if before.get("state") != "on":
+                        dark.append(entity)
             self._save_memory()
+        if dark:
+            self._again = asyncio.create_task(self._off_again(dark))
         if schedule and self._pending and not self._active and self._retry is None:
             self._retry = asyncio.create_task(self._retry_later())
+
+    async def _off_again(self, entities: list) -> None:
+        """A second, plain off a few seconds after the lamps were switched off. The first one
+        can lose against what is still running in the lamp, and Home Assistant then reports
+        off for a lamp that stands on, so checking the state cannot find it. Not when a new
+        show has begun."""
+        await asyncio.sleep(OFF_AGAIN_S)
+        async with self._get_lock():
+            if self._active:
+                return
+            # only lamps that are still reported off: one reported on was switched on by
+            # somebody in the meantime and is his
+            entities = [e for e in entities if (await self._now(e))["state"] == "off"]
+            if not entities:
+                return
+            try:
+                await self._service("turn_off", {"entity_id": entities}, RESTORE_TIMEOUT_S)
+            except Exception as e:
+                logger.warning("Lamp show: second off for %s failed: %s", ", ".join(entities),
+                               str(e) or type(e).__name__)
 
     async def _restore_one(self, entity: str, before: dict) -> bool:
         """Bring one lamp back and check that it reports the old state. True when it does."""
         want = "on" if before.get("state") == "on" else "off"
         for attempt in range(RESTORE_TRIES):
             try:
-                if want == "off" and self._last_on.get(entity):
-                    # A lamp that was off keeps its strength for the next normal switch on: set it back first
-                    await self._service("turn_on", _on_data(entity, self._last_on[entity]), RESTORE_TIMEOUT_S)
+                if want == "off":
+                    # A lamp that was off keeps its strength for the next normal switch on: set it
+                    # back first, at once and without a fade, so nothing is still running in the
+                    # lamp when the off comes. Never a bare off: on 24 Nov 2026 the lamps stood on
+                    # in the last look while Home Assistant reported off, and a plain off did
+                    # nothing; on and then off did.
+                    await self._service("turn_on", _on_data(entity, self._last_on.get(entity) or NEUTRAL, 0),
+                                        RESTORE_TIMEOUT_S)
                     await asyncio.sleep(RESTORE_WAIT_S)
                 service, data = restore_data(entity, before)
                 await self._service(service, data, RESTORE_TIMEOUT_S)
@@ -556,22 +612,22 @@ class LampShow:
         key = pre + ("think" if self._mode == "think" else "listen")
         return self.colors[key], self.levels[key]
 
-    async def _run(self) -> None:
-        try:
-            while True:
-                rgb, pct = self._look()
-                look = (rgb, pct)
-                if look != self._sent:
-                    self._sent = look
-                    try:
-                        await self._service("turn_on", {"entity_id": self.entities, "rgb_color": list(rgb),
-                                                         "brightness_pct": pct, "transition": TRANSITION_S})
-                        self._note_shown(rgb, pct)
-                    except Exception as e:
-                        logger.warning("Lamp show: %s", str(e) or type(e).__name__)
-                await asyncio.sleep(MIN_INTERVAL_S)
-        except asyncio.CancelledError:
-            raise
+    async def _run(self, quit: asyncio.Event) -> None:
+        while not quit.is_set():
+            rgb, pct = self._look()
+            look = (rgb, pct)
+            if look != self._sent:
+                self._sent = look
+                try:
+                    await self._service("turn_on", {"entity_id": self.entities, "rgb_color": list(rgb),
+                                                     "brightness_pct": pct, "transition": TRANSITION_S})
+                    self._note_shown(rgb, pct)
+                except Exception as e:
+                    logger.warning("Lamp show: %s", str(e) or type(e).__name__)
+            try:
+                await asyncio.wait_for(quit.wait(), MIN_INTERVAL_S)
+            except asyncio.TimeoutError:
+                pass
 
 
 def from_env() -> LampShow:
