@@ -36,7 +36,7 @@ import dotenv
 import websockets
 
 from app.audio_recorder import AudioRecorder
-from app import agenda, day, diary, gcontacts, textmodel, heart, ideas, inbox, mail, memory, memory_web, mood, nachdenken, notes, reach, recall, reminders, tls, variety, voice_stream
+from app import agenda, day, diary, gcontacts, textmodel, heart, ideas, inbox, mail, memory, memory_web, mood, nachdenken, notes, reach, recall, reminders, tls, variety, voice_in, voice_stream
 
 # Scene concept 2.0 (2.104.0): her feelings come from what really happens (app/heart.py); env
 # LEYLA_HEART=0 brings back the old dice of app/mood.py as a safety net.
@@ -632,78 +632,117 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         return {"heard": heard}
 
     async def _chat_voice(self, history, audio_b64, mime, stream=False) -> Optional[dict]:
-        """A voice message from Metin in the memory app: text, Leyla's answer, her voice."""
+        """A voice message from Metin in the memory app: text, Leyla's answer, her voice.
+        With the setting `hoeren` (2.151.0) she hears his recording herself while the answer is
+        written and then answers it by voice with that content, instead of saying a text."""
         try:
             audio = base64.b64decode(audio_b64 or "", validate=False)
         except Exception:
             return None
         t0 = time.monotonic()
-        heard = await chat.transcribe(self.openai_api_key, audio, mime or "audio/webm")
-        t1 = time.monotonic()
-        if not heard:
-            logger.info("Voice message in the app: nothing understood (%d bytes)", len(audio))
-            return {"heard": ""}
-        out = await self._chat(history, heard)
-        if not out:
-            return {"heard": heard}
-        out["heard"] = heard
-        t2 = time.monotonic()
-        out["t"] = {"hoeren": int((t1 - t0) * 1000), "antwort": int((t2 - t1) * 1000)}
-        if not out.get("reply"):
-            return out  # she is silent: no voice either
-        prompt = chat.speak_prompt(out["reply"])
         instructions = chat.voice_reply_instructions(self.mood.feeling(), UNLOCKED_LOVE)
-        if stream:
-            # 2.142.0: the text goes out now, the phone fetches the voice while it is spoken
-            sid, st = voice_stream.new()
-            out["voice_id"] = sid
-
-            async def speak():
-                try:
-                    pcm = await self._speak_once(prompt, max_s=60.0, instructions=instructions,
-                                                 on_chunk=st.push)
-                    logger.info("Voice reply streamed: %.1f s", len(pcm) / BYTES_PER_SEC)
-                except Exception as e:
-                    logger.warning("Voice reply could not be spoken: %s", e)
-                finally:
-                    st.finish()
-
-            self._voice_task = asyncio.create_task(speak())
-            out["t"]["stimme"] = 0
-            return out
+        reply = asyncio.get_event_loop().create_future()  # her written answer ("" = silent)
+        st = sid = None
         try:
-            pcm = await self._speak_once(prompt, max_s=60.0, instructions=instructions)
-            if pcm:
-                out["audio"] = base64.b64encode(messages.pcm_to_wav(pcm)).decode("ascii")
+            hears = stream and getattr(getattr(self, "recall", None), "settings", {}).get("hoeren")
+            pcm_in = await voice_in.to_pcm(audio) if hears else b""
+            if pcm_in:  # the recording runs for her while it is transcribed and answered
+                sid, st = voice_stream.new()
+                self._voice_task = asyncio.create_task(self._voice_reply(
+                    st, instructions, reply, heard=pcm_in))
+            heard = await chat.transcribe(self.openai_api_key, audio, mime or "audio/webm")
+            t1 = time.monotonic()
+            if not heard:
+                logger.info("Voice message in the app: nothing understood (%d bytes)", len(audio))
+                return {"heard": ""}
+            out = await self._chat(history, heard)
+            if not out:
+                return {"heard": heard}
+            out["heard"] = heard
+            t2 = time.monotonic()
+            out["t"] = {"hoeren": int((t1 - t0) * 1000), "antwort": int((t2 - t1) * 1000)}
+            if not out.get("reply"):
+                return out  # she is silent: no voice either
+            reply.set_result(out["reply"])
+            if stream:
+                # 2.142.0: the text goes out now, the phone fetches the voice while it is spoken
+                if st is None:
+                    sid, st = voice_stream.new()
+                    self._voice_task = asyncio.create_task(self._voice_reply(st, instructions, reply))
+                out["voice_id"] = sid
+                out["t"]["stimme"] = 0
+                return out
+            try:
+                pcm = await self._speak_once(chat.speak_prompt(out["reply"]), max_s=60.0,
+                                             instructions=instructions)
+                if pcm:
+                    out["audio"] = base64.b64encode(messages.pcm_to_wav(pcm)).decode("ascii")
+            except Exception as e:
+                logger.warning("Voice reply could not be spoken: %s", e)
+            out["t"]["stimme"] = int((time.monotonic() - t2) * 1000)
+            logger.info("Voice message in the app: %d bytes heard, reply audio %s",
+                        len(audio), "yes" if out.get("audio") else "no")
+            return out
+        finally:
+            if not reply.done():
+                reply.set_result("")  # nothing to say: a listening session ends at once
+
+    async def _voice_reply(self, st, instructions: str, reply, heard: bytes = b"") -> None:
+        """Speak her answer into the stream the phone plays. `reply`: a future of her written
+        answer; with `heard` she listens to Metin's recording first (app/announce_voice.py)."""
+        async def then(make) -> str:
+            text = await reply
+            return make(text) if text else ""
+        plain = after = None
+        try:
+            if heard:  # both notes come when the answer is written
+                plain = asyncio.ensure_future(then(chat.speak_prompt))
+                after = asyncio.ensure_future(then(chat.hear_prompt))
+                pcm = await self._speak_once(plain, max_s=60.0, instructions=instructions,
+                                             on_chunk=st.push, heard=heard, heard_prompt=after)
+            else:
+                pcm = await self._speak_once(await then(chat.speak_prompt), max_s=60.0,
+                                             instructions=instructions, on_chunk=st.push)
+            seen = getattr(self, "_speak_seen", {})
+            logger.info("Voice reply streamed: %.1f s%s", len(pcm) / BYTES_PER_SEC,
+                        " (heard %.1f s, note after %.1f s, first sound after %s s, %.1f s "
+                        "spoken early and dropped)" % (
+                            len(heard) / BYTES_PER_SEC, seen.get("note_s", 0),
+                            seen.get("first_s"), seen.get("early_s", 0)) if heard else "")
         except Exception as e:
             logger.warning("Voice reply could not be spoken: %s", e)
-        out["t"]["stimme"] = int((time.monotonic() - t2) * 1000)
-        logger.info("Voice message in the app: %d bytes heard, reply audio %s",
-                    len(audio), "yes" if out.get("audio") else "no")
-        return out
+        finally:
+            for task in (plain, after):
+                if task is not None and not task.done():
+                    task.cancel()
+            st.finish()
 
     async def _voice_probe(self, text: str, how=None, d=None) -> dict:
         """/api/kopf/stimme: speak one test sentence like a voice reply. `how` leaves parts of
         the instructions out ("ohne": no mood and no closeness, "herz": mood only, "naehe":
         closeness only, "ansage": the announcement voice), to see which part silences her.
         "hoeren": she hears a recording first (made here by the announcement voice saying
-        `frage`) and answers it with the content `text`; `speed` times real time, `nach` sends
-        the note only after the recording."""
+        `frage`) and answers it with the content `text`, which comes `warte` seconds after the
+        start, like an answer that is still being written."""
         d = d or {}
         mood = self.mood.feeling() if how in (None, "", "herz", "hoeren") else ""
         love = UNLOCKED_LOVE if how in (None, "", "naehe", "hoeren") else ""
         if how == "ansage":
             return await self._speak_test(text, announce_voice.SPEAK_INSTRUCTIONS, text)
         if how == "hoeren":
-            asked = str(d.get("frage") or "")[:300]
+            asked = ("Sag genau diesen einen Satz und sonst nichts: «"
+                     + str(d.get("frage") or "")[:300] + "»")
             made = await self._speak_test(asked, announce_voice.SPEAK_INSTRUCTIONS, asked)
             heard = getattr(self, "_last_test_pcm", b"")
             if len(heard) < BYTES_PER_SEC:
-                return {"ok": False, "why": "no test recording", "made": made.get("audio_s")}
-            out = await self._speak_test(
-                text, chat.voice_reply_instructions(mood, love), chat.hear_prompt(text),
-                heard=heard, speed=float(d.get("speed") or 1.0), note_first=not d.get("nach"))
-            out["recording_s"] = made.get("audio_s")
+                return {"ok": False, "why": "no test recording", "made": made}
+            loop = asyncio.get_event_loop()
+            answer = loop.create_future()
+            loop.call_later(max(0.0, float(d.get("warte") or 0)), answer.set_result,
+                            chat.hear_prompt(text))
+            out = await self._speak_test(text, chat.voice_reply_instructions(mood, love),
+                                         answer, heard=heard)
+            out["recording"] = made.get("said")
             return out
         return await self._speak_test(text, chat.voice_reply_instructions(mood, love),
                                       chat.speak_prompt(text))

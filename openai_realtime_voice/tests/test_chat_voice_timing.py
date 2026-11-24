@@ -49,6 +49,7 @@ def test_streamed_voice_reply_comes_back_at_once_and_arrives_piece_by_piece(monk
     async def go():
         bridge = types.SimpleNamespace(openai_api_key="k", _chat=fake_chat, _speak_once=speak,
                                        mood=types.SimpleNamespace(feeling=lambda: ""))
+        bridge._voice_reply = lambda *a, **k: main.LiveVoiceBridge._voice_reply(bridge, *a, **k)
         out = await main.LiveVoiceBridge._chat_voice(bridge, [], "YWJj", "audio/webm", stream=True)
         assert out["reply"] == "Hallo Metin" and "audio" not in out and out["voice_id"]
         server = await memory_web.start_http(memory_web.memory.MemoryStore(str(tmp_path / "m.json")),
@@ -86,3 +87,96 @@ def test_unknown_voice_id_is_404(tmp_path):
         return data
 
     assert b"404" in asyncio.run(go()).split(b"\r\n")[0]
+
+
+def test_with_the_setting_she_hears_the_recording_while_the_answer_is_written(monkeypatch):
+    """2.151.0: the listening session starts before the text is there and gets the note later."""
+    from app import voice_stream
+    order = []
+
+    async def to_pcm(audio):
+        return b"\x03\x00" * 12000
+
+    async def transcribe(key, audio, mime):
+        order.append("transcribe")
+        await asyncio.sleep(0.05)
+        return "Hallo Leyla"
+
+    async def fake_chat(history, message):
+        order.append("chat")
+        return {"reply": "Hallo Metin", "proposals": [], "lights": []}
+
+    got = {}
+
+    async def speak(prompt, max_s, instructions, on_chunk=None, heard=b"", heard_prompt=None):
+        order.append("listen")
+        got["heard"] = len(heard)
+        got["after"] = await heard_prompt
+        got["plain"] = await prompt
+        on_chunk(b"\x01\x00" * 100)
+        return b"x" * 400
+
+    monkeypatch.setattr(main.chat, "transcribe", transcribe)
+    monkeypatch.setattr(main.voice_in, "to_pcm", to_pcm)
+
+    async def go(setting, said="Hallo Leyla"):
+        order.clear()
+        got.clear()
+        bridge = types.SimpleNamespace(openai_api_key="k", _chat=fake_chat, _speak_once=speak,
+                                       mood=types.SimpleNamespace(feeling=lambda: ""),
+                                       recall=types.SimpleNamespace(settings={"hoeren": setting}))
+        bridge._voice_reply = lambda *a, **k: main.LiveVoiceBridge._voice_reply(bridge, *a, **k)
+        out = await main.LiveVoiceBridge._chat_voice(bridge, [], "YWJj", "audio/webm", stream=True)
+        await bridge._voice_task
+        chunks = [c async for c in voice_stream.get(out["voice_id"]).read(1.0)]
+        return out, chunks
+
+    out, chunks = asyncio.run(go(1))
+    assert order == ["transcribe", "listen", "chat"] and got["heard"] == 24000
+    assert "Hallo Metin" in got["after"] and got["after"] == main.chat.hear_prompt("Hallo Metin")
+    assert got["plain"] == main.chat.speak_prompt("Hallo Metin") and chunks == [b"\x01\x00" * 100]
+
+    async def old_speak(prompt, max_s, instructions, on_chunk=None):  # setting off: the old way
+        order.append("speak")
+        got["plain"] = prompt
+        return b"x" * 400
+
+    async def go_off():
+        order.clear()
+        bridge = types.SimpleNamespace(openai_api_key="k", _chat=fake_chat, _speak_once=old_speak,
+                                       mood=types.SimpleNamespace(feeling=lambda: ""),
+                                       recall=types.SimpleNamespace(settings={"hoeren": 0}))
+        bridge._voice_reply = lambda *a, **k: main.LiveVoiceBridge._voice_reply(bridge, *a, **k)
+        out = await main.LiveVoiceBridge._chat_voice(bridge, [], "YWJj", "audio/webm", stream=True)
+        await bridge._voice_task
+        return out
+    asyncio.run(go_off())
+    assert order == ["transcribe", "chat", "speak"] and got["plain"] == main.chat.speak_prompt("Hallo Metin")
+
+
+def test_nothing_understood_ends_the_listening_session_without_a_voice(monkeypatch):
+    async def to_pcm(audio):
+        return b"\x03\x00" * 12000
+
+    async def transcribe(key, audio, mime):
+        await asyncio.sleep(0.02)
+        return ""
+
+    got = {}
+
+    async def speak(prompt, max_s, instructions, on_chunk=None, heard=b"", heard_prompt=None):
+        got["after"] = await heard_prompt
+        return b""
+
+    monkeypatch.setattr(main.chat, "transcribe", transcribe)
+    monkeypatch.setattr(main.voice_in, "to_pcm", to_pcm)
+
+    async def go():
+        bridge = types.SimpleNamespace(openai_api_key="k", _chat=None, _speak_once=speak,
+                                       mood=types.SimpleNamespace(feeling=lambda: ""),
+                                       recall=types.SimpleNamespace(settings={"hoeren": 1}))
+        bridge._voice_reply = lambda *a, **k: main.LiveVoiceBridge._voice_reply(bridge, *a, **k)
+        out = await main.LiveVoiceBridge._chat_voice(bridge, [], "YWJj", "audio/webm", stream=True)
+        await asyncio.wait_for(bridge._voice_task, 2)
+        return out
+    assert asyncio.run(go()) == {"heard": ""} and got["after"] == ""

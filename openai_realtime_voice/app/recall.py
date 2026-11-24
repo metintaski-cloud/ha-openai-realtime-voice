@@ -60,7 +60,11 @@ SETTINGS = {"min_sim": 0.48, "top": 4, "ask_min_sim": 0.38, "ask_top": 6, "word_
             "nachdenken": 0,
             # the chat model instead of the add on option (step 5; "" = as configured) and its
             # budget in dollars a month (0 = as configured); over the budget Luna answers again
-            "chat_model": "", "budget": 0.0}
+            "chat_model": "", "budget": 0.0,
+            # 1: for a voice message in the app she hears Metin's recording herself and answers
+            # it by voice with the written answer as content (main._chat_voice, 2.151.0); 0: she
+            # only says the written answer, as before
+            "hoeren": 0}
 COMPARE = (("text-embedding-3-small", 256), ("text-embedding-3-small", 1536),
            ("text-embedding-3-large", 256), ("text-embedding-3-large", 1024))
 BONUSES = (0.0, 0.05, 0.1)
