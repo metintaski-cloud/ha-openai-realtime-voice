@@ -281,25 +281,25 @@ Bedienung im kleineren Fenster (800x777, seit etwa 20:51): First frame (301,685)
 
 "0–2s: She feels an unexpected gentle sensation on her cheek, closes her eyes for a moment with a sweet smile and shifts her weight onto one leg. 2–5s: Playfully she turns her head, offering him her other cheek, and taps it lightly with one fingertip as if asking for one more, her hips swaying gently. 5–8s: She looks into the camera with a shy, hopeful smile, softly lifting her shoulders and shifting her weight onto the other leg. 8–10s: She lowers her hand, looks at him with loving eyes and returns to her initial pose. Soft, feminine, natural body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-Vorgesehen als `kurz/freizeitgesicht2`. Ergebnis hier nachtragen.
+Von Claude eingesetzt (beide Bilder Favorit 5, `file_000000006bdc8210912b5.png`, 4K, 10 s, Adaptive, 1, 350 Credits, abgelesen) und um 21:39 gestartet (Metin, 21:37: "nicht warten, weiter machen"). Vorgesehen als `kurz/freizeitgesicht2`. Ergebnis hier nachtragen.
 
 **Gesicht 2, langes Arbeitskleid: Buch umarmen (21:38).** Überraschter, glücklicher Blick, dann drückt sie das Buch mit beiden Armen an sich und wiegt sich wie ein verliebtes Mädchen, schaut ihn von unten dankbar an. Keine Hand am Gesicht (Brille); Blick als "looks into the camera".
 
 "0–2s: She feels an unexpected gentle sensation on her cheek, her lips part in sweet surprise and she looks into the camera with wide, happy eyes, shifting her weight onto one leg. 2–5s: Overjoyed and bashful, she hugs her book to her chest with both arms and sways softly from side to side like a girl in love, lowering her gaze with a shy smile. 5–8s: She tilts her head, looks into the camera from under her lashes with a tender, grateful smile and shifts her weight onto the other leg. 8–10s: She brings the book back to her side, looks at him with loving eyes and returns to her initial pose. Soft, feminine, natural body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-Vorgesehen als `schwarz/gesicht2`. Ergebnis hier nachtragen.
+Von Claude eingesetzt (beide Bilder `5_lang_arbeit.png`, 4K, 10 s, Adaptive, 1, 350 Credits, abgelesen) und um 21:40 gestartet (Metin, 21:37: "nicht warten, weiter machen"). Vorgesehen als `schwarz/gesicht2`. Ergebnis hier nachtragen.
 
 **Gesicht 2, langes Freizeitkleid: Luft zufächeln (21:38).** Sie holt überrascht Luft, wird rot, schaut weg und fächelt sich mit einer Hand Luft ins warme Gesicht, schaut ihn dann strahlend und verlegen an, die Hand sinkt ans Schlüsselbein.
 
 "0–2s: She feels an unexpected gentle sensation on her cheek, draws in a soft breath and looks into the camera with a sweet, surprised smile, shifting her weight onto one leg. 2–5s: Blushing, she glances away and gently fans her warm face with one hand, her shoulders turning softly, her hips swaying. 5–8s: She looks into the camera again with a glowing, bashful smile, lets her hand sink to her collarbone and shifts her weight onto the other leg. 8–10s: She lowers her hand, looks at him with loving eyes and returns to her initial pose. Soft, feminine, natural body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-Vorgesehen als `schwarz/freizeitgesicht2`. Ergebnis hier nachtragen.
+Von Claude eingesetzt (beide Bilder Favorit 4, `file_00000000530481f4977d9.png`, 4K, 10 s, Adaptive, 1, 350 Credits, abgelesen) und um 21:40 gestartet (Metin, 21:37: "nicht warten, weiter machen"). Vorgesehen als `schwarz/freizeitgesicht2`. Ergebnis hier nachtragen.
 
 **Gesicht 2, Nachtkleid: wie auf ein Kissen (21:38).** Sie schließt verträumt die Augen, legt die Handflächen aneinander und schmiegt die Wange einen Moment darauf wie auf ein Kissen, öffnet die Augen und lächelt ihn müde und verliebt an. Die Geste nur einen Takt lang, Füße am Platz (Lehre aus Clip 978).
 
 "0–2s: She feels an unexpected gentle sensation on her cheek, closes her eyes with a dreamy smile and shifts her weight onto one leg. 2–5s: Sweetly she lays her palms together and rests her cheek on them for a moment as if on a pillow, her head tilting, her hips swaying gently. 5–8s: She opens her eyes, lets her hands sink and looks into the camera with a tender, sleepy, loving smile, shifting her weight onto the other leg. 8–10s: She looks at him with bright, loving eyes and returns to her initial pose. Soft, feminine, natural body movements. Subtle facial expressions, no exaggerated reactions. Both feet remain in place. No speaking. Static camera, full body visible, unchanged background."
 
-Vorgesehen als `nacht/gesicht2`. Ergebnis hier nachtragen.
+Von Claude eingesetzt (beide Bilder `7_nacht.png`, 4K, 10 s, Adaptive, 1, 350 Credits, abgelesen) und um 21:41 gestartet (Metin, 21:37: "nicht warten, weiter machen"). Vorgesehen als `nacht/gesicht2`. Ergebnis hier nachtragen.
 
 ## Was am 24.11.2026 sonst noch entstand
 
