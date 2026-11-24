@@ -24,6 +24,12 @@ Ergebnis: Clip 360, Metin "super geworden", unverändert als `kurz/begruessung` 
 
 Ergebnis: gestartet von Metin etwa 18:38 im kurzen Arbeitskleid, hier nachtragen.
 
+**Vorlage 3, Berührung an der Brust (24.11.2026, 18:53, von Metin mitgebracht, noch nicht gelaufen):**
+
+"0–3s: She smiles affectionately, gently moves her legs in place and reacts subtly to an unexpected sensation. 3–5s: She briefly glances down at her chest, slightly raises her eyebrows and shifts her weight onto the other leg. 5–8s: She looks into the camera with a shy, playful expression, briefly raises her middle finger and gently shakes her head. 8–10s: She lowers her hand, smiles bashfully and takes a small step in place. Continuous relaxed leg, foot, hip and shoulder movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
+
+Gleicher Bau wie Vorlage 2 (vier Takte, Gefühl plus oben plus unten, kein toter Anfang, Schlusszeilen für Körper, Ort und Kamera). Neu und für Berührungs Clips zu übernehmen: die Berührung steht nur als ihr eigenes Empfinden da ("reacts subtly to an unexpected sensation"), ohne Hand und ohne Person; eine Zeile für die Stärke ("Subtle facial expressions, no exaggerated reactions."); eine Zeile gegen Mundbewegungen ("No speaking."). Kein "him", sie schaut in die Kamera. Offen, bei Metin nachgefragt: im dritten Takt steht "raises her middle finger" (Mittelfinger, also der Stinkefinger); falls der mahnende Finger gemeint war, heißt es "index finger".
+
 ## Das Muster
 
 1. **Vier Takte**, je ein Satz, zusammen 10 Sekunden (2, 3, 3, 2 oder 3, 3, 2, 2). Sekunden stehen nur am Anfang jedes Takts.
