@@ -202,6 +202,9 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self.diary = diary.Diary()  # what she talked about in the last month, fading
         # what comes to her mind by itself, for the chat and at home alike (2.147.0)
         self.diary.repair_chat_person("Metin")  # chat entries the diary model left unnamed
+        # the one line a day about touches (2.147.0 to 2.150.4) fades: she does not keep them
+        self.diary.fade([e.get("t") for e in self.diary.archived()
+                         if e.get("src") == diary.TOUCH_SRC and not e.get("blass")])
         self.recall = recall.Index(self.diary, self.openai_api_key)
         self.recall.probe = self._chat_probe
         # at night she thinks the day over (2.150.0); used only while the setting is on
@@ -412,6 +415,11 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         rules += (self._memory_note("Metin", True) + self.variety.note()
                   + self.diary.followup_note("Metin", private=True) + self.day.note() + day.pet_note()
                   + await self.reminders.followup_note())
+        if not chat.touch_zone(message) and not self.mood.status().get("low"):
+            wish = self.diary.touch_wish_note()  # his closeness is missing (2.150.5), not while hurt
+            if wish and hasattr(self.mood, "touch_wished"):
+                self.mood.touch_wished()  # her heart waits for it: fulfilled, or sad after a day
+            rules += wish
         if self.reach.available:  # she knows she writes to him on her own (2.129.0)
             rules += reach.CHAT_NOTE
         live = self._live_talk_text()
@@ -587,6 +595,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         msg = chat.touch_message(zone)
         if not msg:
             return None
+        if hasattr(self.mood, "touched"):
+            self.mood.touched()  # his touch counts for her heart before she answers (2.150.5)
         out = await self._chat(history, msg)
         if not out or not out.get("reply"):
             return out
@@ -1099,11 +1109,6 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         if not dialog or not self.openai_api_key:
             return
         try:
-            # touches are counted in one line a day, not told as talks of their own (2.147.0)
-            zones = [chat.touch_zone(t) for sp, t in dialog if sp == "user"]
-            self.diary.touched([z for z in zones if z])
-            if zones and all(zones):
-                return
             await self.diary.write(dialog, "Metin", "chat", self.openai_api_key,
                                    [self.memory_model, self.backend_model],
                                    os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL))

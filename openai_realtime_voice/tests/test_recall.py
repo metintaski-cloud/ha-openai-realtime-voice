@@ -87,12 +87,15 @@ def test_what_she_has_before_her_is_not_repeated_and_twins_show_once(tmp_path, m
 def test_deleted_entries_lose_their_vector_and_changed_text_gets_a_new_one(tmp_path, monkeypatch):
     dy, ix, calls = make(tmp_path, monkeypatch)
     dy.add(entry("Der Garten blüht."), "Metin", "chat", now=NOW - 5 * DAY)
-    dy.touched(["gesicht"], now=NOW - 2 * DAY)
+    dy.add(entry("Wir backen Kuchen."), "Metin", "chat", now=NOW - 2 * DAY)
 
     async def run():
         await ix.sync()
         assert len(ix.vectors) == 2
-        dy.touched(["bauch"], now=NOW - 2 * DAY + 60)      # the day's line is rewritten
+        items = dy.entries()
+        items[1]["lang"] = "Wir backen Kuchen mit Zimt."          # an entry is rewritten
+        dy._save(items)
+        dy._archive(items[1])                                      # same stamp: the newest line counts
         assert await ix.sync() == 1
         dy.delete([NOW - 5 * DAY])
         await ix.sync()

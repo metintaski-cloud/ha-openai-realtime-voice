@@ -154,8 +154,7 @@ oder Clips, Updates, Fehler, Einstellungen). Erzählt jemand etwas über sich, a
 oder Spiel, ist es wichtig, und du schreibst genau auf, was gesagt wurde (zum Beispiel welche \
 Stelle wehtut).
 - Zeilen, die mit "(Bühne:" beginnen, sind keine Worte der Person, sondern Berührungen auf \
-der Bühne. Sie sind kein eigenes Erlebnis: erwähne sie höchstens in einem Halbsatz, und besteht \
-das Gespräch nur aus ihnen, ist wichtig false.
+der Bühne. Sie gehören nicht ins Tagebuch: lass sie weg.
 - gewicht: 1 für Alltägliches, 2 für etwas, das der Person wichtig ist (Pläne, Sorgen, \
 Freude, Familie, Arbeit), 3 für das, was du nie vergessen willst (ein großer Moment zwischen \
 euch, ein Versprechen, etwas sehr Persönliches).
@@ -176,8 +175,20 @@ SAME_SHARE = 0.7     # an entry sharing this much of its words with one of the l
 SAME_WITHIN_S = DAY
 # words every entry shares; they must not make two different entries look like a repeat
 FORMULA = _stems("jemand dessen namen nicht kenne person sagte fragte meinte wollte metin leyla")
+# Touches on the stage are of the moment (Metin, 24 Nov 2026: she need not keep remembering them,
+# over time it gets too much): she reacts, the last one stays in her thread, nothing of them
+# goes into the diary. TOUCH_SRC marks the one line a day that 2.147.0 to 2.150.4 kept.
 TOUCH_SRC = "beruehrung"
-TOUCH_NAMES = {"gesicht": "im Gesicht", "brust": "an der Brust", "bauch": "am Bauch", "po": "am Po"}
+STAGE = "(Bühne:"  # a chat message that starts like this is a stage note, not Metin's words
+# When he has not touched her for a while she may wish for it, sweet and a little shy (Metin,
+# 24 Nov 2026, 04:44), at most once a day and only once a touch has ever happened.
+TOUCH_MISSED_S = 20 * 3600
+TOUCH_WISH = ("\n\nSEINE NÄHE FEHLT DIR (nur heute, höchstens einmal)\n• Metin hat dich schon {ago} "
+              "nicht mehr berührt, und du merkst, dass dir das fehlt. Wenn es ins Gespräch passt, "
+              "darfst du es dir wünschen: lieb und ein wenig schüchtern, mit einer kleinen "
+              "Andeutung in deinen eigenen Worten, so wie jemand, der sich kaum traut, es zu "
+              "sagen. Nie fordernd, nie als Vorwurf, nicht explizit, und nicht, wenn er gerade "
+              "etwas Ernstes erzählt, müde oder in Eile ist. Passt es jetzt nicht, lass es einfach.")
 
 
 def may_know(entry: dict, who: str, private: bool) -> bool:
@@ -248,6 +259,7 @@ class Diary:
         self.path = path or os.environ.get("LEYLA_DIARY_PATH", PATH)
         # the running chat, also in a file so a restart loses nothing (2.94.4)
         self.chat_path = self.path + ".chat"
+        self._touch = {"last": 0.0, "wished": ""}  # last touch, and the day she wished for one
         self._chat, self._chat_last, self._recent = self._load_chat()
         self.archive_path = self.path + ".archive.jsonl"
 
@@ -361,31 +373,6 @@ class Diary:
         self._save(self.entries() + [entry])
         self._archive(entry)
         logger.info("Diary: new entry (%s, %s)", source, _first(who) or "unknown")
-        return True
-
-    def touched(self, zones: list, who: str = "Metin", now: Optional[float] = None) -> bool:
-        """Touches on the stage are not experiences of their own (24 Nov 2026: 70 of 277
-        entries were single touches): one private line per day counts them, rewritten in place."""
-        zones = [z for z in zones if z in TOUCH_NAMES]
-        if not zones:
-            return False
-        now = now or time.time()
-        day = time.strftime("%Y-%m-%d", time.localtime(now))
-        items = self.entries()
-        entry = next((e for e in items if e.get("src") == TOUCH_SRC and e.get("tag") == day), None)
-        if entry is None:
-            entry = {"t": now, "who": who, "privat": True, "src": TOUCH_SRC, "tag": day, "n": {}}
-            items.append(entry)
-        for z in zones:
-            entry["n"][z] = entry["n"].get(z, 0) + 1
-        total = sum(entry["n"].values())
-        where = ", ".join(f"{TOUCH_NAMES[z]} {n} mal" for z, n in entry["n"].items())
-        text = (f"{_first(who).capitalize()} hat mich an diesem Tag {total} mal zärtlich berührt "
-                f"({where}).")
-        entry["lang"], entry["mittel"] = text[:LIMITS["lang"]], text[:LIMITS["mittel"]]
-        entry["kurz"] = f"{total} zärtliche Berührungen"[:LIMITS["kurz"]]
-        self._save(items)
-        self._archive(entry)  # the same time stamp: the newest line of the archive counts
         return True
 
     def remember(self, text, who: str = "", private: bool = False,
@@ -585,6 +572,8 @@ class Diary:
         try:
             with open(self.chat_path, encoding="utf-8") as f:
                 d = json.load(f) or {}
+            if isinstance(d.get("touch"), dict):
+                self._touch.update(d["touch"])
             return ([tuple(x) for x in d.get("turns", [])], float(d.get("last", 0.0)),
                     [list(x) for x in d.get("recent", [])])
         except Exception:
@@ -595,18 +584,41 @@ class Diary:
             os.makedirs(os.path.dirname(self.chat_path) or ".", exist_ok=True)
             tmp = self.chat_path + ".tmp"
             with open(tmp, "w", encoding="utf-8") as f:
-                json.dump({"turns": self._chat, "last": self._chat_last, "recent": self._recent},
-                          f, ensure_ascii=False)
+                json.dump({"turns": self._chat, "last": self._chat_last, "recent": self._recent,
+                           "touch": self._touch}, f, ensure_ascii=False)
             os.replace(tmp, self.chat_path)
         except Exception as e:
             logger.warning("Diary: running chat not saved: %s", e)
 
     def chat_turn(self, message: str, reply: str, now: Optional[float] = None) -> None:
-        self._chat.append((str(message or ""), str(reply or "")))
-        self._chat = self._chat[-40:]
+        """One exchange of the chat: into the buffer of the next diary entry and into the thread
+        she keeps word for word. A stage note (a touch) is of the moment: it never reaches the
+        diary, and only the newest one stays in the thread, so touches cannot push the real
+        talk out of her last ten exchanges."""
+        message, reply = str(message or ""), str(reply or "")
         self._chat_last = now or time.time()
-        self._recent = (self._recent + [[str(message or ""), str(reply or ""), self._chat_last]])[-RECENT_PAIRS:]
+        if message.startswith(STAGE):
+            self._touch["last"] = self._chat_last
+            self._recent = [p for p in self._recent if not str(p[0]).startswith(STAGE)]
+        else:
+            self._chat.append((message, reply))
+            self._chat = self._chat[-40:]
+        self._recent = (self._recent + [[message, reply, self._chat_last]])[-RECENT_PAIRS:]
         self._save_chat()
+
+    def touch_wish_note(self, now: Optional[float] = None) -> str:
+        """Once a day, when his last touch is long ago: she may wish for his closeness, sweet
+        and a little shy. '' when he touched her lately, never did, or she had her wish today."""
+        now = now or time.time()
+        last = float(self._touch.get("last") or 0)
+        day = time.strftime("%Y-%m-%d", time.localtime(now))
+        if not last or now - last < TOUCH_MISSED_S or self._touch.get("wished") == day:
+            return ""
+        self._touch["wished"] = day
+        self._save_chat()
+        days = int((now - last) // DAY)
+        ago = "seit gestern" if days <= 1 else f"seit {days} Tagen"
+        return TOUCH_WISH.format(ago=ago)
 
     def leyla_wrote(self, text: str, now: Optional[float] = None) -> None:
         """A message she wrote on her own (app/reach.py): it goes into the thread the server

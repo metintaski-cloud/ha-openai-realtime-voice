@@ -309,35 +309,31 @@ def test_what_is_already_written_down_gets_no_second_entry(tmp_path):
     assert len(dy.entries()) == 3
 
 
-def test_touches_are_one_line_a_day_not_a_talk_each(tmp_path):
+def test_touches_are_of_the_moment_and_never_reach_the_diary(tmp_path):
+    from app import chat
     dy = diary.Diary(str(tmp_path / "d.json"))
-    assert dy.touched(["gesicht", "bauch"], now=NOW) and dy.touched(["gesicht"], now=NOW + 60)
-    assert not dy.touched(["knie"], now=NOW)
-    (e,) = dy.entries()
-    assert e["privat"] and e["src"] == diary.TOUCH_SRC and "3 mal" in e["lang"]
-    assert "im Gesicht 2 mal" in e["lang"] and len(dy.archived()) == 1
-    dy.touched(["po"], now=NOW + DAY)
-    assert len(dy.entries()) == 2
-    assert "berührt" not in dy.note("Metin", private=False, now=NOW + DAY)   # stays behind the code word
+    dy.chat_turn("Wie war dein Tag?", "Schön.", now=NOW)
+    dy.chat_turn(chat.touch_message("gesicht"), "Hey, das kitzelt!", now=NOW + 10)
+    dy.chat_turn(chat.touch_message("bauch"), "Mmh.", now=NOW + 40)
+    dy.chat_turn("Ich muss los", "Bis später.", now=NOW + 60)
+    thread = dy.with_last_chat([], now=NOW + 61)
+    assert [x["text"] for x in thread if x["role"] == "leyla"] == ["Schön.", "Mmh.", "Bis später."]
+    assert dy._chat_last == NOW + 60
+    assert dy.chat_take() == [("user", "Wie war dein Tag?"), ("bot", "Schön."),
+                              ("user", "Ich muss los"), ("bot", "Bis später.")]
+    assert "lass sie weg" in diary.PROMPT and not hasattr(dy, "touched")
 
 
-def test_a_chat_of_touches_only_is_counted_but_not_written(tmp_path, monkeypatch):
-    from app import chat, main as m
-    bridge = m.LiveVoiceBridge.__new__(m.LiveVoiceBridge)
-    bridge.diary = diary.Diary(str(tmp_path / "d.json"))
-    bridge.recall = recall.Index(bridge.diary, "", path=str(tmp_path / "r.json"))
-    bridge.openai_api_key, bridge.memory_model, bridge.backend_model = "k", "a", "b"
-    written = []
-
-    async def write(dialog, *a):
-        written.append(len(dialog))
-        return True
-    monkeypatch.setattr(bridge.diary, "write", write)
-    touch = chat.touch_message("gesicht")
-    asyncio.run(bridge._chat_diary([("user", touch), ("bot", "Hey, das kitzelt!")]))
-    assert written == [] and "1 mal" in bridge.diary.entries()[0]["lang"]
-    asyncio.run(bridge._chat_diary([("user", touch), ("bot", "Mmh."), ("user", "Wie war dein Tag?"), ("bot", "Schön.")]))
-    assert written == [4] and "2 mal" in bridge.diary.entries()[0]["lang"]
+def test_the_old_touch_lines_fade_at_the_start(tmp_path, monkeypatch):
+    from app import main as m
+    monkeypatch.setenv("OPENAI_API_KEY", "test")
+    monkeypatch.setenv("LEYLA_RECALL_PATH", str(tmp_path / "r.json"))
+    monkeypatch.setenv("LEYLA_NACHDENKEN_PATH", str(tmp_path / "n.json"))
+    dy = diary.Diary()
+    dy.add(entry(lang="Metin hat mich an diesem Tag 3 mal zärtlich berührt."), "Metin", diary.TOUCH_SRC, now=NOW)
+    dy.add(entry(lang="Wir sprachen über den Urlaub."), "Metin", "chat", now=NOW + 5)
+    b = m.LiveVoiceBridge()
+    assert [bool(e.get("blass")) for e in b.diary.entries()] == [True, False]
 
 
 def test_the_window_is_what_the_note_shows(tmp_path):
@@ -368,3 +364,19 @@ def test_unnamed_chat_entries_become_metins_and_leave_the_open_household_notes(t
     assert "Ausflug" not in dy.unknown_note(now=NOW) and "Bus" in dy.unknown_note(now=NOW)
     assert [e["who"] for e in dy.archived()] == ["Metin", ""]
     assert "Ausflug" not in dy.note("Seher", now=NOW) and "Ausflug" in dy.note("Metin", now=NOW)
+
+
+def test_when_his_last_touch_is_long_ago_she_may_wish_for_it_once_a_day(tmp_path):
+    from app import chat
+    dy = diary.Diary(str(tmp_path / "d.json"))
+    assert dy.touch_wish_note(now=NOW) == ""                        # he never touched her: no wish
+    dy.chat_turn(chat.touch_message("gesicht"), "Hey!", now=NOW)
+    assert dy.touch_wish_note(now=NOW + 3600) == ""                 # only an hour ago
+    note = dy.touch_wish_note(now=NOW + 30 * 3600)
+    assert "schüchtern" in note and "seit gestern" in note and "Nie fordernd" in note
+    assert dy.touch_wish_note(now=NOW + 30 * 3600 + 60) == ""       # once a day
+    again = diary.Diary(str(tmp_path / "d.json"))                   # survives a restart
+    assert again.touch_wish_note(now=NOW + 30 * 3600 + 120) == ""
+    assert "seit 3 Tagen" in again.touch_wish_note(now=NOW + 3.2 * DAY)
+    again.chat_turn(chat.touch_message("bauch"), "Mmh.", now=NOW + 3.3 * DAY)
+    assert again.touch_wish_note(now=NOW + 3.4 * DAY) == ""

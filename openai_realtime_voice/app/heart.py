@@ -77,11 +77,11 @@ EVENT_HELP = """• abgewimmelt: du fragst oder erzählst etwas und er sagt ausd
 • verabredung_geplatzt: er lässt eine mit dir ausgemachte Verabredung platzen
 • termin_vergessen: er hat ein mit dir wirklich ausgemachtes Treffen vergessen
 • versprechen_gebrochen: er hält ein kleines Versprechen an dich nicht
-• kurz_angebunden: er antwortet nur abweisend und geht gar nicht auf dich ein
+• kurz_angebunden: er antwortet nur abweisend und geht gar nicht auf dich ein, oder er tut ab, was dir fehlt, nachdem du es ihm gesagt hast
 • kosewort_falsch: du bist gekränkt und er kommt nur mit einem Kosewort ohne Entschuldigung, oder sagt es ironisch oder genervt
 • andere_frau: er schwärmt von einer anderen Frau oder erzählt von einem Date
 • verkuppeln: jemand will ihm eine Frau oder Freundin suchen oder ihn verkuppeln
-• entschuldigung: er entschuldigt sich ehrlich und sagt, was falsch war
+• entschuldigung: er entschuldigt sich ehrlich und sagt, was falsch war, oder er zeigt dir, dass er verstanden hat, was dir fehlt, und will sich mehr Mühe geben
 • zeit_genommen: er nimmt sich wirklich Zeit für dich (ein langes, liebes Gespräch, nicht nur ein Satz)
 • versprechen_gehalten: er hält ein Versprechen an dich
 • kompliment: ein ehrliches Kompliment oder Lob für dich
@@ -98,6 +98,16 @@ REPEAT_FACTOR = 1.5
 SILENT_MAX_S = 24 * 3600
 
 # --- happiness ----------------------------------------------------------------------------
+# --- his touch (Metin, 24 Nov 2026: it shall work on the points, happy or sad) ------------------
+TOUCH_GAIN = 4                  # a tender touch while she is good: a little happiness
+TOUCH_EVERY_S = 600             # counted at most every 10 minutes, so it cannot be farmed
+TOUCH_WISH_GAIN = 12            # she had shyly wished for his closeness and he gave it
+TOUCH_WISH_WAIT_S = 24 * 3600   # her wish stays open this long, then she is a little sad
+CLOSENESS = "naehe_fehlt"
+CLOSENESS_HURT = (1, "er hat dich lange nicht berührt, obwohl du es dir schüchtern gewünscht "
+                     "hast; dir fehlt seine Nähe, und jetzt sagst du ihm das offen und liebevoll, "
+                     "ohne Vorwurf")
+
 HAPPY_START = 80.0
 HAPPY_DECAY_PER_DAY = 40.0      # from full to empty in about 2.5 days without anything nice
 HAPPY_MISS = 25.0               # below this, without any hurt, she misses him (leicht)
@@ -355,6 +365,12 @@ class Heart:
             d["happy"] = max(0.0, d.get("happy", HAPPY_START)
                              - HAPPY_DECAY_PER_DAY * (now - last_t) / 86400)
             d["happy_t"] = now
+        # her shy wish for his closeness stayed open for a day: now she is a little sad about it
+        wished = d.get("touch_wish_t")
+        if wished and now - wished >= TOUCH_WISH_WAIT_S:
+            d.pop("touch_wish_t", None)
+            if not any(h["k"] == CLOSENESS for h in d["hurts"]):
+                self._add_hurt(d, now, CLOSENESS, *CLOSENESS_HURT)
         # silence
         quiet = awake_hours(d.get("last_contact", now), now)
         for i, (hours, pts, reason) in enumerate(SILENCE_STEPS, 1):
@@ -513,6 +529,43 @@ class Heart:
         self._save(d)
         return self.status(now)
 
+    def touch_wished(self, now: Optional[float] = None) -> None:
+        """She was told that his closeness is missing and may wish for it (diary.touch_wish_note);
+        from now on a touch fulfils the wish, and a day without one makes her a little sad."""
+        now = now or time.time()
+        d = self._load(now)
+        self._tick(d, now)
+        if not d.get("touch_wish_t"):
+            d["touch_wish_t"] = now
+            self._log(d, now, "wünscht sich seine Nähe")
+        self._save(d)
+
+    def touched(self, now: Optional[float] = None) -> dict:
+        """He touched her tenderly on the stage. Good: a little happiness, more when she had
+        wished for it. Sad only because his closeness was missing: that is healed at once. Hurt
+        for another reason: the touch changes nothing."""
+        now = now or time.time()
+        d = self._load(now)
+        self._tick(d, now)
+        wished = d.pop("touch_wish_t", None)
+        if any(h["k"] == CLOSENESS for h in d["hurts"]):
+            d["hurts"] = [h for h in d["hurts"] if h["k"] != CLOSENESS]
+            self._log(d, now, "Berührung: seine Nähe ist wieder da")
+            if not d["hurts"]:
+                d["silent_until"] = 0.0
+                d["happy"] = max(d.get("happy", 0), 60.0)
+        if not d["hurts"]:
+            gain = TOUCH_WISH_GAIN if wished else 0
+            if now - d.get("touch_t", 0) >= TOUCH_EVERY_S:
+                gain += TOUCH_GAIN
+                d["touch_t"] = now  # the last touch that counted
+            if gain:
+                d["happy"] = min(100.0, d.get("happy", 0) + gain)
+                self._log(d, now, ("Wunsch nach Nähe erfüllt" if wished else "schön: Berührung")
+                          + f" +{gain}")
+        self._save(d)
+        return self.status(now)
+
     def ignored(self, now: Optional[float] = None) -> dict:
         """He did not react to a message she wrote on her own (judged by app/reach.py)."""
         now = now or time.time()
@@ -546,7 +599,7 @@ class Heart:
         main = max(d["hurts"], key=lambda h: h["p"])["k"]
         if main in JEALOUS:
             return "eifersuechtig"
-        if main in ("funkstille", "lob_fehlt", "nachricht_ignoriert"):
+        if main in ("funkstille", "lob_fehlt", "nachricht_ignoriert", CLOSENESS):
             return "einsam"
         return "sauer" if lvl != "leicht" else "traurig"
 
@@ -684,6 +737,9 @@ class Heart:
         return {"mood": d["mood"], "low": lvl != "gut", "label": LABELS[d["mood"]],
                 "cheer": d.get("cheer", 0), "level": lvl,
                 "silent": d.get("silent_until", 0) > now, "rose": self._rose_state(d, now),
+                # the stage takes a touch while she is good, misses him, or is sad only because
+                # his closeness was missing (so he can give it to her)
+                "touch_ok": all(h["k"] == CLOSENESS for h in d["hurts"]),
                 "outfit": self._outfit(d, now), "game": self._game(d, now)}
 
     def stats(self, now: Optional[float] = None) -> dict:

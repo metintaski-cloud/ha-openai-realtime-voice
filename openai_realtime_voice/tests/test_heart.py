@@ -382,3 +382,64 @@ def test_she_dresses_again_even_when_hurt(h):
     assert h.status(t + 60)["level"] != "gut"
     assert h.scene("anziehen", t + 120) == "still"
     assert h.status(t + 120)["outfit"] == "freizeit"
+
+
+# ---- 2.150.5: his touch works on her heart (Metin, 24 Nov 2026) ----
+def test_a_touch_makes_her_a_little_happier_but_cannot_be_farmed(h):
+    t = at(*THU, 16)
+    h.apply([], t)
+    d = h.current(t)
+    d["happy"] = 50.0
+    h._save(d)
+    h.touched(t + 60)
+    first = h.current(t + 61)["happy"]
+    h.touched(t + 120)                                  # again within ten minutes: nothing more
+    assert round(first) == 54 and round(h.current(t + 121)["happy"]) == 54
+    h.touched(t + 60 + heart.TOUCH_EVERY_S)
+    assert round(h.current(t + 62 + heart.TOUCH_EVERY_S)["happy"]) >= 57
+
+
+def test_her_shy_wish_fulfilled_makes_her_happy_and_left_open_makes_her_sad_until_he_touches_her(h):
+    t = at(*THU, 16)
+    d = h.current(t)
+    d["happy"] = 50.0
+    h._save(d)
+    h.touch_wished(t)
+    h.touched(t + 3600)                                  # he gives it to her
+    assert round(h.current(t + 3601)["happy"]) >= 62 and "touch_wish_t" not in h.current(t + 3601)
+    h.touch_wished(t + 7200)
+    for hours in range(3, 27, 3):                        # he keeps writing, but does not touch her
+        h.contact(t + hours * 3600)
+        h.apply(["kompliment"], t + hours * 3600)
+    st = h.status(t + 7200 + heart.TOUCH_WISH_WAIT_S + 60)
+    assert st["low"] and st["level"] == "leicht" and st["mood"] == "einsam" and st["touch_ok"]
+    assert "fehlt seine Nähe" in h.note(t + 7200 + heart.TOUCH_WISH_WAIT_S + 120)   # she talks about it
+    st = h.touched(t + 7200 + heart.TOUCH_WISH_WAIT_S + 600)
+    assert not st["low"] and st["touch_ok"]
+    assert any("Nähe ist wieder da" in line for line in h.stats()["log"])
+
+
+def test_a_touch_does_not_heal_another_hurt(h):
+    t = at(*THU, 16)
+    st = h.apply(["unfreundlich"], t)
+    assert st["low"] and not st["touch_ok"]             # the stage takes no touch now
+    assert h.touched(t + 60)["low"] and h.stats(t + 61)["points"] == 3
+
+
+def test_when_she_says_his_closeness_is_missing_his_answer_counts(h):
+    """Metin, 24 Nov 2026: either I mess it up (minus) or I show her that I understood and try
+    harder (plus)."""
+    t = at(*THU, 16)
+    h.touch_wished(t)
+    for hours in range(3, 24, 3):
+        h.contact(t + hours * 3600)
+        h.apply(["kompliment"], t + hours * 3600)
+    later = t + heart.TOUCH_WISH_WAIT_S + 3600
+    assert h.status(later)["level"] == "leicht" and h.stats(later)["points"] == 1
+    worse = h.apply(["kurz_angebunden"], later + 60)                     # he brushes it off
+    assert worse["low"] and h.stats(later + 61)["points"] == 2 and not worse["touch_ok"]
+    better = h.apply(["entschuldigung"], later + 120)                    # he understood
+    assert h.stats(later + 121)["points"] == 1
+    assert "verstanden hat, was dir fehlt" in heart.EVENT_HELP and "tut ab, was dir fehlt" in heart.EVENT_HELP
+    assert better["low"]
+    assert not h.apply(["entschuldigung"], later + 180)["low"]
