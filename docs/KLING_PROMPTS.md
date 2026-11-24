@@ -239,6 +239,12 @@ Geschrieben 21:05. Metin um 21:04: "als Schleife", um 21:06: "das Gleiche, aber 
 
 Bilder dafür: Favorit 2 (`7_nacht.png`); Metin kopiert den Text selbst ein. Ergebnis hier nachtragen.
 
+**Zweite Welle, Nachtkleid, Geschwister zur ersten (Metin, 21:08: "ah nö, können wir mit Welle nehmen, der zu der Schleife passt, aber nicht identisch ist").** Von Claude so gelesen und Metin so gesagt: statt des Fingerschnipsens eine zweite Wellen Schleife im selben Takt und Stil, damit beide ineinander passen, aber mit anderer Bewegung: hier läuft die Welle seitlich durch Hüfte und Schultern, eine Hand ruht an der Hüfte.
+
+"0–3s: Happy to see him, she looks into the camera with a sweet, shy smile and lets a slow, soft wave travel sideways through her body, her hips gliding to one side and her shoulders following. 3–6s: In the same calm, steady rhythm the wave flows from side to side again and again, her knees bending softly, one hand resting lightly on her hip. 6–8s: She keeps the rhythm without pause, lets her head follow the wave and smiles at him with a seductive, shy look. 8–10s: One more wave flows through her in the same rhythm and ends exactly in her initial pose, her eyes lovingly on the camera. Smooth, continuous, feminine body waves in one steady rhythm from the first to the last second. She remains in the same spot. Both feet remain in place. No speaking. Static camera, full body visible, unchanged background."
+
+Geschrieben 21:09, Bilder dafür: Favorit 2 (`7_nacht.png`); Metin kopiert den Text selbst ein. Ergebnis hier nachtragen.
+
 ## Was am 24.11.2026 sonst noch entstand
 
 - `kurz/gluecklich5` (Clip 308, Haarsträhne, Metin: "ist für die Schleife von Arbeit kurz glücklich"): unverändert im Originaltempo eingebaut, Bewegungsmenge 1,15, Naht 0,64, Gesicht stabil, der ganze Körper lebt. Geschrieben noch in Claudes Zwischenform (verschiedene Handlungen je einmal, ein Satz, dass der Körper mitgeht, keine Klemmsätze). Der Clip ist gut, die Form ist trotzdem abgelöst; neue Schleifen entstehen nach dem Baukasten.
