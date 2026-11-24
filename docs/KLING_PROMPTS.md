@@ -140,13 +140,13 @@ Generate klickt Metin. Ergebnis hier nachtragen.
 
 "0–3s: Dreamy and happy to see him, she clasps her hands behind her back and gently sways from one leg to the other with a sweet smile. 3–6s: She bashfully glances to the side, her shoulders turning softly along, and gently raises one heel. 6–8s: She looks back at him with a sweet, affectionate smile, tilts her head and shifts her weight onto the other leg. 8–10s: She lets her hands come forward again, looks at him with loving eyes and returns to her initial pose. Continuous, gentle leg and foot movements throughout the scene. Natural hip and upper body movements. She remains in the same area without walking away. Sweet, shy, feminine and affectionate body language. Static camera, full body visible, unchanged background."
 
-Generate klickt Metin. Ergebnis hier nachtragen.
+Von Metin gestartet etwa 19:58. **Ergebnis (Clip 747, `kling_20261125_VIDEO_0_3s__Drea_747_0.mp4`, Download 20:03, Original in Leyla Kling Originale):** die Hände gehen hinter den Rücken (ab 1,5 s), sie wiegt sich, schaut verlegen zur Seite und nach unten (4 bis 6 s), schaut ihn wieder lächelnd an, die Hände kommen nach vorn (7,5 s), Grundpose. Gesicht stabil. Bewegungsmenge im Mittel 1,05, je Sekunde 1,1 / 0,9 / 0,8 / 0,8 / 1,7 / 1,1 / 0,6 / 1,1 / 1,9 / 0,6, Naht 0,68, letzte halbe Sekunde 0,30. Metins Urteil hier nachtragen.
 
 **Berührung am Po, langes Arbeitskleid (Metin, 20:02: "läuft, nächste").** Eigene Szene, anders als im kurzen Arbeitskleid (dort Rückenansicht mit Hüftwiegen): hier Profil, die Hand streicht am Kleid über die Hüfte, Blick über den Brillenrand, mit Sexappeal nach Punkt 12:
 
 "0–2s: She reacts with sweet surprise to an unexpected playful sensation on her bottom, hugs her book a little closer and gives him a playful, scolding little smile. 2–5s: Slowly she turns sideways into profile, one hand gliding down over her hip along the dress, her weight sinking onto her back leg. 5–8s: In profile she looks at him over the rim of her glasses with a seductive, shy smile and slowly rolls her hips once, her hair falling over her shoulder. 8–10s: She turns back to face him, smiles bashfully and lovingly and returns to her initial pose. Soft, feminine, sensual body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-Geschrieben 20:04, noch nicht in Kling eingesetzt: Metin hatte gerade die Großansicht der fertigen Freizeit Schleife offen. Bilder dafür: Favorit 1 (`5_lang_arbeit.png`). Ergebnis hier nachtragen.
+In Kling eingesetzt um 20:05 (beide Bilder `5_lang_arbeit.png`, 4K, 10 s, Adaptive, 1, 350 Credits) und von Metin sofort gestartet. Ergebnis hier nachtragen.
 
 ## Was am 24.11.2026 sonst noch entstand
 
