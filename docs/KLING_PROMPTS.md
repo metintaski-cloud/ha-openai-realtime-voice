@@ -500,7 +500,7 @@ Herkunft der Teile:
 
 Gestartet 24.11.2026 um 16:00 von Claude auf Metins Wort ("Mach das für mich", nachdem Bilder, Einstellungen und 350 Credits genannt waren): beide Bilder 5_lang_arbeit.png (am Dateinamen und groß geprüft), 4K, 10 s, Adaptive, 1 Ausgabe, Standard statt HDR, 350 am Knopf.
 
-Ergebnis hier nachtragen.
+Ergebnis (Clip 5902, 24.11.2026, Metin um 17:08: "das mit Buch nehmen wir als Schleife"): 2352 x 3524, 241 Bilder. Sie schlägt das Buch auf, liest, dreht sich bei 4,5 bis 6,5 s seitlich und hält das Buch vor sich (nicht im Prompt, die Füße bleiben also nicht am Platz), blättert, klappt zu und steht wieder; Brille und Buch stimmen, keine zweite Person. Bewegungsmenge im Mittel 1,40, je Sekunde 1,3 / 1,0 / 0,5 / 1,7 / 2,3 / 1,0 / 1,1 / 2,7 / 1,8 / 0,7, Naht 0,68, Stillstand nur in der letzten halben Sekunde, keine Endmarke nötig. Metin fand alle drei Clips zu stark im Ausdruck, diesen nimmt er trotzdem. Um 17:10 unverändert als `schwarz/gluecklich2.mp4` eingebaut (Bildstrom bitgleich, Ton entfernt), kein Faktor, keine Kurve, kein Schnitt gespeichert; der alte 15 s Clip liegt als `schwarz_gluecklich2_alt.mp4` in Leyla aussortiert.
 
 ## Begrüßung langes Arbeitskleid neu in 4K: schwarz/begruessung (24.11.2026, vorbereitet 16:04)
 
@@ -516,7 +516,7 @@ Herkunft: Aufbau, feste Tatsachen (eine Frau, ein Buch, Buch bleibt im selben Ar
 
 Gestartet 24.11.2026 um 16:05 von Claude (Metins Ja von 16:05), 350 Credits, Guthaben danach etwa 5.000.
 
-Ergebnis hier nachtragen.
+Ergebnis (Clip 5912, 24.11.2026): 2352 x 3524, 241 Bilder. Sie winkt, lacht aber rund sechs Sekunden mit weit offenem Mund und beugt sich zur Kamera; Metin: "krank lachen", zu stark. Sein Rettungsversuch um 17:09: etwas schneller abspielen. Deshalb nicht als Ersatz, sondern als zweite Begrüßung `schwarz/begruessung2.mp4` eingebaut (Bildstrom bitgleich, ohne Ton) mit Abspielfaktor 1,3 als Startwert (`/api/tempo`, verlustfrei); die alte `begruessung` bleibt. Metin stellt das Tempo im Tempo Tester nach und entscheidet, ob der Clip bleibt.
 
 ## Brust Berührung langes Arbeitskleid neu in 4K: schwarz/brust (24.11.2026, gestartet 16:11)
 
@@ -530,4 +530,4 @@ Gezählt: erschrecken (3), an sich heruntersehen, aufblicken, Kopf neigen (3), z
 
 Herkunft: Aufbau und Zählen aus den Profi Quellen. Aus unserem Log: bei Berührungs Clips nur ihre eigene Reaktion, keine andere Person und keine Hand erwähnen (21.11.), kein Lippenbiss, Satz zu Gesicht und Kleidung ohne das Wort für die Brille.
 
-Ergebnis hier nachtragen.
+Ergebnis (Clip 5932, 24.11.2026): verworfen, nicht eingebaut. Aus "she shimmies her shoulders" machte Kling eine Hand, die an ihrer Schulter wedelt (Metin: "die klopft sich auf ihre Schulter?"), dazu ein erschrockenes Gesicht, fliegende Haare und Lachen mit dem Kopf im Nacken. Der Shimmy stand nicht im alten Clip, Claude hatte ihn dazu erfunden. Die Datei liegt nur in Downloads.
