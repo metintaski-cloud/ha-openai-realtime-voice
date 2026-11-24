@@ -30,6 +30,20 @@ Ablauf, jedes Mal, direkt bevor der Prompt in Kling getippt wird (nicht aus dem 
 
 7. **Bein und Arm Bewegungen nicht gleich (Metin, 24.11.2026, 17:37).** So verstanden und Metin so gesagt: die Clips einer Gruppe dürfen nicht alle dieselbe Bein und Arm Bewegung zeigen, und innerhalb eines Clips laufen Beine und Arme nicht im Gleichschritt. Vor jedem Prompt gegen die anderen Clips desselben Kleids halten: jede Schleife hat ihre eigene Bewegung (eine über die Beine, eine über die freie Hand, eine über Blick und Schultern, eine über beide Arme).
 
+## Warum die Clips vom 24.11. "plastisch und nicht real" wirken (Metin, 17:54)
+
+Metin nach Schleife 169 (zu langsam) und Begrüßung 181 (Hand flattert): "wir machen was falsch ... es wirkt so plastisch und nicht real". Vergleich der Prompts, die auf Anhieb saßen (6080 ruhige Schleife, 26 Winken mit Hand aufs Herz, 2441 Begrüßung verspielt, 1853 Po), mit denen von heute Abend:
+
+1. **Alles festgeklemmt bis auf ein Körperteil.** Heute standen fünf Klemmsätze im Prompt ("Every movement is small", "She keeps a shy smile the whole time", "her eyes rest on the lens", Buch im selben Arm, Füße am Platz, Gesicht und Haare exakt) und dann eine einzige Bewegung. Kling friert bei Start gleich Endbild ohnehin den Körper ein (Log vom 22.11., "Arm bleibt eingefroren"); mit den Klemmsätzen bewegt sich nur noch die Hand oder die Hüfte, der Rest steht wie eine Puppe. Das war die Übersteuerung nach den zu starken Clips vom Nachmittag.
+2. **Dieselbe Bewegung abgezählt wiederholt.** "waves three times" viermal hintereinander, "shifts her weight" fünfmal. Kling macht daraus entweder ein mechanisches Flattern (181) oder zieht alles zu einer langen Bewegung zusammen (169). Die guten Clips reihten verschiedene Handlungen aneinander, die ineinander übergehen (Strähne, Blick, Fingerwinken, Hand an die Hüfte), jede höchstens zwei bis vier Mal.
+3. **Keine Folgebewegung.** In den guten Prompts stand, was der Körper von selbst mitmacht: "she blinks naturally", "her hair sways after the movement", "her arms hang loose and move along", "her upper body follows". Das sind die Sätze, die echt wirken (offizielle Regel: Physik eigens benennen, Gewicht und Trägheit). Heute fehlten sie ganz.
+
+Regel ab jetzt, zusätzlich zu den anderen:
+- Nur die festen Tatsachen klemmen (eine Frau, ein Buch, Kamera, Füße am Platz, Satz zu Gesicht und Kleidung). Kein "every movement is small", kein "the whole time" für Lächeln oder Blick.
+- Eine Handlung höchstens drei bis vier Mal, dann geht sie in die nächste über. Winken mit offener Hand von Seite zu Seite (Formulierung aus 5912), nie "from the wrist".
+- In jeden Prompt zwei bis drei Folgebewegungen: Blinzeln, Haare schwingen nach, Schultern und freier Arm gehen mit.
+- Zierlich und schüchtern kommt aus der Wahl der Handlungen (Blick senken, Strähne, Kopf neigen, wenige Winkbewegungen), nicht aus Klemmwörtern.
+
 ## Stillstand am Ende höchstens eine halbe Sekunde (seit 24.11.2026, 16:35)
 
 Metin um 16:31 zu `schwarz/freizeitbrust`: "hängt am Ende sehr auffallend". Gemessen: von 8,5 bis 10 s keine Bewegung (Bewegungsmenge 0,15, dann 0,02 und 0,01), also 1,5 s eingefrorenes Bild, bevor die App übergibt. Unsere Prompts seit dem 23.11. schrieben am Ende "8.5 to 10 seconds: she holds ... completely still" vor; die offiziellen Kling Beispiele reservieren nur die letzte halbe Sekunde. Ab jetzt: Stillstand nur von 9,5 bis 10 s, die Rückkehr in die Grundpose füllt die Zeit davor. `tools/kling_check.py` hält bei mehr als 0,75 s Stillstand an. Für Clips, die schon so entstanden sind, setzt Claude nach Metins Ja eine Endmarke (`POST /api/schnitt`, Datei bleibt unverändert): `schwarz/freizeitbrust` endet seit 16:34 bei 8,6 s. Die drei Clips von heute Nachmittag (gluecklich2, begruessung, brust im langen Arbeitskleid) haben noch 1,5 s Stillstand im Prompt: nach dem Download messen und Metin eine Endmarke vorschlagen.
