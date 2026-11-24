@@ -5,9 +5,17 @@ Recherche vom 24.11.2026, 12:50, nachdem Metin sagte: "Vielleicht sollst du dich
 ## Was bei uns läuft
 
 - Das Weckwort erkennt ein kleines Modell auf dem Gerät selbst (microWakeWord, Datei `hallo_leyla.tflite` im Repo, Manifest `hallo_leyla.json`, Version 2, trainiert am 2.11.2026 von Metin mit Opus).
-- Trainiert mit dem Trainer von TaterTotterson (`ghcr.io/tatertotterson/microwakeword`, Docker mit Grafikkarte auf Metins PC, Start über `Hallo Leyla Trainer starten.bat` auf dem Desktop, Daten in `C:\mww`, Oberfläche auf Port 8789). In `C:\mww` gibt es die Ordner `personal_samples`, `negative_samples`, `captured_audio`, `trained_wake_words`, `output`, `work`. Was darin liegt, ist noch nicht angesehen (der Ordner ist der Sitzung nicht verbunden).
+- Trainiert mit dem Trainer von TaterTotterson (`ghcr.io/tatertotterson/microwakeword`, Docker mit Grafikkarte auf Metins PC, Start über `Hallo Leyla Trainer starten.bat` auf dem Desktop, Daten in `C:\mww`, Oberfläche auf Port 8789). In `C:\mww` gibt es die Ordner `personal_samples`, `negative_samples`, `captured_audio`, `trained_wake_words`, `output`, `work`. Was darin liegt, steht im nächsten Abschnitt.
 - Live Einstellung am Gerät: Schwelle 99 Prozent, Fenster 6, `gain_factor: 4`.
 - Messwerte: rund 5 Fehlstarts am Tag, 29 von 31 bei laufendem Fernseher (türkisches Fernsehen). Gleichzeitig muss Metin oft 2 bis 3 Mal rufen.
+
+## Was im Trainer liegt (angesehen am 24.11.2026, 12:58, `C:\mww`)
+
+- `personal_samples`: 121 echte Rufe, `wohnzimmer_001.wav` bis `wohnzimmer_121.wav`, 16 kHz mono, 1,2 bis 2,9 s, Pegel rms 495 bis 3756 (Mitte 1365), nichts übersteuert; hochgeladen am 2.11.2026 als `hallo_leyla_wohnzimmer.zip`. Sie wurden im Training benutzt (Gewicht 3,0).
+- `negative_samples`: LEER. Im Trainingsprotokoll steht wörtlich "No WAVs found for reviewed negatives in: /data/negative_samples (skipping)" und "continuing with stock negatives". Echte Fehlwecker aus dem Wohnzimmer hat das Modell also nie gesehen. Dazu kamen 2040 künstlich erzeugte ähnlich klingende Sätze als Gegenbeispiele.
+- Training: 50 000 künstliche Rufe, 80 000 Schritte, sechs Läufe am 2.11.2026, der letzte um 15:07 bis 16:34.
+- Urteil des Trainers selbst über das Modell, das heute läuft: "Needs attention", erkannte Rufe 87,6 Prozent, Fehlwecker 0,21 pro Stunde bei Schwelle 0,99 und Fenster 5 (gemessen auf den Testdaten des Trainers, 9,67 Stunden Umgebungston). 0,21 pro Stunde sind rund 5 am Tag: das ist ziemlich genau, was wir zählen. Bei Schwelle 0,94 wären es laut Protokoll 6,5 Prozent überhörte Rufe und 0,375 Fehlwecker pro Stunde.
+- Folgerung: Metins Gefühl stimmt mit den Zahlen überein (er muss mehrfach rufen, und sie weckt trotzdem falsch). Was fehlt, sind allein die echten Gegenbeispiele.
 
 ## Wie die Erkennung arbeitet
 
