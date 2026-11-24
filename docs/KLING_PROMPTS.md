@@ -221,7 +221,13 @@ Geschrieben 20:47, Bilder dafür: Favorit 2 (`7_nacht.png`). Von Metin selbst in
 
 "0–3s: Dreamy and in love, she looks into the camera with a sweet smile, clasps her hands in front of her chest and gently sways from one leg to the other. 3–6s: She glances up as if at a falling star, closes her eyes for a brief moment to make a wish, then opens them and looks at him with a shy, knowing smile, lifting one heel. 6–8s: Bashful, she lowers her hands, softly draws her shoulders in and shifts her weight onto the other leg. 8–10s: She looks lovingly into the camera and returns to her initial pose. Soft, feminine, natural body movements. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-Geschrieben 20:54, Bilder dafür: Favorit 2 (`7_nacht.png`); Metin kopiert den Text selbst ein. Ergebnis hier nachtragen.
+Geschrieben 20:54, Bilder dafür: Favorit 2 (`7_nacht.png`); von Metin selbst einkopiert und gestartet, 20:54. **Ergebnis (Clip 978, `kling_20261125_VIDEO_0_3s__Drea_978_0.mp4`, Download 21:01, Original in Leyla Kling Originale):** die Hände liegen nicht gefaltet vor der Brust, sondern steif als Dreieck vor dem Bauch, und das fünf Sekunden lang (2 bis 7 s); der Blick nach oben ist nur ein Seitenblick; aus "lifting one heel" wurde ein hoch nach hinten angewinkeltes Bein (6 bis 7 s). Bewegungsmenge im Mittel 2,09, Naht 0,59. Metin um 21:00: "sehr komisch"; nicht eingebaut. Lehre: "clasps her hands in front of her chest" hält Kling als starre Pose über mehrere Takte, und "lifting one heel" ohne langes Kleid wird ein gehobenes Bein; eine Geste nur einen Takt lang, bei nackten Beinen "Both feet remain in place" aus Vorlage 1 dazuschreiben.
+
+**Schleife, Nachtkleid, Ersatz für Clip 978: Hand aufs Herz (21:02).** Schlicht nach Vorlage 1: Blick zu ihm von Anfang an, eine einzige Geste (eine Hand aufs Herz, einen Takt lang), Füße bleiben am Platz.
+
+"0–3s: Happy and in love, she looks into the camera with a sweet, shy smile and gently sways from one leg to the other. 3–6s: Touched, she places one hand over her heart, tilts her head and softly turns her shoulders, shifting her weight onto one leg. 6–8s: Bashful, she lowers her gaze for a moment, lets her hand sink and playfully shifts her weight onto the other leg. 8–10s: She looks back at him with bright, loving eyes and returns to her initial pose. Soft, feminine, natural body movements. Both feet remain in place. No speaking. Static camera, full body visible, unchanged background."
+
+Geschrieben 21:02, Bilder dafür: Favorit 2 (`7_nacht.png`); Metin kopiert den Text selbst ein. Ergebnis hier nachtragen.
 
 ## Was am 24.11.2026 sonst noch entstand
 
