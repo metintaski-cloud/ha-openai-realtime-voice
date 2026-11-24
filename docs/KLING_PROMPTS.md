@@ -566,7 +566,7 @@ Herkunft: Abfolge aus dem alten Clip (Hand heben, winken, Kopf leicht neigen, Ha
 
 Gestartet 24.11.2026 um 17:32 von Metin selbst ("läuft"), 350 Credits. Nur dieser eine Clip läuft; der nächste erst nach seinem Urteil.
 
-Ergebnis hier nachtragen.
+Ergebnis: keins. Um 17:42 war der Clip in Kling nicht mehr vorhanden (Assets zeigt nur noch die laufende Schleife), heruntergeladen wurde er nie; Metin hatte in Kling aufgeräumt und ihn dabei mit gelöscht. Einen Papierkorb hat Claude auf der Assets Seite nicht gefunden. Lehre: einen fertigen Clip sofort herunterladen und nach `Desktop\Leyla Kling Originale` kopieren, bevor in Kling irgendetwas gelöscht wird.
 
 ## Vier ruhige Schleifen kurzes Arbeitskleid in 4K (24.11.2026, vorbereitet 17:40)
 
