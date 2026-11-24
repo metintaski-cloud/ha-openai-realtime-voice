@@ -113,4 +113,4 @@ Bereit, noch nicht gelaufen. Von Claude am 24.11.2026 um 18:58 nach dem Baukaste
 - `kurz/gluecklich4` (Clip 169, Wiegen im Stand): zu langsam geraten (0,77), mit Abspielfaktor 1,5 eingebaut; Metin stellt nach.
 - `schwarz/gluecklich2` (Clip 5902), `schwarz/begruessung2` (Clip 5912, Faktor 1,3), `schwarz/brust` (Clip 5932): die drei zu stark gespielten Clips vom Nachmittag, auf Metins Wort trotzdem eingebaut.
 - Nicht eingebaut, Originale in Leyla Kling Originale: Clips 181 und 226 (misslungene Begrüßungen).
-- Noch nicht 4K und offen: `schwarz/freizeitbrust` (Endmarke bei 8,6 s), die Begrüßung im langen Arbeitskleid (nur `begruessung2` mit Lachen), im kurzen Arbeitskleid die alten Schleifen `gluecklich`, `gluecklich2`, `gluecklich3`.
+- Ziel seit 19:09 (Metin): nur noch 4K Clips. 62 alte Clips mit 4K Ersatz in derselben Szene sind seit 19:10 herausgenommen (Kopien in Leyla aussortiert); die Arbeitsliste der 67 Szenen ohne 4K steht in STATUS.md unter "ZIEL: NUR NOCH 4K CLIPS".
