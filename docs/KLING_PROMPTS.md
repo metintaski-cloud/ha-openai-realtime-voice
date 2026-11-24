@@ -568,6 +568,8 @@ Gestartet 24.11.2026 um 17:32 von Metin selbst ("läuft"), 350 Credits. Nur dies
 
 Ergebnis: keins. Um 17:42 war der Clip in Kling nicht mehr vorhanden (Assets zeigt nur noch die laufende Schleife), heruntergeladen wurde er nie; Metin hatte in Kling aufgeräumt und ihn dabei mit gelöscht. Einen Papierkorb hat Claude auf der Assets Seite nicht gefunden. Lehre: einen fertigen Clip sofort herunterladen und nach `Desktop\Leyla Kling Originale` kopieren, bevor in Kling irgendetwas gelöscht wird.
 
+Zweiter Anlauf, vorbereitet 24.11.2026 um 17:44 (Metin um 17:42: "nochmal bitte, mein Fehler"): derselbe Prompt, ergänzt um Metins Blick aus der Tonregel von 17:35 (beim ersten Winken "and her eyes drop to the floor", danach "she lifts her eyes back to the lens"); sonst kein Wort geändert. Durch `tools/kling_check.py`. Beide Bilder `6_kurz_arbeit.png` (das erste von Claude, das letzte von Metin eingesetzt, groß geprüft), 4K, 10 s, Adaptive, 1, 350 Credits am Knopf. Die Schleife 1 von 17:40 läuft noch; Metin hatte sie doppelt gestartet und einen der beiden Läufe gelöscht (Guthaben 3.6k). Generate klickt Metin. Ergebnis hier nachtragen.
+
 ## Vier ruhige Schleifen kurzes Arbeitskleid in 4K (24.11.2026, vorbereitet 17:40)
 
 Metin um 17:32: "brauche noch 3 Prompt für die Schleife", Kleid: kurzes Arbeitskleid; aus vier vorgeschlagenen Inhalten wählte er alle ("nehmen wir alle 4"). Sein Ton dazu: "wichtig, süße Blicke, schüchtern, verliebt, feminin" und "Beine und Arm Bewegungen nicht gleich". Kein Nachbau, sondern neue Inhalte, die er aus einer Auswahl bestimmt hat; jede Bewegung im Prompt stammt aus seiner Auswahl oder aus seinem Ton (Blick senken und zurück, Kinn senken), nichts sonst.
