@@ -2,7 +2,7 @@
 
 ## 2.154.2 (24 Nov 2026)
 
-- `perf`: only a message of 60 characters or more is sorted (`schwer.MIN_CHARS`), a shorter one is answered by Luna without waiting. Measured on 2.154.1: without reasoning one judgement still takes 1.0 to 1.2 s (median 1.21 s, before 1.4 s), which is the floor of a call to the small model, and a second on every answer would be felt. The everyday messages of the test are 30 to 52 characters long, the hard ones 95 to 170. Accuracy on 2.154.1: 18 of 18 one by one, 30 of 30 at once, no everyday message sent to the strong model. The limit for a late judgement is 2 s (was 3 s), and the second, plain attempt of 2.154.1 is gone (the fast fields are accepted).
+- `perf`: only a message of 60 characters or more is sorted (`schwer.MIN_CHARS`), a shorter one is answered by Luna without waiting. Measured on 2.154.1: without reasoning one judgement still takes 1.0 to 1.2 s (median 1.21 s, before 1.4 s), which is the floor of a call to the small model, and a second on every answer would be felt. The everyday messages of the test are 30 to 52 characters long, the hard ones 95 to 170. Accuracy on 2.154.1: 18 of 18 one by one, 30 of 30 at once, no everyday message sent to the strong model. The limit for a late judgement is 2 s (was 3 s), and the second, plain attempt of 2.154.1 is gone (the fast fields are accepted). Measured after the update (07:21): 15 of 15 hard questions recognised, 0 of 15 everyday messages sent to the strong model and none of them waited; a long message is sorted in 1.2 to 1.8 s; "Denk genau nach" and "İyi düşün" count at once. `schwer` is 1 on the server since then.
 
 ## 2.154.1 (24 Nov 2026)
 
