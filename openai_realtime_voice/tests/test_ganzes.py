@@ -107,6 +107,18 @@ async def test_in_a_browser_loops_run_in_order_and_a_touch_cuts_in_and_hands_bac
             state = await watch(8.5)
             assert state["look"] == "Kurzes Freizeitkleid"  # from the clip in the address
             assert seen[:3] == ["freizeitgluecklich", "freizeitgluecklich2", "freizeitgluecklich3"]
+            # the clip never leaves the view: the stage fills the screen, the settings lie on its left
+            # and scroll by themselves, the page itself does not scroll (Metin, 25 Nov 2026, 00:29)
+            lay = await page.evaluate("""()=>{const r=id=>document.getElementById(id).getBoundingClientRect();
+              const p=document.getElementById('panel');p.scrollTop=p.scrollHeight;window.scrollTo(0,500);
+              return {st:r('st'),panel:r('panel'),scrolled:p.scrollTop>0,page:window.scrollY,h:innerHeight,w:innerWidth};}""")
+            assert lay["st"]["top"] == 0 and lay["st"]["height"] == lay["h"] and lay["st"]["right"] == lay["w"]
+            assert lay["panel"]["left"] == 0 and lay["panel"]["width"] < lay["w"] * 0.6
+            assert lay["scrolled"] and lay["page"] == 0
+            await page.click("#tog")
+            assert not await page.is_visible("#panel")  # the whole clip
+            await page.click("#tog")
+            assert await page.is_visible("#panel")
             # fine tempo steps of one hundredth, and back to 1
             await page.click("#rp")
             await page.click("#rp")
@@ -146,8 +158,8 @@ async def test_in_a_browser_loops_run_in_order_and_a_touch_cuts_in_and_hands_bac
             assert {x[1] for x in volumes} == {4.0}                       # and the clip keeps its length
             # the picture of the sound: a finger dragged over it selects the stretch
             await page.wait_for_function("()=>(WAVE['kurz/freizeitpo8']||{peaks:[]}).peaks.length>100")
-            await page.locator("#wave").scroll_into_view_if_needed()
             box = await page.locator("#wave").bounding_box()
+            assert box["width"] == 400 and box["y"] + box["height"] == 800  # a strip over the full width at the bottom
             await page.mouse.move(box["x"] + box["width"] * 0.25, box["y"] + 20)
             await page.mouse.down()
             await page.mouse.move(box["x"] + box["width"] * 0.4, box["y"] + 20, steps=4)

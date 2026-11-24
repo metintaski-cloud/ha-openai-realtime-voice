@@ -6,9 +6,13 @@ for face, chest and bottom in between, the way the app plays them. This page doe
 the same hand over as the stage of the app (memory_web.stageShow): the next loop clip is
 loaded PRELOAD_S before the end and fades in 0.25 s before it, a touch clip starts at once
 with a 0.35 s fade and with its sound, and stored tempo, tempo curve and cut marks apply.
-The page is grouped (Metin, 00:10: "alles übersichtlich und zugeordnet"): Kleid, the stage,
-Schleifen, Berührung, then everything that can be set for the running clip (tempo in steps of
-one hundredth, begin and end, sound off) and the reset for all clips. Nothing here changes a
+The page is grouped (Metin, 00:10: "alles übersichtlich und zugeordnet"): Kleid, Schleifen,
+Berührung, then everything that can be set for the running clip (tempo in steps of one
+hundredth, begin and end, sound off) and the reset for all clips. The clip never leaves the
+view (Metin, 00:29: scrolling down to the settings he lost sight of it, all of it must lie on
+the left in the clip): the stage fills the screen like in the app, the groups are a see
+through column on its left that scrolls by itself, ☰ hides it, and the picture of the sound
+is a strip over the full width at the bottom. Nothing here changes a
 clip file: tempo, cut and "sound off" are values the app reads from /clips.json.
 
 The script is a raw string: keep it free of backslashes and check it with node --check
@@ -237,52 +241,62 @@ def stand_restore() -> dict:
 PAGE = r"""<!doctype html><html lang="de"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Outfit als Ganzes</title><style>
-body{margin:0 0 30px;background:#000;color:#eee;font:15px system-ui}
-h1{font-size:17px;margin:8px 10px}
-h2{font-size:14px;margin:0 0 6px;color:#9fe8ff;font-weight:600}
-h3{font-size:13px;margin:10px 0 4px;color:#c9a8ff;font-weight:600}
+html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#eee;font:13px system-ui}
+h1{font-size:14px;margin:6px 8px}
+h2{font-size:13px;margin:0 0 4px;color:#9fe8ff;font-weight:600}
+h3{font-size:12px;margin:8px 0 3px;color:#c9a8ff;font-weight:600}
 a{color:#9fe8ff}
-.card{margin:8px 10px;padding:8px 10px;border:1px solid #334;border-radius:10px}
-.bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:4px 0}
-select,button{padding:7px 10px;border-radius:8px;background:#222;color:#eee;border:1px solid #445;font:inherit}
-button.on{border-color:#2a6;color:#9f9}
-button:disabled{opacity:.45}
-#st{position:relative;margin:6px auto;height:56vh;aspect-ratio:2/3;max-width:100vw;overflow:hidden;border-radius:10px;background:#000}
+/* the clip always stays in view (Metin, 00:29): it fills the screen like in the app, everything to set lies on its left */
+#st{position:fixed;top:0;right:0;height:100%;aspect-ratio:2/3;max-width:100vw;overflow:hidden;background:#000}
 #st video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .8s}
 #st video.on{opacity:1}
-#name{font-size:19px;font-weight:600;color:#9fe8ff}
-.t{font-size:13px;color:#8aa}
-.z{color:#8aa;font-size:13px;min-width:54px}
-input[type=range]{flex:1;min-width:140px}
+#panel{position:fixed;top:0;left:0;bottom:0;width:min(58vw,360px);overflow-y:auto;background:rgba(0,0,0,.30);padding-bottom:10px;z-index:3}
+body.wave #panel{bottom:92px}
+body.hide #panel{display:none}
+@media (min-aspect-ratio:1/1){#panel{width:calc(100vw - 100vh*2/3);max-width:none;background:#000}}
+#top{position:fixed;top:6px;right:6px;z-index:4;display:flex;gap:6px;align-items:center;flex-direction:row-reverse;max-width:42vw;flex-wrap:wrap}
+#name{font-size:13px;font-weight:600;color:#9fe8ff;background:rgba(0,0,0,.55);padding:4px 7px;border-radius:8px}
+#wavebar{position:fixed;left:0;right:0;bottom:0;height:92px;z-index:4;background:rgba(0,0,0,.55);display:none}
+body.wave #wavebar{display:block}
+#wave{width:100%;height:92px;display:block;touch-action:none}
+.card{margin:6px;padding:6px 8px;border:1px solid #334;border-radius:10px;background:rgba(0,0,0,.42)}
+.bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:4px 0}
+select,button{padding:6px 8px;border-radius:8px;background:rgba(34,34,34,.9);color:#eee;border:1px solid #445;font:inherit}
+button.on{border-color:#2a6;color:#9f9}
+button:disabled{opacity:.45}
+.t{font-size:12px;color:#9ab}
+.z{color:#9ab;font-size:12px;min-width:44px}
+input[type=range]{flex:1 1 120px;min-width:120px}
 label{display:flex;gap:4px;align-items:center}
-</style></head><body><h1>Outfit als Ganzes &nbsp; <a href="/tempo" style="font-size:13px;font-weight:400">zum Clip Tester</a></h1>
-<div class="card"><h2>1. Kleid</h2><div class="bar"><select id="look"></select></div></div>
+</style></head><body>
 <div id="st"><video id="v0" playsinline muted></video><video id="v1" playsinline muted></video></div>
-<div class="card"><h2>Läuft gerade</h2><div class="bar"><span id="name">...</span><span class="t" id="info"></span></div>
+<div id="top"><button id="tog">☰</button><span id="name">...</span></div>
+<div id="panel"><h1>Outfit als Ganzes &nbsp; <a href="/tempo" style="font-size:12px;font-weight:400">Clip Tester</a></h1>
+<div class="card"><h2>1. Kleid</h2><div class="bar"><select id="look"></select></div><div class="t" id="info"></div>
 <div class="bar" id="solobar" style="display:none"><span class="t">Nur dieser Clip läuft, zum Einstellen.</span><button id="weiter">weiter mit den Schleifen</button></div></div>
 <div class="card"><h2>2. Schleifen</h2><div id="loops" class="bar"></div>
 <div class="bar"><button id="seq">Schleifen: der Reihe nach</button><button id="nxt">nächste Schleife</button></div></div>
 <div class="card"><h2>3. Berührung</h2><div id="touch"></div>
-<div class="bar"><label><input type="checkbox" id="ton" checked>Ton auf dieser Seite hören</label></div></div>
-<div class="card"><h2>4. Einstellen für den Clip, der gerade läuft</h2>
+<div class="bar"><label><input type="checkbox" id="ton" checked>Ton hier hören</label></div></div>
+<div class="card"><h2>4. Einstellen: der Clip, der läuft</h2>
 <h3>Tempo</h3>
-<div class="bar"><input type="range" id="rate" min="0.4" max="2" step="0.01" value="1"><span id="rlab" style="min-width:42px">1.00</span></div>
-<div class="bar"><button id="rm">Tempo − 0,01</button><button id="rp">Tempo + 0,01</button><button id="r1">auf 1</button><button id="mk">Tempo merken</button></div>
+<div class="bar"><input type="range" id="rate" min="0.4" max="2" step="0.01" value="1"><span id="rlab" style="min-width:34px">1.00</span></div>
+<div class="bar"><button id="rm">− 0,01</button><button id="rp">+ 0,01</button><button id="r1">auf 1</button><button id="mk">Tempo merken</button></div>
 <h3>Schnitt: Anfang und Ende</h3>
 <div class="t" id="clab"></div>
 <div class="bar"><span class="z">Anfang</span><input type="range" id="cfrom" min="0" max="10" step="0.01" value="0"><button id="am">− 0,01</button><button id="ap">+ 0,01</button></div>
 <div class="bar"><span class="z">Ende</span><input type="range" id="cto" min="0" max="10" step="0.01" value="10"><button id="em">− 0,01</button><button id="ep">+ 0,01</button></div>
-<div class="bar"><button id="csave">Schnitt merken</button><button id="cclr">Schnitt weg</button><a id="cut" href="/tempo" class="t">im Clip Tester öffnen</a></div>
+<div class="bar"><button id="csave">Schnitt merken</button><button id="cclr">Schnitt weg</button><a id="cut" href="/tempo" class="t">im Clip Tester</a></div>
 <h3>Ton</h3>
-<div class="bar"><button id="tonb">Ton dieses Clips</button><span class="t" id="toninfo"></span></div>
-<div id="tonstk"><div class="t">Das Bild vom Ton: mit dem Finger über das Stück ziehen, das stumm sein soll. Rot ist schon stumm, die weiße Linie zeigt, wo der Clip gerade ist. Einmal tippen springt an die Stelle.</div>
-<canvas id="wave" style="width:100%;height:84px;display:block;margin:6px 0;border:1px solid #334;border-radius:8px;touch-action:none;background:#0a0f18"></canvas>
+<div class="bar"><button id="tonb">Ton dieses Clips</button></div><div class="t" id="toninfo"></div>
+<div id="tonstk"><div class="t">Unten am Rand ist das Bild vom Ton: mit dem Finger über das Stück ziehen, das stumm sein soll. Rot ist schon stumm, die weiße Linie zeigt, wo der Clip ist. Einmal tippen springt an die Stelle.</div>
 <div class="t" id="slab"></div>
 <div class="bar"><span class="z">von</span><input type="range" id="sfrom" min="0" max="10" step="0.01" value="0"><button id="sm1">− 0,01</button><button id="sp1">+ 0,01</button></div>
 <div class="bar"><span class="z">bis</span><input type="range" id="sto" min="0" max="10" step="0.01" value="1"><button id="sm2">− 0,01</button><button id="sp2">+ 0,01</button></div>
-<div class="bar"><button id="sadd">Dieses Stück stumm schalten</button><button id="shear">Stück anhören</button></div><div class="t" id="slist"></div></div></div>
-<div class="card"><h2>5. Reset für alle Clips</h2><div class="bar"><button id="rst">Reset</button><button id="rnew" style="font-size:12px;color:#8aa">Stand neu merken</button></div>
-<div class="t" id="rinfo"></div></div>
+<div class="bar"><button id="sadd">Stück stumm schalten</button><button id="shear">Stück anhören</button></div><div class="t" id="slist"></div></div></div>
+<div class="card"><h2>5. Reset für alle Clips</h2><div class="bar"><button id="rst">Reset</button><button id="rnew" style="font-size:11px;color:#9ab">Stand neu merken</button></div>
+<div class="t" id="rinfo"></div></div></div>
+<div id="wavebar"><canvas id="wave"></canvas></div>
 <script>
 const OUT=[['Kurzes Arbeitskleid','kurz',''],['Kurzes Freizeitkleid','kurz','freizeit'],['Langes Arbeitskleid','schwarz',''],['Langes Freizeitkleid','schwarz','freizeit'],['Nachtkleid','nacht','']];
 const ZONES=[['Gesicht',['gesicht']],['Brust',['brust']],['Bauch',['bauch','mix']],['Po',['po','povorne','mix']]];
@@ -305,13 +319,13 @@ function cutShow(){const p=pthNow(),d=vis().duration||0,a=Number($('cfrom').valu
 function tonShow(){const p=pthNow(),off=!!MUTE[p];$('tonb').disabled=!CURSND;$('tonb').classList.toggle('on',CURSND&&off);
  $('tonb').textContent=!CURSND?'Schleifen laufen immer ohne Ton':(off?'Ton dieses Clips ist AUS (wieder einschalten)':'Ton dieses Clips ausschalten');
  $('toninfo').textContent=CURSND?(off?'In der App läuft dieser Clip stumm. Die Datei behält ihren Ton.':'In der App läuft dieser Clip mit seinem Ton.'):'';
- $('tonstk').style.display=CURSND&&!off?'block':'none';const d=vis().duration||10;$('sfrom').max=$('sto').max=String(d);stkShow();waveLoad();}
+ $('tonstk').style.display=CURSND&&!off?'block':'none';document.body.classList.toggle('wave',CURSND&&!off);const d=vis().duration||10;$('sfrom').max=$('sto').max=String(d);stkShow();waveLoad();}
 /* the picture of the sound: loudness over time from the server, his selection, the silent stretches, the play line */
 let WAVE={},WSEL=null;
 async function waveLoad(){const p=pthNow();if(!CURSND||WAVE[p])return;WAVE[p]={peaks:[],dauer:0,wait:true};
  try{const j=await (await fetch('/api/wave?clip='+encodeURIComponent(p))).json();if(j&&j.ok)WAVE[p]=j;else WAVE[p]={peaks:[],dauer:0,fail:true};}catch(e){WAVE[p]={peaks:[],dauer:0,fail:true};}}
 function waveDur(){const w=WAVE[pthNow()];return (vis().duration||0)||(w&&w.dauer)||10;}
-function waveDraw(){const c=$('wave');if(c.offsetParent!==null){const dpr=window.devicePixelRatio||1,W=Math.round(c.clientWidth*dpr),H=Math.round(c.clientHeight*dpr);
+function waveDraw(){const c=$('wave');if(document.body.classList.contains('wave')){const dpr=window.devicePixelRatio||1,W=Math.round(c.clientWidth*dpr),H=Math.round(c.clientHeight*dpr);
   if(c.width!==W||c.height!==H){c.width=W;c.height=H;}
   const g=c.getContext('2d'),p=pthNow(),w=WAVE[p]||{peaks:[]},d=waveDur(),x=t=>t/d*W;g.clearRect(0,0,W,H);
   const n=w.peaks.length;if(n){const span=(w.dauer||d)/n;g.fillStyle='#4fd6ff';for(let i=0;i<n;i++){const h=Math.max(1,w.peaks[i]*(H-6));g.fillRect(x(i*span),(H-h)/2,Math.max(1,x(span)-0.5),h);}}
@@ -398,6 +412,7 @@ async function start(){const j=await (await fetch('/clips.json?t='+Date.now())).
  if(!OUT[i]||!o[OUT[i][1]])i=Number(s.options[0].value);s.value=String(i);pick(i);requestAnimationFrame(soloTick);requestAnimationFrame(waveDraw);}
 const post=async(url,body)=>{try{return await (await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();}catch(e){return null;}};
 const flash=(b,ok,txt)=>{b.textContent=ok?'gemerkt':'ging nicht';setTimeout(()=>{b.textContent=txt;},1200);};
+$('tog').onclick=()=>document.body.classList.toggle('hide');  /* the panel away: the whole clip */
 $('nxt').onclick=()=>{BUSY=false;loopNext(false,true);};$('weiter').onclick=()=>{BUSY=false;loopNext(false,true);};
 /* the loops in order (clip 1, 2, 3, 1 ...) or at random like the app, where never the same one follows itself */
 function seqShow(){$('seq').textContent=SEQ?'Schleifen: der Reihe nach':'Schleifen: zufällig wie in der App';$('seq').classList.toggle('on',!SEQ);}
