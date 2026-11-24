@@ -120,7 +120,11 @@ In Kling vorbereitet um 19:21, beide Bilder `6_kurz_arbeit.png` (von Metin einge
 
 "0–2s: She reacts with sweet surprise to an unexpected playful sensation on her bottom, smiles shyly at him and shifts her weight onto one leg. 2–4s: Playfully she turns around on the spot until her back faces the camera, her long hair swinging softly. 4–7s: With her back to him she gently sways her hips from side to side, relaxed and teasing, shifting her weight from leg to leg. 7–10s: She turns back to face him, smiles bashfully and lovingly into the camera and returns to her initial pose. Soft, feminine, natural body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-Noch nicht in Kling eingesetzt (19:45): Metin hatte einen Clip in der Großansicht offen. Ergebnis hier nachtragen.
+Dieser Nachbau lief nicht. Metin um 19:44: "jetzt, wo wir die Muster Regel verstanden haben, können wir bessere Szenen beschreiben"; Claude schlug eine eigene Szene vor (überrascht, frech, verlegen, verliebt, das Buch spielt mit), Metin um 19:46: "ja". Eingesetzt um 19:48, beide Bilder `6_kurz_arbeit.png` aus den Favoriten, 4K, 10 s, Adaptive, 1, 350 Credits am Knopf:
+
+"0–2s: She reacts with sweet surprise to an unexpected playful sensation on her bottom, gives a tiny start and glances back over her shoulder, shifting her weight onto one leg. 2–5s: Playfully she turns halfway until her back is half toward him, looks at him over her shoulder with a teasing, shy smile and gently sways her hips once. 5–8s: She turns back to face him, bashfully hugs her book against her chest and lowers her gaze, shifting her weight onto the other leg. 8–10s: She looks up at him with loving eyes, lowers the book back to her side and returns to her initial pose. Soft, feminine, natural body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
+
+Generate klickt Metin. Ergebnis hier nachtragen.
 
 ## Was am 24.11.2026 sonst noch entstand
 
