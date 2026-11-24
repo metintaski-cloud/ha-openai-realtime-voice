@@ -604,7 +604,7 @@ window.addEventListener('beforeinstallprompt',e=>{INST=e;diag('installable');});
 window.addEventListener('appinstalled',()=>{INST=null;diag('installed');});
 setTimeout(()=>diag('open'),4000);  /* 2.134.3: only with a service worker does Chrome install the page as an app, and only then does the manifest's fullscreen apply */
 async function clipsLoad(){let outs={};try{outs=(await (await fetch('/clips.json')).json()).outfits||{};}catch(e){}
- for(const k in outs){CVER[k]=outs[k].v||0;const r=outs[k].r||{};for(const c in r)RATE[k+'/'+c]=r[c];const q=outs[k].k||{};for(const c in q)KURVE[k+'/'+c]=q[c];const sc=outs[k].s||{};for(const c in sc)SCHNITT[k+'/'+c]=sc[c];}  /* 2.136.0 (Metin): his tempo from the tester, the clip files stay untouched */
+ MUTE={};STUMM={};for(const k in outs){for(const c of (outs[k].m||[]))MUTE[k+'/'+c]=1;for(const c in (outs[k].ms||{}))STUMM[k+'/'+c]=outs[k].ms[c];CVER[k]=outs[k].v||0;const r=outs[k].r||{};for(const c in r)RATE[k+'/'+c]=r[c];const q=outs[k].k||{};for(const c in q)KURVE[k+'/'+c]=q[c];const sc=outs[k].s||{};for(const c in sc)SCHNITT[k+'/'+c]=sc[c];}  /* 2.136.0 (Metin): his tempo from the tester, the clip files stay untouched */
 NIGHT=outs.nacht?outs.nacht.clips:[];NIGHTBODY=!!(outs.nacht&&outs.nacht.body);delete outs.nacht;PET=outs.mokka&&outs.mokka.alpha||[];delete outs.mokka;const names=Object.keys(outs);LOOKS=names.slice().sort();
  let last='',lday='',seen=0;try{last=localStorage.getItem('loutfit')||'';lday=localStorage.getItem('loutfitday')||'';seen=Number(localStorage.getItem('lseen')||0);}catch(e){}
  let mokpend=false;try{mokpend=!localStorage.getItem('lmokka');}catch(e){}
@@ -627,7 +627,7 @@ const PHONE=Math.min(screen.width,screen.height)*(window.devicePixelRatio||1)<=1
 function lightNow(){try{const o=localStorage.getItem('llight');if(o==='an')return true;if(o==='aus')return false;}catch(e){}
  const c=navigator.connection;return LIGHT||PHONE||!!(c&&(c.type==='cellular'||c.saveData));}
 function stallSeen(){if(lightNow())return;const t=Date.now();STALLS=STALLS.filter(x=>t-x<60000);STALLS.push(t);if(STALLS.length>=2)LIGHT=true;}
-let RATE={},KURVE={},SCHNITT={};
+let RATE={},KURVE={},SCHNITT={},MUTE={},STUMM={};  /* MUTE: clips whose sound Metin switched off on the page /ganzes, STUMM: silent stretches [from,to] inside a clip (2.163.0); the files keep their sound and their length */
 /* 2.144.0 (Metin sets where a clip begins and ends, in the tester): the stage starts a clip at its mark, hands over at its end mark and holds the last picture there; the file stays whole */
 function cutStart(pth){const c=SCHNITT[pth];return c&&c[0]>0?c[0]:0;}
 function endOf(v){const d=v.duration||0,c=SCHNITT[v.dataset.pth||''];return c&&c[1]>0&&c[1]<d?c[1]:d;}
@@ -641,7 +641,7 @@ function rateFollow(v,pth){if(!KURVE[pth])return null;return()=>{const r=rateAt(
  if(Math.abs((v.playbackRate||1)-r)>0.001)v.playbackRate=r;};}
 let SV=0,STOK=0,CONT=false,SWAP=0;const PRELOAD_S=3,PRELOAD_LIGHT_S=9;  /* 2.141.5: on the go a 7 Mbit copy needs about 7 s over an 11 Mbit line, so the next clip starts loading 9 s ahead, once the running one is fully loaded */
 let TIGHT=false;  /* a loop that replays the same clip blends only at the very end (2.133.5): nacht/eifersuechtig does not come all the way back to its start pose, and the wide blend showed both poses at once */
-function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name);const tight=TIGHT;TIGHT=false;const PRE=tight?0.25:0.8,OFF=tight?300:850;const s=document.getElementById('stage'),vs=[document.getElementById('svid'),document.getElementById('svid2')],a=vs[SV],b=vs[1-SV],tok=++STOK,cont=CONT;CONT=false;
+function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name)&&!MUTE[name.includes('/')?name:OUTFIT+'/'+name];const tight=TIGHT;TIGHT=false;const PRE=tight?0.25:0.8,OFF=tight?300:850;const s=document.getElementById('stage'),vs=[document.getElementById('svid'),document.getElementById('svid2')],a=vs[SV],b=vs[1-SV],tok=++STOK,cont=CONT;CONT=false;
  if(!name){s.classList.remove('vid');vs.forEach(v=>{v.classList.remove('on');setTimeout(()=>{if(tok===STOK){v.pause();v.removeAttribute('src');v.load();}},600);});return;}
  if(loop&&a.loop&&a.classList.contains('on')&&a.src.split('?')[0].endsWith('/'+name+'.mp4'))return;
  b.onended=null;b.ontimeupdate=null;b.loop=!!loop;b.muted=!snd||document.getElementById('chat').classList.contains('oncall');b.volume=.7;let rdy=false;const ready=()=>{if(rdy)return;rdy=true;b.oncanplaythrough=null;if(tok!==STOK)return;
@@ -654,6 +654,7 @@ function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name);const tight=TI
  const go=()=>{const cs=cutStart(b.dataset.pth||'');if(Math.abs(b.currentTime-cs)>0.04)b.currentTime=cs;b.play().catch(()=>{b.muted=true;b.play().catch(()=>{});});b.style.zIndex=1;a.style.zIndex=0;b.classList.add('on');s.classList.add('vid');SV=1-SV;
   setTimeout(()=>{if(tok===STOK)a.classList.remove('on');},OFF);setTimeout(()=>{if(!a.classList.contains('on'))a.pause();},OFF+150);let fired=false;const fire=()=>{if(fired||tok!==STOK||!done)return;fired=true;CONT=true;done();CONT=false;};
   const fol=rateFollow(b,b.dataset.pth||'');
+  {const st=STUMM[b.dataset.pth||''];if(st&&!b.muted){const s0=b.src,vf=()=>{if(b.src!==s0)return;const t=b.currentTime;b.volume=st.some(x=>t>=x[0]&&t<x[1])?0:.7;if(!b.ended)requestAnimationFrame(vf);};vf();}}  /* a silent stretch: the clip plays on, only its volume is zero there, nothing shifts */
   const pre=lightNow()?PRELOAD_LIGHT_S:PRELOAD_S,full=()=>{const r=b.buffered;return r.length&&r.end(r.length-1)>=endOf(b)-0.2;};
   /* 2.143.2 (Metin: the ends of the clips flicker): the early preload on the phone began about 1 s into a 10 s clip and loaded the next clip into the old video while it was still fading out (it stays visible up to 1.65 s). The early preload now waits 2.5 s after the swap */
   const t0=performance.now();
@@ -1147,6 +1148,17 @@ def list_outfits() -> dict:
         look, clip = name.split("/", 1)
         if look in out and clip in out[look]["clips"]:
             out[look].setdefault("s", {})[clip] = cut
+    # m: clips whose sound is switched off (2.163.0, the page /ganzes; the files keep their sound)
+    from app import ganzes_page
+    sound = ganzes_page.ton_read()
+    for name in sound["aus"]:
+        look, _, clip = name.partition("/")
+        if look in out and clip in out[look]["clips"]:
+            out[look].setdefault("m", []).append(clip)
+    for name, segs in sound["stumm"].items():  # ms: silent stretches inside a clip, [from, to] seconds
+        look, _, clip = name.partition("/")
+        if look in out and clip in out[look]["clips"]:
+            out[look].setdefault("ms", {})[clip] = segs
     return out
 
 
@@ -1403,7 +1415,7 @@ button{padding:6px 10px;border-radius:8px;background:#222;color:#eee;border:1px 
 .t.g{color:#5c9}
 #liste{margin:10px;padding:8px;border:1px solid #334;border-radius:10px;font-size:13px;color:#9ab}
 @media (max-width:720px){.wrap{flex-direction:column}video{max-height:34vh}}
-</style></head><body><h1>Clip Tester: Tempo, Anfang und Ende</h1><div class="wrap" id="w"></div>
+</style></head><body><h1>Clip Tester: Tempo, Anfang und Ende &nbsp; <a href="/ganzes" id="ganz" style="font-size:13px;font-weight:400;color:#9fe8ff">Outfit als Ganzes</a></h1><div class="wrap" id="w"></div>
 <script>
 /* 2.138.0 (Metin: "Ich brauche Referenz vor Augen"): judging a clip on its own does not
    work, so the left side keeps playing one clip he picked as the reference and the right
@@ -1453,7 +1465,11 @@ async function build(){
  const pick=document.createElement('select');pick.style.cssText='max-width:100%;padding:6px;border-radius:8px;background:#222;color:#eee;border:1px solid #445';
  for(const n of ALL){const op=document.createElement('option');op.value=n;op.textContent=n;pick.appendChild(op);}
  nav.append(prev,next,asref,pick);
- const r=document.createElement('input');r.type='range';r.min='0.4';r.max='2';r.step='0.05';r.value='1';
+ const r=document.createElement('input');r.type='range';r.min='0.4';r.max='2';r.step='0.01';r.value='1';
+ /* 2.163.0 (Metin: buttons with 0,01 steps for all): two buttons next to a slider move it by one hundredth */
+ const fine=(inp,name)=>{const row2=document.createElement('div');row2.className='row';const mkf=(txt,dd)=>{const x=document.createElement('button');x.textContent=name+' '+txt;x.dataset.fine=name+txt[0];
+   x.onclick=()=>{inp.value=String(Math.min(Number(inp.max),Math.max(Number(inp.min),Math.round((Number(inp.value)+dd)*100)/100)));inp.oninput();};return x;};
+  row2.append(mkf('- 0,01',-0.01),mkf('+ 0,01',0.01));return row2;};
  const lab=document.createElement('span');lab.className='v';lab.textContent='1.00';
  const row=document.createElement('div');row.className='row';
  const back=document.createElement('button');back.textContent='zurueck auf 1';
@@ -1462,9 +1478,9 @@ async function build(){
  row.append(lab,back,mk,skip);
  /* the scalpel (2.139.0, Metin): a stretch inside the clip gets its own tempo */
  const seg=document.createElement('div');seg.className='row';
- const sfrom=document.createElement('input');sfrom.type='range';sfrom.min='0';sfrom.max='10';sfrom.step='0.05';sfrom.value='0';
- const slen=document.createElement('input');slen.type='range';slen.min='0.2';slen.max='4';slen.step='0.05';slen.value='1';
- const srate=document.createElement('input');srate.type='range';srate.min='0.4';srate.max='2';srate.step='0.05';srate.value='1';
+ const sfrom=document.createElement('input');sfrom.type='range';sfrom.min='0';sfrom.max='10';sfrom.step='0.01';sfrom.value='0';
+ const slen=document.createElement('input');slen.type='range';slen.min='0.2';slen.max='4';slen.step='0.01';slen.value='1';
+ const srate=document.createElement('input');srate.type='range';srate.min='0.4';srate.max='2';srate.step='0.01';srate.value='1';
  const slab=document.createElement('div');slab.className='t';
  const only=document.createElement('button');only.textContent='nur Stueck';
  const sadd=document.createElement('button');sadd.textContent='Stueck merken';
@@ -1482,7 +1498,7 @@ async function build(){
  const crow2=document.createElement('div');crow2.className='row';
  const seam=mkb('Ende ansehen'),csave=mkb('Schnitt merken'),cclr=mkb('Schnitt weg');
  crow.append(am,ap,em,ep);crow2.append(seam,csave,cclr);
- d.append(pos,v,nav,r,row,clab,cfrom,cto,crow,crow2,slab,sfrom,slen,srate,seg,slist);
+ d.append(pos,v,nav,r,fine(r,'Tempo'),row,clab,cfrom,fine(cfrom,'Anfang'),cto,fine(cto,'Ende'),crow,crow2,slab,sfrom,fine(sfrom,'Stück Anfang'),slen,fine(slen,'Stück Länge'),srate,fine(srate,'Stück Tempo'),seg,slist);
  let cur=(ALL.includes(want)&&want)||NAMES.find(n=>n!==REF)||NAMES[0];
  const show=()=>{pos.textContent=cur+'   '+(NAMES.indexOf(cur)+1)+' von '+NAMES.length+' offen';pick.value=cur;};
  const play=()=>{v.src='/clips/'+cur+'.mp4?t='+Date.now();v.playbackRate=Number(r.value);v.play().catch(()=>{});show();};
@@ -1710,6 +1726,44 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
             # Tempo Tester (2.135.0, Metin): two clips side by side with a speed slider each,
             # so he can find the right factor himself and name it
             await _respond(writer, "200 OK", "text/html; charset=utf-8", TEMPO_PAGE)
+        elif method == "GET" and path == "/api/wave":
+            # loudness of a clip's sound over time, for the picture of the sound on /ganzes (2.163.0)
+            from app import ganzes_page
+            from urllib.parse import parse_qs
+            name = (parse_qs(query).get("clip") or [""])[0]
+            file = clip_paths().get(name)
+            out = await ganzes_page.wave(file) if file else {"ok": False}
+            await _respond(writer, "200 OK", "application/json", json.dumps(out))
+        elif path == "/api/ton" and method in ("GET", "POST"):
+            # the sound of one clip off or on again (app/ganzes_page.py, 2.163.0)
+            from app import ganzes_page
+            n = str(d.get("name") or "")[:60]
+            if method == "GET":
+                ok = True
+            elif "stumm" in d:
+                ok = ganzes_page.ton_stumm(n, d.get("stumm"))
+            else:
+                ok = isinstance(d.get("aus"), bool) and ganzes_page.ton_set(n, d["aus"])
+            if method == "POST" and ok:
+                logger.info("Clip sound: %s %s", n, "silent stretches set" if "stumm" in d
+                            else "off" if d["aus"] else "on")
+            await _respond(writer, "200 OK", "application/json",
+                           json.dumps({"ok": ok, **ganzes_page.ton_read()}, ensure_ascii=False))
+        elif path == "/api/stand" and method in ("GET", "POST"):
+            # the reset point of all tempo, curve and cut values (app/ganzes_page.py, 2.163.0)
+            from app import ganzes_page
+            act = d.get("aktion") if method == "POST" else ""
+            out = (ganzes_page.stand_restore() if act == "zurueck" else
+                   ganzes_page.stand_save() if act == "merken" else
+                   ganzes_page.stand_info() if method == "GET" else {"ok": False})
+            if act in ("zurueck", "merken"):
+                logger.info("Clip values: %s, reset point of %s", "all put back" if act == "zurueck"
+                            else "new reset point", out.get("wann"))
+            await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
+        elif method == "GET" and path == "/ganzes":
+            # one outfit as a whole: its loops in a row and the touch clips in between (2.163.0)
+            from app import ganzes_page
+            await _respond(writer, "200 OK", "text/html; charset=utf-8", ganzes_page.PAGE)
         elif method == "GET" and path == "/sw.js":
             # without a service worker Chrome only makes a shortcut that opens with its address
             # bar; with one the page installs as an app and the manifest's fullscreen applies
@@ -1964,6 +2018,12 @@ async def start_http(store: memory.MemoryStore, sync: Optional[object] = None,
                           planer),
         host, port, ssl=tls)
     logger.info("Memory page on port %d%s", port, " (HTTPS)" if tls else "")
+    if tls is None:
+        try:  # the reset point is taken at the first start, before anything is tried out (2.163.0)
+            from app import ganzes_page
+            ganzes_page.stand_info()
+        except Exception as e:
+            logger.warning("Reset point of the clip values: %s", type(e).__name__)
     if tls is None and os.environ.get("LEYLA_MOBIL", "1") == "1":
         asyncio.get_running_loop().create_task(mobil_runner().run())
     return server
