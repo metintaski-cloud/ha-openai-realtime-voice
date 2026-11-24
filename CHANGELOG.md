@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.152.0 (24 Nov 2026)
+
+- `feat`: the notes at the start of a spoken talk go out in the order she needs them. GPT Live takes a note piece by piece on its audio clock, about half a second each; with 38 pieces Metin's personal part and the last chat arrived about 19 s into the talk, behind the private list (14 pieces) and the diary (17). New order: who it is and their closeness, her heart, his personal part, the small notes of today, the last chat (now its own note `chat`), her diary, and the private list last. Nothing is left out (Metin, 06:20: "Kürzen hört sich nach wenig an").
+- `refactor`: this code moved from `main.py` into `app/talk_notes.py` (`TalkNotesMixin`: `_unlock`, `_hand_over_personal`, `_send_note`, the texts as functions without side effects). `main.py` 1935 to 1818 lines.
+- New `POST /api/kopf/notizen {sizes:[...]}` (code word): the notes of a talk with Metin, how long each is, and for each piece size how many pieces GPT Live takes or rejects and how long it lasts. The piece size is the server setting `note_chars` (0 = 1000).
+- The setting `hoeren` of 2.151.0 is on by default: Metin heard it at 06:16, "Ja das ist sie".
+
 ## 2.151.0 (24 Nov 2026)
 
 - `feat`: for a voice message in the app Leyla can hear Metin's recording herself (setting `hoeren` on the server, `POST /api/kopf/settings`, default 0 = as before). Until now the message only became text, the chat model wrote the answer and GPT Live said it without ever hearing him; to Metin that sounded read ("klingt wie Roboter", "nicht die voice ai von gpt", 05:44 and 05:46). With the setting, `main._chat_voice` turns the recording into 24 kHz PCM (`app/voice_in.py`, ffmpeg) and starts a GPT Live session at once: a note to listen in silence, the recording in real time, and when it is through and the written answer is there, the note with the content (`chat.hear_prompt`); she answers in the words of the moment. Transcription and chat answer run while she listens, so the wait stays about the same. What she says before the note is dropped; a silent first try falls back to the old way (the text only); a recording that cannot be read or is longer than 60 s takes the old way too.

@@ -79,6 +79,8 @@ async def test_private_list_only_after_code(tmp_path, monkeypatch):
     assert "Habibi" in sent[0]["content"] and "nie laut" in everything
     kinds = [x["event_id"].split("_")[0] for x in sent]
     assert kinds[0] == "unlock" and "heart" in kinds and "private" in kinds
+    # 2.152.0: what she needs first goes first, the long private list last
+    assert kinds[-1] == "private" and kinds.index("heart") < kinds.index("private")
     sent.clear()
     await bridge._unlock(WS(), {}, app=True)   # typed in the app: nothing to answer aloud
     assert "Habibi" not in sent[0]["content"] and "App" in sent[0]["content"]

@@ -63,8 +63,12 @@ SETTINGS = {"min_sim": 0.48, "top": 4, "ask_min_sim": 0.38, "ask_top": 6, "word_
             "chat_model": "", "budget": 0.0,
             # 1: for a voice message in the app she hears Metin's recording herself and answers
             # it by voice with the written answer as content (main._chat_voice, 2.151.0); 0: she
-            # only says the written answer, as before
-            "hoeren": 0}
+            # only says the written answer, as before. On since Metin heard it on 24 Nov 2026,
+            # 06:16 ("Ja das ist sie").
+            "hoeren": 1,
+            # the largest piece of a note to GPT Live in characters (0 = notes.NOTE_MAX_CHARS),
+            # measured with /api/kopf/notizen
+            "note_chars": 0}
 COMPARE = (("text-embedding-3-small", 256), ("text-embedding-3-small", 1536),
            ("text-embedding-3-large", 256), ("text-embedding-3-large", 1024))
 BONUSES = (0.0, 0.05, 0.1)
@@ -134,6 +138,7 @@ class Index:
         self.reflect = None  # main sets it: app/nachdenken.Reflection
         self.think = None   # main sets it: think now (async, returns the number of days done)
         self.speak = None   # main sets it: one spoken test sentence (async, returns what came)
+        self.notes = None   # main sets it: the notes of a talk's start, measured (async)
         self._load()
 
     @property
@@ -484,6 +489,8 @@ class Index:
             done = await self.think() if (d.get("now") and self.think) else 0
             return {"ok": True, "done": done, "due": len(self.reflect.due()),
                     **(self.reflect.listing() if d.get("read") else {})}
+        if path == "/api/kopf/notizen" and self.notes:
+            return await self.notes(d.get("sizes"))
         if path == "/api/kopf/stimme" and self.speak:
             return await self.speak(str(d.get("text", ""))[:600], d.get("how"), d)
         if path == "/api/kopf/find":
