@@ -233,7 +233,11 @@ Geschrieben 21:02; Metin um 21:04: "nein", nicht gelaufen.
 
 "0–3s: Happy to see him, she looks into the camera with a sweet, shy smile and lets a slow, soft wave roll down through her body, from her shoulders through her chest and waist to her hips. 3–6s: In a calm, steady rhythm the wave rolls down her body again and again, her knees bending softly with each one, her arms relaxed at her sides. 6–8s: She keeps the same rhythm, tilts her head and smiles at him with a seductive, shy look as one more wave flows down to her hips. 8–10s: She lets the last wave fade, looks lovingly into the camera and returns to her initial pose. Smooth, continuous, feminine body waves in a steady rhythm. She remains in the same spot. Both feet remain in place. No speaking. Static camera, full body visible, unchanged background."
 
-Geschrieben 21:05, Bilder dafür: Favorit 2 (`7_nacht.png`); Metin kopiert den Text selbst ein. Ergebnis hier nachtragen.
+Geschrieben 21:05. Metin um 21:04: "als Schleife", um 21:06: "das Gleiche, aber sie schnipst mit einer Hand die Finger, kurz bevor die letzte Pose kommt". Endfassung (Welle ohne Pause von der ersten bis zur letzten Sekunde, damit die Naht nicht stockt, Fingerschnipsen kurz vor der Endpose):
+
+"0–3s: Happy to see him, she looks into the camera with a sweet, shy smile and at once lets a slow, soft wave roll down through her body, from her shoulders through her chest and waist to her hips. 3–6s: In the same calm, steady rhythm the wave rolls down her body again and again, her knees bending softly with each one, her arms relaxed at her sides. 6–8s: She keeps the rhythm without pause, tilts her head and smiles at him with a seductive, shy look. 8–10s: One more wave flows down in the same rhythm, she raises one hand and playfully snaps her fingers once, then lowers her hand and ends exactly in her initial pose, her eyes lovingly on the camera. Smooth, continuous, feminine body waves in one steady rhythm from the first to the last second. She remains in the same spot. Both feet remain in place. No speaking. Static camera, full body visible, unchanged background."
+
+Bilder dafür: Favorit 2 (`7_nacht.png`); Metin kopiert den Text selbst ein. Ergebnis hier nachtragen.
 
 ## Was am 24.11.2026 sonst noch entstand
 
