@@ -499,3 +499,17 @@ Herkunft: Aufbau, feste Tatsachen (eine Frau, ein Buch, Buch bleibt im selben Ar
 Gestartet 24.11.2026 um 16:05 von Claude (Metins Ja von 16:05), 350 Credits, Guthaben danach etwa 5.000.
 
 Ergebnis hier nachtragen.
+
+## Brust Berührung langes Arbeitskleid neu in 4K: schwarz/brust (24.11.2026, gestartet 16:11)
+
+Metin schickte `schwarz/brust` mit "Brust berühre": alter Clip 1176 x 1764, 15 s. Abgelesen: sie erschrickt kurz (Lippen offen), schaut an sich herunter und lächelt verlegen, wiegt den Oberkörper, schaut wieder hoch und lacht. Neu dazu der Schulter Shimmy, den Metin beim Brust Clip im langen Freizeitkleid (schwarz/freizeitbrust) gut fand; die alten Teile sind alle enthalten.
+
+Einstellungen (ausgelesen): Kling 4.0, Keyframes, beide Bilder `5_lang_arbeit.png` (groß geprüft), 4K, 10 s, Adaptive, 1 Ausgabe, 350 Credits. Von Claude ohne Rückfrage gestartet nach Metins Regel von 16:05.
+
+Prompt (durch `tools/kling_check.py`; der erste Entwurf wurde angehalten, weil der Shimmy als eine Bewegung in 2,5 s zählte, danach in vier gezählte Bewegungen zerlegt): "Use the first keyframe as the first frame and the last keyframe as the last frame. A single continuous shot with no cuts. The camera stays fixed on a tripod and keeps the full body framing of the keyframes; the background and the reflections on the floor stay exactly as they are. Exactly one woman and exactly one book; the closed book stays against her side in the same arm the whole time, and both of her feet stay planted on the same spot. Her face, her hair and everything she wears stay exactly as in the keyframes the whole time. Every movement keeps natural weight and real-time speed. 0 to 1.5 seconds: her eyes widen, her lips part in a quick gasp and she pulls both shoulders up. 1.5 to 3.5 seconds: she glances down at herself, she lifts her eyes back to the lens with a bashful smile and she tilts her head to her left. 3.5 to 6 seconds: she shimmies her shoulders twice, she leans her upper body toward the lens, she shimmies her shoulders twice more, and she straightens up with a grin; her hair swings with each shimmy. 6 to 8.5 seconds: she laughs once with her head tipping back, she shakes her head twice, then she lowers her shoulders and settles into the stance of the first frame with a wide smile. 8.5 to 10 seconds: she holds exactly the pose of the last frame, completely still. No subtitles, no background music."
+
+Gezählt: erschrecken (3), an sich heruntersehen, aufblicken, Kopf neigen (3), zweimal Shimmy, vorbeugen, zweimal Shimmy, aufrichten (4), auflachen, zweimal Kopf schütteln, Schultern senken (3), dann 1,5 s Stillstand.
+
+Herkunft: Aufbau und Zählen aus den Profi Quellen. Aus unserem Log: bei Berührungs Clips nur ihre eigene Reaktion, keine andere Person und keine Hand erwähnen (21.11.), kein Lippenbiss, Satz zu Gesicht und Kleidung ohne das Wort für die Brille.
+
+Ergebnis hier nachtragen.
