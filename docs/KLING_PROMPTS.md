@@ -22,6 +22,11 @@ Ablauf, jedes Mal, direkt bevor der Prompt in Kling getippt wird (nicht aus dem 
 3. Prüfskript laufen lassen, Bilder groß ansehen, Einstellungen und Preis vom Knopf ablesen.
 4. Metin in einem Satz sagen, was sie tut, und was davon nicht aus dem alten Clip stammt. Kein Raten: ist etwas unklar (zum Beispiel wie der alte Clip genau aussieht oder was Kling aus einem Wort macht), wird gefragt oder das Wort weggelassen, nicht ausprobiert.
 5. Grundton aller Clips: zierlich und feminin, kleine Bewegungen, schüchternes Lächeln statt Lachen, außer Metin wünscht ausdrücklich etwas anderes.
+6. **Metins Ton für jeden Clip (24.11.2026, 17:35 und 17:36: "wichtig, süße Blicke, schüchtern, verliebt, feminin", "nimm das mit in den Regeln, die du kurz vor Prompt erstellen nimmst"):** Vor jedem Prompt wird geprüft, ob alle vier Punkte sichtbar darin stehen. Umgesetzt wird der Ton über das, was eine Kamera sieht, nicht über Gefühlswörter (Kling dreht jedes Gefühlswort auf, siehe Abschnitt Ausdruck):
+   - süße Blicke: ihr Blick geht zur Kamera, senkt sich kurz und kommt wieder zur Kamera zurück; mindestens ein solcher Blickwechsel pro Clip.
+   - schüchtern: das eine milde Ausdruckswort des Clips ist "shy smile"; dazu Kinn leicht senken oder den Blick kurz senken.
+   - verliebt: sie schaut die meiste Zeit in die Kamera, also ihn an; das Wort selbst ("in love", "loving") kommt nicht in den Prompt, weil es abstrakt ist und aufgedreht wird.
+   - feminin: kleine Bewegungen aus Handgelenk, Kopf und Hüfte, Haare hinters Ohr, Gewicht verlagern; nichts Großes, nichts Schnelles.
 
 ## Stillstand am Ende höchstens eine halbe Sekunde (seit 24.11.2026, 16:35)
 
