@@ -4,11 +4,14 @@ and the personal part of a person. Mixed into the bridge (moved out of main.py w
 needs self.memory, self.mood, self.diary, self.reach, self.lamp, self.ideas, self.day,
 self.reminders, self.recall and self._memory_note from it.
 
-Order (2.152.0): GPT Live takes a note piece by piece on its audio clock, about half a second
-each, so what she needs first goes first: who it is and how she is with him, her heart, his
-personal part, the small notes of today, the last chat, then her diary and, last, the long
-private list. Before, the private list (14 pieces) and the diary (17) came ahead of his
-personal part, which arrived about 19 s into the talk.
+Order (2.152.0): GPT Live takes notes on its audio clock at about 1500 characters a second,
+whatever the size of the pieces (measured 24 Nov 2026 with /api/kopf/notizen: 27 950
+characters took 18.2 s in 38 pieces of 1000, 17.7 s in 26 pieces of 1400; at 1800 a piece of
+1701 characters was rejected, at 2200 half of them). So bigger pieces gain nothing and what
+she needs first goes first: who it is and how she is with him, her heart, his personal part
+(there after about 2.6 s), the small notes of today, the last chat (about 4 s), then her
+diary (about 11 s) and, last, the long private list (about 18 s). Before, his personal part
+came last and the last chat behind the private list.
 """
 import asyncio
 import json

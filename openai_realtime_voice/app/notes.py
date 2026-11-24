@@ -10,8 +10,10 @@ Leyla never had what the code word should hand her.
 
 So a long note is cut at line ends (a long line at sentence ends) into pieces of at most
 NOTE_MAX_CHARS, each later piece under a line that says it continues the note. The measure is
-characters, because there is no tokenizer for GPT Live here: a note of about 1490 German
-characters passed, so 1000 leaves room for Turkish words and names. Should a piece still be
+characters, because there is no tokenizer for GPT Live here. Measured on 24 Nov 2026 with
+Metin's real notes (/api/kopf/notizen): pieces up to 1391 characters all passed, one of 1701
+was rejected, from 1892 on all of them; so 1000 leaves room for Turkish words and names.
+Bigger pieces are not faster (GPT Live takes about 1500 characters a second either way). Should a piece still be
 rejected, `Sent` remembers what went out under which event id and hands back two halves.
 """
 import re
