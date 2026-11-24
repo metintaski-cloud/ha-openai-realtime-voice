@@ -53,7 +53,7 @@ Gleicher Bau wie Vorlage 2 (vier Takte, Gefühl plus oben plus unten, kein toter
 Continuous, gentle leg and foot movements throughout the scene. Natural hip and upper body movements. She remains in the same area without walking away. Sweet, shy, feminine and affectionate body language. Static camera, full body visible, unchanged background.
 ```
 
-Dieser Baukasten folgt Vorlage 2. Bestätigt ihr Clip das Muster nicht, wird er nach dem Ergebnis berichtigt, nicht vorher.
+Dieser Baukasten folgt Vorlage 2; ihr Clip 395 hat das Muster bestätigt (lebendig ab Sekunde 0, der ganze Körper lebt).
 
 ## Ablauf für jeden Clip
 
@@ -95,11 +95,11 @@ Dieser Baukasten folgt Vorlage 2. Bestätigt ihr Clip das Muster nicht, wird er 
 | 360 | `kurz/begruessung` | Vorlage 1 | Metin: "super geworden". Bewegungsmenge 0,73, Naht 0,68, ruhiger Anfang. Eingebaut 18:37, Originaltempo. |
 | 395 | noch nicht eingebaut | Vorlage 2 | Bewegungsmenge 2,83, Naht 0,60, lebendig ab Sekunde 0, richtiges Winken; im dritten Takt Drehung zur Seite mit Faust. Metins Urteil offen. |
 
-Bereit, noch nicht gelaufen (geschrieben 18:34 nach Vorlage 1; vor dem Start nach dem Baukasten um die Bewegung unten ergänzen, wenn Vorlage 2 sitzt):
+Bereit, noch nicht gelaufen. Von Claude am 24.11.2026 um 18:58 nach dem Baukasten geschrieben (Metin um 18:56: "kannst du nun anhand dieser neuen Regel auch solche erstellen?"); die Inhalte hatte Metin um 17:34 gewählt. Für die Beine nur Bewegungen aus seinen Vorlagen (wiegen, Ferse heben, Gewicht verlagern, kleiner Schritt), in jedem Takt eine andere:
 
-**Schleife Blick senken, kurzes Arbeitskleid:** "10-second realistic continuous scene. 0–2s: She looks directly into the camera with a soft, shy smile, happy that he is looking at her. 2–5s: She bashfully lowers her gaze to the floor, gently lifts her shoulders and tilts her head. 5–8s: She looks back up at him with a sweet, affectionate smile and playfully shifts her body weight. 8–10s: She holds his gaze with bright, loving eyes and settles back into her starting pose. Soft, feminine, natural body movements. Both feet remain in place. Static camera, full body visible, unchanged background, no zoom, no cuts."
+**Schleife Blick senken, kurzes Arbeitskleid** (121 Wörter): "0–3s: Happy that he is looking at her, she gently sways from one leg to the other with a sweet, shy smile. 3–6s: She bashfully lowers her gaze to the floor, softly lifts her shoulders and gently raises one heel. 6–8s: She looks back up at him with an affectionate smile, tilts her head and lightly shifts her weight onto the other leg. 8–10s: She holds his gaze with loving eyes, takes a small step in place and returns to her initial pose. Continuous, gentle leg and foot movements throughout the scene. Natural hip and upper body movements. She remains in the same area without walking away. Sweet, shy, feminine and affectionate body language. Static camera, full body visible, unchanged background."
 
-**Schleife Buch an die Brust, kurzes Arbeitskleid:** "10-second realistic continuous scene. 0–2s: She looks directly into the camera, a shy, happy smile spreading as she sees him. 2–5s: She lifts her closed book, hugs it against her chest with both arms and gently sways her upper body from side to side. 5–8s: She bashfully lowers her gaze to the book, tilts her head and keeps swaying playfully. 8–10s: She looks back at him with bright, loving eyes and lowers the book back to her side. Soft, feminine, natural body movements. Both feet remain in place. Static camera, full body visible, unchanged background, no zoom, no cuts."
+**Schleife Buch an die Brust, kurzes Arbeitskleid** (127 Wörter): "0–3s: Happy to see him, she hugs her closed book against her chest with both arms and gently sways from one leg to the other with a sweet smile. 3–6s: She smiles warmly at him over the book, softly sways her hips and gently lifts her heels. 6–8s: She bashfully lowers her gaze to the book, tilts her head and takes a small step in place. 8–10s: She looks lovingly into the camera, lowers the book back to her side, shifts her weight and returns to her initial pose. Continuous, gentle leg and foot movements throughout the scene. Natural hip and upper body movements. She remains in the same area without walking away. Sweet, shy, feminine and affectionate body language. Static camera, full body visible, unchanged background."
 
 ## Was am 24.11.2026 sonst noch entstand
 
