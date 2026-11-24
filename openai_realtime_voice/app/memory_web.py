@@ -412,7 +412,7 @@ let LOOKS=[];  /* her dresses, filled by clipsLoad */
 function menuItems(){const it=[];const ls=(LASTD&&LASTD.lists)||[];
  for(const l of ls)it.push([l.kind,l.title,l.items.length]);
  if(CODE&&GM.shown&&GM.needs)it.push(['mail','Google verbinden','']);if(lampOn)it.push(['lamps','Lampenfarben','']);
- if(CODE){it.push(['diary','Tagebuch','']);it.push(['rules','So ist Leyla',''])};if(LOOKS.length>1)it.push(['look','Kleid wechseln','']);it.push(['full','Vollbild','']);it.push(['set','Einstellungen','']);return it;}
+ if(CODE){it.push(['diary','Tagebuch',LASTD&&LASTD.diary_n!=null?LASTD.diary_n:'']);it.push(['rules','So ist Leyla',''])};if(LOOKS.length>1)it.push(['look','Kleid wechseln','']);it.push(['full','Vollbild','']);it.push(['set','Einstellungen','']);return it;}
 function drawMenu(){const m=document.getElementById('menu');m.innerHTML='';m.style.display=menuOpen?'block':'none';document.getElementById('micon').classList.toggle('open',menuOpen);if(!menuOpen)return;
  for(const [k,t,n] of menuItems()){const b=document.createElement('button');b.className='mi';const i=document.createElement('i');i.textContent=SECICON[k]||'•';
   const sp=document.createElement('span');sp.textContent=t;const sm=document.createElement('small');sm.textContent=n===''?'':String(n);const ch=document.createElement('b');ch.textContent='›';
@@ -1692,8 +1692,10 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
             await _respond(writer, "200 OK", "application/json",
                            json.dumps(snapshot(store), ensure_ascii=False))
         elif method == "POST" and path == "/api/lists":
-            await _respond(writer, "200 OK", "application/json",
-                           json.dumps(snapshot(store, titles), ensure_ascii=False))
+            snap = snapshot(store, titles)
+            if unlocked and diary:  # the menu shows how many diary entries there are (2.150.3)
+                snap["diary_n"] = len(diary.entries())
+            await _respond(writer, "200 OK", "application/json", json.dumps(snap, ensure_ascii=False))
         elif method == "POST" and path == "/api/rules":
             text = rules() if (unlocked and rules) else ""
             await _respond(writer, "200 OK", "application/json",

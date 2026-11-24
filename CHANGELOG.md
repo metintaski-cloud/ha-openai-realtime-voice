@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.150.3 (24 Nov 2026)
+
+- The menu shows the number of diary entries next to "Tagebuch", like the counts of the lists (Metin: there was no number). `POST /api/lists` carries `diary_n` behind the code word.
+
 ## 2.150.2 (24 Nov 2026)
 
 - She thought over the last 7 days on the server (24 Nov, about 04:23 to 04:30): 7 day texts in both forms, our story, 16 of 279 entries faded as no memory. The recall test still finds 22 of 22. Read and corrected from that: no dashes in her night texts, technical work on her or the app is no part of a day or a thread, the open story is what stays (agreements in the household, habits, visitors) instead of a list of dated trifles, the app shows only the threads she still comes back to (14 had piled up, 5 are shown), and two thinkings never run at the same time (`Reflection._busy`). `POST /api/kopf/nachdenken {story: true}` writes our story again from all the days.
