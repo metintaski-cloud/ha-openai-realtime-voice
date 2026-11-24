@@ -1,7 +1,7 @@
 import asyncio
 import json
 
-from app import diary
+from app import diary, recall
 
 DAY = diary.DAY
 NOW = 2_000_000_000.0
@@ -87,6 +87,7 @@ def test_bridge_new_chat_writes_the_diary_before_the_next_answer(tmp_path, monke
     from app import main as m
     bridge = m.LiveVoiceBridge.__new__(m.LiveVoiceBridge)
     bridge.diary = diary.Diary(str(tmp_path / "d.json"))
+    bridge.recall = recall.Index(bridge.diary, "", path=str(tmp_path / "r.json"))
     bridge.openai_api_key, bridge.memory_model, bridge.backend_model = "k", "a", "b"
     written = []
 
@@ -269,3 +270,85 @@ def test_forget_span_removes_chat_entries_pairs_and_buffer(tmp_path):
     texts = [x["lang"] for x in d.archived()]
     assert "Sol sprach von anderen Frauen" not in texts and "Anne kochte" in texts and "früher" in texts
     assert d.chat_take() == []
+
+
+# ---- 2.147.0: experiences instead of protocols (docs/LEYLA_SEELE.md, step 2) ----
+def _writer(monkeypatch, answer, seen):
+    async def ask(prompt, *a, **kw):
+        seen.append(prompt)
+        return json.dumps(answer, ensure_ascii=False)
+    monkeypatch.setattr(diary.textmodel, "ask", ask)
+
+
+def test_in_the_chat_the_person_is_always_metin_and_feeling_and_weight_are_kept(tmp_path, monkeypatch):
+    dy, seen = diary.Diary(str(tmp_path / "d.json")), []
+    _writer(monkeypatch, {"eintraege": [dict(entry(lang="Er erzählte mir vom neuen Fahrrad, ich freute mich mit."),
+                                             wer="unbekannt", gefuehl="froh", gewicht=2)]}, seen)
+    talk = [("user", "Ich habe mir ein neues Fahrrad gekauft"), ("bot", "Oh wie schön, welche Farbe?")]
+    assert asyncio.run(dy.write(talk, "Metin", "chat", "k", ["m"], "http://x"))
+    e = dy.entries()[0]
+    assert e["who"] == "Metin" and e["gefuehl"] == "froh" and e["gewicht"] == 2
+    assert "immer Metin" in seen[0] and "schon aufgeschrieben" not in seen[0]
+    assert "ein einziger Eintrag" in seen[0] and "Schlussformel" in seen[0]
+    # at home the model's person still counts, and an unknown voice stays unknown
+    _writer(monkeypatch, {"eintraege": [dict(entry(lang="Jemand fragte nach dem Bus zum Bahnhof."), wer="unbekannt")]}, seen)
+    assert asyncio.run(dy.write(talk, ["Metin"], "stimme", "k", ["m"], "http://x"))
+    assert dy.entries()[1]["who"] == "" and "immer Metin" not in seen[1]
+    assert "schon aufgeschrieben" in seen[1] and "neuen Fahrrad" in seen[1]   # she sees what is there
+
+
+def test_what_is_already_written_down_gets_no_second_entry(tmp_path):
+    dy = diary.Diary(str(tmp_path / "d.json"))
+    first = "Metin erzählte mir vom Angelausflug mit Umut am Rhein, sie fingen zwei Forellen."
+    assert dy.add(entry(lang=first), "Metin", "chat", now=NOW - 600)
+    assert not dy.add(entry(lang="Metin erzählte vom Angelausflug mit Umut am Rhein und zwei Forellen."),
+                      "Metin", "chat", now=NOW)
+    assert dy.add(entry(lang="Metin will am Samstag mit Umut wieder angeln und hat neue Köder gekauft."),
+                  "Metin", "chat", now=NOW)
+    assert dy.add(entry(lang=first), "Metin", "chat", now=NOW + 2 * DAY)      # days later it is new again
+    assert len(dy.entries()) == 3
+
+
+def test_touches_are_one_line_a_day_not_a_talk_each(tmp_path):
+    dy = diary.Diary(str(tmp_path / "d.json"))
+    assert dy.touched(["gesicht", "bauch"], now=NOW) and dy.touched(["gesicht"], now=NOW + 60)
+    assert not dy.touched(["knie"], now=NOW)
+    (e,) = dy.entries()
+    assert e["privat"] and e["src"] == diary.TOUCH_SRC and "3 mal" in e["lang"]
+    assert "im Gesicht 2 mal" in e["lang"] and len(dy.archived()) == 1
+    dy.touched(["po"], now=NOW + DAY)
+    assert len(dy.entries()) == 2
+    assert "berührt" not in dy.note("Metin", private=False, now=NOW + DAY)   # stays behind the code word
+
+
+def test_a_chat_of_touches_only_is_counted_but_not_written(tmp_path, monkeypatch):
+    from app import chat, main as m
+    bridge = m.LiveVoiceBridge.__new__(m.LiveVoiceBridge)
+    bridge.diary = diary.Diary(str(tmp_path / "d.json"))
+    bridge.recall = recall.Index(bridge.diary, "", path=str(tmp_path / "r.json"))
+    bridge.openai_api_key, bridge.memory_model, bridge.backend_model = "k", "a", "b"
+    written = []
+
+    async def write(dialog, *a):
+        written.append(len(dialog))
+        return True
+    monkeypatch.setattr(bridge.diary, "write", write)
+    touch = chat.touch_message("gesicht")
+    asyncio.run(bridge._chat_diary([("user", touch), ("bot", "Hey, das kitzelt!")]))
+    assert written == [] and "1 mal" in bridge.diary.entries()[0]["lang"]
+    asyncio.run(bridge._chat_diary([("user", touch), ("bot", "Mmh."), ("user", "Wie war dein Tag?"), ("bot", "Schön.")]))
+    assert written == [4] and "2 mal" in bridge.diary.entries()[0]["lang"]
+
+
+def test_the_window_is_what_the_note_shows(tmp_path):
+    dy = diary.Diary(str(tmp_path / "d.json"))
+    dy.add(entry(lang="Alt und fest"), "Metin", "chat", now=NOW - 20 * DAY)
+    dy.pin(NOW - 20 * DAY)
+    dy.add(entry(lang="Heute"), "Metin", "chat", now=NOW - 60)
+    dy.add(entry(lang="Geheim", privat=True), "Metin", "chat", now=NOW - 30)
+    levels = [(e["lang"], lv) for e, lv in dy.window("Metin", private=False, now=NOW)]
+    assert levels == [("Alt und fest", "fest"), ("Heute", "lang")]
+    assert diary.may_know({"who": "Metin", "privat": True}, "Metin", True)
+    assert not diary.may_know({"who": "Metin", "privat": True}, "Metin", False)
+    assert not diary.may_know({"who": "Gülfikar Taskiran"}, "Metin", True)
+    assert diary.may_know({"who": ""}, "Seher", False)

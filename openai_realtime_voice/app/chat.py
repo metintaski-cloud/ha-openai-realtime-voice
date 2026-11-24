@@ -237,6 +237,15 @@ def touch_message(zone: str) -> str:
                "yaramaz!'" if random.random() < TOUCH_TURKISH_P else "") + ")")
 
 
+def touch_zone(message: str) -> str:
+    """The zone of a stage note made by touch_message, '' for anything Metin wrote himself."""
+    message = message or ""
+    if not message.startswith("(Bühne: Metin berührt dich gerade zärtlich "):
+        return ""
+    return next((z for z, where in TOUCH_WHERE.items()
+                 if message.startswith(f"(Bühne: Metin berührt dich gerade zärtlich {where}.")), "")
+
+
 def no_dashes(text: str) -> str:
     """Metin reads dashes as machine written; the style rule alone did not stop them."""
     return re.sub(r"\s*[—–]\s*", ", ", text or "").replace(" ,", ",")
@@ -500,8 +509,8 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
         out.setdefault("lights", []).append("🧹 " + line)
     rec_req = out.pop("erinnern_raw", None) if out else None
     if out and recall and isinstance(rec_req, str) and rec_req.strip():  # 2.123.0: her library
-        second = await _answer(api_key, models, rules + recall(rec_req[:200]), store, history,
-                               message, url, lights)
+        second = await _answer(api_key, models, rules + await recall(rec_req[:200]), store,
+                               history, message, url, lights)
         if second:
             second.pop("erinnern_raw", None)
             second["proposals"] = out["proposals"] + second["proposals"]

@@ -397,3 +397,29 @@ def test_dictation_turns_speech_into_text_without_sending(tmp_path, monkeypatch)
     assert 'id="ckb"' in memory_web.PAGE, "the pill back to the keyboard"
     assert 'readonly inputmode="none"' in memory_web.PAGE, "no keyboard by default"
     assert "/api/hoeren" in memory_web.PAGE
+
+
+def test_kopf_routes_need_the_code_word(tmp_path, monkeypatch):
+    from app import diary, recall
+    monkeypatch.setitem(memory_web._code_fails, "n", 0)
+    monkeypatch.setitem(memory_web._code_fails, "until", 0.0)
+    dy = diary.Diary(str(tmp_path / "dy.json"))
+    ix = recall.Index(dy, "", path=str(tmp_path / "r.json"))
+    s = _store(tmp_path)
+
+    async def go(code):
+        server = await memory_web.start_http(s, None, host="127.0.0.1", port=0,
+                                             code_phrase="Leyla Sonne Mond", diary=dy, kopf=ix)
+        port = server.sockets[0].getsockname()[1]
+        body = json.dumps({"code": code}).encode()
+        r, w = await asyncio.open_connection("127.0.0.1", port)
+        w.write(b"POST /api/kopf/status HTTP/1.1\r\nContent-Length: %d\r\n\r\n" % len(body) + body)
+        await w.drain()
+        data = await r.read()
+        w.close()
+        server.close()
+        return json.loads(data.split(b"\r\n\r\n", 1)[1])
+
+    assert asyncio.run(go("falsch")) == {"ok": False}
+    out = asyncio.run(go("Sonne Mond"))
+    assert out["ok"] and out["vectors"] == 0 and out["settings"]["top"] == 4

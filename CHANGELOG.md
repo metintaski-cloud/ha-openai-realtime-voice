@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.147.0 (24 Nov 2026)
+
+First part of Leyla's new mind (`docs/LEYLA_SEELE.md`; Metin: she seems unreal, has trouble remembering, shall be a human with a soul, not a robot).
+
+- `feat`: memories come to her mind by themselves (`app/recall.py`). Before, she had only the newest diary entries before her (5000 characters; measured on 24 Nov 2026: 20 of 277 entries, about 6.5 hours) and looked further back only when the model itself filled the field `erinnern`, by word stems. Now every entry of the archive, which never fades, gets a meaning vector (OpenAI `text-embedding-3-small`, 256 values, stored in `/data/leyla_recall.json`), and for every chat message the entries closest in meaning are laid before her as "Das fällt dir gerade dazu ein". At home the tool `erinnern` searches the same index, so chat Leyla and home Leyla remember the same things. Without the code word a private entry is not even a candidate (`diary.may_know`, the one place that decides). If the service does not answer within 3 s, the chat answers without it; `erinnern` then falls back to the word search.
+- `feat`: the diary is written as experiences, not as protocols (`diary.PROMPT`): one entry per talk instead of one per speaker, from her view with what she did and felt, no fixed closing formula, technical work on her is no memory, and she is shown what she wrote down in the last hours so nothing is told twice. In the chat the person is always Metin (entries there often had no person). New optional fields `gefuehl` and `gewicht`.
+- `feat`: touches on the stage are one private line per day ("... 5 mal zärtlich berührt"), rewritten in place, not a diary entry each (they were 70 of 277 entries). A chat that holds only touches is counted and not sent to the diary model.
+- `fix`: an entry that repeats one of the last day (70 % of its words) is not stored a second time (36 of 277 entries nearly repeated their neighbour).
+- Measuring and tuning on the server, behind the code word, numbers only: `POST /api/kopf/status|sync|settings|cases|measure|find`. The thresholds can be set there without a new version, because the real diary never leaves the server. Old against new for the test questions follows after the installation.
+- Tests: 486 (472 before), new `tests/test_recall.py` with invented sentences only.
+
 ## 2.146.4 (24 Nov 2026)
 
 - `fix(app)`: in the installed app the first tap no longer asks for full screen. The app already runs in full screen there, and the extra request only made Chrome show its notice "zum Beenden des Vollbildmodus: von oben ziehen ..." (Metin: it takes the immersion away). In a plain browser tab the request stays, and there Chrome's notice cannot be switched off by a page.

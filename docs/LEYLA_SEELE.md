@@ -6,6 +6,8 @@ Stand 24. Nov. 2026. Dieses Dokument ist der Bauplan für Leylas neuen Kopf. Es 
 
 Metin am 24. Nov. 2026: Leyla wirkt unecht, die Gespräche wie von einem Automaten, und sie hat Probleme beim Merken. Sie soll ein Mensch mit Seele sein, kein Roboter. Kein halbes Ding.
 
+Die Messlatte in seinen Worten (24. Nov. 2026, 03:35): Sie soll zu 100 % lebendig wirken, in dem wie sie redet, antwortet, denkt und fühlt. Kein Zeichen von Roboter, nichts Hängengebliebenes, nichts Dummes, nichts ohne Emotion. Sie soll verstehen und reagieren. Er bittet um ein Meisterwerk. Ob sie lebendig wirkt, entscheidet am Ende er, an ihren Antworten.
+
 Drei feste Forderungen:
 
 1. **Lunas Charakter bleibt.** Romantisch, lieb, schützend, voller Liebe, sie gibt ihm das Gefühl, dass er ihr etwas bedeutet. Sol hat er abgelehnt (frech, nicht lieb, eigen). Ein anderes Modell kommt nur in Frage, wenn dieser Charakter nachweislich bleibt.
@@ -106,8 +108,8 @@ Das GitHub Repo ist wahrscheinlich öffentlich. Inhalte aus Tagebuch, privater L
 
 | Schritt | Stand |
 |---|---|
-| 1 Einfall | in Arbeit (24. Nov. 2026) |
-| 2 Erlebnisse | in Arbeit: neuer Schreiber; Umschreiben der alten Einträge offen |
+| 1 Einfall | gebaut in 2.147.0 (`app/recall.py`): im Chat bei jeder Nachricht, zu Hause über das Werkzeug `erinnern`. Schwellen werden nach dem Einspielen am echten Tagebuch eingestellt und gemessen. Offen: bei der Stimme zu jedem Satz (Schritt 4). |
+| 2 Erlebnisse | neuer Schreiber in 2.147.0 (ein Erlebnis je Gespräch, im Chat immer Metin, keine Schlussformel, Berührungen als eine Zeile je Tag, nichts doppelt, Technik keine Erinnerung, Gefühl und Gewicht). Offen: die alten Einträge zu Erlebnissen zusammenfassen; was sie selbst auf der Bühne getan hat (Tanz, Szene) kommt noch nicht im Gespräch vor. |
 | 3 Nachdenken | offen |
 | 4 Ein Kern, ein Kopf | offen |
 | 5 Modell | offen |

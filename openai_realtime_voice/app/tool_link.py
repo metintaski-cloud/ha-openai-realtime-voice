@@ -75,8 +75,8 @@ class ToolLinkMixin:
             return {"ok": ok}
 
         async def recall_run(args):  # same speaker logic as merken (remember_gate)
-            note = self.diary.recall_note(args.get("suche", ""), args.get("_wer", ""),
-                                          bool(args.get("_privat_ok")))
+            note = await self.recall.ask(args.get("suche", ""), args.get("_wer", ""),
+                                         bool(args.get("_privat_ok")))
             return {"erinnerung": note.strip()}
 
         def mood_after(args, result):
@@ -146,7 +146,7 @@ class ToolLinkMixin:
                 "error": "Das konnte ich mir gerade nicht merken.",
                 "log": lambda a, r: ("ok " if r.get("ok") else "no ") + (a.get("_wer") or "unknown")},
             diary.ERINNERN_TOOL["name"]: {
-                "label": "Recall", "timeout": 5.0, "run": recall_run, "gate": remember_gate,
+                "label": "Recall", "timeout": 8.0, "run": recall_run, "gate": remember_gate,
                 "error": "Daran komme ich gerade nicht heran.",
                 "log": lambda a, r: a.get("_wer") or "unknown"},
             messages.TO_METIN_TOOL["name"]: {
