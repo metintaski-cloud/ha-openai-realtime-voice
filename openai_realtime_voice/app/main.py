@@ -1806,14 +1806,17 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 if verdict["pre"]:
                     marks = " ".join("%s=%s" % (n, {True: 1, False: 0, None: "?"}[v])
                                      for n, v in (verdict.get("v") or {}).items())
-                    logger.info("Wake check: %.1f s of history, TV %s, her name %s (%.2f s)%s%s%s",
-                                verdict["pre"], "on" if verdict["tv"] else "off",
+                    logger.info("Wake check: %.1f s of history%s, TV %s, her name %s (%.2f s)%s%s%s",
+                                verdict["pre"],
+                                "" if verdict.get("wake") is None else
+                                ", wake word %.2f s before its end" % verdict["wake"],
+                                "on" if verdict["tv"] else "off",
                                 {True: "heard", False: "not heard", None: "not looked for"}[verdict["named"]],
                                 verdict["s"], " [" + marks + "]" if marks else "",
                                 ", heard: " + verdict["heard"] if verdict.get("heard") else "",
                                 " -> no talk" if verdict["reject"] else "")
                     metrics.record("wake_check", tv=verdict["tv"], named=verdict["named"],
-                                   reject=verdict["reject"], s=verdict["s"],
+                                   reject=verdict["reject"], s=verdict["s"], wake=verdict.get("wake"),
                                    **({"v": verdict["v"]} if verdict.get("v") else {}))
                     state["wake_named"] = verdict["named"]
                     state["wake_v"] = verdict.get("v")  # logged again with how the talk ended
@@ -1902,8 +1905,10 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             return
         try:
             os.makedirs(self.false_wake_dir, exist_ok=True)
-            name = "falsewake_%s_%s_vorher.wav" % (
-                state.get("client_id", "client"), datetime.now().strftime("%Y%m%d_%H%M%S"))
+            wake_ms = state.get("wake_ms")
+            name = "falsewake_%s_%s_vorher%s.wav" % (
+                state.get("client_id", "client"), datetime.now().strftime("%Y%m%d_%H%M%S"),
+                "" if wake_ms is None else "_w%d" % wake_ms)
             with open(os.path.join(self.false_wake_dir, name), "wb") as f:
                 f.write(wakecheck.wav(pcm, rate))
             logger.info("False wake: the %.1f s before it kept (%s)", len(pcm) / (rate * 2), name)

@@ -56,6 +56,10 @@ class LeylaVoice : public Component {
   }
 
   // Actions and conditions of the YAML
+  // The wake word was just heard (call it from on_wake_word_detected, before start): the server is
+  // then told where in the microphone history it lies, and that this talk was started by the wake
+  // word and not by the button or by her. Without this call no talk can be turned away as a false wake.
+  void note_wake() { this->wake_at_ms_ = millis() | 1; }
   void start();
   void stop();
   void interrupt();
@@ -71,6 +75,7 @@ class LeylaVoice : public Component {
  protected:
   static constexpr size_t kTriggers = 10;
   static constexpr uint32_t kMicRate = 16000, kWireRate = 24000;
+  static constexpr uint32_t kWakeToStartMs = 1500;  // a wake word older than this did not start the talk
   static constexpr size_t kRxBytes = 48000;       // 1 s of reply audio at 24 kHz, 16 bit
   static constexpr size_t kTxBytes = 24000;       // 0.5 s of microphone audio
   static constexpr size_t kPlayChunk = 2048;
@@ -112,6 +117,7 @@ class LeylaVoice : public Component {
   size_t pre_bytes_{0};       // its size, 0 = no history
   size_t pre_left_{0};        // bytes of the history still to send for this conversation
   std::atomic<bool> pre_frozen_{false};  // while it is being sent the microphone does not write into it
+  uint32_t wake_at_ms_{0};    // millis() when the wake word was heard (odd, so never 0), 0 = not by wake word
   SemaphoreHandle_t lock_{nullptr};
 
   // Socket

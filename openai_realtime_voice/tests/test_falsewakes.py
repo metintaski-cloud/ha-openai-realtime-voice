@@ -60,18 +60,21 @@ def test_a_live_talk_from_the_app_is_not_counted_as_woken():
 
 
 def test_the_probe_runs_every_way_of_listening_over_the_kept_recordings(tmp_path, monkeypatch):
-    write(tmp_path / "falsewake_192_168_2_241_20261124_115753_vorher.wav", 2.5)
+    write(tmp_path / "falsewake_192_168_2_241_20261124_115753_vorher_w840.wav", 2.5, loud_from=2.0)
     write(tmp_path / "falsewake_192_168_2_241_20261124_092934.wav", 6.0)
-    lengths = {}
+    seen = []
 
-    async def hear(pcm, rate, api_key, client, names=None, timeout=0):
-        lengths[len(pcm) / (rate * 2)] = True
-        return {"ganz": "televizyon", "ende": "Hallo Leyla", "ganz_kw": None, "ende_kw": ""}
+    async def hear(pcm, rate, api_key, client, wake_ms=None, timeout=0):
+        seen.append((len(pcm) / (rate * 2), wake_ms))
+        return {"ganz": "televizyon", "ganz_kw": "Hallo Leyla", "ruf": None, "ruf_kw": ""}
     monkeypatch.setattr(falsewakes.wakecheck, "hear", hear)
     out = asyncio.run(falsewakes.probe(str(tmp_path), "key"))
-    assert out["anzahl"] == 2 and out["name_gehoert"] == {"ganz": 0, "ende": 2, "ganz_kw": 0, "ende_kw": 0}
-    assert out["items"][0]["v"] == {"ganz": False, "ende": True, "ganz_kw": None, "ende_kw": False}
-    assert "gehoert" not in out["items"][0]                     # the texts only when asked for
-    assert sorted(lengths) == [2.5]                             # a long recording is cut to the same length
+    assert out["anzahl"] == 2 and out["name_gehoert"] == {"ganz": 0, "ganz_kw": 2, "ruf": 0, "ruf_kw": 0}
+    first = out["items"][1]
+    assert first["v"] == {"ganz": False, "ganz_kw": True, "ruf": None, "ruf_kw": False} and first["weck_ms"] == 840
+    assert "gehoert" not in first                               # the texts only when asked for
+    assert first["pegel"][0] == 0 and first["pegel"][-1] > 3000 and len(first["pegel"]) == 10
+    assert sorted(seen, key=str) == [(2.5, 840), (2.5, None)]            # a long recording is cut to the same length
     only = asyncio.run(falsewakes.probe(str(tmp_path), "key", pre=True, text=True))
-    assert only["anzahl"] == 1 and only["items"][0]["vorher"] and only["items"][0]["gehoert"]["ende"] == "Hallo Leyla"
+    assert only["anzahl"] == 1 and only["items"][0]["vorher"] and only["items"][0]["gehoert"]["ganz_kw"] == "Hallo Leyla"
+    assert falsewakes.describe("falsewake_192_168_2_241_20261124_092934_vorher.wav")["vorher"] is True

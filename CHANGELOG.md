@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.157.2 (24 Nov 2026)
+
+- Measured with the probe of 2.157.1: with her name as a keyword the recogniser found one of the two real calls that were turned away, and invented her name in 0 of the 69 kept television recordings (first 2.5 s each). The plain way found neither call, the last 1.5 s found neither as well.
+- Why the end did not work, a mistake in my design: the device freezes the microphone history when the socket opens, not at the wake word. The call lies an unknown stretch before the end and can fall out of 2.5 s altogether.
+- Firmware (`leyla_voice`): `note_wake()`, called by a lambda first thing in `on_wake_word_detected`. The header then carries `"wake_ms": N`, the time from the wake word to the end of the history, and only for a talk the wake word started (a mark older than 1.5 s at `start()` is dropped).
+- Server: ways `ruf` and `ruf_kw` hear only the call, from 1.9 s before the wake word to 0.2 s after it (`wakecheck.call`); `ganz` and `ganz_kw` stay; the fixed end is gone. A talk without `wake_ms` (button, a talk Leyla started herself, older firmware) is never turned away. Before this, acting would also have turned away a button press with the TV on. Default `weckart` is `ganz_kw`. A kept history carries the place in its name (`..._vorher_w840.wav`); the probe also returns the loudness per quarter second (`pegel`).
+- Contract: the `preroll` message has the optional field `wake_ms`.
+
 ## 2.157.1 (24 Nov 2026)
 
 - Wake check: acting (`weckpruefung` 2) was on for three minutes on 24 Nov 2026 and turned away two of three real calls by Metin with the TV at volume 23, because the recogniser wrote down the television (or nothing) and not his "Hallo Leyla" at the very end. It is back on watching. New: four ways of listening (`wakecheck.WAYS`: the whole history or only its last 1.5 s, each plain or with her name as a `keywords` hint of gpt-transcribe), all heard at the same time on every wake with the TV on and logged (`Wake check: ... [ganz=0 ende=1 ganz_kw=0 ende_kw=1]`, metric `wake_check` with `v`, and again in `session_end` as `wake`, so every talk shows what each way heard next to how it ended). Server setting `weckart` ("ganz+ende_kw") names the ways that count. `POST /api/kopf/fehlwecker` with `probe` runs the four ways over the kept recordings (`vorher` true or false, `text` for what was heard). A recogniser that does not answer now counts as doubt (she is taken as called), not as silence.

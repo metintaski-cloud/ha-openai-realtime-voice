@@ -552,8 +552,9 @@ async def test_with_frisch_the_code_word_puts_a_fresh_session_in_place_and_the_t
         assert not any("Codewort" in e["content"] for e in notes)   # nothing appended about it
 
 
-async def _wake_talk(env, monkeypatch, mode, tv, heard, send_history=True):
-    """One wake at home with the microphone history sent first, as firmware 2.157.0 does."""
+async def _wake_talk(env, monkeypatch, mode, tv, heard, send_history=True, by_wake_word=True):
+    """One wake at home with the microphone history sent first, as the firmware does; with
+    `by_wake_word` it also says where the wake word was (leyla_voice 2.158.0)."""
     from app import wakecheck
     calls = {"shown": 0, "asked": 0}
 
@@ -579,7 +580,8 @@ async def _wake_talk(env, monkeypatch, mode, tv, heard, send_history=True):
         b.bridge._show_listening = lambda: calls.__setitem__("shown", calls["shown"] + 1)
         async with b.connect() as client:
             if send_history:
-                await client.send(json.dumps({"type": "preroll", "rate": 16000, "bytes": 32000}))
+                await client.send(json.dumps({"type": "preroll", "rate": 16000, "bytes": 32000,
+                                              **({"wake_ms": 300} if by_wake_word else {})}))
                 for _ in range(10):
                     await client.send(b"\x05\x00" * 1600)
             got = await collect(client, lambda msg: isinstance(msg, bytes) or '"disconnect"' in str(msg), timeout=5.0)
@@ -610,7 +612,13 @@ async def test_acting_ends_a_wake_by_the_television_before_anything_shows(env, m
     assert {"type": "disconnect", "reason": "false_wake"} in texts
     assert not any(t["type"] == "ready" for t in texts) and not any(isinstance(g, bytes) for g in got)
     assert calls["shown"] == 0                                             # no lamps, TV not turned down
-    assert len(kept) == 1 and kept[0].endswith("_vorher.wav")              # the real trigger sound is kept
+    assert len(kept) == 1 and kept[0].endswith("_vorher_w300.wav")         # the real trigger sound is kept
+
+
+async def test_acting_never_ends_a_talk_started_by_the_button_or_by_herself(env, monkeypatch):
+    got, calls, _, kept = await _wake_talk(env, monkeypatch, mode=2, tv=True, heard="television talk",
+                                           by_wake_word=False)
+    assert any('"ready"' in g for g in got if isinstance(g, str)) and calls["shown"] == 1
 
 
 async def test_acting_lets_a_real_call_through_and_old_firmware_too(env, monkeypatch):

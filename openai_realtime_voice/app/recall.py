@@ -87,7 +87,7 @@ SETTINGS = {"min_sim": 0.48, "top": 4, "ask_min_sim": 0.38, "ask_top": 6, "word_
             "weckpruefung": 1,
             # the ways of listening that count for it, joined with + (wakecheck.WAYS): she is
             # called when any of them heard her name
-            "weckart": "ganz"}
+            "weckart": "ganz_kw"}
 COMPARE = (("text-embedding-3-small", 256), ("text-embedding-3-small", 1536),
            ("text-embedding-3-large", 256), ("text-embedding-3-large", 1024))
 BONUSES = (0.0, 0.05, 0.1)

@@ -27,6 +27,16 @@ appear that was not said: to be measured, not assumed). All four run on every wa
 on and are logged next to how the talk ended; server setting `weckart` names the ones that
 count ("ganz+ende_kw": called when any of them heard her name). `falsewakes.probe` runs them
 over the kept recordings.
+
+2.157.2: measured with that probe: with her name as a keyword the recogniser found one of the
+two turned away calls and invented her name in none of the 69 kept television recordings; the
+plain way found neither. The last 1.5 s found neither as well, and that was my mistake in
+thinking: the device freezes the history when the socket opens, not at the wake word, so the
+call lies an unknown stretch before the end and can even fall out of 2.5 s. So the firmware
+(leyla_voice 2.158.0) now says where it is: `"wake_ms": N` in the header, the time from the
+wake word to the end of the history, and only when the wake word started the talk. The ways
+"ruf" and "ruf_kw" hear just the two seconds around it. A talk without `wake_ms` (the button,
+a talk she started herself, older firmware) is never turned away: nobody had to say her name.
 """
 import asyncio
 import io
@@ -49,11 +59,12 @@ CHECK_TIMEOUT_S = 2.0   # the transcription; later than this she is taken as cal
 MAX_BYTES = 4 * 48000 * 2
 # Her name as a speech recogniser may write it: Leyla, Leila, Layla, Laila, Leylâ, Leyla'yı
 NAME_RE = re.compile(r"\bl[ae][iy]+l+a")
-TAIL_S = 1.5            # the wake word ends right before the device froze the history
+CALL_BEFORE_S = 1.9     # the call ends shortly before the wake word fires: this much before it
+CALL_AFTER_S = 0.2      # and a little after
 KEYWORDS = ("Hallo Leyla", "Leyla")
-# way of listening: (seconds from the end, 0 = all of it; her name as a keyword)
-WAYS = {"ganz": (0.0, False), "ende": (TAIL_S, False),
-        "ganz_kw": (0.0, True), "ende_kw": (TAIL_S, True)}
+# way of listening: (only the call, where the device said the wake word was; her name as a keyword)
+WAYS = {"ganz": (False, False), "ganz_kw": (False, True),
+        "ruf": (True, False), "ruf_kw": (True, True)}
 
 
 class FalseWake(Exception):
@@ -74,6 +85,16 @@ def header(message) -> int:
         return max(0, min(int(d.get("bytes") or 0), MAX_BYTES))
     except (TypeError, ValueError):
         return 0
+
+
+def wake_of(message: str):
+    """Milliseconds from the wake word to the end of the history, None when the device did not
+    say (then the talk was not started by the wake word, or the firmware is older)."""
+    try:
+        ms = json.loads(message).get("wake_ms")
+    except Exception:
+        return None
+    return int(ms) if isinstance(ms, (int, float)) and not isinstance(ms, bool) and 0 <= ms <= 10000 else None
 
 
 def rate_of(message: str) -> int:
@@ -97,6 +118,7 @@ async def read(ws, state: dict) -> tuple:
         state.setdefault("early", []).append(first)  # not ours: the talk's loop gets it first
         return b"", 0
     rate, pcm = rate_of(first), bytearray()
+    state["wake_ms"] = wake_of(first)
     end = time.monotonic() + BODY_WAIT_S
     try:
         while len(pcm) < total:
@@ -128,18 +150,23 @@ def named(text: str) -> bool:
     return bool(NAME_RE.search(folded))
 
 
-def tail(pcm: bytes, rate: int, seconds: float) -> bytes:
-    """The last `seconds` of it (all of it for 0 or when it is shorter)."""
-    keep = int(rate * seconds) * 2
-    return pcm[-keep:] if 0 < keep < len(pcm) else pcm
+def call(pcm: bytes, rate: int, wake_ms) -> bytes:
+    """The part of the history with the call: from CALL_BEFORE_S before the wake word to
+    CALL_AFTER_S after it. b"" when the device did not say where the wake word was or the call
+    lies before the history."""
+    if wake_ms is None:
+        return b""
+    mark = len(pcm) // 2 - int(rate * wake_ms / 1000)          # sample where the wake word fired
+    start, end = max(0, mark - int(rate * CALL_BEFORE_S)), min(len(pcm) // 2, mark + int(rate * CALL_AFTER_S))
+    return pcm[start * 2:end * 2] if end - start >= rate // 2 else b""
 
 
 def ways(setting) -> tuple:
-    """The ways that count, from the server setting ("ganz+ende_kw"); unknown names are
-    dropped, nothing left means the whole history, plain."""
+    """The ways that count, from the server setting ("ganz_kw+ruf_kw"); unknown names are
+    dropped, nothing left means the whole history with her name as a keyword."""
     names = tuple(n for n in str(setting or "").replace(",", "+").replace(" ", "").split("+")
                   if n in WAYS)
-    return names or ("ganz",)
+    return names or ("ganz_kw",)
 
 
 async def transcribe(audio: bytes, api_key: str, client: httpx.AsyncClient,
@@ -167,14 +194,17 @@ async def transcribe(audio: bytes, api_key: str, client: httpx.AsyncClient,
 
 
 async def hear(pcm: bytes, rate: int, api_key: str, client: httpx.AsyncClient,
-               names=tuple(WAYS), timeout: float = CHECK_TIMEOUT_S) -> dict:
+               wake_ms=None, timeout: float = CHECK_TIMEOUT_S) -> dict:
     """What each way of listening hears, at the same time: {way: text, or None when it did not
-    answer in time}."""
+    answer in time}. Without `wake_ms` only the ways that take the whole history."""
+    part = call(pcm, rate, wake_ms)
+    names = [n for n, (only_call, _) in WAYS.items() if part or not only_call]
+
     async def one(name: str):
-        seconds, kw = WAYS[name]
+        only_call, kw = WAYS[name]
         try:
             return await asyncio.wait_for(
-                transcribe(wav(tail(pcm, rate, seconds), rate), api_key, client,
+                transcribe(wav(part if only_call else pcm, rate), api_key, client,
                            KEYWORDS if kw else ()), timeout)
         except Exception:
             return None
@@ -183,35 +213,41 @@ async def hear(pcm: bytes, rate: int, api_key: str, client: httpx.AsyncClient,
 
 def verdict(texts: dict, use: tuple):
     """Was she called, by the ways that count? True when one of them heard her name, False when
-    all of them answered and none did, None (taken as called) when one is missing."""
+    all of them answered and none did, None (taken as called) when one is missing. A way that
+    could not run (no place of the wake word) does not count."""
+    use = [n for n in use if n in texts] or [n for n in ("ganz_kw",) if n in texts]
     seen = [None if texts.get(n) is None else named(texts[n]) for n in use]
     if any(v is True for v in seen):
         return True
     return None if any(v is None for v in seen) or not seen else False
 
 
-async def check(ws, state: dict, mode: int, tv_playing, api_key: str, use="ganz") -> dict:
+async def check(ws, state: dict, mode: int, tv_playing, api_key: str, use="ganz_kw") -> dict:
     """Take the history off the line and, with the TV running, look for her name in it.
     {"pre": seconds, "tv": bool, "named": bool or None, "reject": bool, "s": seconds, "v": {way:
-    bool or None}}; never raises. `tv_playing`: async function, True when the TV is on and not
-    muted. `use`: the ways that count (setting `weckart`); all ways are heard and reported."""
+    bool or None}, "wake": seconds from the wake word to the end of the history or None}; never
+    raises. `tv_playing`: async function, True when the TV is on and not muted. `use`: the ways
+    that count (setting `weckart`); all ways are heard and reported. Only a talk the wake word
+    started (the device sent `wake_ms`) can be turned away."""
     started = time.monotonic()
     out = {"pre": 0.0, "tv": False, "named": None, "reject": False}
     try:
         pcm, rate = await read(ws, state)
+        wake_ms = state.get("wake_ms")
         if pcm:
             state["preroll"] = (pcm, rate)
             out["pre"] = round(len(pcm) / (rate * 2), 1)
+            out["wake"] = None if wake_ms is None else round(wake_ms / 1000, 2)
         if pcm and mode >= 1 and api_key:
             out["tv"] = bool(await tv_playing())
             if out["tv"]:
                 use = ways(use)
                 async with httpx.AsyncClient(timeout=CHECK_TIMEOUT_S) as client:
-                    texts = await hear(pcm, rate, api_key, client)
+                    texts = await hear(pcm, rate, api_key, client, wake_ms)
                 out["v"] = {n: (None if t is None else named(t)) for n, t in texts.items()}
                 out["named"] = verdict(texts, use)
-                out["heard"] = " | ".join((texts.get(n) or "")[:80] for n in use)
-                out["reject"] = mode >= 2 and out["named"] is False
+                out["heard"] = " | ".join((texts.get(n) or "")[:80] for n in use if n in texts)
+                out["reject"] = mode >= 2 and out["named"] is False and wake_ms is not None
     except Exception as e:
         logger.info("Wake check not finished (%s): she is taken as called", e or type(e).__name__)
         out["named"], out["reject"] = None, False

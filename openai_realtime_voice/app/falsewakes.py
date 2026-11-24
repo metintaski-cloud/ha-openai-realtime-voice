@@ -24,7 +24,9 @@ WINDOW_S = 0.1
 SOUND_RMS = 300      # a window louder than this counts as sound (voice.py: a voice is 300 to 400)
 PARALLEL = 5
 # "_vorher": the microphone history from before the wake word (wakecheck.py), else what came after
-NAME_RE = re.compile(r"falsewake_(?P<who>.+)_(?P<day>\d{8})_(?P<time>\d{6})(?P<pre>_vorher)?\.wav$")
+# "_w840": the wake word fired 840 ms before the end of that history
+NAME_RE = re.compile(r"falsewake_(?P<who>.+)_(?P<day>\d{8})_(?P<time>\d{6})"
+                     r"(?P<pre>_vorher)?(?:_w(?P<wake>\d+))?\.wav$")
 
 
 def listing(folder: str) -> list:
@@ -60,7 +62,7 @@ def describe(name: str) -> dict:
     day, t = m["day"], m["time"]
     return {"tag": f"{day[:4]}-{day[4:6]}-{day[6:]}", "uhrzeit": f"{t[:2]}:{t[2:4]}",
             "app": m["who"].startswith("app_"),  # a live talk from the app is no wake word
-            "vorher": bool(m["pre"])}
+            "vorher": bool(m["pre"]), **({"weck_ms": int(m["wake"])} if m["wake"] else {})}
 
 
 async def heard(path: str, api_key: str, client: httpx.AsyncClient) -> str:
@@ -72,6 +74,12 @@ async def heard(path: str, api_key: str, client: httpx.AsyncClient) -> str:
 PROBE_S = 2.5   # as long as the history the device sends
 
 
+def levels(pcm: bytes, rate: int, step_s: float = 0.25) -> list:
+    """Loudness (rms) of each quarter second, to see where in a history somebody spoke."""
+    step = max(2, int(rate * step_s) * 2)
+    return [pcm_level(pcm[i:i + step])[0] for i in range(0, len(pcm) - step + 1, step)]
+
+
 def clip(path: str) -> tuple:
     """(pcm, rate) of what the wake check would have got: a kept history as it is, of any other
     recording its first PROBE_S seconds."""
@@ -80,7 +88,7 @@ def clip(path: str) -> tuple:
         if w.getsampwidth() != 2 or w.getnchannels() != 1:
             raise ValueError("not 16 bit mono")
         pcm = w.readframes(w.getnframes())
-    return (pcm if path.endswith("_vorher.wav") else pcm[:int(rate * PROBE_S) * 2]), rate
+    return (pcm if "_vorher" in os.path.basename(path) else pcm[:int(rate * PROBE_S) * 2]), rate
 
 
 async def probe(folder: str, api_key: str, offset: int = 0, limit: int = 20,
@@ -88,7 +96,7 @@ async def probe(folder: str, api_key: str, offset: int = 0, limit: int = 20,
     """Every way of listening of the wake check over the kept recordings: per file, which way
     heard her name. `pre` True: only kept histories, False: only the others."""
     names = [n for n in listing(folder)
-             if pre is None or n.endswith("_vorher.wav") == bool(pre)]
+             if pre is None or ("_vorher" in n) == bool(pre)]
     part = names[max(0, offset):max(0, offset) + max(1, min(limit, 30))]
     gate = asyncio.Semaphore(PARALLEL)
 
@@ -97,7 +105,9 @@ async def probe(folder: str, api_key: str, offset: int = 0, limit: int = 20,
         try:
             pcm, rate = await asyncio.to_thread(clip, os.path.join(folder, name))
             async with gate:
-                texts = await wakecheck.hear(pcm, rate, api_key, client, timeout=20.0)
+                texts = await wakecheck.hear(pcm, rate, api_key, client, item.get("weck_ms"),
+                                             timeout=20.0)
+            item["pegel"] = [int(r) for r in levels(pcm, rate)]
         except Exception as e:
             item["fehler"] = str(e)[:80]
             return item

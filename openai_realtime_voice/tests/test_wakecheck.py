@@ -18,8 +18,9 @@ class Ws:
         return self.frames.pop(0)
 
 
-def head(n, rate=16000):
-    return json.dumps({"type": "preroll", "rate": rate, "bytes": n})
+def head(n, rate=16000, wake_ms=None):
+    return json.dumps({"type": "preroll", "rate": rate, "bytes": n,
+                       **({} if wake_ms is None else {"wake_ms": wake_ms})})
 
 
 @pytest.mark.parametrize("text", ["Hallo Leyla", "hallo leila, mach das licht an", "Halo Layla", "Alo Laila!",
@@ -63,7 +64,8 @@ def test_what_is_still_missing_when_time_is_up_is_remembered(monkeypatch):
 
 
 def run_check(monkeypatch, mode, tv, heard, frames=None, use="ganz"):
-    """`heard`: one text for every way of listening, or {(whole, keyword): text}."""
+    """`heard`: one text for every way of listening, or {(only the call, keyword): text}.
+    The default frames are a talk the wake word started (wake_ms in the header)."""
     asked = []
 
     async def transcribe(audio, api_key, client, keywords=()):
@@ -71,7 +73,7 @@ def run_check(monkeypatch, mode, tv, heard, frames=None, use="ganz"):
         if isinstance(heard, Exception):
             raise heard
         if isinstance(heard, dict):
-            return heard[(len(audio) > 60000, bool(keywords))]
+            return heard[(len(audio) < 75000, bool(keywords))]
         return heard
 
     async def playing():
@@ -79,14 +81,14 @@ def run_check(monkeypatch, mode, tv, heard, frames=None, use="ganz"):
     monkeypatch.setattr(wakecheck, "transcribe", transcribe)
     monkeypatch.setattr(wakecheck, "HEADER_WAIT_S", 0.1)
     state = {}
-    frames = [head(3200), b"\x01\x00" * 1600] if frames is None else frames
+    frames = [head(128000, wake_ms=600), b"\x01\x00" * 64000] if frames is None else frames
     out = asyncio.run(wakecheck.check(Ws(frames), state, mode, playing, "key", use))
     return out, state, asked
 
 
 def test_with_the_tv_off_nobody_is_asked_and_she_is_taken_as_called(monkeypatch):
     out, state, asked = run_check(monkeypatch, 2, tv=False, heard="television")
-    assert out["named"] is None and not out["reject"] and not asked and out["pre"] == 0.1
+    assert out["named"] is None and not out["reject"] and not asked and out["pre"] == 4.0
     assert state["preroll"][1] == 16000        # the history is there for a later false wake
 
 
@@ -98,7 +100,7 @@ def test_watching_never_ends_a_talk_and_acting_does_when_her_name_is_missing(mon
     out, _, _ = run_check(monkeypatch, 2, tv=True, heard="... Hallo Leyla")
     assert out["named"] is True and not out["reject"]
     out, _, asked = run_check(monkeypatch, 0, tv=True, heard="x")      # switched off: only taken off the line
-    assert not asked and not out["reject"] and out["pre"] == 0.1
+    assert not asked and not out["reject"] and out["pre"] == 4.0
 
 
 def test_in_doubt_she_is_taken_as_called(monkeypatch):
@@ -108,37 +110,60 @@ def test_in_doubt_she_is_taken_as_called(monkeypatch):
     assert not out["reject"] and not asked and out["pre"] == 0.0
 
 
-def test_only_the_end_is_where_the_wake_word_must_be():
-    pcm = bytes(range(200)) * 400                                  # 2.5 s at 16 kHz
-    assert wakecheck.tail(pcm, 16000, 1.5) == pcm[-48000:]
-    assert wakecheck.tail(pcm, 16000, 0) == pcm and wakecheck.tail(pcm, 16000, 9) == pcm
+def test_the_call_is_cut_out_where_the_device_says_the_wake_word_was():
+    pcm = b"".join(i.to_bytes(2, "little") for i in range(64000))           # 4 s at 16 kHz, sample = index
+    part = wakecheck.call(pcm, 16000, 600)                                    # wake word 0.6 s before the end
+    first, last = int.from_bytes(part[:2], "little"), int.from_bytes(part[-2:], "little")
+    assert first == 64000 - 9600 - 30400 and last == 64000 - 9600 + 3200 - 1  # 1.9 s before to 0.2 s after
+    assert wakecheck.call(pcm, 16000, None) == b""                            # no place given
+    assert wakecheck.call(pcm, 16000, 3900) == b""                            # the call lies before the history
+    assert len(wakecheck.call(pcm, 16000, 0)) == 30400 * 2                    # nothing after the end to take
+
+
+def test_the_header_may_say_where_the_wake_word_was():
+    assert wakecheck.wake_of(head(8, wake_ms=840)) == 840 and wakecheck.wake_of(head(8)) is None
+    assert wakecheck.wake_of(json.dumps({"type": "preroll", "wake_ms": "x"})) is None
+    assert wakecheck.wake_of(json.dumps({"type": "preroll", "wake_ms": 99999})) is None
+    state = {}
+    asyncio.run(wakecheck.read(Ws([head(4, wake_ms=840), b"\x01\x00\x02\x00"]), state))
+    assert state["wake_ms"] == 840
 
 
 def test_the_setting_names_the_ways_that_count():
-    assert wakecheck.ways("ganz+ende_kw") == ("ganz", "ende_kw")
-    assert wakecheck.ways("ende , unsinn") == ("ende",)
-    assert wakecheck.ways("") == ("ganz",) and wakecheck.ways(None) == ("ganz",)
-    assert wakecheck.ways("alles") == ("ganz",)
+    assert wakecheck.ways("ganz+ruf_kw") == ("ganz", "ruf_kw")
+    assert wakecheck.ways("ruf , unsinn") == ("ruf",)
+    assert wakecheck.ways("") == ("ganz_kw",) and wakecheck.ways(None) == ("ganz_kw",)
+    assert wakecheck.ways("alles") == ("ganz_kw",)
 
 
 def test_one_way_that_heard_her_is_enough_and_a_missing_one_is_doubt():
-    assert wakecheck.verdict({"ganz": "televizyon", "ende": "Hallo Leyla"}, ("ganz", "ende")) is True
-    assert wakecheck.verdict({"ganz": "televizyon", "ende": ""}, ("ganz", "ende")) is False
-    assert wakecheck.verdict({"ganz": "televizyon", "ende": None}, ("ganz", "ende")) is None
-    assert wakecheck.verdict({"ganz": None, "ende": "Leyla"}, ("ganz", "ende")) is True
-    assert wakecheck.verdict({"ganz": "x"}, ("ende",)) is None            # not heard at all
+    assert wakecheck.verdict({"ganz": "televizyon", "ruf": "Hallo Leyla"}, ("ganz", "ruf")) is True
+    assert wakecheck.verdict({"ganz": "televizyon", "ruf": ""}, ("ganz", "ruf")) is False
+    assert wakecheck.verdict({"ganz": "televizyon", "ruf": None}, ("ganz", "ruf")) is None
+    assert wakecheck.verdict({"ganz": None, "ruf": "Leyla"}, ("ganz", "ruf")) is True
+    # a way that could not run (no place of the wake word) does not count; then the whole with keyword
+    assert wakecheck.verdict({"ganz": "x", "ganz_kw": "Hallo Leyla"}, ("ruf_kw",)) is True
+    assert wakecheck.verdict({"ganz": "x", "ganz_kw": "x"}, ("ruf_kw", "ganz")) is False
 
 
-def test_the_television_drowned_him_in_the_whole_but_not_at_the_end(monkeypatch):
+def test_the_television_drowned_him_in_the_whole_but_not_in_the_call(monkeypatch):
     """24 Nov 2026, 11:57: the whole history gave only the television, he was turned away."""
-    heard = {(True, False): "Hafif bir ses", (True, True): "Hafif bir ses",
-             (False, False): "Hallo Leyla", (False, True): "Hallo Leyla"}
-    frames = [head(80000), b"\x01\x00" * 40000]
-    out, _, asked = run_check(monkeypatch, 2, tv=True, heard=heard, frames=frames)
-    assert out["reject"] and out["v"] == {"ganz": False, "ende": True, "ganz_kw": False, "ende_kw": True}
+    heard = {(False, False): "Hafif bir ses", (False, True): "Hafif bir ses",
+             (True, False): "", (True, True): "Hallo Leyla"}
+    out, _, asked = run_check(monkeypatch, 2, tv=True, heard=heard)
+    assert out["reject"] and out["wake"] == 0.6
+    assert out["v"] == {"ganz": False, "ganz_kw": False, "ruf": False, "ruf_kw": True}
     assert len(asked) == 4 and sorted(asked)[0] < sorted(asked)[-1]      # all four ways were heard
-    out, _, _ = run_check(monkeypatch, 2, tv=True, heard=heard, frames=frames, use="ganz+ende")
+    out, _, _ = run_check(monkeypatch, 2, tv=True, heard=heard, use="ganz_kw+ruf_kw")
     assert out["named"] is True and not out["reject"] and "Hallo Leyla" in out["heard"]
+
+
+def test_a_talk_the_wake_word_did_not_start_is_never_turned_away(monkeypatch):
+    """The button, a talk she started herself, older firmware: nobody had to say her name."""
+    frames = [head(80000), b"\x01\x00" * 40000]                        # no wake_ms in the header
+    out, _, asked = run_check(monkeypatch, 2, tv=True, heard="Biz dinleyicilerimiz", frames=frames)
+    assert out["named"] is False and not out["reject"] and out["wake"] is None
+    assert len(asked) == 2 and out["v"] == {"ganz": False, "ganz_kw": False}    # only the whole history
 
 
 def test_keywords_go_to_the_new_recogniser_and_as_a_prompt_to_the_old_one():

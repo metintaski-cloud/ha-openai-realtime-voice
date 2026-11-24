@@ -61,6 +61,8 @@ void LeylaVoice::dump_config() {
 
 void LeylaVoice::start() {
   uint32_t now = millis();
+  // a wake word heard longer ago did not start this talk (the button did, or she herself)
+  if (this->wake_at_ms_ != 0 && now - this->wake_at_ms_ > kWakeToStartMs) this->wake_at_ms_ = 0;
   xSemaphoreTake(this->lock_, portMAX_DELAY);
   bool memory_ok = this->rx_.acquire(kRxBytes) && this->tx_.acquire(kTxBytes);
   this->carry_has_ = false;
@@ -341,9 +343,15 @@ void LeylaVoice::start_preroll_() {
     return;
   }
   auto info = this->mic_->get_audio_stream_info();
-  char msg[80];
-  snprintf(msg, sizeof(msg), "{\"type\":\"preroll\",\"rate\":%u,\"bytes\":%u}",
-           (unsigned) (info.get_sample_rate() ? info.get_sample_rate() : kMicRate), (unsigned) this->pre_left_);
+  unsigned rate = info.get_sample_rate() ? info.get_sample_rate() : kMicRate;
+  char msg[112];
+  uint32_t wake = this->wake_at_ms_;
+  this->wake_at_ms_ = 0;
+  if (wake != 0)  // the history ends now: so far back the wake word was heard
+    snprintf(msg, sizeof(msg), "{\"type\":\"preroll\",\"rate\":%u,\"bytes\":%u,\"wake_ms\":%u}", rate,
+             (unsigned) this->pre_left_, (unsigned) (millis() - wake));
+  else
+    snprintf(msg, sizeof(msg), "{\"type\":\"preroll\",\"rate\":%u,\"bytes\":%u}", rate, (unsigned) this->pre_left_);
   this->send_text_(msg);
 }
 
