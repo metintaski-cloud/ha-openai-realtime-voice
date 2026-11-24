@@ -160,7 +160,13 @@ Geschrieben 20:09, in Kling eingesetzt um 20:12 (beide Bilder `5_lang_arbeit.png
 
 "0–3s: Calm and content, she opens her book and reads a line, gently swaying from one leg to the other with a soft smile. 3–6s: Her thoughts drift to him, she looks up at him over the rim of her glasses and smiles shyly, slowly shifting her weight onto one leg. 6–8s: Bashful at being caught dreaming, she lowers her gaze to the page again and softly turns her shoulders, her hip swaying gently. 8–10s: She closes the book, looks lovingly into the camera and returns to her initial pose. Soft, feminine, natural body movements. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-In Kling eingesetzt um 20:18 (beide Bilder `5_lang_arbeit.png`, 4K, 10 s, Adaptive, 1, 350 Credits). Generate klickt Metin. Ergebnis hier nachtragen.
+In Kling eingesetzt um 20:18 (beide Bilder `5_lang_arbeit.png`, 4K, 10 s, Adaptive, 1, 350 Credits). Von Metin gestartet etwa 20:19. Ergebnis hier nachtragen.
+
+**Schleife, langes Arbeitskleid: sie zeigt ihm ihr Kleid (Metin, 20:20: "was fehlt, das machen").** Eigene Szene, die es noch nicht gibt; sie nutzt den Schlitz und den langen Saum, die es nur in diesem Kleid gibt.
+
+"0–3s: Feeling pretty for him, she smooths her dress along her hip with her free hand and gently sways from one leg to the other with a sweet smile. 3–6s: She glances down at her dress, softly turns her shoulders a little to one side and to the other as if showing it to him, and slides one foot slightly forward. 6–8s: She looks up at him with a shy, questioning smile, tilts her head and shifts her weight onto her back leg. 8–10s: Bashful and happy, she draws her foot back, looks lovingly into the camera and returns to her initial pose. Soft, feminine, natural body movements. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
+
+In Kling eingesetzt um 20:21 (beide Bilder `5_lang_arbeit.png`, 4K, 10 s, Adaptive, 1, 350 Credits). Generate klickt Metin. Ergebnis hier nachtragen.
 
 ## Was am 24.11.2026 sonst noch entstand
 
