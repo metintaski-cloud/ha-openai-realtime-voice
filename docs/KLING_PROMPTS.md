@@ -99,6 +99,7 @@ Dieser Baukasten folgt Vorlage 2; ihr Clip 395 hat das Muster bestätigt (lebend
 | 360 | `kurz/begruessung` | Vorlage 1 | Metin: "super geworden". Bewegungsmenge 0,73, Naht 0,68, ruhiger Anfang. Eingebaut 18:37, Originaltempo. |
 | 395 | `kurz/gluecklichextra` | Vorlage 2 | Bewegungsmenge 2,83, Naht 0,60. Als Begrüßung "zu hektisch", als besonders glückliche Schleife eingebaut 19:02. |
 | 481 | `kurz/gluecklich6` | Claudes erster Prompt nach dem Baukasten (Blick senken) | Metin: "100% gutes Ergebnis". Bewegungsmenge 0,88, Naht 0,58. Eingebaut 19:14, Originaltempo. |
+| 595 | `kurz/gesicht` | Claudes Nachbau des alten Clips in der neuen Form (Berührung im Gesicht) | Metin: "Ok". Bewegungsmenge 0,90, Naht 0,58, keine fremde Hand. Eingebaut 19:33. |
 
 Bereit, noch nicht gelaufen. Von Claude am 24.11.2026 um 18:58 nach dem Baukasten geschrieben (Metin um 18:56: "kannst du nun anhand dieser neuen Regel auch solche erstellen?"); die Inhalte hatte Metin um 17:34 gewählt. Für die Beine nur Bewegungen aus seinen Vorlagen (wiegen, Ferse heben, Gewicht verlagern, kleiner Schritt), in jedem Takt eine andere:
 
@@ -112,7 +113,7 @@ Bereit, noch nicht gelaufen. Von Claude am 24.11.2026 um 18:58 nach dem Baukaste
 
 "0–2s: She reacts with sweet surprise to an unexpected gentle sensation on her cheek, her lips parting softly as she shifts her weight onto one leg. 2–5s: She closes her eyes with a soft little pout, tilts her head and nestles her cheek toward her shoulder with a blissful smile, gently swaying her hips. 5–8s: She slowly opens her eyes and looks at him with a shy, loving smile, her head still tilted, and shifts her weight onto the other leg. 8–10s: She straightens her head, smiles bashfully into the camera and returns to her initial pose. Soft, feminine, natural body movements. Subtle facial expressions, no exaggerated reactions. Both feet remain in place. No speaking. Static camera, full body visible, unchanged background."
 
-In Kling vorbereitet um 19:21, beide Bilder `6_kurz_arbeit.png` (von Metin eingesetzt, Dateiname geprüft), 4K, 10 s, Adaptive, 1, 350 Credits; von Metin gestartet etwa 19:23. Ergebnis hier nachtragen.
+In Kling vorbereitet um 19:21, beide Bilder `6_kurz_arbeit.png` (von Metin eingesetzt, Dateiname geprüft), 4K, 10 s, Adaptive, 1, 350 Credits; von Metin gestartet etwa 19:23. **Ergebnis (Clip 595, `kling_20261125_VIDEO_0_2s__She__595_0.mp4`, Download 19:28, Original in Leyla Kling Originale):** folgt dem alten Clip Takt für Takt: überrascht mit leicht geöffneten Lippen (0 bis 1,5 s), kleiner Schmollmund, Augen zu, Kopf zur Schulter, Wange hineingeschmiegt mit seligem Lächeln (2 bis 6 s), Augen auf, schüchterner Blick zu ihm mit geneigtem Kopf (6 bis 7 s), aufrichten, lächeln, Grundpose. Keine fremde Hand, Gesicht und Brille stabil, Gewicht wechselt sichtbar. Bewegungsmenge im Mittel 0,90, je Sekunde 0,4 / 0,8 / 1,6 / 0,9 / 0,7 / 0,3 / 1,5 / 1,7 / 0,8 / 0,4, Naht 0,58, letzte halbe Sekunde 0,22. Metin um 19:32: "Ok". Um 19:33 unverändert als `kurz/gesicht.mp4` eingebaut (Bildstrom bitgleich, ohne Ton wie der alte, Originaltempo). Erster Berührungs Clip in der neuen Form und erster Nachbau eines alten Clips damit: beides auf Anhieb.
 
 ## Was am 24.11.2026 sonst noch entstand
 
@@ -120,4 +121,4 @@ In Kling vorbereitet um 19:21, beide Bilder `6_kurz_arbeit.png` (von Metin einge
 - `kurz/gluecklich4` (Clip 169, Wiegen im Stand): zu langsam geraten (0,77), mit Abspielfaktor 1,5 eingebaut; Metin stellt nach.
 - `schwarz/gluecklich2` (Clip 5902), `schwarz/begruessung2` (Clip 5912, Faktor 1,3), `schwarz/brust` (Clip 5932): die drei zu stark gespielten Clips vom Nachmittag, auf Metins Wort trotzdem eingebaut.
 - Nicht eingebaut, Originale in Leyla Kling Originale: Clips 181 und 226 (misslungene Begrüßungen).
-- Ziel seit 19:09 (Metin): nur noch 4K Clips. 62 alte Clips mit 4K Ersatz in derselben Szene sind seit 19:10 herausgenommen (Kopien in Leyla aussortiert); die Arbeitsliste der 67 Szenen ohne 4K steht in STATUS.md unter "ZIEL: NUR NOCH 4K CLIPS".
+- Seit 19:32 liegen im Medienordner nur noch 4K Clips (Metins Ziel); alle 257 alten Clips sind mit geprüfter Kopie in Leyla aussortiert. Die Arbeitsliste der Szenen, die jetzt leer sind und neu gemacht werden, steht in STATUS.md unter "ZIEL ERREICHT IM MEDIENORDNER".
