@@ -9,9 +9,11 @@ Recherche vom 24.11.2026, 12:50, nachdem Metin sagte: "Vielleicht sollst du dich
 - Live Einstellung am Gerät: Schwelle 99 Prozent, Fenster 6, `gain_factor: 4`.
 - Messwerte: rund 5 Fehlstarts am Tag, 29 von 31 bei laufendem Fernseher (türkisches Fernsehen). Gleichzeitig muss Metin oft 2 bis 3 Mal rufen.
 
+- Beobachtung 24.11.2026, 22:25 (Metin): seine Mutter konnte Leyla mit "Hallo Leyla" nicht wecken, obwohl ihre Stimme im Training war. Passt zu den Messwerten (Schwelle 99 Prozent, er selbst muss oft 2 bis 3 Mal rufen). Zu prüfen: hat der leise Sammler (Schwelle 0,70) ihre Rufe aufgenommen? Dann hört das Modell sie, nur unter 99 Prozent.
+
 ## Was im Trainer liegt (angesehen am 24.11.2026, 12:58, `C:\mww`)
 
-- `personal_samples`: 121 echte Rufe, `wohnzimmer_001.wav` bis `wohnzimmer_121.wav`, 16 kHz mono, 1,2 bis 2,9 s, Pegel rms 495 bis 3756 (Mitte 1365), nichts übersteuert; hochgeladen am 2.11.2026 als `hallo_leyla_wohnzimmer.zip`. Sie wurden im Training benutzt (Gewicht 3,0).
+- `personal_samples`: 121 echte Rufe (laut Metin, 24.11.2026, 22:26, sind auch Rufe seiner Mutter darunter: "Sie wurde auch damit trainiert"; wie viele von wem, ist nicht notiert), `wohnzimmer_001.wav` bis `wohnzimmer_121.wav`, 16 kHz mono, 1,2 bis 2,9 s, Pegel rms 495 bis 3756 (Mitte 1365), nichts übersteuert; hochgeladen am 2.11.2026 als `hallo_leyla_wohnzimmer.zip`. Sie wurden im Training benutzt (Gewicht 3,0).
 - `negative_samples`: LEER. Im Trainingsprotokoll steht wörtlich "No WAVs found for reviewed negatives in: /data/negative_samples (skipping)" und "continuing with stock negatives". Echte Fehlwecker aus dem Wohnzimmer hat das Modell also nie gesehen. Dazu kamen 2040 künstlich erzeugte ähnlich klingende Sätze als Gegenbeispiele.
 - Training: 50 000 künstliche Rufe, 80 000 Schritte, sechs Läufe am 2.11.2026, der letzte um 15:07 bis 16:34.
 - Urteil des Trainers selbst über das Modell, das heute läuft: "Needs attention", erkannte Rufe 87,6 Prozent, Fehlwecker 0,21 pro Stunde bei Schwelle 0,99 und Fenster 5 (gemessen auf den Testdaten des Trainers, 9,67 Stunden Umgebungston). 0,21 pro Stunde sind rund 5 am Tag: das ist ziemlich genau, was wir zählen. Bei Schwelle 0,94 wären es laut Protokoll 6,5 Prozent überhörte Rufe und 0,375 Fehlwecker pro Stunde.
