@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.154.1 (24 Nov 2026)
+
+- `perf`: sorting a message into SCHWER or LEICHT asks the small model without reasoning and with an output limit of 16 tokens (`schwer.FAST`; Luna reasons at medium effort by default). Should the service refuse these fields, the question is asked plainly. `textmodel.ask` takes `extra` fields for the request.
+
 ## 2.154.0 (24 Nov 2026)
 
 - `feat`: hard questions can go to the strong model while everyday talk stays with Luna (`app/schwer.py`; Metin, 07:03: "Schwere Fragen Astra und Alltag Luna?"). Two ways in: he says so ("denk genau nach", "überleg gut", "iyi düşün", German and Turkish), which always counts; and, with the server setting `schwer` 1, the small model sorts each message into SCHWER or LEICHT while the rest of her head is put together (in doubt LEICHT). The answer is written with the same rules and memory, so it is still Leyla. Settings: `schwer_model` (default gpt-6.2-astra, "" = never), `schwer` (0 = only his own words, default), `schwer_tag` (the most the strong model may cost on one day, default 1.5 dollars; his worry at 07:08 that Astra gets too many questions), and the month's `budget` as before. `chat.spend_add` now also keeps today's sum.

@@ -17,6 +17,9 @@ import time
 
 MODEL = "gpt-6.2-astra"
 JUDGE_TIMEOUT_S = 3.0
+# Sorting is one word, so it needs no thinking: without this the small model reasons at its
+# default effort (medium) and one judgement took 1.1 to 2.8 s (median 1.4 s, 24 Nov 2026).
+FAST = {"reasoning": {"effort": "none"}, "max_output_tokens": 16}
 MIN_CHARS = 25   # shorter than this is never judged (a greeting, a command)
 
 PHRASE_RE = re.compile(

@@ -25,15 +25,17 @@ def output_text(data: dict) -> str:
 
 
 async def ask(prompt: str, api_key: str, models: list, url: str, label: str,
-              check: Callable[[str], bool] = bool, timeout: float = 90.0) -> Optional[str]:
-    """The first usable answer of the models, or None."""
+              check: Callable[[str], bool] = bool, timeout: float = 90.0,
+              extra: Optional[dict] = None) -> Optional[str]:
+    """The first usable answer of the models, or None. `extra`: more fields for the request
+    (a reasoning effort, an output limit)."""
     async with httpx.AsyncClient(timeout=timeout) as client:
         for model in [m for m in models if m]:
             try:
                 resp = await client.post(
                     url, headers={"Authorization": f"Bearer {api_key}",
                                   "Content-Type": "application/json"},
-                    json={"model": model, "input": prompt})
+                    json={"model": model, "input": prompt, **(extra or {})})
             except Exception as e:
                 logger.warning("%s request failed (%s): %s", label, model, e)
                 continue

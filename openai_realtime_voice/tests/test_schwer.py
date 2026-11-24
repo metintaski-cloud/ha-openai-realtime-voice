@@ -99,6 +99,14 @@ def test_without_the_setting_only_his_own_words_count(monkeypatch):
     assert hard("Denk genau nach: " + long_question)["how"] == "phrase" and not asked
     b.recall.settings["schwer"] = 1
     assert hard(long_question)["how"] == "judged" and len(asked) == 1
+    kinds = []
+
+    async def refuses_fast(prompt, *a, extra=None, **k):   # the fast fields refused: asked plainly
+        kinds.append(extra)
+        return None if extra else "SCHWER"
+    monkeypatch.setattr(main.textmodel, "ask", refuses_fast)
+    assert hard(long_question)["schwer"] and kinds == [main.schwer.FAST, None]
+    monkeypatch.setattr(main.textmodel, "ask", ask)
     b.recall.settings["schwer_model"] = ""
     assert hard("Denk genau nach: " + long_question)["schwer"] is False
 
