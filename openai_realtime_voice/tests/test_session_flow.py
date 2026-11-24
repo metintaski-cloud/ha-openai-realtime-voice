@@ -340,7 +340,7 @@ def test_every_registered_tool_has_a_runner_and_every_runner_a_tool_name(env):
         assert callable(spec["run"]) and spec["timeout"] > 0 and spec["error"], name
     for tool in (m.lights.LIGHTS_TOOL, m.fan.FAN_TOOL, m.vacuum.VACUUM_TOOL,
                  m.purifier.PURIFIER_TOOL, m.technik.TECHNIK_TOOL, m.cleanup.CLEANUP_TOOL,
-                 m.messages.TO_METIN_TOOL, m.costs.COSTS_TOOL):
+                 m.messages.TO_METIN_TOOL, m.costs.COSTS_TOOL, bridge.planer.tool()):
         assert tool["name"] in bridge._tools
 
 
@@ -670,3 +670,21 @@ async def test_acting_lets_a_real_call_through_and_old_firmware_too(env, monkeyp
     assert any('"ready"' in g for g in got if isinstance(g, str)) and calls["shown"] == 1 and not kept
     got, calls, _, _ = await _wake_talk(env, monkeypatch, mode=2, tv=True, heard="x", send_history=False)
     assert any('"ready"' in g for g in got if isinstance(g, str)) and calls == {"shown": 1, "asked": 0}
+
+
+async def test_the_planner_is_reached_like_every_tool_and_only_metin_plans(env):
+    bridge = m.LiveVoiceBridge()
+
+    class Lamps:
+        available = True
+        entities = ["light.a", "light.b"]
+    bridge.lights = Lamps()
+    args = {"aktion": "anlegen", "titel": "Probe", "datum": None, "uhrzeit": None, "in_minuten": 30,
+            "wiederholung": None, "tage": None, "nummer": None, "schritte": [
+                {"geraet": "licht_steuern", "argumente": json.dumps({"lamps": [1], "action": "off"})}]}
+    blocked = (await call(bridge, "planer", args, {}))[0].result()
+    assert "Nicht erlaubt" in blocked["error"] and bridge.planer.plans == []
+    made = (await call(bridge, "planer", args, {"unlocked": True}))[0].result()
+    assert made["ok"] and made["was"] == "Stehlampe 1 aus" and len(bridge.planer.plans) == 1
+    shown = (await call(bridge, "planer", {"aktion": "anzeigen"}, {}))[0].result()
+    assert shown["anzahl"] == 1 and shown["geplant"][0]["titel"] == "Probe"

@@ -421,3 +421,29 @@ async def test_reset_also_tells_lamps_reported_off(monkeypatch, tmp_path):
     assert mine[0][0] == "turn_on" and mine[0][1]["color_temp_kelvin"] == 6000 and mine[0][1]["transition"] == 0
     assert mine[1] == ("turn_off", {"entity_id": "light.a"})
     assert not [c for c in calls if c[1]["entity_id"] == "light.b"]   # on in his white: left alone
+
+
+async def test_busy_from_the_first_look_until_the_second_off_is_through(monkeypatch, tmp_path):
+    """For the planner (2.161.0): a plan for these lamps waits while this is True."""
+    show, calls = _show(monkeypatch, tmp_path)
+    assert not show.busy
+    await show.begin()
+    await asyncio.sleep(0.03)
+    assert show.busy
+    ending = asyncio.create_task(show.end())
+    await asyncio.sleep(0)  # the talk is over, the lamps are not back yet
+    assert show.busy
+    await ending
+    assert show.busy          # lamp a went off: its second off is still to come
+    await asyncio.sleep(0.08)
+    assert not show.busy and calls[-1] == ("turn_off", {"entity_id": ["light.a"]})
+
+
+async def test_busy_while_a_failed_restore_is_tried_again_and_free_when_it_gave_up(monkeypatch, tmp_path):
+    show, _ = _show(monkeypatch, tmp_path, fail=lambda name, data: name == "turn_off")
+    await show.begin()
+    await asyncio.sleep(0.03)
+    await show.end()
+    assert show._pending and show.busy   # lamp a could not be switched off: tried again
+    await asyncio.sleep(0.3)
+    assert show._pending and not show.busy  # given up until the next talk: a plan need not wait

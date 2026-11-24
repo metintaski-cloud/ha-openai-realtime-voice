@@ -36,7 +36,7 @@ import dotenv
 import websockets
 
 from app.audio_recorder import AudioRecorder
-from app import agenda, befehle, day, diary, falsewakes, gcontacts, textmodel, heart, ideas, inbox, mail, memory, memory_web, mood, nachdenken, reach, recall, reminders, sammler, schwer, tls, variety, voice_in, voice_stream, wakecheck
+from app import agenda, befehle, day, diary, falsewakes, gcontacts, textmodel, heart, ideas, inbox, mail, memory, memory_web, mood, nachdenken, planer, reach, recall, reminders, sammler, schwer, tls, variety, voice_in, voice_stream, wakecheck
 
 # Scene concept 2.0 (2.104.0): her feelings come from what really happens (app/heart.py); env
 # LEYLA_HEART=0 brings back the old dice of app/mood.py as a safety net.
@@ -213,6 +213,12 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self.technik = technik.TechnikChecker(
             notify=self.messages.push if self.messages.available else None)
         self.technik.lamp_count = len(self.lights.entities)
+        # what Metin tells her to do later, she does at that time by herself (app/planer.py)
+        self.planer = planer.Planner(
+            schemas=self._plan_schemas, run=self._plan_step, check=self._plan_check,
+            hold=self._plan_hold,
+            say=self._plan_say if self.messages.available else None,
+            notify=self.messages.push if self.messages.available else None)
         self.messages.on_command = self._automation_command
         self.messages.on_leyla_reply = self._push_reply
         self.messages.before_play = self._tv_down_for_announcement
@@ -291,6 +297,13 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
              "wird, hat Metin festgelegt)"),
             (self.lights.available or self.fan.available, befehle.SET_TOOL, "",
              "einen festen Befehl neu festlegen oder ändern, wenn Metin es sagt (gilt sofort)"),
+            (self.planer.available, self.planer.tool() if self.planer.available else None,
+             planer.PLANER_BACKEND_HINT,
+             "etwas für später planen und es dann zur Zeit selbst erledigen, einmal, täglich "
+             "oder an festen Wochentagen (Lampen, Ventilator, Luftreiniger, Saugroboter, "
+             "Fernseher, feste Befehle, eine Ansage; soll etwas erst später passieren, gibst du "
+             "es als Plan weiter und schaltest jetzt nichts; Pläne legt nur Metin an und nur er "
+             "löscht sie, anhören darf sie jeder)"),
             (self.fan.available, fan.FAN_TOOL, fan.FAN_BACKEND_HINT,
              "den Deckenventilator (aus, Stufe 1 bis 6, Licht am Ventilator, "
              "Naturwind, Drehrichtung, Timer; ein Strommesser zeigt, was an ist, "
@@ -483,7 +496,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                                 mood=self.mood,
                                 recall=lambda q: self.recall.ask(q, "Metin", private=True),
                                 cleanup=self._chat_cleanup if self.enable_memory else None,
-                                style=(base, chat.KOPF_DATA) if neu else None)
+                                style=(base, chat.KOPF_DATA) if neu else None,
+                                planer=self.planer)
         if out:
             out.pop("aufraeumen_raw", None)
             if neu and self.recall.settings.get("selbst"):
@@ -639,7 +653,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         rules = await chat.with_abilities(
             rules, message, mailer=self.mailer, inbox=self.inbox, agenda=self.agenda,
             mama=self.messages.from_metin if self.messages.available else None, mood=self.mood,
-            lights=(len(self.lights.entities), self.lights.run) if self.lights.available else None)
+            lights=(len(self.lights.entities), self.lights.run) if self.lights.available else None,
+            planer=self.planer)
         stats: dict = {}
         out = await chat._answer(
             self.openai_api_key, [model] if model else self._chat_models(), rules, self.memory,
@@ -1023,6 +1038,10 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         else:
             dialog.append([speaker, delta])
 
+    def _device_lock(self, device: str) -> asyncio.Lock:
+        """One lock per device (ventilator, fernseher), shared by automations and plans."""
+        return self.__dict__.setdefault("_command_locks", {}).setdefault(device, asyncio.Lock())
+
     async def _automation_command(self, data: dict) -> dict:
         """Event leyla_command from a Home Assistant automation, e.g.
         {"device": "ventilator", "action": "licht"} or {"device": "fernseher", "action": "aus"}."""
@@ -1037,14 +1056,13 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         # One command per device at a time, in the order the automation sent them: each event
         # starts its own task, and "ventilator aus" used to overtake the "licht_an" before it
         # (24 Nov 2026, the sunset automation; asyncio locks are handed out in turn).
-        lock = self.__dict__.setdefault("_command_locks", {}).setdefault(device, asyncio.Lock())
         if device in ("ventilator", "fan"):
-            async with lock:
+            async with self._device_lock("ventilator"):
                 result = await self.fan.run(args)
         elif device in ("fernseher", "tv"):
             args.setdefault("channel", None)
             args.setdefault("steps", None)
-            async with lock:
+            async with self._device_lock("fernseher"):
                 result = await self.tv.run(args)
         else:
             result = {"error": f"unknown device {device}"}
@@ -1971,6 +1989,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         if self.enable_memory and self.openai_api_key:
             self._in_background(self._cleanup_loop())
         self._in_background(self._minute_loop())
+        if self.planer.available:
+            self._in_background(self.planer.loop())
         if self.enable_memory:
             web = dict(lamp=self.lamp, code_phrase=self.code_phrase,
                        rules=self._readable_rules, chat=self._chat,
@@ -1979,7 +1999,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                        mood=self.mood, reminders=self.reminders,
                        diary=self.diary, chat_new=self._chat_new,
                        reach=self.reach, touch=self._chat_touch,
-                       hear=self._chat_hear, kopf=self.recall)
+                       hear=self._chat_hear, kopf=self.recall, planer=self.planer)
             self.recall.kick()
             try:
                 await memory_web.start_http(self.memory, self.todo_sync,

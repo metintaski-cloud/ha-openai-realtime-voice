@@ -1582,7 +1582,7 @@ async def _reach_api(reach, method: str, path: str, d: dict, unlocked: bool) -> 
 async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "", rules=None,
                   chat=None, voice=None, mailer=None, google=None, inbox=None,
                   mood=None, reminders=None, diary=None, chat_new=None, reach=None,
-                  touch=None, hear=None, kopf=None) -> None:
+                  touch=None, hear=None, kopf=None, planer=None) -> None:
     try:
         head = await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), timeout=10)
         lines = head.decode("latin-1").split("\r\n")
@@ -1822,6 +1822,10 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
             out = mood.game_reset() if (mood and hasattr(mood, "game_reset")) else {"ok": False}
             logger.info("Memory page: touch game reset")
             await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
+        elif method == "GET" and path == "/api/planstats":
+            # counts, times and device names only, no titles and no texts (2.161.0)
+            out = planer.stats() if planer else {}
+            await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
         elif method == "GET" and path == "/api/moodstats":
             # mood names and roll times only, no texts (2.96.1, to check that the moods run)
             out = mood.stats() if mood else {}
@@ -1950,13 +1954,14 @@ async def start_http(store: memory.MemoryStore, sync: Optional[object] = None,
                      code_phrase: str = "", rules=None, chat=None, voice=None,
                      mailer=None, google=None, inbox=None, mood=None, reminders=None,
                      diary=None, chat_new=None, reach=None, touch=None, hear=None, tls=None,
-                     kopf=None):
+                     kopf=None, planer=None):
     """`rules`: a function that returns Leyla's instructions without memory and without the
     code word; shown read only after the code word. `tls`: an ssl context; then this is the
     HTTPS copy of the page (app/tls.py) and the background jobs are not started a second time."""
     server = await asyncio.start_server(
         lambda r, w: _handle(store, sync, r, w, lamp, code_phrase, rules, chat, voice, mailer, google,
-                          inbox, mood, reminders, diary, chat_new, reach, touch, hear, kopf),
+                          inbox, mood, reminders, diary, chat_new, reach, touch, hear, kopf,
+                          planer),
         host, port, ssl=tls)
     logger.info("Memory page on port %d%s", port, " (HTTPS)" if tls else "")
     if tls is None and os.environ.get("LEYLA_MOBIL", "1") == "1":

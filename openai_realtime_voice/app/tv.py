@@ -109,12 +109,12 @@ def build_tool(channels: dict[str, int]) -> dict:
                     "description": "Volume steps 1 to 15 for lauter or leiser (default 3), "
                                    "otherwise null.",
                 },
-            },
                 "volume_percent": {
                     "type": ["integer", "null"],
                     "description": "For action lautstaerke: exact TV volume 0 to 100 "
                                    "(0 means mute), otherwise null.",
                 },
+            },
             "required": ["action", "channel", "steps", "volume_percent"],
             "additionalProperties": False,
         },

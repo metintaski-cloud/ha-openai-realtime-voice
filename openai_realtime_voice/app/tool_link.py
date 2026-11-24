@@ -7,7 +7,7 @@ import asyncio
 import json
 import logging
 
-from app import agenda, befehle, cleanup, diary, heart, mood, reminders, costs, fan, inbox, lights, mail, messages, purifier, technik, vacuum
+from app import agenda, befehle, cleanup, diary, heart, mood, planer, reminders, costs, fan, inbox, lights, mail, messages, purifier, technik, tv, vacuum
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +64,12 @@ class ToolLinkMixin:
         async def command_set(args):
             return self.commands.define(args)
 
+        def plan_gate(args, state):  # hearing what is planned is open, planning is Metin's
+            if args.get("aktion") in ("anlegen", "loeschen") \
+                    and not (self._only_metin(state) or state.get("metin_known")):
+                return {"error": "Nicht erlaubt: Pläne legt nur Metin an und nur er löscht "
+                                 "sie. Frag, wer spricht; ist es Metin, soll er es selbst sagen."}
+
         def mood_gate(args, state):  # code word, or Metin known by his words
             if not (self._only_metin(state) or state.get("metin_known")):
                 return metin_error("Laune")
@@ -114,6 +120,11 @@ class ToolLinkMixin:
                 "gate": command_gate, "error": "Der feste Befehl konnte gerade nicht geändert werden.",
                 "log": lambda a, r: f"{a.get('name')} -> " + str(
                     r.get("gilt_jetzt") or r.get("geloescht") or r.get("error", ""))[:80]},
+            "planer": {
+                "label": "Planner", "timeout": 10.0, "run": self.planer.run_tool,
+                "gate": plan_gate, "error": "Der Planer hat gerade nicht geklappt.",
+                "log": lambda a, r: f"{a.get('aktion')} -> " + (
+                    "ok" if r.get("ok") else str(r.get("error", ""))[:80])},
             fan.FAN_TOOL["name"]: {
                 "label": "Fan", "timeout": 15.0, "run": self.fan.run,
                 "error": "Der Ventilator konnte gerade nicht gesteuert werden."},
@@ -172,6 +183,68 @@ class ToolLinkMixin:
                 "error": "Die Nachricht konnte gerade nicht gesendet werden.",
                 "log": lambda a, r: "done"},
         }
+
+    # ---- the planner (app/planer.py): the household tools a plan may use ----
+    def _plan_schemas(self) -> dict:
+        """Tool name -> argument schema of what a plan may switch (only what this home has).
+        Never a tool with a gate: a plan runs with nobody there to be asked who speaks."""
+        tools = [(self.lights.available, lights.LIGHTS_TOOL),
+                 (self.lights.available or self.fan.available, befehle.RUN_TOOL),
+                 (self.fan.available, fan.FAN_TOOL),
+                 (self.tv.available, tv.build_tool(self.tv.channels) if self.tv.available else None),
+                 (self.vacuum.available, vacuum.VACUUM_TOOL),
+                 (self.purifier.available, purifier.PURIFIER_TOOL)]
+        return {t["name"]: t["parameters"] for ok, t in tools if ok and t}
+
+    def _plan_check(self, name: str, args: dict):
+        """What the schema cannot know: lamp numbers and names of fixed commands."""
+        if name == lights.LIGHTS_TOOL["name"]:
+            count = len(self.lights.entities)
+            if any(not 1 <= n <= count for n in args.get("lamps") or []):
+                return f"Es gibt nur Stehlampe 1 bis {count}."
+        if name == befehle.RUN_TOOL["name"] and not self.commands.find(str(args.get("name") or "")):
+            return ("Diesen festen Befehl gibt es nicht. Es gibt: "
+                    + ", ".join(c["name"] for c in self.commands.load()) + ".")
+        return None
+
+    async def _plan_step(self, name: str, args: dict):
+        """One step of a plan: the same function and time limit as when she is asked now."""
+        spec = self._tools[name]
+        if spec.get("gate") or name not in self._plan_schemas():
+            raise RuntimeError("not a tool for plans")
+        device = {fan.FAN_TOOL["name"]: "ventilator", "fernseher_steuern": "fernseher"}.get(name)
+        if not device:
+            return await asyncio.wait_for(spec["run"](args), timeout=spec["timeout"])
+        async with self._device_lock(device):  # in turn with commands of automations
+            return await asyncio.wait_for(spec["run"](args), timeout=spec["timeout"])
+
+    def _plan_hold(self, plan: dict) -> bool:
+        """A plan that switches lamps of the lamp show waits while the show has them: at the
+        end of a talk the show puts them back to what they were before, which would undo it."""
+        if not self.lamp.busy:
+            return False
+        show = set(self.lamp.entities)
+        for step in plan["schritte"]:
+            numbers = None
+            if step["geraet"] == lights.LIGHTS_TOOL["name"]:
+                numbers = step["argumente"].get("lamps") or []
+            elif step["geraet"] == befehle.RUN_TOOL["name"]:
+                c = self.commands.find(str(step["argumente"].get("name") or ""))
+                numbers = ((c.get("lampen_an") or []) + (c.get("lampen_aus") or [])) if c else None
+                if not numbers:
+                    continue
+            if numbers is not None and show & set(
+                    lights.select_entities(self.lights.entities, numbers)[0]):
+                return True
+        return False
+
+    async def _plan_say(self, text: str) -> None:
+        """A planned announcement: in the running talk, else over the speaker."""
+        if any(not state.get("closing") for _, state in self._live_sessions.values()):
+            await self._converse("Das hat Metin für jetzt geplant, sag es kurz in deinen "
+                                 "Worten: " + text)
+        else:
+            await self.messages.say(text)
 
     async def _run_tool(self, spec: dict, live_ws, call_id: str, raw_args, state: dict) -> None:
         """Run one backend function without blocking the audio loop and return its result."""

@@ -211,12 +211,23 @@ class LampShow:
         self._worker: Optional[asyncio.Task] = None
         self._retry: Optional[asyncio.Task] = None
         self._again: Optional[asyncio.Task] = None   # the second off after a show
+        self._ending = False                         # between the last look and the lamps being back
         self._quit = asyncio.Event()                 # ends the worker of the running show
         self._lock: Optional[asyncio.Lock] = None
 
     @property
     def available(self) -> bool:
         return bool(self.entities and self.token)
+
+    @property
+    def busy(self) -> bool:
+        """True while a show runs or its lamps are not back yet. Whoever switches these lamps
+        for good at a set time (app/planer.py) waits for it: the end of a show puts them back
+        to what they were before the talk, and a second off follows OFF_AGAIN_S later."""
+        return bool(self._active or self._ending
+                    or (self._pending and self._retry is not None)  # a restore is tried again
+                    or (self._lock is not None and self._lock.locked())
+                    or (self._again is not None and not self._again.done()))
 
     def _load_memory(self) -> None:
         try:
@@ -491,18 +502,22 @@ class LampShow:
             return
         self.mood_low = None
         worker, self._worker = self._worker, None
-        if worker:
-            # Never cut a look that is on its way: Home Assistant would still send it, and it
-            # could reach the lamp after the commands that put the lamp back. The worker ends
-            # after the call it is in, then the lamp gets a moment for its last fade.
-            self._quit.set()
-            try:
-                await asyncio.wait_for(asyncio.shield(worker), SHOW_TIMEOUT_S + 1.0)
-            except Exception:
-                worker.cancel()
-                await asyncio.gather(worker, return_exceptions=True)
-            await asyncio.sleep(SETTLE_S)
-        await self._restore_all()
+        self._ending = True  # still busy for a plan until the lamps are back
+        try:
+            if worker:
+                # Never cut a look that is on its way: Home Assistant would still send it, and
+                # it could reach the lamp after the commands that put the lamp back. The worker
+                # ends after the call it is in, then the lamp gets a moment for its last fade.
+                self._quit.set()
+                try:
+                    await asyncio.wait_for(asyncio.shield(worker), SHOW_TIMEOUT_S + 1.0)
+                except Exception:
+                    worker.cancel()
+                    await asyncio.gather(worker, return_exceptions=True)
+                await asyncio.sleep(SETTLE_S)
+            await self._restore_all()
+        finally:
+            self._ending = False
 
     async def recover(self) -> None:
         """At start: a restore that failed before the add on stopped is done now."""

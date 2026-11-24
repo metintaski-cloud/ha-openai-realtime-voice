@@ -383,6 +383,7 @@ def _parse(text: str, lists: dict, may_ask: bool = True) -> Optional[dict]:
             "lights_raw": parsed.get("lights"), "email_raw": parsed.get("email"),
             "mail_raw": parsed.get("mail"), "mama_raw": parsed.get("mama"),
             "kalender_raw": parsed.get("kalender"), "merken_raw": parsed.get("merken"),
+            "planer_raw": parsed.get("planer"),
             "erinnern_raw": parsed.get("erinnern"),
             "aufraeumen_raw": parsed.get("aufraeumen"),
             "mood_resolved": parsed.get("mood_resolved") is True,
@@ -550,7 +551,7 @@ def hear_prompt(reply: str) -> str:
 
 
 async def with_abilities(rules: str, message: str, lights=None, room=None, mailer=None,
-                         inbox=None, mama=None, mood=None, agenda=None) -> str:
+                         inbox=None, mama=None, mood=None, agenda=None, planer=None) -> str:
     """The rules plus what the chat can do right now and how her heart is (also used by the
     probe in main, so a test answer is built exactly like a real one)."""
     if mailer and mailer.available:
@@ -574,6 +575,10 @@ async def with_abilities(rules: str, message: str, lights=None, room=None, maile
         abilities.append("seine Mails lesen und Löschen vorschlagen")
     if agenda and agenda.available:
         abilities.append("seinen Kalender verwalten (Termine ansehen, eintragen, ändern, löschen)")
+    if planer and planer.available:
+        rules = rules + planer.chat_note()
+        abilities.append("etwas für später planen und dann selbst erledigen (einmal, täglich "
+                         "oder an festen Wochentagen), Pläne ansehen und löschen")
     if mama:
         rules = rules + MAMA_NOTE
         abilities.append("Anne etwas von Metin ausrichten")
@@ -587,18 +592,23 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
                  history, message: str, url: str = memory.RESPONSES_URL,
                  lights=None, room=None, mailer=None, inbox=None,
                  mama=None, mood=None, agenda=None, recall=None,
-                 cleanup=None, style: Optional[str] = None) -> Optional[dict]:
+                 cleanup=None, style: Optional[str] = None, planer=None) -> Optional[dict]:
     """`lights`: (count, run) of the light controller, so Leyla can switch the lamps.
     `room`: async function giving the room values, asked only when Metin asks about them.
     `mailer`: `mail.Mailer`; an "email" in her answer becomes a draft card, never a sent mail.
     `inbox`: `inbox.Inbox`; a "mail" search or read is run and she answers again with the result
     (one extra pass at most), a "loeschen" becomes a bin card that Metin confirms.
     `agenda`: `agenda.Agenda`; a "kalender" request (looking, creating, changing, deleting) is
-    run at once and she answers once more with the result (one extra pass)."""
-    rules = await with_abilities(rules, message, lights, room, mailer, inbox, mama, mood, agenda)
+    run at once and she answers once more with the result (one extra pass).
+    `planer`: `planer.Planner`; a "planer" request (making, listing, deleting a plan) is run at
+    once and she answers once more with the result; the line under her answer comes from the
+    code, so it says what really is planned."""
+    rules = await with_abilities(rules, message, lights, room, mailer, inbox, mama, mood, agenda,
+                                 planer)
     out = await _answer(api_key, models, rules, store, history, message, url, lights, style)
     trash = None
     cal_req = out.pop("kalender_raw", None) if out else None
+    plan_req, plan_line = (out.pop("planer_raw", None) if out else None), ""
     req = out.pop("mail_raw", None) if out else None
     if out and inbox and inbox.available and isinstance(req, dict):
         note, trash = await inbox.chat_step(req)
@@ -618,6 +628,16 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
         if second:
             second.pop("kalender_raw", None)
             second["proposals"] = out["proposals"] + second["proposals"]
+            out = second
+    if out and planer and planer.available and isinstance(plan_req, dict):
+        note, plan_line = await planer.chat_step(plan_req)
+        second = await _answer(api_key, models, rules + note, store, history, message, url,
+                               lights, style)
+        if second:
+            second.pop("planer_raw", None)  # one plan per message, never a second one unseen
+            second["proposals"] = out["proposals"] + second["proposals"]
+            # "jetzt an und um elf aus": what she switches now must not get lost in the 2nd pass
+            second["lights_raw"] = second.get("lights_raw") or out.get("lights_raw")
             out = second
     tidy = cleanup_numbers(out.get("aufraeumen_raw")) if out and cleanup else ("", "")
     if any(tidy):  # 2.125.2: delete first, then she confirms what really happened (Metin)
@@ -647,7 +667,10 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
         out.pop("lights_raw", None)
         out.pop("mail_raw", None)
         out.pop("kalender_raw", None)
+        out.pop("planer_raw", None)
         out.setdefault("lights", [])
+        if plan_line:
+            out["lights"].append(plan_line)
         resolved, paused = out.pop("mood_resolved", False), out.pop("mood_pause", False)
         events = [e for e in out.pop("gefuehl", []) if isinstance(e, str) and e != "rose"]  # rose: button only
         if mood and hasattr(mood, "apply"):  # scene concept 2.0: the counter decides, not the model
