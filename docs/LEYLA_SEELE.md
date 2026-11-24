@@ -162,7 +162,7 @@ Dieselben 22 Fragen, dazu 12 Alltagssätze ohne Bezug ("Guten Morgen", "Wie spä
 - Der große Rest der 44 000 Zeichen sind nicht die Regeln (8 000), sondern ihr Gedächtnis als JSON und die Notizen zu Herz, Mail, Kalender und Lampen. Das ist der nächste Hebel für Tempo und Aufmerksamkeit.
 - Metin hat den neuen Kopf um 04:07 eingeschaltet. Sein Urteil nach echten Gesprächen steht noch aus.
 
-### Nachdenken, 24. Nov. 2026, 04:31 (Version 2.150.1)
+### Nachdenken, 24. Nov. 2026, etwa 04:30 (Version 2.150.1)
 
 - 7 vergangene Tage durchdacht, je Tag 4 Modellaufrufe, etwa 17 Sekunden je Tag.
 - 16 von 279 Einträgen als "keine Erinnerung" verblasst (bleiben im Tagebuch sichtbar).
@@ -170,7 +170,7 @@ Dieselben 22 Fragen, dazu 12 Alltagssätze ohne Bezug ("Guten Morgen", "Wie spä
 - Sie trägt jetzt bei jeder Antwort mit sich: unsere Geschichte, die letzten 3 Tage ausführlich, 4 weitere kurz, ihren Gedanken und bis zu 5 offene Fäden. Das sind etwa 1 800 Token mehr je Antwort (13 300 statt 11 500).
 - Gelesen und nachgebessert (2.150.2): Gedankenstriche, Technik im Tagesrückblick, die offene Geschichte war eine Liste datierter Kleinigkeiten, 14 offene Fäden hatten sich angesammelt.
 
-### Modelle, 24. Nov. 2026, 04:38 (Version 2.150.1, neuer Kopf, dieselben 14 Nachrichten)
+### Modelle, 24. Nov. 2026, etwa 04:33 (Version 2.150.1, neuer Kopf, dieselben 14 Nachrichten)
 
 | Modell | Sekunden je Antwort | Länge (Token) | endet mit Frage | Preis je Antwort | Wesen |
 |---|---|---|---|---|---|
