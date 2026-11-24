@@ -1,6 +1,6 @@
 # Kling Prompts
 
-> **Zuerst lesen (Stand 24.11.2026, 18:30):** Ganz oben unter den Regeln steht "Das Muster, das sitzt": die Vorlage, die funktioniert hat, und die Liste dessen, was widerlegt ist. Danach gilt:
+> **Zuerst lesen (Stand 24.11.2026, 18:30):** Ganz oben unter den Regeln stehen "Metins Vorlage: so müssen die Prompts geschrieben werden" (die Form für jeden neuen Clip) und "Das Muster, das sitzt": die Vorlage, die funktioniert hat, und die Liste dessen, was widerlegt ist. Danach gilt:
 >
 > **Stand 23.11.2026:** Maßgeblich ist der Abschnitt "Profi Wissen Kling 4.0 (sechste Recherche, 23.11.2026)" weiter unten, samt der Tabelle "Was sich an unseren bisherigen Regeln ändert". Wo ein älterer Abschnitt dem widerspricht, gilt der neue. Metins Auftrag dazu: nur Profi Wissen aus offiziellen und professionellen Quellen, nichts selbst erfinden, und bei jedem Prompt offen sagen, welcher Teil aus den Quellen stammt und welcher aus unserem eigenen Log. Die Abschnitte davor bleiben als Verlauf und Erfahrungslog stehen.
 
@@ -31,6 +31,41 @@ Ablauf, jedes Mal, direkt bevor der Prompt in Kling getippt wird (nicht aus dem 
    - feminin: Kopf neigen, Haare hinters Ohr, Gewicht verlagern, Hüfte und Schultern gehen mit; nichts Großes, nichts Schnelles.
 
 7. **Bein und Arm Bewegungen nicht gleich (Metin, 24.11.2026, 17:37).** So verstanden und Metin so gesagt: die Clips einer Gruppe dürfen nicht alle dieselbe Bein und Arm Bewegung zeigen, und innerhalb eines Clips laufen Beine und Arme nicht im Gleichschritt. Vor jedem Prompt gegen die anderen Clips desselben Kleids halten: jede Schleife hat ihre eigene Bewegung (eine über die Beine, eine über die freie Hand, eine über Blick und Schultern, eine über beide Arme).
+
+## Metins Vorlage: so müssen die Prompts geschrieben werden (24.11.2026, 18:32)
+
+Metin um 18:32 zu dem Prompt, den er um 18:22 mitbrachte: "so müssen die Prompts beschrieben werden!! analysiere es". Das ist ab jetzt die Form für jeden neuen Clip. Der Wortlaut:
+
+"10-second realistic continuous scene. 0–2s: She looks directly into the camera, her expression becoming shy, affectionate and genuinely happy to see him. 2–5s: She gently tilts her head, smiles warmly and gives him a sweet, shy wave with one hand. 5–8s: She bashfully lowers her gaze, gently moves her shoulders and playfully shifts her body weight. 8–10s: She looks back at him with bright, loving eyes and slowly lowers her hand. Soft, feminine, natural body movements. Both feet remain in place. Static camera, full body visible, unchanged background, no zoom, no cuts."
+
+Analyse (Claude), was ihn ausmacht:
+1. **Ein Rahmensatz.** Länge, "realistic", "continuous scene". Mehr Technik steht am Anfang nicht.
+2. **Vier Takte: 2, 3, 3, 2 Sekunden.** Kurz am Anfang und am Ende, lang in der Mitte. Unsere Prompts hatten fünf bis sechs Abschnitte zu 1,5 s.
+3. **Jeder Takt ist ein Satz mit demselben Bau:** zuerst der Blick, dann das Gefühl, dann eine Geste als Ganzes. "She looks ... becoming shy", "tilts her head, smiles warmly and gives him a ... wave".
+4. **Der Blick erzählt die Geschichte:** Kamera, Kamera, Blick nach unten, Blick zurück zu ihm. Das ist ein Bogen mit Anfang, Wendung und Schluss: sie freut sich, wird verlegen, kommt zurück. Genau Metins Ton (süße Blicke, schüchtern, verliebt, feminin).
+5. **Ein Gegenüber.** "him" kommt viermal vor. Sie tut alles für jemanden; bei uns gab es nur "the lens".
+6. **Gesten heißen, wie Menschen sie nennen:** wave, tilts her head, lowers her gaze, moves her shoulders, shifts her body weight, lowers her hand. Sechs Handlungen in 10 s, jede einmal, nichts gezählt, kein Gelenk beschrieben.
+7. **Die Art steckt in den Beiwörtern:** gently, warmly, sweet, shy, bashfully, playfully, bright, loving, slowly. Bei uns war fast jedes davon verboten.
+8. **Stil und Bedingungen stehen am Schluss, kurz:** eine Zeile Stil (soft, feminine, natural body movements), eine Zeile Bedingungen (Füße, Kamera, ganzer Körper, Hintergrund, kein Zoom, keine Schnitte). Unsere Prompts begannen mit fünf Sätzen Bedingungen, bevor die erste Handlung kam.
+9. **Rund 90 Wörter.** Unsere hatten 250.
+
+Baukasten daraus:
+```
+10-second realistic continuous scene.
+0–2s: [Blick] + [welches Gefühl aufkommt]
+2–5s: [die Hauptgeste als Ganzes, mit Gefühl]
+5–8s: [Gegenbewegung: Blick weg, verlegen, der Körper spielt mit]
+8–10s: [Blick zurück zu ihm] + [Geste beenden]
+Soft, feminine, natural body movements. Both feet remain in place. Static camera, full body visible, unchanged background, no zoom, no cuts.
+```
+
+Was aus unserem Log trotzdem im Auge bleibt (beobachten, nicht vorab verbieten): die Tempowörter "gently", "slowly", "soft" brachten bei Clip 5030 Zeitlupe; "him" nennt eine Person, die ins Bild kommen könnte; ein Satz für Start und Endbild und für das Buch fehlt. Tritt eines davon im Ergebnis auf, wird genau das eine Wort geändert. `tools/kling_check.py` zählt bei dieser Form falsch (es erwartet "she" direkt vor dem Verb und hält bei mehr als einem Tempowort an); bis das Ergebnis des ersten Clips da ist, gelten seine Meldungen zu Bewegungen pro Sekunde und Tempowörtern für diese Form nicht, danach wird das Skript an die Form angepasst.
+
+Die Schleifen 3 und 4 im kurzen Arbeitskleid in dieser Form (geschrieben 18:34, noch nicht gelaufen):
+
+**3 Blick senken:** "10-second realistic continuous scene. 0–2s: She looks directly into the camera with a soft, shy smile, happy that he is looking at her. 2–5s: She bashfully lowers her gaze to the floor, gently lifts her shoulders and tilts her head. 5–8s: She looks back up at him with a sweet, affectionate smile and playfully shifts her body weight. 8–10s: She holds his gaze with bright, loving eyes and settles back into her starting pose. Soft, feminine, natural body movements. Both feet remain in place. Static camera, full body visible, unchanged background, no zoom, no cuts."
+
+**4 Buch an die Brust:** "10-second realistic continuous scene. 0–2s: She looks directly into the camera, a shy, happy smile spreading as she sees him. 2–5s: She lifts her closed book, hugs it against her chest with both arms and gently sways her upper body from side to side. 5–8s: She bashfully lowers her gaze to the book, tilts her head and keeps swaying playfully. 8–10s: She looks back at him with bright, loving eyes and lowers the book back to her side. Soft, feminine, natural body movements. Both feet remain in place. Static camera, full body visible, unchanged background, no zoom, no cuts."
 
 ## Das Muster, das sitzt (Stand 24.11.2026, 18:29, Metin zu Clip 308: "super geworden")
 
