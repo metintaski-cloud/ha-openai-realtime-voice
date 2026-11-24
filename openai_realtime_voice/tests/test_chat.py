@@ -375,18 +375,20 @@ def test_her_core_is_a_person_not_a_device_and_love_only_behind_the_code_word():
     assert '"merken"' in chat.CHAT_KOPF and '"erinnern"' in chat.CHAT_KOPF and "private" in chat.CHAT_KOPF
 
 
-async def test_new_mind_puts_the_fixed_part_first_and_the_memory_last(tmp_path, monkeypatch):
+async def test_new_mind_puts_the_fixed_part_first_then_her_lists_then_the_moment(tmp_path, monkeypatch):
     from app import persona
     store = memory.MemoryStore(str(tmp_path / "m.json"))
     store.save_all({"family": ["Person: Metin | Arbeit: Elektriker"], "private": ["Geheim A"]})
     sent, stats = [], {}
     _fake_model(monkeypatch, sent, {"reply": "Na du, wie war die Schicht?", "question": "Und sonst?"})
-    rules = persona.kern(with_metin=True) + chat.CHAT_KOPF + "\n\nNOTIZ X"
-    out = await chat._answer("k", ["m"], rules, store, [], "Bin zu Hause", "http://x", None,
-                             chat.KOPF_DATA, stats)
+    base = persona.kern(with_metin=True) + chat.kopf(True)
+    out = await chat._answer("k", ["m"], "\n\nNOTIZ X", store, [], "Bin zu Hause", "http://x", None,
+                             (base, chat.KOPF_DATA), stats)
     text = sent[0]["instructions"]
-    assert text.startswith("DU BIST LEYLA") and text.index("SO ANTWORTEST DU") < text.index("NOTIZ X")
-    assert text.index("NOTIZ X") < text.index("Geheim A") and "CHAT MIT METIN" not in text
+    # what never changes, then her lists, then the notes of this moment (closest to her answer)
+    assert text.startswith("DU BIST LEYLA") and text.index("SO ANTWORTEST DU") < text.index("Geheim A")
+    assert text.index("Geheim A") < text.index("NOTIZ X") and "CHAT MIT METIN" not in text
+    assert text.endswith("NOTIZ X" + chat.KOPF_END)
     assert stats["input_tokens"] == 1234 and stats["model"] == "m" and stats["characters"] == len(text)
     assert out["reply"].startswith("Na du")
 
@@ -463,3 +465,18 @@ def test_she_keeps_new_things_herself_and_leaves_changes_to_metin(tmp_path, monk
     assert data["private"] == ["Unser Lied ist ein Geheimnis."]
     assert data["family"] == [old + " | Arbeit: Lehrer", "Metin mag Tee."] and kicked == [1]
     assert "notedLine" in m.memory_web.PAGE and "j.noted" in m.memory_web.PAGE
+
+
+def test_the_chat_model_can_be_switched_on_the_server_and_has_a_budget(tmp_path, monkeypatch):
+    from app import main as m, recall, diary
+    b = m.LiveVoiceBridge.__new__(m.LiveVoiceBridge)
+    b.recall = recall.Index(diary.Diary(str(tmp_path / "d.json")), "", path=str(tmp_path / "r.json"))
+    b.chat_model, b.chat_budget, b.memory_model, b.backend_model = "", 40.0, "gpt-6-luna", "back"
+    monkeypatch.setattr(chat, "SPEND_PATH", str(tmp_path / "spend.json"))
+    assert b._chat_models() == ["gpt-6-luna", "back"]
+    assert b.recall.set({"chat_model": "gpt-6.2-astra", "budget": 300})["chat_model"] == "gpt-6.2-astra"
+    assert b._chat_models() == ["gpt-6.2-astra", "gpt-6-luna", "back"]
+    chat.spend_add("gpt-6.2-astra", {"input_tokens": 40_000_000, "output_tokens": 0})   # 320 dollars
+    assert b._chat_models() == ["gpt-6-luna", "back"]                                    # over the budget
+    assert b.recall.set({"chat_model": "etwas anderes"})["chat_model"] == "gpt-6.2-astra"
+    assert b.recall.set({"chat_model": ""})["chat_model"] == ""

@@ -57,7 +57,10 @@ SETTINGS = {"min_sim": 0.48, "top": 4, "ask_min_sim": 0.38, "ask_top": 6, "word_
             "selbst": 0,
             # 1: at night she thinks the day over (app/nachdenken.py) and carries our story,
             # the days and her thought with her instead of single diary lines of past days
-            "nachdenken": 0}
+            "nachdenken": 0,
+            # the chat model instead of the add on option (step 5; "" = as configured) and its
+            # budget in dollars a month (0 = as configured); over the budget Luna answers again
+            "chat_model": "", "budget": 0.0}
 COMPARE = (("text-embedding-3-small", 256), ("text-embedding-3-small", 1536),
            ("text-embedding-3-large", 256), ("text-embedding-3-large", 1024))
 BONUSES = (0.0, 0.05, 0.1)
@@ -155,6 +158,9 @@ class Index:
         for k, v in (values or {}).items():
             if k == "model":
                 if v in MODELS:
+                    self.settings[k] = v
+            elif k == "chat_model":
+                if v == "" or (isinstance(v, str) and v.startswith("gpt-") and len(v) < 40):
                     self.settings[k] = v
             elif k in SETTINGS and isinstance(v, (int, float)) and not isinstance(v, bool):
                 self.settings[k] = type(SETTINGS[k])(v)
@@ -467,6 +473,9 @@ class Index:
         if path == "/api/kopf/nachdenken" and self.reflect:
             if d.get("forget"):
                 return {"ok": self.reflect.forget(str(d["forget"]))}
+            if d.get("story"):  # write our story again from all the days (after a prompt change)
+                await self.reflect._story(time.time(), rebuild=True)
+                self.reflect._save()
             done = await self.think() if (d.get("now") and self.think) else 0
             return {"ok": True, "done": done, "due": len(self.reflect.due()),
                     **(self.reflect.listing() if d.get("read") else {})}

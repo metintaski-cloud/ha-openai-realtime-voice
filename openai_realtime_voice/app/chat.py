@@ -105,6 +105,10 @@ KOPF_SELF = ("• Erzählt er etwas Bleibendes (über sich, die Familie, Freunde
              "geschehen.")
 
 
+# the last line of her new mind: the form of the answer stands far up, in the fixed start
+KOPF_END = "\n\nAntworte jetzt, als Leyla, nur mit dem JSON aus SO ANTWORTEST DU."
+
+
 def kopf(selbst: bool = False) -> str:
     """The chat part of her new mind; selbst: she keeps new things without asking (2.149.0)."""
     return CHAT_KOPF.replace("<<MERKEN>>", KOPF_SELF if selbst else KOPF_ASK)
@@ -668,8 +672,9 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
 async def _answer(api_key, models, rules, store, history, message, url, lights, style=None,
                   stats: Optional[dict] = None):
     """{"reply": ..., "proposals": [...]} or None when no model answered. style: the block that
-    holds her memory lists (CHAT_STYLE, or KOPF_DATA for her new mind). stats: filled with model,
-    seconds and token counts of the answer (for the probe)."""
+    holds her memory lists and is put after the rules (CHAT_STYLE), or for her new mind a pair
+    (fixed start, KOPF_DATA) that is put before them. stats: filled with model, seconds and
+    token counts of the answer (for the probe)."""
     message = (message or "").strip()[:MAX_MESSAGE]
     if not message:
         return None
@@ -684,8 +689,12 @@ async def _answer(api_key, models, rules, store, history, message, url, lights, 
             missing.append(f"• {prof[0]}: {', '.join(gaps)}")
     if lights:
         rules = rules + LIGHTS_NOTE.format(count=lights[0])
-    instructions = rules + (style or CHAT_STYLE).format(
+    block = (style[1] if isinstance(style, tuple) else style or CHAT_STYLE).format(
         lists=json.dumps(lists, ensure_ascii=False), missing="\n".join(missing) or "(nichts)")
+    # her new mind (2.150.2): what never changes first, then her lists, which change rarely,
+    # then everything of this moment. The model keeps a start it has seen before, so most of
+    # the text is not read anew with every message, and the newest stands closest to her answer
+    instructions = (style[0] + block + rules + KOPF_END) if isinstance(style, tuple) else rules + block
     dialog = [{"role": "user" if h["role"] == "user" else "assistant", "content": h["text"]}
               for h in _clean_history(history)]
     dialog.append({"role": "user", "content": message})
@@ -715,6 +724,8 @@ async def _answer(api_key, models, rules, store, history, message, url, lights, 
                 stats.update(model=model, seconds=round(time.monotonic() - started, 2),
                              input_tokens=usage.get("input_tokens", 0),
                              output_tokens=usage.get("output_tokens", 0),
+                             cached_tokens=(usage.get("input_tokens_details") or {}).get(
+                                 "cached_tokens", 0),
                              characters=len(instructions))
             text = out.get("output_text") or ""
             if not text:

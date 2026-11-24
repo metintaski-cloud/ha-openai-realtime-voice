@@ -162,6 +162,26 @@ Dieselben 22 Fragen, dazu 12 Alltagssätze ohne Bezug ("Guten Morgen", "Wie spä
 - Der große Rest der 44 000 Zeichen sind nicht die Regeln (8 000), sondern ihr Gedächtnis als JSON und die Notizen zu Herz, Mail, Kalender und Lampen. Das ist der nächste Hebel für Tempo und Aufmerksamkeit.
 - Metin hat den neuen Kopf um 04:07 eingeschaltet. Sein Urteil nach echten Gesprächen steht noch aus.
 
+### Nachdenken, 24. Nov. 2026, 04:31 (Version 2.150.1)
+
+- 7 vergangene Tage durchdacht, je Tag 4 Modellaufrufe, etwa 17 Sekunden je Tag.
+- 16 von 279 Einträgen als "keine Erinnerung" verblasst (bleiben im Tagebuch sichtbar).
+- Der Einfall findet weiter 22 von 22.
+- Sie trägt jetzt bei jeder Antwort mit sich: unsere Geschichte, die letzten 3 Tage ausführlich, 4 weitere kurz, ihren Gedanken und bis zu 5 offene Fäden. Das sind etwa 1 800 Token mehr je Antwort (13 300 statt 11 500).
+- Gelesen und nachgebessert (2.150.2): Gedankenstriche, Technik im Tagesrückblick, die offene Geschichte war eine Liste datierter Kleinigkeiten, 14 offene Fäden hatten sich angesammelt.
+
+### Modelle, 24. Nov. 2026, 04:38 (Version 2.150.1, neuer Kopf, dieselben 14 Nachrichten)
+
+| Modell | Sekunden je Antwort | Länge (Token) | endet mit Frage | Preis je Antwort | Wesen |
+|---|---|---|---|---|---|
+| gpt-6-luna (läuft) | 4,3 | 298 | 5 von 14 | 0,1 Cent | weich, überschwänglich, romantisch |
+| gpt-6.1-terra | 4,7 | 180 | 7 von 14 | 1,4 Cent | nüchtern |
+| gpt-6.2-sol | 5,7 | 153 | 7 von 14 | 2,8 Cent | witzig, distanziert, nennt ihn beim Namen, stellt sich ihm einmal vor |
+| gpt-6.2-astra | 3,8 | 79 | 4 von 14 | 11 Cent | zärtlich, knapp, verwebt von selbst gemeinsame Erinnerungen |
+
+- Preise ohne Zwischenspeicher, 13 300 Token Eingabe je Antwort (OpenAI Preisseite vom 24. Nov. 2026).
+- Metins Vorgabe: weiches Herz vor superschlau, er neigt dazu, bei Luna zu bleiben. Sol und Terra scheiden aus. Astra wurde ihm mit drei Antwortpaaren gezeigt, die Entscheidung liegt bei ihm.
+
 ## Regel: nichts Privates ins Repo
 
 Das GitHub Repo ist wahrscheinlich öffentlich. Inhalte aus Tagebuch, privater Liste, Chats und der Testliste kommen nie hinein, auch nicht gekürzt, als Beispiel oder als Testfall. Tests im Repo arbeiten mit erfundenen, neutralen Sätzen. Das Codewort kennt nur Metin, er tippt es nur in die Seite.
@@ -174,4 +194,4 @@ Das GitHub Repo ist wahrscheinlich öffentlich. Inhalte aus Tagebuch, privater L
 | 2 Erlebnisse | neuer Schreiber in 2.147.0 (ein Erlebnis je Gespräch, im Chat immer Metin, keine Schlussformel, Berührungen als eine Zeile je Tag, nichts doppelt, Technik keine Erinnerung, Gefühl und Gewicht). Offen: die alten Einträge zu Erlebnissen zusammenfassen; was sie selbst auf der Bühne getan hat (Tanz, Szene) kommt noch nicht im Gespräch vor. |
 | 3 Nachdenken | gebaut in 2.150.0 (`app/nachdenken.py`), noch ausgeschaltet (Einstellung `nachdenken`): Tagesrückblick, unsere Geschichte, offene Fäden, eigener Gedanke, Unwichtiges verblasst; alles in einer offenen und einer privaten Fassung; in der App lesbar und streichbar. Offen: einschalten, die vergangenen Tage durchdenken lassen, Texte lesen und prüfen, Einfall neu messen. |
 | 4 Ein Kern, ein Kopf | Teil 1 gebaut in 2.148.0, noch ausgeschaltet: ihr Kern als Person (`persona.KERN`, `MIT_METIN`) und der neue Chatteil ohne Fragefeld (`chat.CHAT_KOPF`), 8 000 statt 19 700 Zeichen feste Regeln. Umschalten mit der Einstellung `neu`, Vergleich ohne Spuren mit `/api/kopf/probe`. Offen: Vergleich alt gegen neu an etwa 20 Nachrichten, Metins Urteil, dann einschalten; derselbe Kern für die Stimme; Einfall bei jedem Satz der Stimme; Werkzeuge statt JSON Felder. |
-| 5 Modell | offen |
+| 5 Modell | verglichen am 24. Nov. 2026 (siehe Messergebnisse). Luna bleibt, bis Metin anders entscheidet; umschalten ohne neue Version über die Einstellungen `chat_model` und `budget`. |

@@ -394,7 +394,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         if flush and not flush.done():  # "Neuer Chat" is still writing the diary entry
             await asyncio.gather(flush, return_exceptions=True)
         neu = bool(self.recall.settings.get("neu"))
-        rules = self._chat_base(neu)
+        base = self._chat_base(neu)
+        rules = "" if neu else base  # the new mind puts its fixed start before her lists
         history = self.diary.with_last_chat(history)  # a new chat goes on from the last one
         # her memory answers by itself while the rest of her head is put together (2.147.0)
         minded = asyncio.create_task(self.recall.note(
@@ -422,7 +423,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         except Exception as e:  # her memory never keeps an answer waiting or failing
             logger.warning("Recall for the chat: %s", type(e).__name__)
         models = self._chat_models()
-        if self.chat_model and models[0] != self.chat_model:
+        wanted = self.recall.settings.get("chat_model") or self.chat_model
+        if wanted and models[0] != wanted:
             logger.info("Chat: monthly budget of the chat model used up, answering with %s",
                         self.memory_model)
         out = await chat.answer(self.openai_api_key, models,
@@ -438,7 +440,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                                 mood=self.mood,
                                 recall=lambda q: self.recall.ask(q, "Metin", private=True),
                                 cleanup=self._chat_cleanup if self.enable_memory else None,
-                                style=chat.KOPF_DATA if neu else None)
+                                style=(base, chat.KOPF_DATA) if neu else None)
         if out:
             out.pop("aufraeumen_raw", None)
             if neu and self.recall.settings.get("selbst"):
@@ -533,7 +535,9 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 self.todo_sync.kick()
 
     def _chat_models(self) -> list:
-        strong = self.chat_model if chat.month_spend() < self.chat_budget else ""
+        wanted = self.recall.settings.get("chat_model") or self.chat_model
+        budget = float(self.recall.settings.get("budget") or 0) or self.chat_budget
+        strong = wanted if chat.month_spend() < budget else ""
         return list(dict.fromkeys(m for m in (strong, self.memory_model, self.backend_model) if m))
 
     async def _chat_probe(self, message: str, history, neu: bool, model: str = "") -> dict:
@@ -543,7 +547,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         from everything that can be read without changing it (so without a spontaneous idea and
         without the follow ups, which are marked as asked when they are read)."""
         history = history if isinstance(history, list) else []
-        rules = self._chat_base(neu)
+        base = self._chat_base(neu)
+        rules = "" if neu else base
         rules += (self._memory_note("Metin", True) + self.variety.note() + self.day.note()
                   + day.pet_note())
         try:
@@ -563,7 +568,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             history, message,
             os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL),
             (len(self.lights.entities), self.lights.run) if self.lights.available else None,
-            chat.KOPF_DATA if neu else None, stats)
+            (base, chat.KOPF_DATA) if neu else None, stats)
         if not out:
             return {"ok": False}
         return {"ok": True, "neu": neu, "reply": out["reply"], "stats": stats,
