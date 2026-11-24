@@ -588,4 +588,6 @@ Herkunft: Aufbau, feste Tatsachen, Zeitabschnitte, gezählte Bewegungen, halbe S
 
 Stand 24.11.2026, 17:39: Metin hat beide Bilder selbst eingesetzt (von Claude am Dateinamen und groß geprüft: zweimal `6_kurz_arbeit.png`, Leyla allein, Brille, Buch in ihrem linken Arm, die freie Hand ist ihre rechte). Claude hat Schleife 1 (Wiegen im Stand) eingetippt, 1.329 Zeichen, am Knopf 4K, 10 s, Adaptive, 1, 350 Credits. Generate klickt Metin. Schleifen 2 bis 4 erst nach seinem Urteil.
 
+Schleife 1 gestartet 24.11.2026 um 17:40 von Metin selbst ("Prompt läuft"), 350 Credits.
+
 Ergebnisse hier nachtragen.
