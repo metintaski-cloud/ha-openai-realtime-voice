@@ -95,3 +95,42 @@ async def test_private_list_only_after_code(tmp_path, monkeypatch):
     assert "unlock" in kinds and "heart" in kinds and "private" not in kinds
     assert state["notes_held"]["private"] > talk_notes.START_CHARS
     assert sum(len(x["content"]) for x in sent) < talk_notes.START_CHARS + 600
+
+
+async def test_a_live_talk_from_the_app_knows_everything_from_the_first_moment(tmp_path, monkeypatch):
+    """2.153.0: nothing is appended after the start (she does not hear while she takes notes);
+    the private list stands in the instructions, the past in the startup input."""
+    from app import main as m, talk_notes
+    monkeypatch.setenv("CODE_PHRASE", "Leyla habibi")
+    monkeypatch.setenv("MEMORY_PATH", str(tmp_path / "memory.json"))
+    bridge = m.LiveVoiceBridge()
+    bridge.memory.save_all({"family": ["Person: Metin | Zugehörigkeit: wohnt hier | Hobby: Gartenarbeit"],
+                            "private": ["Metins Geburtsdatum ist der 16. Juli 1981."]})
+    bridge._memory_note = lambda name, private: "\nUNSER TAG: Wir haben den Garten gegossen."
+    state = {}
+    items = await bridge._app_start(state)
+    assert state["unlocked"] and [k for k, _ in items][:2] == ["unlock", "heart"]
+    assert [k for k, _ in items][-1] == "private" and "diary" in [k for k, _ in items]
+    assert "kommen gleich weitere Notizen" not in items[0][1] and "Habibi" not in items[0][1]
+    plain = bridge._session_start()["session"]
+    session = bridge._session_start("", (items, state))["session"]
+    assert "16. Juli" in session["instructions"] and "16. Juli" not in plain["instructions"]
+    assert talk_notes.START_HEAD.strip() in session["instructions"]
+    texts = [msg["content"][0]["text"] for msg in session["input"]]
+    assert any("Garten gegossen" in t for t in texts) and "Garten gegossen" not in session["instructions"]
+    assert state["start_held"] == {}
+    assert await bridge._personal_items(state, bridge._metin()) == []   # counted once per talk
+
+
+def test_start_split_keeps_to_the_room_and_reports_what_is_held_back():
+    from app import talk_notes as tn
+    items = [("unlock", "u" * 1000), ("diary", "d" * 12000), ("chat", "c" * 12000), ("private", "p" * 9000)]
+    text, inputs, held = tn.TalkNotesMixin.start_split(items, base_chars=21000)
+    assert text.startswith(tn.START_HEAD) and "u" * 1000 in text and "p" * 9000 in text
+    assert inputs == ["d" * 12000] and "c" * 12000 in text and held == {}   # no room in the input: the other place
+    assert text.index("p" * 9000) < text.index("c" * 12000)                 # after what belongs there
+    text, inputs, held = tn.TalkNotesMixin.start_split(items, base_chars=40000)
+    assert held == {"chat": 12000, "private": 9000} and "u" * 1000 in text and inputs == ["d" * 12000]
+    text, inputs, held = tn.TalkNotesMixin.start_split(items, base_chars=33000)
+    assert held == {"chat": 12000} and "p" * 9000 in text
+    assert tn.TalkNotesMixin.start_split([], 100) == ("", [], {})

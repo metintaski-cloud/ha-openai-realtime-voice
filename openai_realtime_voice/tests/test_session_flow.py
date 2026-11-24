@@ -403,8 +403,13 @@ async def test_live_talk_from_the_app_needs_the_code_word_and_unlocks(env):
             assert json.loads(await asyncio.wait_for(client.recv(), 5)) == {"type": "ready"}
             await asyncio.sleep(0.3)
             assert getattr(client, "close", None)
+        # 2.153.0: she knows it is Metin from the first moment (inside the session start), and
+        # nothing about it is appended afterwards, because she does not hear while she takes notes
+        start = [e for e in fake.received if e["type"] == "session.start"][-1]["session"]
+        assert "Codewort dort schon eingegeben" in start["instructions"]
+        assert "FÜR DIESES GESPRÄCH MIT METIN ALLEIN" in start["instructions"]
         notes = [e for e in fake.received if e["type"] == "session.commentary.append"]
-        assert any("Codewort" in e["content"] for e in notes)  # Leyla knows it is Metin
+        assert not any("Codewort" in e["content"] for e in notes)
 
 
 async def test_mail_draft_is_only_for_metin(env):

@@ -323,8 +323,10 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
              "deine eigene Laune Metin gegenüber festhalten (nur nach seinem Codewort)"),
         ]
 
-    def _session_start(self, extra: str = "") -> dict:
-        """Build the session.start payload for GPT Live."""
+    def _session_start(self, extra: str = "", start=None) -> dict:
+        """Build the session.start payload for GPT Live. `start`: the items of a live talk
+        from the app (talk_notes._app_start) and the state they are reported in; they go into
+        the instructions and the startup input, so she knows them from the first moment."""
         tools: list[dict] = [END_CONVERSATION_TOOL]
         backend_instructions = self.backend_instructions
         devices: list[str] = []
@@ -336,13 +338,25 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         live_extra = self.messages.live_hint() if self.messages.available else ""
         self._devices = (devices, self.fan.available, self.tv.available,
                          self.messages.available)
+        instructions = (self._instructions_with_memory() + live_extra
+                        + self.variety.note() + self.diary.unknown_note() + extra)
+        start_input = []
+        if start:
+            items, state = start
+            text, start_input, held = self.start_split(
+                items, len(instructions), len(self.greeting or ""))
+            logger.info("Start of the session: %d characters of rules, %d of her knowledge in "
+                        "them, %d in the startup input%s", len(instructions), len(text),
+                        sum(len(t) for t in start_input),
+                        ", held back: %s" % held if held else "")
+            state["start_held"] = held
+            instructions += text
         session = {
             "type": "session.start",
             "event_id": "event_start",
             "session": {
                 "model": self.live_model,
-                "instructions": (self._instructions_with_memory() + live_extra
-                                 + self.variety.note() + self.diary.unknown_note() + extra),
+                "instructions": instructions,
                 "audio": {
                     "format": {"type": "audio/pcm", "rate": SAMPLE_RATE},
                     "output": {"voice": self.voice},
@@ -362,13 +376,17 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         if self.backend_effort:
             session["session"]["delegation"]["responses"]["reasoning"] = {
                 "effort": self.backend_effort}
+        messages_in = [{"type": "message", "role": "developer",
+                        "content": [{"type": "input_text", "text": t}]} for t in start_input]
         if self.greeting:
             # Developer message so the greeting instruction is known from the start; the
             # commentary.append after session.started makes GPT Live actually speak first.
-            session["session"]["input"] = [{
+            messages_in.append({
                 "role": "developer",
                 "content": [{"type": "input_text", "text": self.greeting}],
-            }]
+            })
+        if messages_in:
+            session["session"]["input"] = messages_in
         return session
 
     def _readable_rules(self) -> str:
@@ -946,7 +964,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         logger.info("Automation command %s -> %s", data, result)
         return result
 
-    async def _start_session(self, live_ws, timeout: float = 15.0) -> dict:
+    async def _start_session(self, live_ws, timeout: float = 15.0, start=None) -> dict:
         """Send session.start and wait for session.started. Returns the started event."""
         followup, self._followup = self._followup, None
         if followup and time.monotonic() - followup["at"] < FOLLOWUP_MAX_WAIT_S:
@@ -963,7 +981,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 extra = await asyncio.wait_for(context.build_context(), timeout=4.0)
             except Exception as e:
                 logger.info("Context not added: %s", e)
-        await live_ws.send(json.dumps(self._session_start(extra)))
+        await live_ws.send(json.dumps(self._session_start(extra, start)))
         loop = asyncio.get_event_loop()
         deadline = loop.time() + timeout
         while True:
@@ -1519,26 +1537,41 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             if "reason" not in end_reason:
                 end_reason["reason"] = "live_disconnected"
 
-    async def _open_live(self, state: dict):
+    async def _open_live(self, state: dict, start=None):
         """Take a GPT Live connection (the warm one when possible) and start the session.
         Falls back to a new connection when the warm one does not answer. The connection
-        is also kept in state["live_ws"] so the caller can close it on any failure."""
+        is also kept in state["live_ws"] so the caller can close it on any failure.
+        `start`: what she knows from the first moment (a live talk from the app); when GPT
+        Live does not take the session with it, the session starts without it
+        (state["start_refused"]) and the caller hands it over as notes."""
         live_ws, was_warm = await self._take_live()
         state["live_ws"] = live_ws
         followup_before = self._followup
         try:
-            started = await self._start_session(
-                live_ws, timeout=WARM_START_TIMEOUT_S if was_warm else 15.0)
+            return live_ws, await self._start_session(
+                live_ws, timeout=WARM_START_TIMEOUT_S if was_warm else 15.0, start=start)
         except Exception as e:
-            if not was_warm:
+            if not was_warm and not start:
                 raise
-            logger.info("Warm GPT Live connection did not work (%s), opening a new one", e)
+            logger.info("%s GPT Live connection did not work (%s), opening a new one",
+                        "Warm" if was_warm else "New", e)
+            refused = bool(start) and (not was_warm or "GPT Live error" in str(e))
+        tries = [None] if (refused or not start) else [start, None]
+        for i, with_start in enumerate(tries):
+            if start and with_start is None:
+                logger.warning("GPT Live did not take the session with her knowledge inside, "
+                               "starting without it")
+                state["start_refused"] = True
             self._in_background(self._close_quietly(live_ws))
             self._followup = followup_before  # the retry must still start as a followup
             live_ws = await self._connect_live()
             state["live_ws"] = live_ws
-            started = await self._start_session(live_ws)
-        return live_ws, started
+            try:
+                return live_ws, await self._start_session(live_ws, start=with_start)
+            except Exception as e:
+                if i == len(tries) - 1:
+                    raise
+                logger.info("New GPT Live connection did not work (%s), once more", e)
 
     async def _forward_until_done(self, client_ws, live_ws, output_queue: asyncio.Queue,
                                   end_reason: dict, state: dict) -> None:
@@ -1657,7 +1690,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
 
         try:
             t_live = time.monotonic()
-            live_ws, started = await self._open_live(state)
+            start = (await self._app_start(state), state) if app else None
+            live_ws, started = await self._open_live(state, start)
             live_open_s = time.monotonic() - t_live
             state["live_started"] = True
             self._in_background(self.health.openai_ok())
@@ -1674,7 +1708,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                             if len(self.instructions) > 100 else self.instructions)
             await client_ws.send(json.dumps({"type": "ready"}))
             logger.info("Sent ready signal to client")
-            if app:  # the code word was typed in the app: it is Metin
+            if app and state.get("start_refused"):  # then as notes, as far as the budget goes
+                state.pop("identified", None)
                 await self._unlock(live_ws, state, app=True)
             metrics.record("ready", client=client_id, live_open_s=live_open_s,
                            connect_to_ready_s=time.monotonic() - start_time)

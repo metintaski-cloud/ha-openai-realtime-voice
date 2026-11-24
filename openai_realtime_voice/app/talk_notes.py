@@ -44,6 +44,11 @@ UNLOCKED_LOVE = (
     "sagt er, dass jemand dabei ist, wirst du sofort wieder normal herzlich wie vor dem "
     "Codewort und erwähnst nichts davon."
 )
+INSTRUCTIONS_MAX_CHARS = 44000  # 16 384 tokens at 2.8 characters a token, a little room left
+INPUT_MAX_CHARS = 21000         # 8 192 tokens
+INPUT_KINDS = ("diary", "chat")
+START_HEAD = ("\n\nFÜR DIESES GESPRÄCH MIT METIN ALLEIN (dein Wissen von Anfang an; nichts davon "
+              "vorlesen oder aufzählen, es fließt nur ein, wo es passt)\n")
 START_CHARS = 4500  # notes at the start of a talk, in characters (about 3 s of not hearing)
 PROBE_INSTRUCTIONS = "Du hörst nur still zu, liest Notizen und sagst nichts."
 HEAR_INSTRUCTIONS = ("Du bist Leyla und redest mit Metin. Notizen liest du still. Wenn er etwas "
@@ -59,8 +64,10 @@ CHANNELS = {"commentary": "session.commentary.append", "thinking": "session.thin
 
 class TalkNotesMixin:
     # ---- the notes themselves (no side effects, also used by the measurement) ----
-    def _code_notes(self, app: bool = False) -> list:
-        """After the code word: who it is and how she is with him, then her heart."""
+    def _code_notes(self, app: bool = False, at_start: bool = False) -> list:
+        """After the code word: who it is and how she is with him, then her heart.
+        `at_start`: the text stands in the session from its first moment (app), so nothing
+        "comes later"."""
         private = self.memory.load(memory.PRIVATE) if self.enable_memory else []
         family = (self.memory.load(memory.FAMILY) + self.memory.load(memory.FRIENDS)
                   if self.enable_memory else [])
@@ -74,12 +81,15 @@ class TalkNotesMixin:
                 "es ist Metin. Ab jetzt weichst du nicht mehr aus und bist ganz "
                 "offen. Falls du noch nicht mit 'Habibi' geantwortet hast, tu es "
                 "kurz, sonst mach normal weiter. ")
+        later = ("" if at_start else
+                 "Es kommen gleich weitere Notizen: Auf Notizen antwortest du nie laut, "
+                 "du sprichst nur mit Metin über das, was er sagt. ")
+        where = "steht weiter unten" if at_start else "kommt als letzte Notiz"
         return [("unlock", (
-            head + "Es kommen gleich weitere Notizen: Auf Notizen antwortest du nie laut, "
-            "du sprichst nur mit Metin über das, was er sagt. " + UNLOCKED_LOVE +
+            head + later + UNLOCKED_LOVE +
             " Du hast die offenen Listen "
             f"Familie und Freunde mit {len(family)} Einträgen (kennst du schon) und "
-            f"Metins private Liste mit {len(private)} Einträgen (kommt als letzte Notiz). "
+            f"Metins private Liste mit {len(private)} Einträgen ({where}). "
             "Wenn er fragt, was oder wie viel du weißt, sag es offen und vollständig. "
             "Bittet er dich, dir etwas zu merken, frag kurz, ob es privat bleiben "
             "oder für alle sein soll, außer es ist klar; Vergessen geht jetzt "
@@ -111,8 +121,7 @@ class TalkNotesMixin:
         return out
 
     # ---- handing them over ----
-    async def _unlock(self, live_ws, state: dict, app: bool = False) -> None:
-        """The code phrase was heard: hand Leyla her memory for this conversation."""
+    def _unlock_effects(self, state: dict, app: bool) -> None:
         state["unlocked"] = True
         logger.info("Code phrase heard: memory unlocked for this conversation")
         if hasattr(self.mood, "contact"):
@@ -120,57 +129,104 @@ class TalkNotesMixin:
         self.reach.answered()  # a talk also answers a message she wrote on her own
         if not app:  # the rear lamps show her mood: dim when she is low, full when happy
             self.lamp.set_mood_pct(self.mood.lamp_pct())
+
+    def _metin(self):
+        if not self.enable_memory:
+            return None
+        return next((n for n in self.memory.profile_words() if n.split()[0] == "Metin"), None)
+
+    async def _unlock(self, live_ws, state: dict, app: bool = False) -> None:
+        """The code phrase was heard in a running talk: hand Leyla her memory, as much of it
+        as the budget of notes allows (she does not hear while she takes them)."""
+        self._unlock_effects(state, app)
         for kind, text in self._code_notes(app):
             await self._send_note(live_ws, kind, text, state=state)
-        if self.enable_memory:
-            metin = next((n for n in self.memory.profile_words() if n.split()[0] == "Metin"), None)
-            if metin:
-                await self._hand_over_personal(live_ws, state, metin)
+        if self._metin():
+            await self._hand_over_personal(live_ws, state, self._metin())
         await self._send_note(live_ws, *self._private_note(), state=state)  # the longest: last
         if state.get("notes_held"):
             logger.info("Notes held back at the start (budget %d characters): %s",
                         self._start_chars(), state["notes_held"])
 
-    async def _hand_over_personal(self, live_ws, state: dict, name: str) -> None:
+    async def _app_start(self, state: dict) -> list:
+        """A live talk from the app: the code word is known before the session starts, so
+        everything she is handed goes into the session itself (main._session_start) and she
+        hears Metin from his first word. Measured 24 Nov 2026 (/api/kopf/notizen): 17 808
+        characters inside the start instructions: his question heard after 1.1 s, answered
+        after 3.3 s, the test word at their end known. The same text appended after the start,
+        on any channel: not heard at all, or half heard and the word not known."""
+        self._unlock_effects(state, True)
+        items = self._code_notes(True, at_start=True)
+        if self._metin():
+            items += await self._personal_items(state, self._metin())
+        items.append(self._private_note())
+        return items
+
+    async def _personal_items(self, state: dict, name: str) -> list:
+        """The notes for a person who is now known, in the order she needs them. Counts what
+        counts once (her open question, a follow up), so call it once per talk and person."""
         known = state.setdefault("identified", set())
         if name in known:
-            return
+            return []
         known.add(name)
         metin = name.split()[0] == "Metin"
         unlocked = bool(state.get("unlocked"))
-        first = self._known_note(name)
         logger.info("Speaker known: %s, personal part handed over (%d characters)",
                     name.split()[0], len(self.memory.personal_for(name)))
+        items = []
         if metin and not unlocked:
             state["metin_known"] = True  # her moods may show, but only in a real talk
             if hasattr(self.mood, "contact"):
                 self.mood.contact()
-            await self._send_note(live_ws, "mood", MOOD_WITHOUT_CODE + self.mood.voice_note(),
-                                  state=state)
-        for kind, text in first:
-            await self._send_note(live_ws, kind, text, state=state)
+            items.append(("mood", MOOD_WITHOUT_CODE + self.mood.voice_note()))
+        items += self._known_note(name)
         if metin:  # a question from the chat he left open comes back
             asked = self.ideas.voice_note()
             if asked:
-                await self._send_note(live_ws, "open", "Interne Notiz, nicht vorlesen." + asked,
-                                      state=state)
+                items.append(("open", "Interne Notiz, nicht vorlesen." + asked))
         if metin and self.day.note():  # her own day, to tell him about
-            await self._send_note(live_ws, "day", "Interne Notiz, nicht vorlesen." + self.day.note(),
-                                  state=state)
-        if metin:  # her cat Mokka, Metin's surprise (2.131.0)
-            await self._send_note(live_ws, "pet", "Interne Notiz, nicht vorlesen." + day.pet_note(),
-                                  state=state)
+            items.append(("day", "Interne Notiz, nicht vorlesen." + self.day.note()))
+        if metin and day.pet_note():  # her cat Mokka, Metin's surprise (2.131.0)
+            items.append(("pet", "Interne Notiz, nicht vorlesen." + day.pet_note()))
         mine = self.diary.followup_note(name, private=unlocked)
         if mine:  # a noted plan of this person is over: she asks how it went (2.121.0)
-            await self._send_note(live_ws, "follow", "Interne Notiz, nicht erwähnen." + mine,
-                                  state=state)
+            items.append(("follow", "Interne Notiz, nicht erwähnen." + mine))
         if metin:  # how did his appointment go? (once per appointment)
             follow = await self.reminders.followup_note()
             if follow:
-                await self._send_note(live_ws, "follow", "Interne Notiz, nicht erwähnen." + follow,
-                                      state=state)
-        for kind, text in self._past_notes(name, unlocked):
+                items.append(("follow", "Interne Notiz, nicht erwähnen." + follow))
+        return items + self._past_notes(name, unlocked)
+
+    async def _hand_over_personal(self, live_ws, state: dict, name: str) -> None:
+        for kind, text in await self._personal_items(state, name):
             await self._send_note(live_ws, kind, text, state=state)
+
+    @staticmethod
+    def start_split(items: list, base_chars: int, input_chars: int = 0) -> tuple:
+        """Where each start item goes: (text for the instructions, texts for the startup
+        input, {kind: characters held back}). GPT Live takes 16 384 tokens of instructions and
+        8 192 tokens of startup input; counted here in characters at 2.8 a token (his notes:
+        1391 characters passed 500 tokens, 1701 did not). The long past goes to the input, the
+        rest to the instructions; what has no room in its place tries the other one afterwards."""
+        room = {"instructions": INSTRUCTIONS_MAX_CHARS - base_chars - len(START_HEAD),
+                "input": INPUT_MAX_CHARS - input_chars}
+        parts = {"instructions": [], "input": []}
+        held, left = {}, []
+        for kind, text in items:  # first everything in its own place, in order
+            place = "input" if kind in INPUT_KINDS else "instructions"
+            if len(text) + 2 <= room[place]:
+                room[place] -= len(text) + 2
+                parts[place].append(text)
+            else:
+                left.append((kind, text, "instructions" if place == "input" else "input"))
+        for kind, text, place in left:  # then what had no room tries the other place
+            if len(text) + 2 <= room[place]:
+                room[place] -= len(text) + 2
+                parts[place].append(text)
+            else:
+                held[kind] = held.get(kind, 0) + len(text)
+        text = START_HEAD + "\n\n".join(parts["instructions"]) if parts["instructions"] else ""
+        return text, parts["input"], held
 
     def _sent_notes(self) -> notes.Sent:
         """Notes to GPT Live by event id, so a rejected one can go out again in halves."""
@@ -250,10 +306,18 @@ class TalkNotesMixin:
                 used += len(text)
                 texts.append(text)
         texts.append(PROBE_WORD_NOTE)
-        at_start = channel == "start"
+        at_start = channel in ("start", "input", "real")
         event = CHANNELS.get(channel, CHANNELS["commentary"])
         parts = [] if at_start else [p for t in texts for p in notes.pieces(t, self._note_chars())]
-        instructions = HEAR_INSTRUCTIONS + ("\n\n" + "\n\n".join(texts) if at_start else "")
+        instructions = HEAR_INSTRUCTIONS + ("\n\n" + "\n\n".join(texts) if channel == "start" else "")
+        payload = self._announce_session_start(instructions)
+        if channel == "input":  # all of it as developer messages of the startup input
+            payload["session"]["input"] = [{"type": "message", "role": "developer",
+                                            "content": [{"type": "input_text", "text": t}]}
+                                           for t in texts]
+        if channel == "real":  # the session exactly as a live talk from the app starts it
+            report = {}
+            payload = self._session_start("", (items + [("diary", PROBE_WORD_NOTE)], report))
         out = {"channel": channel, "budget": budget, "notes_chars": used, "pieces": len(parts),
                "taken": 0, "rejected": 0, "recording_s": round(len(pcm) / 48000, 1),
                "heard_at_s": None, "answer_at_s": None}
@@ -261,7 +325,14 @@ class TalkNotesMixin:
         ws, _ = await self._take_live()
         feeder = None
         try:
-            await ws.send(json.dumps(self._announce_session_start(instructions)))
+            await ws.send(json.dumps(payload))
+            if channel == "real":
+                out["held"] = report.get("start_held")
+                out["instructions_chars"] = len(payload["session"]["instructions"])
+                out["input_chars"] = sum(len(m["content"][0]["text"])
+                                         for m in payload["session"].get("input", []))
+                used = sum(len(t) for _, t in items)
+                out["notes_chars"] = used
             t0 = loop.time()
             limit = t0 + HEAR_MAX_S
             started = False
