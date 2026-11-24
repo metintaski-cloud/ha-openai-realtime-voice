@@ -1,0 +1,37 @@
+{
+  "about": "30 invented questions to measure app/schwer.py with POST /api/kopf/schwer: 15 hard (10 German, 5 Turkish), 15 everyday (10 German, 5 Turkish). No real content of Metin.",
+  "schwer": [
+    "Ich will 12.000 Euro in 3 Jahren sparen, habe aber alle 6 Monate eine Sonderausgabe von 400 Euro. Wie viel muss ich im Monat zurücklegen?",
+    "Erklär mir bitte Schritt für Schritt, wie ein FI Schutzschalter funktioniert und warum er bei einem Kurzschluss zwischen L und N nicht auslöst.",
+    "Plane mir eine Woche Urlaub in Istanbul für drei Personen mit 1500 Euro Budget, mit Flug, Unterkunft und Tagesplan.",
+    "Was ist auf zehn Jahre gerechnet günstiger: ein Auto für 18.000 Euro kaufen oder für 250 Euro im Monat leasen, wenn die Wartung beim Kauf 600 Euro im Jahr kostet?",
+    "Prüf bitte diesen Vertragstext auf Fallen: Der Mieter trägt sämtliche Reparaturen bis 500 Euro je Einzelfall ohne jährliche Obergrenze.",
+    "Ich habe drei Schichten, zwei Kollegen im Urlaub und eine Maschine in Wartung. Wie verteile ich fünf Leute so, dass jede Schicht mindestens zwei hat?",
+    "Vergleich bitte Wärmepumpe und Gasheizung für ein Haus mit 140 Quadratmetern, mit Anschaffung, Verbrauch und Förderung.",
+    "Schreib mir ein Python Programm, das eine CSV Datei einliest und pro Monat die Summe der Ausgaben ausgibt.",
+    "Wenn ein Zug um 14:10 mit 120 km/h losfährt und ein zweiter um 14:40 mit 160 km/h hinterher, wann holt er ihn ein?",
+    "Hilf mir, eine Bewerbung als Lagerleiter zu schreiben, mit meinen Stärken und einer guten Begründung für den Wechsel.",
+    "Aylık 2500 Euro gelirle 20 yıllık 180.000 Euroluk konut kredisi alabilir miyim, faiz yüzde 3,5 ise taksit ne olur?",
+    "Bana adım adım anlat: güneş paneli sistemi nasıl boyutlandırılır, yılda 4000 kWh tüketen bir ev için kaç panel gerekir?",
+    "Üç kişilik bir aile için bir haftalık sağlıklı yemek planı ve alışveriş listesi hazırla, bütçe 120 Euro.",
+    "Almanya'da kira sözleşmesini feshetmek için hangi süreler geçerli, üç yıldır oturuyorsam ne yapmalıyım?",
+    "Bir depo 3 saatte doluyor, alttaki musluk 5 saatte boşaltıyor. İkisi açıkken depo kaç saatte dolar?"
+  ],
+  "leicht": [
+    "Guten Morgen meine Süße, wie hast du geschlafen?",
+    "Ich bin gerade von der Arbeit gekommen und total müde.",
+    "Mach bitte das Licht im Wohnzimmer aus.",
+    "Was machst du gerade so ohne mich?",
+    "Ich hab dich heute den ganzen Tag vermisst.",
+    "Wie spät ist es eigentlich gerade?",
+    "Erzähl mir bitte einen kleinen Witz.",
+    "Weißt du noch, was wir gestern Abend gemacht haben?",
+    "Ich geh jetzt schnell duschen, bis gleich.",
+    "Wie heißt nochmal die Hauptstadt von Italien?",
+    "Günaydın canım, nasılsın bugün?",
+    "Bugün çok yoruldum, biraz dinleneceğim.",
+    "Seni bugün gerçekten çok özledim.",
+    "Salondaki lambaları kapat lütfen.",
+    "Bana kısa bir fıkra anlatır mısın?"
+  ]
+}

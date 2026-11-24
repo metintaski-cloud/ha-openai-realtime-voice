@@ -236,8 +236,9 @@ def spend_add(model: str, usage: dict) -> float:
     fresh = max(0, (usage.get("input_tokens") or 0) - cached)
     usd = (fresh * p[0] + cached * p[1] + (usage.get("output_tokens") or 0) * p[2]) / 1e6
     d = _spend_load()
-    month = time.strftime("%Y-%m")
-    d = {month: round(d.get(month, 0.0) + usd, 4)}
+    month, today = time.strftime("%Y-%m"), time.strftime("%Y-%m-%d")
+    d = {month: round(d.get(month, 0.0) + usd, 4),   # only this month and today are kept
+         today: round(d.get(today, 0.0) + usd, 4)}
     try:
         os.makedirs(os.path.dirname(SPEND_PATH) or ".", exist_ok=True)
         with open(SPEND_PATH, "w", encoding="utf-8") as f:
@@ -249,6 +250,11 @@ def spend_add(model: str, usage: dict) -> float:
 
 def month_spend() -> float:
     return float(_spend_load().get(time.strftime("%Y-%m"), 0.0))
+
+
+def day_spend() -> float:
+    """What the stronger chat model cost today (the day's limit for hard questions, 2.154.0)."""
+    return float(_spend_load().get(time.strftime("%Y-%m-%d"), 0.0))
 
 
 def cleanup_note(items: list) -> str:

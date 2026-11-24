@@ -71,7 +71,12 @@ SETTINGS = {"min_sim": 0.48, "top": 4, "ask_min_sim": 0.38, "ask_top": 6, "word_
             "note_chars": 0,
             # how many characters of notes go out at the start of a spoken talk
             # (0 = talk_notes.START_CHARS); while GPT Live takes notes it does not hear
-            "start_chars": 0}
+            "start_chars": 0,
+            # hard questions go to this model (app/schwer.py; "" = never): always when Metin
+            # says "denk genau nach", and with schwer 1 also when the small model judges so
+            # schwer_tag: the most the strong model may cost on one day, in dollars (Metin,
+            # 07:08: "Ich befürchte Astra wird mehr Fragen bekommen"); then Luna answers
+            "schwer_model": "gpt-6.2-astra", "schwer": 0, "schwer_tag": 1.5}
 COMPARE = (("text-embedding-3-small", 256), ("text-embedding-3-small", 1536),
            ("text-embedding-3-large", 256), ("text-embedding-3-large", 1024))
 BONUSES = (0.0, 0.05, 0.1)
@@ -142,6 +147,7 @@ class Index:
         self.think = None   # main sets it: think now (async, returns the number of days done)
         self.speak = None   # main sets it: one spoken test sentence (async, returns what came)
         self.notes = None   # main sets it: the notes of a talk's start, measured (async)
+        self.hard = None    # main sets it: how she sorts questions into hard and easy (async)
         self._load()
 
     @property
@@ -172,7 +178,7 @@ class Index:
             if k == "model":
                 if v in MODELS:
                     self.settings[k] = v
-            elif k == "chat_model":
+            elif k in ("chat_model", "schwer_model"):
                 if v == "" or (isinstance(v, str) and v.startswith("gpt-") and len(v) < 40):
                     self.settings[k] = v
             elif k in SETTINGS and isinstance(v, (int, float)) and not isinstance(v, bool):
@@ -492,6 +498,8 @@ class Index:
             done = await self.think() if (d.get("now") and self.think) else 0
             return {"ok": True, "done": done, "due": len(self.reflect.due()),
                     **(self.reflect.listing() if d.get("read") else {})}
+        if path == "/api/kopf/schwer" and self.hard:
+            return await self.hard(d.get("fragen"))
         if path == "/api/kopf/notizen" and self.notes:
             return await self.notes(d)
         if path == "/api/kopf/stimme" and self.speak:

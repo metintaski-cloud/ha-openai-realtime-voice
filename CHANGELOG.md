@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.154.0 (24 Nov 2026)
+
+- `feat`: hard questions can go to the strong model while everyday talk stays with Luna (`app/schwer.py`; Metin, 07:03: "Schwere Fragen Astra und Alltag Luna?"). Two ways in: he says so ("denk genau nach", "überleg gut", "iyi düşün", German and Turkish), which always counts; and, with the server setting `schwer` 1, the small model sorts each message into SCHWER or LEICHT while the rest of her head is put together (in doubt LEICHT). The answer is written with the same rules and memory, so it is still Leyla. Settings: `schwer_model` (default gpt-6.2-astra, "" = never), `schwer` (0 = only his own words, default), `schwer_tag` (the most the strong model may cost on one day, default 1.5 dollars; his worry at 07:08 that Astra gets too many questions), and the month's `budget` as before. `chat.spend_add` now also keeps today's sum.
+- `POST /api/kopf/schwer {fragen:[...]}` shows how she sorts questions without answering them; the 30 invented test questions are in `tools/schwer_fragen.json`.
+- Astra as the model for every answer is off the table (Metin, 06:59: "Luna und vergesse Astra").
+
 ## 2.153.0 (24 Nov 2026)
 
 - `feat`: a live talk from the app knows everything from its first moment. The code word is known before the session starts there, so what she is handed goes into the session itself: the code word note, her heart, Metin's personal part, the small notes of today and the private list into the `instructions`, her diary and the last chat as developer messages into the startup `input` (`talk_notes._app_start`, `start_split`, `main._session_start`). Nothing is appended after the start any more and nothing is left out. Room is counted in characters at 2.8 a token (44 000 for the instructions, 21 000 for the input); what has no room is logged as held back. If GPT Live does not take the session that way, it starts without and falls back to notes within the budget.

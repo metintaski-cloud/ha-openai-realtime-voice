@@ -36,7 +36,7 @@ import dotenv
 import websockets
 
 from app.audio_recorder import AudioRecorder
-from app import agenda, day, diary, gcontacts, textmodel, heart, ideas, inbox, mail, memory, memory_web, mood, nachdenken, reach, recall, reminders, tls, variety, voice_in, voice_stream
+from app import agenda, day, diary, gcontacts, textmodel, heart, ideas, inbox, mail, memory, memory_web, mood, nachdenken, reach, recall, reminders, schwer, tls, variety, voice_in, voice_stream
 
 # Scene concept 2.0 (2.104.0): her feelings come from what really happens (app/heart.py); env
 # LEYLA_HEART=0 brings back the old dice of app/mood.py as a safety net.
@@ -200,6 +200,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self.recall.think = lambda: self._reflect_tick(force=True)
         self.recall.speak = self._voice_probe
         self.recall.notes = self._notes_hear_probe
+        self.recall.hard = self._hard_probe
         self.day = day.Day(self.diary, ask=self._day_ask, weather=self._day_weather)  # her own day
         self._forget_sol_evening()
         self._init_reach(UNLOCKED_LOVE)  # she writes to Metin on her own (app/reach.py)
@@ -410,6 +411,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         # her memory answers by itself while the rest of her head is put together (2.147.0)
         minded = asyncio.create_task(self.recall.note(
             recall.query_text(message, history), "Metin", private=True, since=self._thought_until()))
+        hard_task = asyncio.create_task(self._hard(message, history))  # for the strong model?
         kind = ""
         if chat.wants_idea(history):  # now and then a question on another topic
             kind, idea = self.ideas.pick(low=self.mood.status()["low"],
@@ -437,8 +439,17 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             rules += await asyncio.wait_for(minded, recall.QUERY_TIMEOUT_S + 1.0)
         except Exception as e:  # her memory never keeps an answer waiting or failing
             logger.warning("Recall for the chat: %s", type(e).__name__)
-        models = self._chat_models(strong=not chat.touch_zone(message))
-        wanted = self.recall.settings.get("chat_model") or self.chat_model
+        try:
+            hard = await asyncio.wait_for(hard_task, schwer.JUDGE_TIMEOUT_S + 0.5)
+        except Exception:  # sorting never keeps an answer waiting or failing
+            hard = {"schwer": False, "how": ""}
+        models = self._chat_models(strong=not chat.touch_zone(message), hard=hard["schwer"])
+        wanted = ((self._hard_model() if hard["schwer"] else "")
+                  or self.recall.settings.get("chat_model") or self.chat_model)
+        if hard["schwer"]:
+            logger.info("Chat: a hard question (%s), answering with %s", hard["how"], models[0])
+        elif hard.get("how") == "day limit":
+            logger.info("Chat: today's limit for hard questions is used up, Luna answers")
         if wanted and models[0] != wanted and not chat.touch_zone(message):
             logger.info("Chat: monthly budget of the chat model used up, answering with %s",
                         self.memory_model)
@@ -549,16 +560,46 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             if self.todo_sync:
                 self.todo_sync.kick()
 
-    def _chat_models(self, strong: bool = True) -> list:
+    def _chat_models(self, strong: bool = True, hard: bool = False) -> list:
         """The models for a chat answer, the stronger one first while its month's budget lasts.
         strong False: the small model alone (her one line reactions to a touch; with a strong
-        model at about 10 cents an answer they would use up the budget, 2.150.4)."""
+        model at about 10 cents an answer they would use up the budget, 2.150.4).
+        hard: a question that needs real thinking (app/schwer.py) takes the model for those."""
         if not strong:
             return list(dict.fromkeys(m for m in (self.memory_model, self.backend_model) if m))
         wanted = self.recall.settings.get("chat_model") or self.chat_model
+        if hard:
+            wanted = self._hard_model() or wanted
         budget = float(self.recall.settings.get("budget") or 0) or self.chat_budget
         strong = wanted if chat.month_spend() < budget else ""
         return list(dict.fromkeys(m for m in (strong, self.memory_model, self.backend_model) if m))
+
+    def _hard_model(self) -> str:
+        return str(self.recall.settings.get("schwer_model") or "")
+
+    async def _hard(self, message: str, history, auto=None) -> dict:
+        """Is this a question for the strong model? His own words ("denk genau nach") always
+        count; with the setting `schwer` the small model judges it too (app/schwer.py)."""
+        if not self._hard_model() or chat.touch_zone(message):
+            return {"schwer": False, "how": "", "s": 0.0}
+        day_max = float(self.recall.settings.get("schwer_tag") or 0)
+        if day_max and chat.day_spend() >= day_max and auto is None:
+            return {"schwer": False, "how": "day limit", "s": 0.0}  # enough for today: Luna
+        auto = bool(self.recall.settings.get("schwer")) if auto is None else auto
+
+        async def ask(prompt: str):
+            return await textmodel.ask(
+                prompt, self.openai_api_key, [self.memory_model],
+                os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL), "Hard question",
+                timeout=schwer.JUDGE_TIMEOUT_S)
+        return await schwer.judge(message, history, ask if auto and self.openai_api_key else None)
+
+    async def _hard_probe(self, questions) -> dict:
+        """/api/kopf/schwer: how she sorts these questions (nothing is answered or stored)."""
+        asked = [str(q)[:1500] for q in (questions if isinstance(questions, list) else [])][:60]
+        got = await asyncio.gather(*(self._hard(q, [], auto=True) for q in asked))
+        return {"ok": True, "model": self._hard_model(), "auto": bool(self.recall.settings.get("schwer")),
+                "items": got}
 
     async def _chat_probe(self, message: str, history, neu: bool, model: str = "") -> dict:
         """One chat answer with the old or the new mind that leaves no trace (docs/LEYLA_SEELE.md,
