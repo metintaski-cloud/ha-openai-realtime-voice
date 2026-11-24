@@ -588,14 +588,10 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         auto = bool(self.recall.settings.get("schwer")) if auto is None else auto
 
         async def ask(prompt: str):
-            url = os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL)
-            for extra in (schwer.FAST, None):  # should the fast fields be refused: plain
-                text = await textmodel.ask(prompt, self.openai_api_key, [self.memory_model], url,
-                                           "Hard question", timeout=schwer.JUDGE_TIMEOUT_S,
-                                           extra=extra)
-                if text:
-                    return text
-            return None
+            return await textmodel.ask(
+                prompt, self.openai_api_key, [self.memory_model],
+                os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL), "Hard question",
+                timeout=schwer.JUDGE_TIMEOUT_S, extra=schwer.FAST)
         return await schwer.judge(message, history, ask if auto and self.openai_api_key else None)
 
     async def _hard_probe(self, questions) -> dict:

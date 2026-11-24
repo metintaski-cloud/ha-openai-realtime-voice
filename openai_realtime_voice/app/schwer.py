@@ -16,11 +16,16 @@ import re
 import time
 
 MODEL = "gpt-6.2-astra"
-JUDGE_TIMEOUT_S = 3.0
-# Sorting is one word, so it needs no thinking: without this the small model reasons at its
-# default effort (medium) and one judgement took 1.1 to 2.8 s (median 1.4 s, 24 Nov 2026).
-FAST = {"reasoning": {"effort": "none"}, "max_output_tokens": 16}
-MIN_CHARS = 25   # shorter than this is never judged (a greeting, a command)
+# Measured 24 Nov 2026 on Metin's server (tools/schwer_fragen.json): one judgement takes 1.0 to
+# 1.2 s whatever is done to it (no reasoning and 16 output tokens brought the median from 1.4 s
+# to 1.2 s; that is the floor of a call to the small model), and it was right 48 of 48 times
+# when asked one by one or 30 at once, 59 of 60 when 60 ran at once (a late answer counts as
+# LEICHT). A second on every answer would be felt, so only a long message is judged: the
+# everyday ones of the test are 30 to 52 characters, the hard ones 95 to 170. A short message
+# is answered by Luna without waiting; for a short hard one he has his own words.
+MIN_CHARS = 60
+JUDGE_TIMEOUT_S = 2.0
+FAST = {"reasoning": {"effort": "none"}, "max_output_tokens": 16}  # one word needs no thinking
 
 PHRASE_RE = re.compile(
     r"\b(?:denk\w*\s+(?:\w+\s+){0,3}?(?:genau|gut|gründlich|scharf|richtig)\s+(?:darüber\s+)?nach"

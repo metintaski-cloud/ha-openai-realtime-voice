@@ -41,11 +41,13 @@ def test_the_phrase_needs_no_model_and_a_short_message_is_never_judged():
     assert asyncio.run(schwer.judge("Denk genau nach, was kostet das?", [], ask)) == {
         "schwer": True, "how": "phrase", "s": 0.0}
     assert asyncio.run(schwer.judge("Hallo du", [], ask))["schwer"] is False and not calls
+    everyday = "Ich bin gerade von der Arbeit gekommen und total müde."   # under MIN_CHARS: no wait
+    assert asyncio.run(schwer.judge(everyday, [], ask)) == {"schwer": False, "how": "", "s": 0.0} and not calls
 
 
 def test_the_small_model_judges_and_in_doubt_it_is_easy():
     async def hard(prompt):
-        assert "«Wie verteile ich fünf Leute auf drei Schichten mit Urlaub?»" in prompt
+        assert "«Wie verteile ich fünf Leute auf drei Schichten, wenn zwei im Urlaub sind?»" in prompt
         assert "Er davor: «Ich brauche Hilfe»" in prompt
         return " schwer\n"
 
@@ -55,7 +57,7 @@ def test_the_small_model_judges_and_in_doubt_it_is_easy():
     async def broken(prompt):
         raise RuntimeError("down")
     history = [{"role": "user", "text": "Ich brauche Hilfe"}]
-    message = "Wie verteile ich fünf Leute auf drei Schichten mit Urlaub?"
+    message = "Wie verteile ich fünf Leute auf drei Schichten, wenn zwei im Urlaub sind?"
     out = asyncio.run(schwer.judge(message, history, hard))
     assert out["schwer"] and out["how"] == "judged"
     for ask in (nothing, broken, None):
@@ -99,14 +101,6 @@ def test_without_the_setting_only_his_own_words_count(monkeypatch):
     assert hard("Denk genau nach: " + long_question)["how"] == "phrase" and not asked
     b.recall.settings["schwer"] = 1
     assert hard(long_question)["how"] == "judged" and len(asked) == 1
-    kinds = []
-
-    async def refuses_fast(prompt, *a, extra=None, **k):   # the fast fields refused: asked plainly
-        kinds.append(extra)
-        return None if extra else "SCHWER"
-    monkeypatch.setattr(main.textmodel, "ask", refuses_fast)
-    assert hard(long_question)["schwer"] and kinds == [main.schwer.FAST, None]
-    monkeypatch.setattr(main.textmodel, "ask", ask)
     b.recall.settings["schwer_model"] = ""
     assert hard("Denk genau nach: " + long_question)["schwer"] is False
 
