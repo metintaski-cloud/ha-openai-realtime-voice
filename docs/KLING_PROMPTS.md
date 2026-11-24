@@ -197,7 +197,13 @@ In Kling eingesetzt um 20:39 (beide Bilder Favorit 4, 4K, 10 s, Adaptive, 1, 350
 
 "0–2s: She feels an unexpected gentle sensation on her cheek, blinks in sweet surprise and scrunches her nose with a tiny smile, shifting her weight onto one leg. 2–5s: Blushing, she lays both palms on her warm cheeks and turns her face slightly away, her hips swaying gently. 5–8s: She peeks back at him, slowly slides her hands down, and looks into the camera with a tender, bashful smile, shifting her weight onto the other leg. 8–10s: She lowers her hands, looks at him with loving eyes and returns to her initial pose. Soft, feminine, natural body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-In Kling eingesetzt um 20:41 (beide Bilder Favorit 2, `7_nacht.png`, 4K, 10 s, Adaptive, 1, 350 Credits). Generate klickt Metin. Ergebnis hier nachtragen.
+In Kling eingesetzt um 20:41 (beide Bilder Favorit 2, `7_nacht.png`, 4K, 10 s, Adaptive, 1, 350 Credits). Von Metin gestartet 20:42 ("läuft"). Ergebnis hier nachtragen.
+
+**Berührung an der Brust, Nachtkleid (20:43).** Eigene Szene, anders als die anderen Brustszenen (kurz: Blick nach unten, Zeigefinger, Kopfschütteln; langes Freizeitkleid: Hand über dem Ausschnitt, wegdrehen): hier ein gespielt strenger Blick mit gehobener Braue, sie umarmt sich selbst, wiegt die Hüfte, lässt die Arme sinken und fährt sich durchs Haar; mit Sexappeal nach Punkt 12, bleibt angezogen.
+
+"0–2s: She reacts with sweet surprise to an unexpected playful sensation on her chest, draws in a soft breath and gives him a playful, scolding look with one eyebrow raised. 2–5s: Bashfully she wraps her arms around herself, hugging her shoulders, and sways her hips slowly and roundly from side to side. 5–8s: With a seductive, shy smile she slowly lets her arms glide down, runs one hand through her long hair and looks into the camera from under her lashes, her weight sinking onto one leg. 8–10s: She lets her hair fall, smiles at him lovingly and returns to her initial pose. Soft, feminine, sensual body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
+
+Geschrieben 20:43, Bilder dafür: Favorit 2 (`7_nacht.png`). Noch nicht in Kling. Ergebnis hier nachtragen.
 
 ## Was am 24.11.2026 sonst noch entstand
 
