@@ -10,6 +10,7 @@ Recherche vom 24.11.2026, 12:50, nachdem Metin sagte: "Vielleicht sollst du dich
 - Messwerte: rund 5 Fehlstarts am Tag, 29 von 31 bei laufendem Fernseher (türkisches Fernsehen). Gleichzeitig muss Metin oft 2 bis 3 Mal rufen.
 
 - Beobachtung 24.11.2026, 22:25 (Metin): seine Mutter konnte Leyla mit "Hallo Leyla" nicht wecken, obwohl ihre Stimme im Training war. Passt zu den Messwerten (Schwelle 99 Prozent, er selbst muss oft 2 bis 3 Mal rufen). Zu prüfen: hat der leise Sammler (Schwelle 0,70) ihre Rufe aufgenommen? Dann hört das Modell sie, nur unter 99 Prozent.
+- Zählung 24.11.2026, 22:28 (`/api/wakestats`): heute 37 Mal geweckt, davon 12 Fehlstarts; Sammler seit dem Mittag: 50 Beinahe Treffer, 39 sauber (`n0_f0`), 11 zu prüfen. Die Zählung nennt keine Uhrzeiten, welche Clips von der Mutter stammen, zeigt sie nicht; ihre vergeblichen Rufe mit Metins zwei erfolgreichen Rufen kurz danach passen aber genau auf das Muster "prüfen" (noch ein Treffer oder ein Wecken binnen 15 Sekunden). Metin rief danach zweimal, beide Male reagierte sie: Gerät und Modell arbeiten, es ist die Trefferquote. Idee für später: eine Liste der Beinahe Clips mit Uhrzeit in der App, damit man solche Fälle zuordnen kann.
 
 ## Was im Trainer liegt (angesehen am 24.11.2026, 12:58, `C:\mww`)
 
