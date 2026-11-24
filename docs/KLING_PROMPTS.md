@@ -27,6 +27,7 @@ Regel ab jetzt:
 2. Die gezählten Bewegungen sind kleine Körperbewegungen (Gewicht wechseln, Kopf neigen, Hand heben, Haare zurückstreichen), keine Gefühlsausbrüche.
 3. Bei einem Nachbau gibt der alte Clip auch die Stärke des Ausdrucks vor, nicht nur die Abfolge.
 4. `tools/kling_check.py` hält bei mehr als einem starken Ausdruckswort an (Liste `STRONG`).
+6. **Bei einem Nachbau nichts dazu erfinden** (Metin um 17:05: "wir haben doch gesagt nicht selber dazu erfinden??"). Die Regel vom 23.11. galt schon und wurde gebrochen: der Schulter Shimmy, das Erschrecken, das laute Lachen, das Vorbeugen und die zusätzlichen Gesten standen in keinem alten Clip und in keiner Quelle, Claude hat sie hinzugefügt, um jede Sekunde zu füllen. Ein Nachbau enthält nur, was im alten Clip zu sehen ist, in derselben Stärke. Fehlt für die Länge Bewegung, wird der Clip nicht aufgefüllt, sondern Metin gefragt. Vor dem Start nennt Claude in einem Satz, was sie tut, und sagt ausdrücklich, wenn etwas davon nicht aus dem alten Clip stammt.
 5. **Nie mehrere Clips mit derselben neuen Schreibweise hintereinander starten.** Die 1.050 Credits gingen verloren, weil Claude drei Clips startete, bevor Metin den ersten gesehen hatte (Metin um 17:04: "das sind über 900 Credits"). Ab jetzt: einen Clip starten, Metins Urteil abwarten, dann erst den nächsten. Das gilt auch mit seiner Erlaubnis, Generate ohne Rückfrage zu klicken; die Erlaubnis betrifft den einzelnen Klick, nicht eine Serie ohne Kontrolle.
 
 ## Alter Standard vom 21.11.2026 (Verlauf)
