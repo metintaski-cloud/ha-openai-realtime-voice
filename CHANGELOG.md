@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.144.3 (24 Nov 2026)
+
+- Metin wants full screen at once when he opens the app, without a tap; only the installed app can do that, and his icon opens a plain Chrome tab with the address bar. The page now shows a button "Als App installieren" as soon as Chrome reports that it can be installed (`beforeinstallprompt`), one tap starts the installation. It also reports how it runs (tab or app, secure context, service worker, installable) to `POST /api/diag`; `GET /api/diag` shows the last 30 reports, so the cause can be read from outside.
+
 ## 2.144.2 (24 Nov 2026)
 
 - The rest of the black above Leyla's head (Metin: "ganz weg"): in full screen Android keeps the strip beside the camera hole black unless the page says `viewport-fit=cover`. The page now says so, the stage fills the strip (`env(safe-area-inset-top)`), and buttons, chat, menu and lists stay below it.

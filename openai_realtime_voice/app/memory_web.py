@@ -555,7 +555,19 @@ function goFull(){const d=document.documentElement;if(document.fullscreenElement
    2.144.2 (Metin: full screen at once, not by hand through the menu): a finger only counts as a user action for the browser when it lifts (pointerup, click), not when it goes down, so on the phone the old pointerdown never switched; and on a phone full screen is now the default until he turns it off in the menu */
 function fullWant(){let v=null;try{v=localStorage.getItem('lfull');}catch(e){}return v==='1'||(v!=='0'&&PHONE);}
 for(const ev of ['pointerup','click','keydown'])document.addEventListener(ev,()=>{if(fullWant()&&!document.fullscreenElement)goFull();},true);
-if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});  /* 2.134.3: only with a service worker does Chrome install the page as an app, and only then does the manifest's fullscreen apply */
+if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
+/* 2.144.3 (Metin: full screen at once when he opens the app, without any tap): only the installed app can do that. Chrome tells the page when it can be installed; then a button "Als App installieren" shows and one tap on it starts the installation. The page also reports how it runs (tab or app), so the cause can be read from the server */
+let INST=null;
+function runMode(){for(const m of ['fullscreen','standalone','minimal-ui'])if(matchMedia('(display-mode: '+m+')').matches)return m;return 'browser';}
+function diag(ev){try{fetch('/api/diag',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ev,mode:runMode(),secure:!!window.isSecureContext,sw:!!(navigator.serviceWorker&&navigator.serviceWorker.controller),inst:!!INST,ua:(navigator.userAgent.match(/Chrome.[0-9]+/)||[''])[0]+(/Android/.test(navigator.userAgent)?' Android':'')})}).catch(()=>{});}catch(e){}}
+function instBtn(){let b=document.getElementById('instb');if(!INST||runMode()!=='browser'){if(b)b.remove();return;}
+ if(!b){b=document.createElement('button');b.id='instb';b.textContent='Als App installieren';
+  b.style.cssText='position:fixed;left:50%;transform:translateX(-50%);top:calc(12px + env(safe-area-inset-top,0px));z-index:70;width:auto;padding:8px 14px;font-size:14px;border-radius:999px;background:#000c;color:#fff;border:1px solid #22d3ee';
+  b.onclick=async e=>{e.stopPropagation();const p=INST;if(!p)return;try{p.prompt();const r=await p.userChoice;diag('choice:'+(r&&r.outcome));}catch(x){diag('prompt failed');}INST=null;instBtn();};
+  document.body.appendChild(b);}}
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();INST=e;instBtn();diag('installable');});
+window.addEventListener('appinstalled',()=>{INST=null;instBtn();diag('installed');});
+setTimeout(()=>diag('open'),4000);  /* 2.134.3: only with a service worker does Chrome install the page as an app, and only then does the manifest's fullscreen apply */
 async function clipsLoad(){let outs={};try{outs=(await (await fetch('/clips.json')).json()).outfits||{};}catch(e){}
  for(const k in outs){CVER[k]=outs[k].v||0;const r=outs[k].r||{};for(const c in r)RATE[k+'/'+c]=r[c];const q=outs[k].k||{};for(const c in q)KURVE[k+'/'+c]=q[c];const sc=outs[k].s||{};for(const c in sc)SCHNITT[k+'/'+c]=sc[c];}  /* 2.136.0 (Metin): his tempo from the tester, the clip files stay untouched */
 NIGHT=outs.nacht?outs.nacht.clips:[];NIGHTBODY=!!(outs.nacht&&outs.nacht.body);delete outs.nacht;PET=outs.mokka&&outs.mokka.alpha||[];delete outs.mokka;const names=Object.keys(outs);
@@ -1290,6 +1302,7 @@ MOTION = None
 MOBIL = None
 
 
+DIAG = collections.deque(maxlen=30)
 TIMING = collections.deque(maxlen=50)  # 2.141.6: chat times, server part against what the phone saw
 
 
@@ -1606,6 +1619,14 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                 async for chunk in st.read():
                     writer.write(chunk)
                     await writer.drain()
+        elif method == "POST" and path == "/api/diag":
+            # 2.144.3: how the page runs on the phone (tab or installed app), to find out why
+            # Metin's icon opens with the address bar; only these few flags, nothing personal
+            DIAG.append({"at": time.strftime("%H:%M:%S"),
+                         **{k: d.get(k) for k in ("mode", "secure", "sw", "inst", "ev", "ua") if k in d}})
+            await _respond(writer, "200 OK", "application/json", json.dumps({"ok": True}))
+        elif method == "GET" and path == "/api/diag":
+            await _respond(writer, "200 OK", "application/json", json.dumps(list(DIAG)))
         elif method == "GET" and path == "/api/timing":
             await _respond(writer, "200 OK", "application/json", json.dumps(list(TIMING)))
         elif method == "GET" and path == "/api/mobil":
