@@ -139,6 +139,7 @@ The app is also reachable at **https://leyla-metin.duckdns.org/** (port 443, liv
 - Home Assistant add on **Duck DNS** (`core_duckdns`, installed 24 Nov 2026): keeps the name and gets a Let's Encrypt certificate through the DNS challenge, written to `/ssl/fullchain.pem` and `/ssl/privkey.pem` and renewed by the add on. The token was typed in by Metin himself and is stored only in that add on's options.
 - GPT Live Voice maps `/ssl` read only and serves the page on 443 and live talk on 8443 as soon as the certificate is there (`app/tls.py`); a renewed certificate is loaded without a restart.
 - Checked from Metin's PC on 24 Nov 2026 at 02:00: the page loads without a certificate warning, the context is secure, the wss connection opens.
+- Installed on Metin's phone from this address on 24 Nov 2026 at 02:05: the app reports `mode=fullscreen` at start (`GET /api/diag`), before it was always `browser`. This is the address to use from now on.
 - The old addresses (`http://192.168.2.240:8082`, `ws://192.168.2.240:8080`) keep working. With the secure address the Chrome flag "Insecure origins treated as secure" is no longer needed for the microphone.
 - A new address has its own storage in the browser: the code word has to be typed once more there, and the full screen and music choices start fresh.
 - To undo: uninstall the Duck DNS add on and delete its files in `/ssl`; the add on then serves only the plain addresses again.
