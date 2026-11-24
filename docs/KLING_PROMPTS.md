@@ -126,6 +126,8 @@ Dieser Nachbau lief nicht. Metin um 19:44: "jetzt, wo wir die Muster Regel verst
 
 Generate klickt Metin. Ergebnis hier nachtragen.
 
+**Berührung an der Brust, kurzes Freizeitkleid (Metin, 19:49 "kurz freizeit po", "ah und Gesicht fehlt"; Claude wies darauf hin, dass Po und Gesicht dort schon in 4K liegen und Brust und eine dritte Schleife fehlen; Metin wählte "Brust (fehlt)").** Derselbe Text wie beim kurzen Arbeitskleid (Clip 636, "nehmen wir"): Vorlage 3 mit ruhigen Beinen und Zeigefinger; ein Buch kommt im Text nicht vor. In Kling eingesetzt um 19:53: beide Bilder Favorit 5 (kurzes Freizeitkleid, ohne Brille und Buch, groß geprüft, Datei endet auf `...6bdc8210912b5.png`), 4K, 10 s, Adaptive, 1, 350 Credits am Knopf. Generate klickt Metin. Ergebnis hier nachtragen.
+
 ## Was am 24.11.2026 sonst noch entstand
 
 - `kurz/gluecklich5` (Clip 308, Haarsträhne, Metin: "ist für die Schleife von Arbeit kurz glücklich"): unverändert im Originaltempo eingebaut, Bewegungsmenge 1,15, Naht 0,64, Gesicht stabil, der ganze Körper lebt. Geschrieben noch in Claudes Zwischenform (verschiedene Handlungen je einmal, ein Satz, dass der Körper mitgeht, keine Klemmsätze). Der Clip ist gut, die Form ist trotzdem abgelöst; neue Schleifen entstehen nach dem Baukasten.
