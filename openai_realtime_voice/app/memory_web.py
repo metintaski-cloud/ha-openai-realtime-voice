@@ -411,19 +411,24 @@ async function saveFields(fields){if(!view)return false;
  const j=await r.json();if(j.ok)view.text=j.text;return j.ok;}
 let sec=null,menuOpen=false,LASTD=null;
 const SECNAME={family:'Familie und Haushalt',friends:'Freunde und Verwandte',leyla:'Leylas Geschichte',private:'Privat',mail:'Google verbinden',lamps:'Lampenfarben',set:'Einstellungen'};
-const SECICON={family:'👪',friends:'🤝',leyla:'💜',private:'🔒',mail:'✉',lamps:'💡',rules:'📜',diary:'📔',full:'⛶',set:'⚙'};
+const SECICON={family:'👪',friends:'🤝',leyla:'💜',private:'🔒',mail:'✉',lamps:'💡',rules:'📜',diary:'📔',full:'⛶',set:'⚙',outfit:'👗',arbeit:'📖',freizeit:'🌴',nacht:'🌙',mback:'‹'};
+const WEAR=[['arbeit','Arbeitskleid'],['freizeit','Freizeit'],['nacht','Nacht']];let menuSub='';  /* 2.160.0 (Metin): Umziehen is a folder in the menu, the outfits are inside */
 let LOOKS=[];  /* her dresses, filled by clipsLoad */
 function menuItems(){const it=[];const ls=(LASTD&&LASTD.lists)||[];
  for(const l of ls)it.push([l.kind,l.title,l.items.length]);
  if(CODE&&GM.shown&&GM.needs)it.push(['mail','Google verbinden','']);if(lampOn)it.push(['lamps','Lampenfarben','']);
- if(CODE){it.push(['diary','Tagebuch',LASTD&&LASTD.diary_n!=null?LASTD.diary_n:'']);it.push(['rules','So ist Leyla',''])};if(LOOKS.length>1)it.push(['look','Kleid wechseln','']);it.push(['full','Vollbild','']);it.push(['set','Einstellungen','']);return it;}
-function drawMenu(){const m=document.getElementById('menu');m.innerHTML='';m.style.display=menuOpen?'block':'none';document.getElementById('micon').classList.toggle('open',menuOpen);if(!menuOpen)return;
- for(const [k,t,n] of menuItems()){const b=document.createElement('button');b.className='mi';const i=document.createElement('i');i.textContent=SECICON[k]||'•';
-  const sp=document.createElement('span');sp.textContent=t;const sm=document.createElement('small');sm.textContent=n===''?'':String(n);const ch=document.createElement('b');ch.textContent='›';
+ if(CODE){it.push(['diary','Tagebuch',LASTD&&LASTD.diary_n!=null?LASTD.diary_n:'']);it.push(['rules','So ist Leyla',''])};if(CODE&&STM&&STM.outfit)it.push(['outfit','Umziehen','']);if(LOOKS.length>1)it.push(['look','Kleid wechseln','']);it.push(['full','Vollbild','']);it.push(['set','Einstellungen','']);return it;}
+function drawMenu(){const m=document.getElementById('menu');m.innerHTML='';m.style.display=menuOpen?'block':'none';document.getElementById('micon').classList.toggle('open',menuOpen);if(!menuOpen){menuSub='';return;}
+ const items=menuSub==='outfit'?[['mback','Umziehen','']].concat(WEAR.map(([k,t])=>[k,t,STM&&STM.outfit===k?'trägt sie':''])):menuItems();
+ for(const [k,t,n] of items){const b=document.createElement('button');b.className='mi';const i=document.createElement('i');i.textContent=SECICON[k]||'•';
+  const sp=document.createElement('span');sp.textContent=t;const sm=document.createElement('small');sm.textContent=n===''?'':String(n);const ch=document.createElement('b');ch.textContent=k==='mback'?'':'›';
   b.append(i,sp,sm,ch);b.onclick=()=>openSec(k);m.appendChild(b);}}
 document.getElementById('micon').onclick=()=>{menuOpen=!menuOpen;snd[menuOpen?'on':'off']();drawMenu();};
 document.getElementById('cmenu').onclick=e=>{e.stopPropagation();document.getElementById('micon').onclick();};
-function openSec(k){menuOpen=false;drawMenu();if(k==='rules'){openRules();return;}if(k==='diary'){openDiary();return;}
+async function wear(k){snd.on();let st=null;try{st=await (await post('/api/outfit',{outfit:k})).json();}catch(e){}
+ if(!st||!st.mood)return;moodShow(st);ZPEND=null;ZBUSY=0;stagePlay([],clipFor(st));}  /* the loop of the new outfit at once; moodShow alone only swaps the still (an outfit change normally waits for its scene) */
+function openSec(k){if(k==='outfit'){menuSub='outfit';drawMenu();return;}if(k==='mback'){menuSub='';drawMenu();return;}
+ menuOpen=false;drawMenu();if(WEAR.some(w=>w[0]===k)){wear(k);return;}if(k==='rules'){openRules();return;}if(k==='diary'){openDiary();return;}
  if(k==='look'){  /* 2.146.3 (Metin wants to look at the clips of the other dress): the next look, kept for today like the one picked at random */
   const i=LOOKS.indexOf(OUTFIT),nx=LOOKS[(i+1)%LOOKS.length];
   try{localStorage.setItem('loutfit',nx);localStorage.setItem('loutfitday',dressDay());localStorage.setItem('lseen',String(Date.now()));}catch(e){}
@@ -1886,6 +1891,13 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
             await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
         elif method == "POST" and path == "/api/mood":
             out = mood.status() if (unlocked and mood) else {}
+            await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
+        elif method == "POST" and path == "/api/outfit":
+            # the menu Umziehen (2.160.0): Metin picks her outfit himself; the answer is her state
+            out = {}
+            if unlocked and mood and hasattr(mood, "wear") and mood.wear(str(d.get("outfit", ""))[:12]):
+                out = mood.status()
+                logger.info("Memory page: outfit set to %s", out.get("outfit"))
             await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
         elif method == "POST" and path == "/api/unlock":
             if unlocked:

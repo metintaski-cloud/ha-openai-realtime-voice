@@ -443,3 +443,22 @@ def test_when_she_says_his_closeness_is_missing_his_answer_counts(h):
     assert "verstanden hat, was dir fehlt" in heart.EVENT_HELP and "tut ab, was dir fehlt" in heart.EVENT_HELP
     assert better["low"]
     assert not h.apply(["entschuldigung"], later + 180)["low"]
+
+
+def test_the_menu_puts_her_into_any_outfit_at_any_level(tmp_path):
+    """2.160.0 (Metin, 24 Nov 2026): Umziehen in the menu of the app, to look through the clips
+    of every outfit. No scene, no condition; it holds until 5 o'clock like any change, and she
+    knows what she wears."""
+    import time as _t
+    h = heart.Heart(str(tmp_path / "h.json"))
+    t = _t.mktime((2026, 11, 20, 18, 0, 0, 0, 0, -1))
+    h.apply(["unfreundlich"], t)                      # hurt: by words she would not change
+    assert h.scene("umziehen", t + 1) == ""
+    assert h.wear("nacht", t + 2) and h.status(t + 3)["outfit"] == "nacht"
+    assert h.wear("freizeit", t + 4) and h.status(t + 5)["outfit"] == "freizeit"
+    assert "Feierabend" in h.voice_note(t + 6)
+    assert h.wear("arbeit", t + 7) and h.status(t + 8)["outfit"] == "arbeit"   # back to work the same evening
+    assert not h.wear("bikini", t + 9) and h.status(t + 10)["outfit"] == "arbeit"
+    assert h.wear("nacht", t + 11)
+    assert h.status(t + 3600 * 11 + 60)["outfit"] == "arbeit"                  # after 05:00
+    assert any("im Menü umgezogen" in str(x) for x in h.stats(t + 12)["log"])

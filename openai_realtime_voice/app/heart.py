@@ -194,6 +194,7 @@ AUFZUG = {
               "(du bist dann wieder in Freizeit). Sonst bleibst du so bis morgen früh um 5 Uhr."),
 }
 WORK_START_H = 5
+OUTFITS = ("arbeit", "freizeit", "nacht")
 GAME_ZONES = ("gesicht", "brust", "bauch", "po")
 
 SCENE_TEXT = {
@@ -671,6 +672,20 @@ class Heart:
             self._save(d)
             return "umziehen" if new == "freizeit" else "bettvon" + cur
         return SCENES.get(wanted, {}).get(lvl, "")
+
+    def wear(self, outfit: str, now: Optional[float] = None) -> bool:
+        """The menu of the app, Umziehen (Metin, 24 Nov 2026): he picks her outfit himself, at
+        any level and without a scene, to look through the clips of every outfit. It counts
+        until the next 5 o'clock like any change, and she knows what she wears (`_aufzug`)."""
+        if outfit not in OUTFITS:
+            return False
+        now = now or time.time()
+        d = self.current(now)
+        if self._outfit(d, now) != outfit:
+            d.update(outfit=outfit, outfit_t=now)
+            self._log(d, now, "im Menü umgezogen: " + outfit)
+            self._save(d)
+        return True
 
     @staticmethod
     def _outfit(d: dict, now: float) -> str:
