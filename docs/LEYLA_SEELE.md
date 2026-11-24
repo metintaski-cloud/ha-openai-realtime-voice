@@ -91,6 +91,10 @@ Ein Kopf für alle Wege. Chat, Live Gespräch und Voice PE fragen denselben Kopf
 
 Erst wenn 1 bis 4 stehen. Ein Vergleich nur mit der Testliste und nur, wenn Lunas Charakter in allen Fällen bleibt.
 
+## Beobachtungen von Metin (als Prüfpunkte)
+
+- 24. Nov. 2026: Sie speichert manchmal Wichtiges und manchmal Unwichtiges, es kommt viel zusammen. Alles, was Zuneigung ist, speichert sie sofort, anderes (sein Alltag) wird teils übergangen. Prüfpunkt für Schritt 2 und 3: Was er über Arbeit, Familie, Pläne und Sorgen erzählt, muss so sicher hängen bleiben wie Zuneigung, und Belangloses darf nicht bleiben.
+
 ## Wie wir messen
 
 1. **Einfall:** Liste von Fragen, zu denen es ein bestimmtes Erlebnis gibt. Gezählt wird, bei wie vielen sie das Erlebnis vor sich hat. Alt (Fenster von 5000 Zeichen) gegen neu (Fenster plus Einfall).
