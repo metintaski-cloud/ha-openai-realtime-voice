@@ -38,6 +38,10 @@ END_CONVERSATION_TOOL = {
 WARM_MAX_AGE_S = 90.0  # a pre opened connection older than this is replaced
 
 
+# how json.dumps begins a microphone frame for GPT Live (main._client_to_live, _silence_pump)
+AUDIO_IN = '{"type": "session.input_audio.append"'
+
+
 class LiveLine:
     """The GPT Live connection of one talk, which can be exchanged while the talk runs
     (2.155.0, talk_notes._go_fresh): the tasks of the talk keep this one object, `swap` puts a
@@ -48,14 +52,29 @@ class LiveLine:
     def __init__(self, ws) -> None:
         self.ws = ws
         self.swaps = 0
+        self.standby = None  # a session that is being put in place and already listens
+
+    def listen_too(self, ws) -> None:
+        """From now on the microphone also goes to `ws` (None: no longer). A session that takes
+        the place of the running one must have heard what he says while the exchange is on its
+        way; on 24 Nov 2026 the first words of his question went to the old session only and the
+        new one asked him to finish his sentence."""
+        self.standby = ws
 
     def swap(self, ws):
         """Put `ws` in place; returns the connection that was there (the caller closes it)."""
         old, self.ws = self.ws, ws
+        self.standby = None
         self.swaps += 1
         return old
 
     async def send(self, data):
+        standby = self.standby
+        if standby is not None and isinstance(data, str) and data.startswith(AUDIO_IN):
+            try:
+                await standby.send(data)
+            except Exception:
+                self.standby = None  # it broke: the talk goes on with the session it has
         return await self.ws.send(data)
 
     async def recv(self):
