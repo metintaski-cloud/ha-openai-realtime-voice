@@ -215,7 +215,7 @@ Geschrieben 20:43, in Kling eingesetzt um 20:43 (beide Bilder Favorit 2, `7_nach
 
 "0–3s: Sleepy and content, she stretches softly, raising her arms above her head and rising gently onto her toes with closed eyes. 3–6s: She lets her arms sink, hides a sweet little yawn behind one hand and sways from one leg to the other. 6–8s: She sees him, lowers her hand and gives him a small, shy smile with sleepy, tender eyes, softly turning her shoulders. 8–10s: She shifts her weight, looks lovingly into the camera and returns to her initial pose. Soft, feminine, natural body movements. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-Geschrieben 20:47, Bilder dafür: Favorit 2 (`7_nacht.png`). Von Metin selbst in Kling einkopiert und gestartet, 20:53 ("läuft"). Ergebnis hier nachtragen.
+Geschrieben 20:47, Bilder dafür: Favorit 2 (`7_nacht.png`). Von Metin selbst in Kling einkopiert und gestartet, 20:53 ("läuft"). **Ergebnis (Clip `kling_20261125_VIDEO_0_3s__Slee_978_0.mp4`, Download 21:01, dieselbe Nummer 978 wie der Wunsch Clip, darum erst um 21:11 bemerkt; Original in Leyla Kling Originale):** sie streckt die Arme hoch, Augen zu, ein Bein kurz angewinkelt (1 bis 3,5 s), lässt die Arme sinken (3,5 bis 4 s), gähnt hinter der Hand (4 bis 6,5 s), senkt lächelnd den Blick und die Hand (6,5 bis 8 s), Grundpose ab 8,5 s; der Blick in die Kamera kommt erst am Ende. Bewegungsmenge im Mittel 3,07, je Sekunde 2,0 / 5,6 / 4,6 / 5,4 / 2,0 / 1,6 / 2,2 / 2,6 / 3,6 / 1,3, Naht 0,63, letzte halbe Sekunde 0,73. Nach Ablauf Punkt 8 seit 21:11 als `nacht/gluecklich5` in 4K ohne Ton eingebaut (Videospur bytegleich). Merke: neue Downloads am Dateinamen und nicht nur an der Nummer erkennen.
 
 **Schleife, Nachtkleid: ein Wunsch (20:54).** Eigene Szene, die zur Nacht passt: sie faltet die Hände vor der Brust, schaut kurz nach oben wie zu einer Sternschnuppe, schließt nur einen Moment die Augen für einen Wunsch und schaut ihn dann wissend an. Lehre aus Clip 933 beachtet: Blick zu ihm von Anfang an, Augen nur kurz zu.
 
@@ -251,7 +251,7 @@ Geschrieben 21:10. Metin um 21:09: "ah, sie soll sich rundum präsentieren, aber
 
 "0–3s: Happy to see him, she looks into the camera with a sweet, shy smile and begins to turn slowly on the spot, a soft wave rolling down through her body as she comes into profile. 3–6s: Presenting herself to him, she keeps turning slowly until her back faces him, one hand gliding onto her hip, and looks at him over her shoulder with a seductive, shy smile. 6–8s: Sensually she continues the turn through her other side, her hips swaying softly with each small step, her hair flowing along. 8–10s: She completes the full turn, faces him again, smiles lovingly and ends exactly in her initial pose. One slow, continuous, sensual full turn in a steady rhythm. Soft, feminine body movements. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-Geschrieben 21:11, Bilder dafür: Favorit 2 (`7_nacht.png`); Metin kopiert den Text selbst ein. Ergebnis hier nachtragen.
+Geschrieben 21:11, Bilder dafür: Favorit 2 (`7_nacht.png`); von Metin selbst einkopiert und gestartet, 21:10 ("läuft"). Ergebnis hier nachtragen.
 
 ## Was am 24.11.2026 sonst noch entstand
 
