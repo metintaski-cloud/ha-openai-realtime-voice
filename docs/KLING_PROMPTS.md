@@ -482,3 +482,17 @@ Herkunft der Teile:
 Gestartet 24.11.2026 um 16:00 von Claude auf Metins Wort ("Mach das für mich", nachdem Bilder, Einstellungen und 350 Credits genannt waren): beide Bilder 5_lang_arbeit.png (am Dateinamen und groß geprüft), 4K, 10 s, Adaptive, 1 Ausgabe, Standard statt HDR, 350 am Knopf.
 
 Ergebnis hier nachtragen.
+
+## Begrüßung langes Arbeitskleid neu in 4K: schwarz/begruessung (24.11.2026, vorbereitet 16:04)
+
+Metin schickte den laufenden Clip `schwarz/begruessung` mit "Nächste": auch er ist noch 1176 x 1764 (11,6 s) und soll genau so in 4K neu entstehen. Aus dem Clip abgelesen (Kontaktbogen): Grundpose mit dem Buch im Arm, sie hebt die freie Hand, winkt rund 7 s mit offenem Lachen und leicht geneigtem Kopf, senkt die Hand, Grundpose.
+
+Einstellungen (in Kling gesetzt und ausgelesen): Kling 4.0, Keyframes, Start und Endbild beide `5_lang_arbeit.png` (dasselbe Bild wie bei den Schleifen, damit die Begrüßung nahtlos übergeht), 4K, 10 s, Adaptive, 1 Ausgabe, Standard, 350 Credits am Knopf.
+
+Prompt (durch `tools/kling_check.py`, kein Bremswort, nur die beiden erlaubten Verbote): "Use the first keyframe as the first frame and the last keyframe as the last frame. A single continuous shot with no cuts. The camera stays fixed on a tripod and keeps the full body framing of the keyframes; the background and the reflections on the floor stay exactly as they are. Exactly one woman and exactly one book; the closed book stays against her side in the same arm the whole time, and both of her feet stay planted on the same spot. Her face, her hair and everything she wears stay exactly as in the keyframes the whole time. Every movement keeps natural weight and real-time speed. 0 to 1.5 seconds: her eyebrows jump up, her mouth opens into a wide happy laugh and she lifts her free hand beside her shoulder with an open palm. 1.5 to 4 seconds: she waves her open hand from side to side five times and she tilts her head to her right. 4 to 6 seconds: she leans her upper body toward the lens, she laughs once with her shoulders lifting once, and she waves three more times. 6 to 8.5 seconds: she wiggles her fingers twice in a small wave, she straightens up, then she lowers her arm to her side and returns to the stance of the first frame with a bright smile. 8.5 to 10 seconds: she holds exactly the pose of the last frame, completely still. No subtitles, no background music."
+
+Gezählt: Lachen und Hand heben (2), fünfmal winken mit Kopfneigen, vorbeugen, einmal auflachen, dreimal winken, zweimal Fingerwinken, aufrichten, Arm senken; dann 1,5 s Stillstand. Das alte Winken lief 7 s gleichförmig; hier ist es in drei Teile gegliedert, damit es lebendig bleibt.
+
+Herkunft: Aufbau, feste Tatsachen (eine Frau, ein Buch, Buch bleibt im selben Arm), gezählte Bewegungen und Stillstand am Ende aus den Profi Quellen. Aus unserem Log: Satz zu Gesicht und Kleidung ohne das Wort für die Brille, "her free hand" statt links oder rechts (das Bild legt die Seite fest), wechselnder Ausdruck.
+
+Ergebnis hier nachtragen.
