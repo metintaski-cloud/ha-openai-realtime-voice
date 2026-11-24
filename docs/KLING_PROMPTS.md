@@ -114,6 +114,7 @@ Quellen: atlascloud.ai/blog/tips/kling-4-credit-burn-rate-workflow, aitoolanalys
 - Medienordner ist seit 21.11.2026 auf Metins PC als Laufwerk Z: verbunden (\\192.168.2.240\media) und in der Claude App als Ordner freigegeben: Claude legt fertige Clips selbst nach Z:\leyla\<look>\, Metin muss nichts kopieren.
 - Bilder für Keyframes: einmal hochgeladen, danach über "Asset" > "Uploads" oder "Extract Frames" (Bild aus einem fertigen Clip) wählbar, ohne Datei Fenster.
 - Vor jedem "Generate" zeigt Claude Einstellungen und Credits und wartet auf Metins Okay (Metin schrieb am 21.11.2026 "stop", als ein Clip 525 Credits kostete).
+- **Neu seit 24.11.2026, 16:05 (Metin wörtlich: "nicht mehr fragen wenn du Bilder in groß geprüft, 10 s 4K hast und Prompt wie Profi erstellt ist"):** Für einen Clip, den Metin selbst benannt hat (zum Beispiel ein Bildschirmfoto des alten Clips mit "Nächste"), klickt Claude Generate selbst und ohne Rückfrage, wenn alles zugleich gilt: beide Bilder groß am Bild geprüft und am Dateinamen ausgelesen, am Knopf steht "4K · 10s · Adaptive · 1" und 350 Credits, der Prompt ist nach dem Profi Standard geschrieben und durch `tools/kling_check.py` gelaufen. Weicht etwas ab (anderer Preis, andere Länge, mehrere Ausgaben, unklarer Inhalt, ein Clip, den er nicht benannt hat), wird wie bisher gefragt. Nach jedem Start nennt Claude Clip, Uhrzeit und Credits. Der Inhalt eines neuen Clips wird weiter vorher mit ihm geklärt; bei einem Nachbau ist der alte Clip die Vorgabe.
 - Keine Tests in niedriger Auflösung (Metin, 21.11.2026): Jeder Clip wird direkt in 4K erzeugt. Klings Video Upscaler (kling.ai/feature/video-upscaler, Video 3.0 Omni, bis 3840x2160) rechnet nicht 1:1 hoch, sondern erfindet Details; Gesicht und Kleidung können sich ändern.
 - Einstellungen vor Generate prüfen (21.11.2026): Nach einem Neuladen der Seite stand die Länge plötzlich auf 5 s (175 Credits) statt 10 s; Metin hat es bemerkt. Claude liest vor jeder Freigabe den Text "4K · 10s · Adaptive · 1" am Einstellungsknopf und den Preis 350 am Generate Knopf.
 - Favoriten (21.11.2026, Metin): Die Outfit Bilder für Start und Ende sind in Kling unter Asset > Uploads als Favoriten markiert und die Auswahl zeigt nur Favoriten; trotzdem vor Generate groß prüfen.
@@ -494,5 +495,7 @@ Prompt (durch `tools/kling_check.py`, kein Bremswort, nur die beiden erlaubten V
 Gezählt: Lachen und Hand heben (2), fünfmal winken mit Kopfneigen, vorbeugen, einmal auflachen, dreimal winken, zweimal Fingerwinken, aufrichten, Arm senken; dann 1,5 s Stillstand. Das alte Winken lief 7 s gleichförmig; hier ist es in drei Teile gegliedert, damit es lebendig bleibt.
 
 Herkunft: Aufbau, feste Tatsachen (eine Frau, ein Buch, Buch bleibt im selben Arm), gezählte Bewegungen und Stillstand am Ende aus den Profi Quellen. Aus unserem Log: Satz zu Gesicht und Kleidung ohne das Wort für die Brille, "her free hand" statt links oder rechts (das Bild legt die Seite fest), wechselnder Ausdruck.
+
+Gestartet 24.11.2026 um 16:05 von Claude (Metins Ja von 16:05), 350 Credits, Guthaben danach etwa 5.000.
 
 Ergebnis hier nachtragen.
