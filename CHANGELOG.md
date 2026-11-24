@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.147.2 (24 Nov 2026)
+
+- The recall uses 1536 values per vector instead of 256, a word bonus of 0.05 and the threshold 0.48, chosen from a comparison of four model and size pairs on the real diary (`docs/LEYLA_SEELE.md`, Messergebnisse). Old against new for 22 questions: the needed memory was before her in 1 case, now in 22 (21 come to mind by themselves, 1 is a kept entry); 16 with the first setting of 2.147.0. For 10 of 12 everyday messages nothing comes up, as it should. The larger model was not better than the small one with full size vectors. These values were already set on the server through `/api/kopf/settings`; this version makes them the defaults.
+- The comparison of a message with all entries runs in a thread and uses `math.sumprod` where Python has it, so a talk at home that runs at the same moment keeps its audio (45 ms for 276 entries on the Home Assistant host, growing with the diary).
+
 ## 2.147.1 (24 Nov 2026)
 
 - First measurement of 2.147.0 on the real diary (22 questions about things Metin told her in 8 days, texts stay on the server): the needed memory was before her in 1 of 22 cases until now, with the new recall in 17 of 22 (16 came to mind by themselves, 1 is a kept entry). The word search she used when the model asked for it found 14 of 22. Asking the service takes about 0.2 s per message.

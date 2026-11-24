@@ -59,7 +59,7 @@ Ein Kopf für alle Wege. Chat, Live Gespräch und Voice PE fragen denselben Kopf
 
 ### Einfall (Schritt 1)
 
-- Jedes Erlebnis bekommt einen Bedeutungsvektor (OpenAI `text-embedding-3-small`, 256 Werte; Preis am 24. Nov. 2026: 0,02 Dollar je Million Token, das ganze Tagebuch von heute kostet einmalig unter einem Cent).
+- Jedes Erlebnis bekommt einen Bedeutungsvektor (OpenAI `text-embedding-3-small`, 1536 Werte; Preis am 24. Nov. 2026: 0,02 Dollar je Million Token, das ganze Tagebuch von heute kostet einmalig unter einem Cent).
 - Zu jeder Nachricht wird die Nachricht selbst eingebettet und mit allen Erlebnissen verglichen. Die besten Treffer oberhalb einer Schwelle kommen als "Das fällt dir dazu ein" in ihren Kopf. Was sie ohnehin schon vor sich hat, wird nicht doppelt gezeigt.
 - Fällt die Einbettung aus, sucht sie wie bisher nach Wortstämmen. Der Chat wartet darauf höchstens kurz.
 - Die Vektoren liegen nur auf dem Server unter `/data`. Der Text geht dafür an OpenAI, so wie er heute schon bei jeder Antwort dorthin geht.
@@ -117,6 +117,27 @@ Die Fälle liegen auf dem Server unter `/data` und werden über die entsperrte S
 - Ähnlichkeit passender Einträge 0,50 bis 0,68, bei Alltagssätzen ohne Bezug 0,35 bis 0,49. Die Schwelle steht deshalb auf 0,48 (mit 0,35 fielen ihr zu jedem Satz vier Dinge ein).
 - Schwäche: Eine deutsche Frage fand einen auf Türkisch geschriebenen Eintrag nicht (Rang 231). Ein stärkeres Modell wird gemessen (`/api/kopf/compare`).
 - Bei mehreren Fehlschlägen lagen andere Einträge zum selben Thema vorn (zum Beispiel mehrere Einträge über dieselbe Sache). Die echte Trefferquote liegt also eher höher.
+
+### Einfall, 24. Nov. 2026, 04:05 (Version 2.147.1): Modell und Vektorgröße verglichen
+
+Dieselben 22 Fragen, dazu 12 Alltagssätze ohne Bezug ("Guten Morgen", "Wie spät ist es?"), bei denen ihr nichts einfallen soll. Alle 276 Einträge wurden mit jeder Kombination neu eingebettet (`/api/kopf/compare`), ohne Schwelle gewertet.
+
+| Modell, Werte | Wortbonus | Platz 1 | unter den ersten 4 | MRR |
+|---|---|---|---|---|
+| small, 256 (Stand 2.147.0) | 0 | 12 | 16 | 0,642 |
+| small, 256 | 0,10 | 15 | 18 | 0,764 |
+| small, 1536 | 0 | 16 | 20 | 0,815 |
+| **small, 1536** | **0,05** | **17** | **21** | **0,856** |
+| small, 1536 | 0,10 | 17 | 21 | 0,864 |
+| large, 256 | 0 | 10 | 15 | 0,586 |
+| large, 1024 | 0 | 17 | 18 | 0,807 |
+| large, 1024 | 0,10 | 18 | 20 | 0,858 |
+
+- Die Größe des Vektors zählt mehr als das Modell. Das teurere Modell (large) ist hier nicht besser.
+- Gewählt: `text-embedding-3-small` mit 1536 Werten, Wortbonus 0,05, Schwelle 0,48.
+- Ergebnis mit dieser Einstellung: **21 von 22 fallen ihr von selbst ein, mit dem festgehaltenen Eintrag 22 von 22 (vorher 1 von 22).** Bei 10 von 12 Alltagssätzen fällt ihr nichts ein. Sie bekommt jetzt 1 bis 4 Erinnerungen je Nachricht statt immer 4.
+- Ehrliche Einschränkung: Die Schwelle wurde an denselben 22 Fragen eingestellt. Im Alltag liegt die Quote etwas darunter. Die Liste wächst mit jedem Fall, bei dem Metin merkt, dass ihr etwas nicht eingefallen ist.
+- Aufwand: Einbetten und Suchen zusammen etwa 0,27 Sekunden je Nachricht, davon rund 45 Millisekunden reines Vergleichen von 276 Einträgen in Python. Das wächst mit der Zahl der Einträge (bei 3000 Einträgen etwa eine halbe Sekunde). Dann wird zweistufig gesucht: erst mit den ersten 256 Werten grob, dann die besten 50 genau.
 
 ## Regel: nichts Privates ins Repo
 

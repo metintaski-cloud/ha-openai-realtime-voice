@@ -34,7 +34,7 @@ from . import metrics
 logger = logging.getLogger(__name__)
 
 MODEL = "text-embedding-3-small"   # 0.02 dollars per million tokens (24 Nov 2026)
-DIMS = 256                         # short vectors: no numpy in the image, plain Python is enough
+DIMS = 1536                        # measured 24 Nov 2026: 256 values found 16 of 22, 1536 found 21
 MODELS = {"text-embedding-3-small": 1536, "text-embedding-3-large": 3072}  # largest size each
 URL = "https://api.openai.com/v1/embeddings"
 PATH = "/data/leyla_recall.json"
@@ -46,7 +46,7 @@ SAME = 0.92                        # two hits this close say the same thing: onl
 # Tunable on the server without a new version (POST /api/kopf/settings): the thresholds can
 # only be set well with the real diary, which never leaves the server.
 # word_bonus: added to the similarity for the share of the question's words an entry holds.
-SETTINGS = {"min_sim": 0.48, "top": 4, "ask_min_sim": 0.35, "ask_top": 6, "word_bonus": 0.0,
+SETTINGS = {"min_sim": 0.48, "top": 4, "ask_min_sim": 0.38, "ask_top": 6, "word_bonus": 0.05,
             "model": MODEL, "dims": DIMS}
 COMPARE = (("text-embedding-3-small", 256), ("text-embedding-3-small", 1536),
            ("text-embedding-3-large", 256), ("text-embedding-3-large", 1024))
@@ -81,6 +81,9 @@ def _unit(values) -> array.array:
 
 def _dot(a, b) -> float:
     return sum(map(operator.mul, a, b))
+
+
+_dot = getattr(math, "sumprod", _dot)  # Python 3.12 and newer: the same in C, about twice as fast
 
 
 def query_text(message: str, history=None) -> str:
@@ -270,9 +273,13 @@ class Index:
         vecs = await self.embed([query], timeout=QUERY_TIMEOUT_S)
         if not vecs:
             return []
-        return self._pick(self._rank(vecs[0], who, private, skip, text=query),
-                          int(limit or self.settings["top"]),
-                          float(self.settings["min_sim"] if min_sim is None else min_sim))
+        # the comparison is plain Python (no numpy in the image; measured 45 ms for 276 entries
+        # of 1536 values on the Home Assistant host): in a thread, so a talk at home that runs
+        # at the same moment keeps its audio
+        return await asyncio.to_thread(
+            lambda: self._pick(self._rank(vecs[0], who, private, skip, text=query),
+                               int(limit or self.settings["top"]),
+                               float(self.settings["min_sim"] if min_sim is None else min_sim)))
 
     async def note(self, query: str, who: str, private: bool = False,
                    now: Optional[float] = None) -> str:
