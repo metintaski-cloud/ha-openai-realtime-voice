@@ -12,6 +12,10 @@ Anlass: Clip 5030 kam in Zeitlupe, 350 Credits. Kling hatte den Prompt befolgt, 
 4. **Bilder groß prüfen, Einstellungen und Preis vom Knopf ablesen** (4K, Länge, Credits), wie im Abschnitt Bedienung beschrieben.
 5. **Erst dann Metin Bescheid geben**, mit Herkunft der Teile und der gezählten Bewegung. Er klickt Generate.
 
+## Stillstand am Ende höchstens eine halbe Sekunde (seit 24.11.2026, 16:35)
+
+Metin um 16:31 zu `schwarz/freizeitbrust`: "hängt am Ende sehr auffallend". Gemessen: von 8,5 bis 10 s keine Bewegung (Bewegungsmenge 0,15, dann 0,02 und 0,01), also 1,5 s eingefrorenes Bild, bevor die App übergibt. Unsere Prompts seit dem 23.11. schrieben am Ende "8.5 to 10 seconds: she holds ... completely still" vor; die offiziellen Kling Beispiele reservieren nur die letzte halbe Sekunde. Ab jetzt: Stillstand nur von 9,5 bis 10 s, die Rückkehr in die Grundpose füllt die Zeit davor. `tools/kling_check.py` hält bei mehr als 0,75 s Stillstand an. Für Clips, die schon so entstanden sind, setzt Claude nach Metins Ja eine Endmarke (`POST /api/schnitt`, Datei bleibt unverändert): `schwarz/freizeitbrust` endet seit 16:34 bei 8,6 s. Die drei Clips von heute Nachmittag (gluecklich2, begruessung, brust im langen Arbeitskleid) haben noch 1,5 s Stillstand im Prompt: nach dem Download messen und Metin eine Endmarke vorschlagen.
+
 ## Alter Standard vom 21.11.2026 (Verlauf)
 
 Ergebnis der Recherche vom 21.11.2026 (Metin: "Kling macht was es will"). Gilt für alle Leyla und Mokka Clips. Ersetzt den alten Standard vom 16.11.2026 (lange Grundregeln vorne im Prompt).

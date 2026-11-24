@@ -23,6 +23,11 @@ BRAKES = ("slowly", "slow", "gently", "gentle", "softly", "soft", "smoothly", "s
           "delicate", "delicately", "lazily", "leisurely", "languid")
 MAX_BRAKES = 1
 
+# The stillness at the end. The official Kling examples reserve the last half second; from
+# 23 to 24 Nov 2026 our prompts asked for 1.5 s, and the clips stood frozen that long before
+# the app handed over (measured on schwarz/freizeitbrust: no movement from 8.5 s to 10 s).
+MAX_HOLD_S = 0.75
+
 # The official guide: prefer positive descriptions; only these two are truly needed.
 ALLOWED_NEGATIVES = ("no subtitles", "no background music", "no cuts", "no music")
 NEGATIVE = re.compile(r"\b(no|never|without|don't|do not|not)\b", re.I)
@@ -89,7 +94,13 @@ def check(text: str) -> tuple:
         length = b - a
         actions = len(ACTION.findall(body))
         if HOLD.search(body) and actions == 0:
-            notes.append(f"{a:g} to {b:g} s: hold ({length:g} s)")
+            if length > MAX_HOLD_S:
+                problems.append(f"{a:g} to {b:g} s: a hold of {length:g} s. In the app that is a frozen "
+                                f"picture before the hand over (Metin, 24.11.: 'hängt am Ende sehr "
+                                f"auffallend'); the official examples keep the last half second still. "
+                                f"At most {MAX_HOLD_S:g} s.")
+            else:
+                notes.append(f"{a:g} to {b:g} s: hold ({length:g} s)")
             continue
         if actions == 0:
             notes.append(f"{a:g} to {b:g} s: no movement of her own found")
