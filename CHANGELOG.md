@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.150.8 (24 Nov 2026)
+
+- `chore`: finding out why voice replies stay silent. With 2.150.7 the reply of 05:21 was still text only: GPT Live sent no speech on both tries (log: twice `Announcement audio: 0.0 s`). `_collect_speech` now counts the events GPT Live sends and keeps the first ones besides audio; a silent try logs them (`GPT Live did not speak (try N): events {...}`). New route `POST /api/kopf/stimme {text, how}` (code word) speaks one test sentence without any trace and returns seconds of audio and the events; `how` leaves parts of the instructions out (`ohne`, `herz`, `naehe`, `ansage`) to see which part silences her.
+
 ## 2.150.7 (24 Nov 2026)
 
 - `fix`: voice replies without sound. In the add on log of 24 Nov, 05:03 to 05:15, three of eight voice replies came back empty: twice 0.0 s after GPT Live had been waited on for the whole 60 s, once 0.2 s (one loud chunk, then the 1.2 s end gap closed the reply before she spoke). The app showed a speaker sign and stayed silent. Now `_collect_speech` gives up after 12 s without speech (`FIRST_AUDIO_S`), a blip under 0.3 s is not the end of her speech (`MIN_SPEECH_S`), and `_speak_once` tries a second time on a fresh connection. Why GPT Live stays silent now and then is not known. Tests: `tests/test_voice_reply_silence.py`.

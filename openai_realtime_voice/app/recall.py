@@ -129,6 +129,7 @@ class Index:
         self.probe = None  # main sets it: one chat answer without any trace, old or new mind
         self.reflect = None  # main sets it: app/nachdenken.Reflection
         self.think = None   # main sets it: think now (async, returns the number of days done)
+        self.speak = None   # main sets it: one spoken test sentence (async, returns what came)
         self._load()
 
     @property
@@ -479,6 +480,8 @@ class Index:
             done = await self.think() if (d.get("now") and self.think) else 0
             return {"ok": True, "done": done, "due": len(self.reflect.due()),
                     **(self.reflect.listing() if d.get("read") else {})}
+        if path == "/api/kopf/stimme" and self.speak:
+            return await self.speak(str(d.get("text", ""))[:600], d.get("how"))
         if path == "/api/kopf/find":
             vecs = await self.embed([str(d.get("q", ""))[:1500]], timeout=QUERY_TIMEOUT_S)
             if not vecs:

@@ -211,6 +211,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self.reflect = nachdenken.Reflection(self.diary, self._reflect_ask)
         self.recall.reflect = self.reflect
         self.recall.think = lambda: self._reflect_tick(force=True)
+        self.recall.speak = self._voice_probe
         self.day = day.Day(self.diary, ask=self._day_ask, weather=self._day_weather)  # her own day
         self._forget_sol_evening()
         self._init_reach(UNLOCKED_LOVE)  # she writes to Metin on her own (app/reach.py)
@@ -680,6 +681,17 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         logger.info("Voice message in the app: %d bytes heard, reply audio %s",
                     len(audio), "yes" if out.get("audio") else "no")
         return out
+
+    async def _voice_probe(self, text: str, how=None) -> dict:
+        """/api/kopf/stimme: speak one test sentence like a voice reply. `how` leaves parts of
+        the instructions out ("ohne": no mood and no closeness, "herz": mood only, "naehe":
+        closeness only, "ansage": the announcement voice), to see which part silences her."""
+        mood = self.mood.feeling() if how in (None, "", "herz") else ""
+        love = UNLOCKED_LOVE if how in (None, "", "naehe") else ""
+        if how == "ansage":
+            return await self._speak_test(text, announce_voice.SPEAK_INSTRUCTIONS, text)
+        return await self._speak_test(text, chat.voice_reply_instructions(mood, love),
+                                      chat.speak_prompt(text))
 
     def _instructions_with_memory(self) -> str:
         devices, has_fan, has_tv, has_messages = getattr(

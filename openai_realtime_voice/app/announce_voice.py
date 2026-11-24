@@ -30,6 +30,8 @@ SPEECH_END_GAP_S = 1.2  # GPT Live keeps sending silence after the speech: stop 
 # a blip shorter than MIN_SPEECH_S does not count as the end, and _speak_once tries once more.
 FIRST_AUDIO_S = 12.0
 MIN_SPEECH_S = 0.3
+# Events not worth keeping when a session stayed silent (the audio itself, counters).
+QUIET_EVENTS = ("session.output_audio.delta", "session.usage.updated")
 
 
 class AnnounceVoiceMixin:
@@ -63,6 +65,9 @@ class AnnounceVoiceMixin:
         """Start the speaking session on ws, send the prompt and collect the speech (PCM)."""
         pcm = bytearray()
         feeder = None
+        seen: dict = {}   # event type -> count: what GPT Live sent, for a silent session
+        other: list = []  # the first events besides audio, shortened (errors, refusals)
+        self._speak_seen = {"events": seen, "other": other}
         try:
             await ws.send(json.dumps(self._announce_session_start(instructions)))
             loop = asyncio.get_event_loop()
@@ -89,6 +94,9 @@ class AnnounceVoiceMixin:
                     continue
                 ev = json.loads(raw)
                 t = ev.get("type")
+                seen[t] = seen.get(t, 0) + 1
+                if t not in QUIET_EVENTS and len(other) < 12:
+                    other.append(raw[:300])
                 if t == "session.started" and not started:
                     started = True
                     feeder = asyncio.create_task(self._feed_silence(ws))
@@ -137,9 +145,22 @@ class AnnounceVoiceMixin:
             logger.info("Announcement audio: %.1f s", len(pcm) / BYTES_PER_SEC)
             if len(pcm) >= MIN_SPEECH_S * BYTES_PER_SEC:
                 break
-            if attempt == 1:
-                logger.warning("GPT Live did not speak, trying once more")
+            logger.warning("GPT Live did not speak (try %d): events %s", attempt,
+                           json.dumps(self._speak_seen["events"], ensure_ascii=False))
         return pcm
+
+    async def _speak_test(self, text: str, instructions: str, prompt: str) -> dict:
+        """One spoken sentence without a listener and without any trace, for /api/kopf/stimme:
+        how long she spoke and what GPT Live sent (to find out why she sometimes stays silent)."""
+        loop = asyncio.get_event_loop()
+        t0 = loop.time()
+        ws, warm = await self._take_live()
+        try:
+            pcm = await self._collect_speech(ws, prompt, 30.0, instructions)
+        finally:
+            await ws.close()
+        return {"ok": True, "audio_s": round(len(pcm) / BYTES_PER_SEC, 1), "warm": warm,
+                "took_s": round(loop.time() - t0, 1), **self._speak_seen}
 
     async def _tv_down_for_announcement(self) -> None:
         """Turn the TV down before an announcement, unless a conversation already did."""
