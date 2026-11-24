@@ -406,10 +406,11 @@ async function saveFields(fields){if(!view)return false;
 let sec=null,menuOpen=false,LASTD=null;
 const SECNAME={family:'Familie und Haushalt',friends:'Freunde und Verwandte',leyla:'Leylas Geschichte',private:'Privat',mail:'Google verbinden',lamps:'Lampenfarben',set:'Einstellungen'};
 const SECICON={family:'👪',friends:'🤝',leyla:'💜',private:'🔒',mail:'✉',lamps:'💡',rules:'📜',diary:'📔',full:'⛶',set:'⚙'};
+let LOOKS=[];  /* her dresses, filled by clipsLoad */
 function menuItems(){const it=[];const ls=(LASTD&&LASTD.lists)||[];
  for(const l of ls)it.push([l.kind,l.title,l.items.length]);
  if(CODE&&GM.shown&&GM.needs)it.push(['mail','Google verbinden','']);if(lampOn)it.push(['lamps','Lampenfarben','']);
- if(CODE){it.push(['diary','Tagebuch','']);it.push(['rules','So ist Leyla',''])};it.push(['full','Vollbild','']);it.push(['set','Einstellungen','']);return it;}
+ if(CODE){it.push(['diary','Tagebuch','']);it.push(['rules','So ist Leyla',''])};if(LOOKS.length>1)it.push(['look','Kleid wechseln','']);it.push(['full','Vollbild','']);it.push(['set','Einstellungen','']);return it;}
 function drawMenu(){const m=document.getElementById('menu');m.innerHTML='';m.style.display=menuOpen?'block':'none';document.getElementById('micon').classList.toggle('open',menuOpen);if(!menuOpen)return;
  for(const [k,t,n] of menuItems()){const b=document.createElement('button');b.className='mi';const i=document.createElement('i');i.textContent=SECICON[k]||'•';
   const sp=document.createElement('span');sp.textContent=t;const sm=document.createElement('small');sm.textContent=n===''?'':String(n);const ch=document.createElement('b');ch.textContent='›';
@@ -417,6 +418,10 @@ function drawMenu(){const m=document.getElementById('menu');m.innerHTML='';m.sty
 document.getElementById('micon').onclick=()=>{menuOpen=!menuOpen;snd[menuOpen?'on':'off']();drawMenu();};
 document.getElementById('cmenu').onclick=e=>{e.stopPropagation();document.getElementById('micon').onclick();};
 function openSec(k){menuOpen=false;drawMenu();if(k==='rules'){openRules();return;}if(k==='diary'){openDiary();return;}
+ if(k==='look'){  /* 2.146.3 (Metin wants to look at the clips of the other dress): the next look, kept for today like the one picked at random */
+  const i=LOOKS.indexOf(OUTFIT),nx=LOOKS[(i+1)%LOOKS.length];
+  try{localStorage.setItem('loutfit',nx);localStorage.setItem('loutfitday',dressDay());localStorage.setItem('lseen',String(Date.now()));}catch(e){}
+  location.reload();return;}
  if(k==='full'){  /* 2.134.2 (Metin): the stage over the whole phone, without the address bar */
   const on=!document.fullscreenElement;
   try{localStorage.setItem('lfull',on?'1':'0');}catch(e){}  /* 2.134.4: remembered, so the next visit goes full screen at his first touch; a browser never allows it without one */
@@ -579,7 +584,7 @@ window.addEventListener('appinstalled',()=>{INST=null;diag('installed');});
 setTimeout(()=>diag('open'),4000);  /* 2.134.3: only with a service worker does Chrome install the page as an app, and only then does the manifest's fullscreen apply */
 async function clipsLoad(){let outs={};try{outs=(await (await fetch('/clips.json')).json()).outfits||{};}catch(e){}
  for(const k in outs){CVER[k]=outs[k].v||0;const r=outs[k].r||{};for(const c in r)RATE[k+'/'+c]=r[c];const q=outs[k].k||{};for(const c in q)KURVE[k+'/'+c]=q[c];const sc=outs[k].s||{};for(const c in sc)SCHNITT[k+'/'+c]=sc[c];}  /* 2.136.0 (Metin): his tempo from the tester, the clip files stay untouched */
-NIGHT=outs.nacht?outs.nacht.clips:[];NIGHTBODY=!!(outs.nacht&&outs.nacht.body);delete outs.nacht;PET=outs.mokka&&outs.mokka.alpha||[];delete outs.mokka;const names=Object.keys(outs);
+NIGHT=outs.nacht?outs.nacht.clips:[];NIGHTBODY=!!(outs.nacht&&outs.nacht.body);delete outs.nacht;PET=outs.mokka&&outs.mokka.alpha||[];delete outs.mokka;const names=Object.keys(outs);LOOKS=names.slice().sort();
  let last='',lday='',seen=0;try{last=localStorage.getItem('loutfit')||'';lday=localStorage.getItem('loutfitday')||'';seen=Number(localStorage.getItem('lseen')||0);}catch(e){}
  let mokpend=false;try{mokpend=!localStorage.getItem('lmokka');}catch(e){}
  const mok=PET.length&&mokpend?names.filter(n=>(outs[n].clips||[]).includes('freizeitmokka')):[];  /* until Metin's surprise has played she wears the dress that has the discovery clip (2.133.6) */

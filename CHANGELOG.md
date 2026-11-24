@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.146.3 (24 Nov 2026)
+
+- Menu entry "Kleid wechseln" (Metin wanted to look at clips of the dress she is not wearing): switches to her other dress and keeps it for the day like the one she picked herself. Tested in headless Chrome with two looks.
+
 ## 2.146.2 (24 Nov 2026)
 
 - `fix`: the phone copies keep their sound. They were made without a sound track, and since the phone always gets the copy (2.143.0) every clip with sound (kiss, rose, touch reactions) was silent on the phone. The sound track is now copied unchanged into the copy; all copies are made once more. Tested with a clip with and without sound.
