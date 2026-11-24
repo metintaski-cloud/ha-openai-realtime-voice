@@ -341,7 +341,7 @@ Von Claude eingesetzt (beide Bilder und "4K · 10s · Adaptive · 1", 350 Credit
 
 "0–2s: She reacts with a sweet little jump to an unexpected playful sensation on her bottom and looks into the camera with wide, amused eyes, her book staying in the same arm the whole time. 2–5s: Playfully she reaches back with her free hand and lays it protectively over her bottom, giving him a scolding, amused smile and swaying her hips slowly. 5–8s: She turns a little to one side, her free hand still resting behind her, and looks at him over her shoulder with a seductive, shy smile. 8–10s: She turns back to face him, lets her free hand sink, smiles at him lovingly and returns to her initial pose. She holds only one book, always in the same arm. Soft, feminine, sensual body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-Vorgesehen als `kurz/po2`. Ergebnis hier nachtragen.
+Von Metin gestartet 22:24. **Ergebnis (Clip `..._She__1373_0.mp4`, Download 22:30):** kleiner Hüpfer mit offenem Mund, die freie Hand geht hinter sie, sie dreht ins Profil und schaut über die Schulter (5,5 bis 7,5 s), dreht zurück, Grundpose ab 8,5 s; das Buch bleibt die ganze Zeit im selben Arm, nur ein Buch. Bewegungsmenge im Mittel 4,86, Naht 0,61. Seit 22:31 als `kurz/po2` in 4K mit Ton eingebaut. Der Satz "She holds only one book, always in the same arm" hat gewirkt.
 
 **Po 2, kurzes Freizeitkleid: wo war das? (21:46).** Sie zuckt, schaut neugierig erst über die eine, dann über die andere Schulter, als wollte sie ihren eigenen Po sehen, streicht dann das Kleid über den Hüften glatt und wiegt einmal langsam die Hüfte.
 
