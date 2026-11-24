@@ -30,7 +30,7 @@ Ablauf, jedes Mal, direkt bevor der Prompt in Kling getippt wird (nicht aus dem 
    - verliebt: sie schaut die meiste Zeit in die Kamera, also ihn an; das Wort selbst ("in love", "loving") kommt nicht in den Prompt, weil es abstrakt ist und aufgedreht wird.
    - feminin: Kopf neigen, Haare hinters Ohr, Gewicht verlagern, Hüfte und Schultern gehen mit; nichts Großes, nichts Schnelles.
 
-7. **Bein und Arm Bewegungen nicht gleich (Metin, 24.11.2026, 17:37).** So verstanden und Metin so gesagt: die Clips einer Gruppe dürfen nicht alle dieselbe Bein und Arm Bewegung zeigen, und innerhalb eines Clips laufen Beine und Arme nicht im Gleichschritt. Vor jedem Prompt gegen die anderen Clips desselben Kleids halten: jede Schleife hat ihre eigene Bewegung (eine über die Beine, eine über die freie Hand, eine über Blick und Schultern, eine über beide Arme).
+7. **Bein und Arm Bewegungen nicht gleich (Metin, 24.11.2026, 17:37).** Richtig verstanden erst um 18:39 an seiner zweiten Vorlage: in jedem Takt tun Beine und Arme Verschiedenes, und die Beine in jedem Takt etwas anderes (siehe "Das Muster beider Texte zusammen" oben). Die erste Lesart von 17:38 war nur die halbe Wahrheit: die Clips einer Gruppe dürfen nicht alle dieselbe Bein und Arm Bewegung zeigen, und innerhalb eines Clips laufen Beine und Arme nicht im Gleichschritt. Vor jedem Prompt gegen die anderen Clips desselben Kleids halten: jede Schleife hat ihre eigene Bewegung (eine über die Beine, eine über die freie Hand, eine über Blick und Schultern, eine über beide Arme).
 
 ## Metins Vorlage: so müssen die Prompts geschrieben werden (24.11.2026, 18:32)
 
@@ -61,6 +61,24 @@ Baukasten daraus:
 5–8s: [Gegenbewegung: Blick weg, verlegen, der Körper spielt mit]
 8–10s: [Blick zurück zu ihm] + [Geste beenden]
 Soft, feminine, natural body movements. Both feet remain in place. Static camera, full body visible, unchanged background, no zoom, no cuts.
+```
+
+**Das Muster beider Texte zusammen (Metin um 18:39 zur zweiten Fassung: "erkennst du hier wieder ein Muster"):**
+- Jeder Takt hat drei Schichten in einem Satz: ein Gefühl, eine Bewegung oben (Blick, Kopf, Schultern, Hand) und eine Bewegung unten (Schritte auf der Stelle, Beine wechseln und Fersen heben, mit einem Fuß tippen, Gewicht verlagern). Oben und unten tun nie dasselbe, und unten ist es in jedem Takt etwas anderes. Das ist Metins Satz von 17:37, "Beine und Arm Bewegungen nicht gleich"; Claude hatte ihn damals falsch gelesen (als Abwechslung zwischen den Clips).
+- Das Gefühl steht vorn im Satz und begründet die Bewegung ("Happy to see him, she takes ...", "She shyly draws ...").
+- Es gibt keinen toten Anfang: sie bewegt sich ab Sekunde 0. In der ersten Fassung stand im ersten Takt nur ein Blick, und der Clip 360 stand vier Sekunden fast still.
+- Nach den Takten kommt eine Zeile für die ganze Szene: "Continuous, gentle leg and foot movements throughout the scene. Natural hip and upper body movements." Sie hält den Körper die ganze Zeit lebendig.
+- Der Ort ist als Erlaubnis geschrieben, nicht als Klemme: "She remains in the same area without walking away" statt "both feet stay planted".
+- Eine Zeile Körpersprache mit Metins vier Wörtern: "Sweet, shy, feminine and affectionate body language."
+- Der Schluss bleibt die Kamera Zeile.
+
+Baukasten, zweite Stufe (ersetzt den ersten Baukasten, wenn der Clip der zweiten Fassung sitzt):
+```
+0–3s: [Gefühl], she [Bewegung unten] with [Ausdruck].
+3–6s: She [Hauptgeste oben], [andere Bewegung unten].
+6–8s: She [verlegen: Schultern oder Blick], [dritte Bewegung unten] and [Ausdruck].
+8–10s: She [Gewicht], looks [liebevoll] into the camera and returns to her initial pose.
+Continuous, gentle leg and foot movements throughout the scene. Natural hip and upper body movements. She remains in the same area without walking away. Sweet, shy, feminine and affectionate body language. Static camera, full body visible, unchanged background.
 ```
 
 Was aus unserem Log trotzdem im Auge bleibt (beobachten, nicht vorab verbieten): die Tempowörter "gently", "slowly", "soft" brachten bei Clip 5030 Zeitlupe; "him" nennt eine Person, die ins Bild kommen könnte; ein Satz für Start und Endbild und für das Buch fehlt. Tritt eines davon im Ergebnis auf, wird genau das eine Wort geändert. `tools/kling_check.py` zählt bei dieser Form falsch (es erwartet "she" direkt vor dem Verb und hält bei mehr als einem Tempowort an); bis das Ergebnis des ersten Clips da ist, gelten seine Meldungen zu Bewegungen pro Sekunde und Tempowörtern für diese Form nicht, danach wird das Skript an die Form angepasst.
