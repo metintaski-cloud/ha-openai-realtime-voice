@@ -52,9 +52,11 @@ START_HEAD = ("\n\nFÜR DIESES GESPRÄCH MIT METIN ALLEIN (dein Wissen von Anfan
               "vorlesen oder aufzählen, es fließt nur ein, wo es passt)\n")
 # A fresh session once it is clear who talks (2.155.0, server setting `frisch`, see _go_fresh)
 FRESH_MIN_S = 1.2            # let her begin the answer to what was just said
-FRESH_QUIET_S = 0.6          # nothing in the air for this long: now
-FRESH_WAIT_MAX_S = 10.0      # then it is done anyway, unless a tool is still at work
+FRESH_QUIET_S = 0.6          # she has said nothing for this long
+FRESH_HE_QUIET_S = 1.0       # and no word of his came in the transcript for this long: now
+FRESH_WAIT_MAX_S = 10.0      # after this his silence is no longer waited for (the TV talks too)
 FRESH_AFTER_TOOL_S = 12.0    # a delegation without an answer yet counts as at work this long
+FRESH_STALE_TURNS = 2        # the talk went on by more turns than this while it waited: start it again
 FRESH_START_TIMEOUT_S = 6.0
 HISTORY_MAX_TURNS, HISTORY_MAX_CHARS = 24, 6000
 ITEM_ORDER = ("unlock", "heart", "mood", "known", "open", "day", "pet", "follow", "chat",
@@ -293,11 +295,20 @@ class TalkNotesMixin:
                 for sp, t in turns]
 
     async def _go_fresh(self, line, state: dict) -> bool:
-        """Wait for a moment in which nothing is in the air (she has answered, he is not
-        speaking, no tool is at work), start the new session and put it in place. False when
-        it was not done; the talk then simply goes on in the session it has."""
+        """Start the new session at once, while she still answers, and put it in place in the
+        first moment in which nobody speaks. False when it was not done; the talk then simply
+        goes on in the session it has.
+
+        Until 2.158.0 the session was only started once the room was quiet, and "quiet" was
+        read from the microphone level. At home that level never drops (the TV runs on, turned
+        down), so the wait always ran its full 10 s and the exchange then came whenever that
+        was: on 24 Nov 2026 exactly as she began to answer, her sentence broke off and she
+        started again. Now nothing she says is ever cut: she must have been silent for
+        FRESH_QUIET_S, and his silence is read from the transcript (the last word of his),
+        not from the room."""
         loop = asyncio.get_event_loop()
         t0 = loop.time()
+        give_up = FRESH_WAIT_MAX_S + FRESH_AFTER_TOOL_S
 
         def at_work() -> bool:  # a tool runs, or a delegation has not been answered yet
             asked = state.get("last_delegation_at", -1000.0)
@@ -305,44 +316,64 @@ class TalkNotesMixin:
                 time.monotonic() - asked < FRESH_AFTER_TOOL_S
                 and state.get("last_audio_time", 0.0) < asked)
 
-        while True:
-            now, waited = time.monotonic(), loop.time() - t0
+        async def prepare():
+            """A started session with what she may know now and the talk so far, or None."""
+            items, report = list(state.get("start_items", [])), {}
+            turns = len(state.get("dialog", []))
+            payload = self._session_start(state.get("context_extra", ""), (items, report),
+                                          history=self._history(state.get("dialog", [])))
+            ws = None
+            try:
+                ws, _ = await self._take_live()
+                await ws.send(json.dumps(payload))
+                await asyncio.wait_for(self._wait_started(ws), FRESH_START_TIMEOUT_S)
+            except Exception as e:
+                logger.warning("Fresh session did not start (%s)", e or type(e).__name__)
+                if ws is not None:
+                    self._in_background(self._close_quietly(ws))
+                return None
+            return ws, items, report, payload, turns
+
+        while at_work():  # what a tool brings back belongs to the session that asked for it
             if state.get("closing"):
                 return False
-            quiet = (now - state.get("last_audio_time", 0.0) > FRESH_QUIET_S
-                     and now - state.get("last_voice_at", 0.0) > FRESH_QUIET_S)
-            if not at_work() and ((quiet and waited >= FRESH_MIN_S) or waited >= FRESH_WAIT_MAX_S):
-                break
-            if waited >= FRESH_WAIT_MAX_S + FRESH_AFTER_TOOL_S:
+            if loop.time() - t0 >= give_up:
                 logger.info("Fresh session: a tool was at work for too long")
                 return False
             await asyncio.sleep(0.05)
-        waited = loop.time() - t0
-        items = list(state.get("start_items", []))
-        report: dict = {}
-        payload = self._session_start(state.get("context_extra", ""), (items, report),
-                                      history=self._history(state.get("dialog", [])))
-        ws = None
-        try:
-            ws, _ = await self._take_live()
-            await ws.send(json.dumps(payload))
-            await asyncio.wait_for(self._wait_started(ws), FRESH_START_TIMEOUT_S)
-        except Exception as e:
-            logger.warning("Fresh session did not start (%s)", e or type(e).__name__)
-            if ws is not None:
+        ready = await prepare()
+        if ready is None:
+            return False
+        started_s, again = loop.time() - t0, False
+        while True:
+            ws, items, report, payload, turns = ready
+            now, waited = time.monotonic(), loop.time() - t0
+            her_quiet = now - state.get("last_audio_time", 0.0) > FRESH_QUIET_S
+            he_quiet = now - state.get("last_speech_at", 0.0) > FRESH_HE_QUIET_S
+            if state.get("closing") or waited >= give_up:
+                if not state.get("closing"):
+                    logger.info("Fresh session: no moment came in which nobody spoke")
                 self._in_background(self._close_quietly(ws))
-            return False
-        if state.get("closing") or at_work():  # the talk moved on meanwhile: leave it be
-            self._in_background(self._close_quietly(ws))
-            return False
+                return False
+            if (not at_work() and her_quiet and waited >= FRESH_MIN_S
+                    and (he_quiet or waited >= FRESH_WAIT_MAX_S)):
+                if again or len(state.get("dialog", [])) - turns <= FRESH_STALE_TURNS:
+                    break
+                # the talk went on while the session waited: it shall know that too
+                self._in_background(self._close_quietly(ws))
+                again, ready = True, await prepare()
+                if ready is None:
+                    return False
+                continue
+            await asyncio.sleep(0.05)
         old = line.swap(ws)
         self._in_background(self._close_quietly(old))
         state["fresh_done"] = state.get("fresh_done", 0) + 1
         state["start_held"] = report.get("start_held")
         logger.info("Fresh session in place: %d characters of her knowledge, %d turns of the "
-                    "talk, waited %.1f s for a quiet moment, started in %.1f s%s",
+                    "talk, ready after %.1f s, in place after %.1f s%s%s",
                     sum(len(t) for _, t in items), len(payload["session"].get("input", [])),
-                    waited, loop.time() - t0 - waited,
+                    started_s, loop.time() - t0, ", started twice" if again else "",
                     ", held back: %s" % report["start_held"] if report.get("start_held") else "")
         return True
 

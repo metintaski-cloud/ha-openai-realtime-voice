@@ -117,7 +117,7 @@ def test_a_fresh_session_takes_the_place_once_nothing_is_in_the_air(monkeypatch)
         state["last_audio_time"] = time.monotonic()          # she is still answering: wait
         home._start_fresh(line, state, [("private", "P"), ("unlock", "U"), ("diary", "D")], ["fallback"])
         await asyncio.sleep(0.25)
-        assert line.ws is old and not home.payloads
+        assert line.ws is old and len(home.payloads) == 1    # started already, not yet in place
         state["last_audio_time"] = time.monotonic() - 1.0    # she is done
         await asyncio.wait_for(state["fresh_task"], 3)
         await asyncio.sleep(0.01)
@@ -127,6 +127,74 @@ def test_a_fresh_session_takes_the_place_once_nothing_is_in_the_air(monkeypatch)
     extra, items, history = home.payloads[0]
     assert extra == "ctx" and [k for k, _ in items] == ["unlock", "diary", "private"]   # in her order
     assert [m["role"] for m in history] == ["user", "assistant"] and new.sent[0]["session"]["input"] == history
+
+
+def test_she_is_never_cut_off_and_his_silence_is_read_from_his_words(monkeypatch):
+    """24 Nov 2026 at home: the exchange came as she began to answer and her sentence broke off;
+    the room is never quiet there (TV), so the microphone level is no sign any more."""
+    monkeypatch.setattr(talk_notes, "FRESH_MIN_S", 0.05)
+    monkeypatch.setattr(talk_notes, "FRESH_QUIET_S", 0.1)
+    monkeypatch.setattr(talk_notes, "FRESH_HE_QUIET_S", 0.2)
+    monkeypatch.setattr(talk_notes, "FRESH_WAIT_MAX_S", 0.6)
+    monkeypatch.setattr(talk_notes, "FRESH_AFTER_TOOL_S", 5.0)
+
+    async def go():
+        old, new = Conn("old"), Conn("new", [{"type": "session.started"}])
+        line, home, state = live_link.LiveLine(old), Home(new), quiet_state()
+        stop = []
+
+        async def room():   # the TV keeps the microphone loud all the time; she talks until told
+            while not stop:
+                state["last_voice_at"] = time.monotonic()
+                if "she" not in stop and "her_done" not in state:
+                    state["last_audio_time"] = time.monotonic()
+                await asyncio.sleep(0.02)
+        noise = asyncio.ensure_future(room())
+        home._start_fresh(line, state, [("unlock", "U")], ["fallback"])
+        await asyncio.sleep(0.9)                               # past the longest wait for his silence
+        still_old = line.ws is old                             # she is speaking: nothing is exchanged
+        state["her_done"] = True
+        state["last_speech_at"] = time.monotonic()             # and he says something right then
+        await asyncio.wait_for(state["fresh_task"], 3)
+        stop.append(1)
+        await noise
+        return still_old, line.ws is new
+    assert asyncio.run(go()) == (True, True)
+
+
+def test_his_words_hold_the_exchange_back_until_he_is_through(monkeypatch):
+    monkeypatch.setattr(talk_notes, "FRESH_MIN_S", 0.05)
+    monkeypatch.setattr(talk_notes, "FRESH_QUIET_S", 0.05)
+    monkeypatch.setattr(talk_notes, "FRESH_HE_QUIET_S", 0.3)
+
+    async def go():
+        old, new = Conn("old"), Conn("new", [{"type": "session.started"}])
+        line, home, state = live_link.LiveLine(old), Home(new), quiet_state()
+        state["last_speech_at"] = time.monotonic()             # a word of his just came
+        home._start_fresh(line, state, [("unlock", "U")], ["fallback"])
+        await asyncio.sleep(0.15)
+        mid = line.ws is old
+        await asyncio.wait_for(state["fresh_task"], 3)
+        return mid, line.ws is new
+    assert asyncio.run(go()) == (True, True)
+
+
+def test_a_session_that_waited_while_the_talk_went_on_is_started_again_with_all_of_it(monkeypatch):
+    monkeypatch.setattr(talk_notes, "FRESH_MIN_S", 0.05)
+    monkeypatch.setattr(talk_notes, "FRESH_QUIET_S", 0.05)
+
+    async def go():
+        old, new = Conn("old"), Conn("new", [{"type": "session.started"}, {"type": "session.started"}])
+        line, home, state = live_link.LiveLine(old), Home(new), quiet_state()
+        state["last_audio_time"] = time.monotonic() + 0.3      # she talks for a while
+        home._start_fresh(line, state, [("unlock", "U")], ["fallback"])
+        await asyncio.sleep(0.1)
+        state["dialog"] += [("bot", "eins"), ("user", "zwei"), ("bot", "drei")]   # three more turns
+        await asyncio.wait_for(state["fresh_task"], 3)
+        return line, new, home
+    line, new, home = asyncio.run(go())
+    assert line.ws is new and len(home.payloads) == 2
+    assert len(home.payloads[0][2]) == 2 and len(home.payloads[1][2]) == 5       # the second one knows it all
 
 
 def test_while_a_tool_is_at_work_nothing_is_exchanged_and_then_the_notes_go_out(monkeypatch):

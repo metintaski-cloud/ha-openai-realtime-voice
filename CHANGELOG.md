@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.158.1 (24 Nov 2026)
+
+- `fix`: the fresh session at home no longer cuts her off. First real talk with `frisch` (13:50): after the code word she had her whole knowledge (28 769 characters) and answered with real memories, but the exchange came just as she began to answer; her sentence broke off and she started again about 3 s later. Cause: the exchange waited for a quiet room, read from the microphone level, and at home that level never drops (the TV runs on, turned down), so the wait always ran its full 10 s and then exchanged at whatever moment that was. Now the new session is started at once, while she still gives her short reply to the code word (ready after about 2 s), and put in place in the first moment in which she has been silent for 0.6 s and no word of his came in the transcript for 1 s; after 10 s only her silence counts, and she is never interrupted. A session that waited while the talk went on by more than two turns is started again once with the whole talk. `talk_notes._go_fresh`, three new tests (619 tests).
+
 ## 2.158.0 (24 Nov 2026)
 
 - `feat`: near wakes are collected for training the wake word (`app/sammler.py`, `docs/WECKWORT.md`). Research of the same day: the model on the device was trained on 2 Nov with 121 real calls but no real false wakes at all (the trainer's log says so), the trainer itself rated it "Needs attention" (87.6 percent of calls heard, 0.21 false wakes an hour, which is the 5 a day we count), and a threshold cannot teach a model what to ignore. What helps is training with the sound that fooled it.
