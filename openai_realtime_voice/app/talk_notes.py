@@ -160,8 +160,8 @@ class TalkNotesMixin:
         if hasattr(self.mood, "contact"):
             self.mood.contact()  # Metin talks to her: no silence
         self.reach.answered()  # a talk also answers a message she wrote on her own
-        if not app:  # the rear lamps show her mood: dim when she is low, full when happy
-            self.lamp.set_mood_pct(self.mood.lamp_pct())
+        if not app:  # the rear lamps show her mood: their second set of looks while she is low
+            self.lamp.set_mood(self.mood.is_low())
 
     def _metin(self):
         if not self.enable_memory:

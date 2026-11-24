@@ -920,7 +920,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             return
         if sum(1 for s, _ in state.get("dialog", []) if s == "user") >= MOOD_LAMP_TURNS:
             state["mood_lamp"] = True
-            self.lamp.set_mood_pct(self.mood.lamp_pct())
+            self.lamp.set_mood(self.mood.is_low())
 
     async def _maybe_couple_word(self, live_ws, state: dict) -> None:
         """Someone said a pet word to Leyla and no name is known: she must ask who says it."""

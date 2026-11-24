@@ -290,6 +290,10 @@ button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 .card button,.lb button{width:auto;font-size:15px;padding:10px 14px;box-shadow:none;background:#1b2a6b;border:1px solid var(--cy)}
 .lb{display:flex;gap:10px;margin:4px 12px 8px}.lb button{flex:1}
 #lmsg{margin:0 16px 8px;min-height:20px;color:#9fb4ff;font-size:14px}
+#lamps h3{margin:16px 16px 8px;font-size:15px;font-weight:600;color:#9fb4ff}
+.card .lv{flex-basis:100%;display:flex;align-items:center;gap:10px}
+.card .lv input{flex:1;min-width:0;accent-color:#22d3ee}
+.card .lv span{min-width:52px;text-align:right;color:#9fb4ff;font-size:14px}
 #rules{position:fixed;inset:0;z-index:20;overflow-y:auto;background:#000;padding-bottom:40px;display:none}
 #rules .top{position:sticky;top:0;display:flex;align-items:center;gap:12px;padding:14px 16px;background:#000000ee;backdrop-filter:blur(6px)}
 #rules .top button{width:auto;font-size:26px;line-height:1;padding:6px 14px;box-shadow:none;background:#1b2a6b;border:1px solid #3b82f688}
@@ -1027,25 +1031,32 @@ document.getElementById('del').onclick=async()=>{if(!sel.size)return;
 
 let lampOn=false;
 const LROWS=[['listen','Zuhören',['listen']],['think','Denken und Suchen',['think']],['speak','Reden',['speak_low','speak_high']]];
+const LSETS=[['','Wenn Leyla glücklich ist'],['sad_','Wenn Leyla traurig oder eifersüchtig ist']];
 function lmsg(t){document.getElementById('lmsg').textContent=t;}
 const LTXT={ok:'',busy:'Leyla spricht gerade, bitte danach testen.',off:'Lampenshow ist aus.',failed:'Eine Lampe antwortet nicht, Leyla versucht es weiter.',error:'Hat nicht geklappt.'};
 async function lampPost(path,body){try{const r=await fetch(path,{method:'POST',body:JSON.stringify(body||{})});return await r.json();}catch(e){return {result:'error'};}}
+async function lampSave(body){const j=await lampPost('/api/lamp/colors',body);if(j.ok){snd.save();lmsg('Gespeichert.');}else lmsg(LTXT.error);}
 async function loadLamps(){let d;try{d=await (await fetch('/api/lamp')).json();}catch(e){return;}
  lampOn=!!d.available;const box=document.getElementById('lamps');box.innerHTML='';if(!lampOn){box.style.display='none';return;}
  box.style.display=(sec==='lamps'&&!view)?'block':'none';
  const h=document.createElement('h2');h.textContent='Lampenfarben';box.appendChild(h);
- for(const [mode,name,keys] of LROWS){const c=document.createElement('div');c.className='card';
+ for(const [pre,title] of LSETS){const t=document.createElement('h3');t.textContent=title;box.appendChild(t);
+ for(const [m0,name,k0] of LROWS){const mode=pre+m0,keys=k0.map(k=>pre+k);const c=document.createElement('div');c.className='card';
   const n=document.createElement('div');n.className='n';n.innerHTML=esc(name)+(keys.length>1?'<small>leise und laut, das Licht wechselt mit ihrer Stimme</small>':'');c.appendChild(n);
   for(const k of keys){const i=document.createElement('input');i.type='color';i.value=d.colors[k];i.title=d.labels[k];
-   i.onchange=async()=>{const j=await lampPost('/api/lamp/colors',{colors:{[k]:i.value}});if(j.ok){snd.save();lmsg('Gespeichert.');}else lmsg(LTXT.error);};c.appendChild(i);}
+   i.onchange=()=>lampSave({colors:{[k]:i.value}});c.appendChild(i);}
   const b=document.createElement('button');b.textContent='Testen';
-  b.onclick=async()=>{b.disabled=true;lmsg('Die Lampen zeigen die Farbe kurz und gehen dann zurück.');snd.on();
+  b.onclick=async()=>{b.disabled=true;lmsg('Die Lampen zeigen das Licht kurz und gehen dann zurück.');snd.on();
    const j=await lampPost('/api/lamp/test',{mode});lmsg(LTXT[j.result]||'');b.disabled=false;};
-  c.appendChild(b);box.appendChild(c);}
+  c.appendChild(b);
+  const lv=document.createElement('div');lv.className='lv';const r=document.createElement('input');r.type='range';r.min=5;r.max=100;r.step=5;r.value=d.levels[mode];r.title='Helligkeit';
+  const p=document.createElement('span');p.textContent=r.value+' %';r.oninput=()=>{p.textContent=r.value+' %';};
+  r.onchange=()=>lampSave({levels:{[mode]:+r.value}});lv.append(r,p);c.appendChild(lv);box.appendChild(c);}}
  const row=document.createElement('div');row.className='lb';
- const df=document.createElement('button');df.textContent='Standardfarben';
- df.onclick=async()=>{if(!confirm('Alle Farben auf die Leyla Farben zurückstellen?'))return;
-  const j=await lampPost('/api/lamp/colors',{colors:{listen:null,think:null,speak_low:null,speak_high:null}});if(j.ok){snd.save();loadLamps();}};
+ const df=document.createElement('button');df.textContent='Standardwerte';
+ df.onclick=async()=>{if(!confirm('Alle Farben und Helligkeiten auf die Leyla Werte zurückstellen?'))return;
+  const nul=o=>Object.fromEntries(Object.keys(o).map(k=>[k,null]));
+  const j=await lampPost('/api/lamp/colors',{colors:nul(d.colors),levels:nul(d.levels)});if(j.ok){snd.save();loadLamps();}};
  const rs=document.createElement('button');rs.textContent='Lampen zurücksetzen';
  rs.onclick=async()=>{rs.disabled=true;lmsg('Lampen werden zurückgestellt …');const j=await lampPost('/api/lamp/reset');
   lmsg(j.result==='ok'?'Lampen sind zurückgestellt.':(LTXT[j.result]||''));rs.disabled=false;};
@@ -1202,16 +1213,17 @@ async def _lamp_api(lamp, method: str, path: str, body: bytes):
         if lamp is None or not lamp.available:
             return {"available": False}
         from app.lamp_show import COLOR_LABELS
-        return {"available": True, "colors": lamp.colors_hex(), "labels": COLOR_LABELS}
+        return {"available": True, "colors": lamp.colors_hex(), "labels": COLOR_LABELS,
+                "levels": dict(lamp.levels)}
     if method != "POST" or path not in ("/api/lamp/colors", "/api/lamp/test", "/api/lamp/reset"):
         return None
     if lamp is None or not lamp.available:
         return {"ok": False, "result": "off"}
     d = json.loads(body or b"{}") or {}
     if path == "/api/lamp/colors":
-        ok = lamp.set_colors(d.get("colors"))
+        ok = lamp.set_colors(d.get("colors"), d.get("levels"))
         if ok:
-            logger.info("Memory page: lamp colours changed to %s", lamp.colors_hex())
+            logger.info("Memory page: lamp looks changed to %s, strengths %s", lamp.colors_hex(), lamp.levels)
         return {"ok": ok}
     if path == "/api/lamp/test":
         return {"result": await lamp.preview(str(d.get("mode")))}

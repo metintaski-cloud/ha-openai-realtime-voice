@@ -88,8 +88,8 @@ class ToolLinkMixin:
             return {"erinnerung": note.strip()}
 
         def mood_after(args, result):
-            if self.lamp.mood_pct is not None:  # only in a voice talk after the code word
-                self.lamp.set_mood_pct(self.mood.lamp_pct())
+            if self.lamp.mood_low is not None:  # only in a talk in which the lamps show her mood
+                self.lamp.set_mood(self.mood.is_low())
 
         def cleanup_after(args, result):
             if args.get("action") == "streichen" and self.todo_sync:

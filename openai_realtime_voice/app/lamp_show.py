@@ -28,15 +28,25 @@ CYAN = (34, 211, 238)
 BLUE = (59, 130, 246)
 VIOLET = (168, 85, 247)
 MAGENTA = (217, 70, 239)
-DEFAULT_COLORS = {"listen": CYAN, "think": VIOLET, "speak_low": BLUE, "speak_high": MAGENTA}
+ORANGE = (249, 115, 22)
+# Two sets of looks (Metin, 24 Nov 2026): the normal one, and one for a talk with him while
+# she is low (keys with "sad_"). By day the old sign of a low, every look at 5 percent, could
+# not be told from lamps that are off, so a low now has its own listening colour, and every
+# look has its own colour and its own strength, all chosen in the app.
+SAD = "sad_"
+DEFAULT_COLORS = {"listen": CYAN, "think": VIOLET, "speak_low": BLUE, "speak_high": MAGENTA,
+                  "sad_listen": ORANGE, "sad_think": VIOLET, "sad_speak_low": BLUE,
+                  "sad_speak_high": MAGENTA}
 COLOR_LABELS = {"listen": "Zuhören", "think": "Denken", "speak_low": "Reden leise",
-                "speak_high": "Reden laut"}
+                "speak_high": "Reden laut", "sad_listen": "Zuhören, traurig",
+                "sad_think": "Denken, traurig", "sad_speak_low": "Reden leise, traurig",
+                "sad_speak_high": "Reden laut, traurig"}
+MODES = ("listen", "think", "speak")
+DEFAULT_LEVELS = {"listen": 100, "think": 100, "speak": 100,   # brightness percent of each look
+                  "sad_listen": 50, "sad_think": 50, "sad_speak": 50}
+LEVEL_TOLERANCE = 8       # of 255: a lamp reports the strength it was given this exactly
 PREVIEW_S = 4.0           # how long a colour test in the app shows
 HEX_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
-LISTEN_PCT = 100
-THINK_PCT = 100
-SPEAK_MIN_PCT = 100  # the breathing is in the colour, the lamps stay at full strength
-SPEAK_MAX_PCT = 100
 LEVEL_FULL_RMS = 5000.0   # rms that counts as full loudness
 MIN_INTERVAL_S = 0.5      # at most two commands a second: Matter over Thread chokes on more (14 Nov 2026)
 LEVEL_STEPS = 4           # loudness in 5 steps, so small changes send nothing
@@ -57,12 +67,14 @@ def mix(a: tuple, b: tuple, t: float) -> tuple:
     return tuple(round(a[i] + (b[i] - a[i]) * t) for i in range(3))
 
 
-def speak_look(level: float, colors: Optional[dict] = None) -> tuple[tuple, int]:
-    """Colour and brightness percent for a loudness between 0 (quiet) and 1 (loud)."""
-    c = colors or DEFAULT_COLORS
+def speak_look(level: float, colors: Optional[dict] = None, sad: bool = False,
+               levels: Optional[dict] = None) -> tuple[tuple, int]:
+    """Colour and brightness percent for a loudness between 0 (quiet) and 1 (loud). The
+    breathing is in the colour, the strength stays the one chosen for speaking."""
+    c, pre = colors or DEFAULT_COLORS, SAD if sad else ""
     level = max(0.0, min(1.0, level))
-    return (mix(c["speak_low"], c["speak_high"], level),
-            round(SPEAK_MIN_PCT + (SPEAK_MAX_PCT - SPEAK_MIN_PCT) * level))
+    return (mix(c[pre + "speak_low"], c[pre + "speak_high"], level),
+            (levels or DEFAULT_LEVELS)[pre + "speak"])
 
 
 def to_hex(rgb: tuple) -> str:
@@ -73,6 +85,13 @@ def from_hex(text) -> Optional[tuple]:
     if not isinstance(text, str) or not HEX_RE.match(text):
         return None
     return tuple(int(text[i:i + 2], 16) for i in (1, 3, 5))
+
+
+def _pct(value) -> Optional[int]:
+    """A brightness percent from the app: a whole number from 1 to 100, else None."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not 1 <= value <= 100:
+        return None
+    return round(value)
 
 
 def _hue(rgb: tuple) -> tuple[float, float]:
@@ -89,21 +108,32 @@ def level_from_rms(rms: float) -> float:
     return max(0.0, min(1.0, rms / LEVEL_FULL_RMS))
 
 
-def is_show_look(state: dict, colors: Optional[dict] = None) -> bool:
-    """True for a lamp that shows one of the show colours at full strength (the listen or think
-    colour, or anything between the two speaking colours): such a state comes from a show that was
-    not undone and is never taken as the normal setting."""
-    hs = state.get("hs_color")
-    if (state.get("brightness") or 0) < 250 or not hs or state.get("color_mode") == "color_temp":
+def show_looks(colors: Optional[dict] = None, levels: Optional[dict] = None) -> list:
+    """Every look the show can leave on a lamp, as (hue, saturation, brightness percent)."""
+    c, lv = colors or DEFAULT_COLORS, levels or DEFAULT_LEVELS
+    out = []
+    for pre in ("", SAD):
+        out.append(_hue(c[pre + "listen"]) + (lv[pre + "listen"],))
+        out.append(_hue(c[pre + "think"]) + (lv[pre + "think"],))
+        out += [_hue(mix(c[pre + "speak_low"], c[pre + "speak_high"], i / 8)) + (lv[pre + "speak"],)
+                for i in range(9)]
+    return out
+
+
+def is_show_look(state: dict, colors: Optional[dict] = None, levels: Optional[dict] = None) -> bool:
+    """True for a lamp that shows one of the show looks (the listen or think colour, or anything
+    between the two speaking colours, each at its own strength, normal or low): such a state
+    comes from a show that was not undone and is never taken as the normal setting."""
+    hs, bright = state.get("hs_color"), state.get("brightness") or 0
+    if not bright or not hs or state.get("color_mode") == "color_temp":
         return False
     try:
         hue, sat = float(hs[0]), float(hs[1])
     except (TypeError, ValueError, IndexError):
         return False
-    c = colors or DEFAULT_COLORS
-    looks = [_hue(c["listen"]), _hue(c["think"])]
-    looks += [_hue(mix(c["speak_low"], c["speak_high"], i / 8)) for i in range(9)]
-    return any(s >= 30 and sat >= 30 and _hue_gap(hue, h) <= 20 for h, s in looks)
+    return any(s >= 30 and sat >= 30 and _hue_gap(hue, h) <= 20
+               and abs(bright - round(pct * 2.55)) <= LEVEL_TOLERANCE
+               for h, s, pct in show_looks(colors, levels))
 
 
 def restore_data(entity: str, before: dict) -> tuple[str, dict]:
@@ -128,9 +158,10 @@ class LampShow:
     def __init__(self, entities: list[str], api_url: Optional[str] = None, token: Optional[str] = None,
                  memory_path: str = "/data/lamp_show.json") -> None:
         self.entities = entities
-        self.mood_pct: Optional[int] = None
+        self.mood_low: Optional[bool] = None  # her mood in a talk with Metin (None: not shown)
         self.memory_path = memory_path
         self.colors_path = os.path.join(os.path.dirname(memory_path) or ".", "lamp_colors.json")
+        self.levels: dict = dict(DEFAULT_LEVELS)
         self.colors: dict = self._load_colors()
         self._last_on: dict[str, dict] = {}  # strength and colour each lamp had when last on
         self._pending: dict[str, dict] = {}  # state before a show that is not restored yet
@@ -164,7 +195,7 @@ class LampShow:
             data = {"last_on": data}  # older file: only the last on states
         last_on, pending = data.get("last_on"), data.get("pending")
         self._last_on = {e: v for e, v in (last_on if isinstance(last_on, dict) else {}).items()
-                         if isinstance(v, dict) and not is_show_look(v, self.colors)}
+                         if isinstance(v, dict) and not is_show_look(v, self.colors, self.levels)}
         self._pending = {e: v for e, v in (pending if isinstance(pending, dict) else {}).items()
                          if isinstance(v, dict)}
 
@@ -179,6 +210,7 @@ class LampShow:
 
     # ---- Colours chosen in the app ----
     def _load_colors(self) -> dict:
+        """The colours, and with them the strengths (`levels`, key "pct" of the same file)."""
         colors = dict(DEFAULT_COLORS)
         try:
             with open(self.colors_path) as f:
@@ -187,6 +219,9 @@ class LampShow:
                 rgb = from_hex(data.get(k)) if isinstance(data, dict) else None
                 if rgb:
                     colors[k] = rgb
+            for k, v in (data.get("pct") or {}).items():
+                if k in DEFAULT_LEVELS and _pct(v) is not None:
+                    self.levels[k] = _pct(v)
         except Exception:
             pass
         return colors
@@ -194,25 +229,33 @@ class LampShow:
     def colors_hex(self) -> dict:
         return {k: to_hex(v) for k, v in self.colors.items()}
 
-    def set_colors(self, data) -> bool:
-        """Take new colours ({"listen": "#22d3ee", ...}; missing keys stay, None = default).
-        False when a value is not a colour; then nothing changes."""
-        if not isinstance(data, dict):
+    def set_colors(self, data, levels=None) -> bool:
+        """Take new colours ({"listen": "#22d3ee", ...}) and strengths ({"sad_listen": 40, ...},
+        percent 1 to 100); missing keys stay, None = default. False when a value is not a
+        colour or not a strength; then nothing changes."""
+        if not isinstance(data or {}, dict) or not isinstance(levels or {}, dict):
             return False
-        new = dict(self.colors)
-        for k, v in data.items():
+        new, new_levels = dict(self.colors), dict(self.levels)
+        for k, v in (data or {}).items():
             if k not in DEFAULT_COLORS:
                 return False
             rgb = DEFAULT_COLORS[k] if v is None else from_hex(v)
             if rgb is None:
                 return False
             new[k] = rgb
-        self.colors = new
-        self._sent = None  # a running show takes the new colours at once
+        for k, v in (levels or {}).items():
+            if k not in DEFAULT_LEVELS:
+                return False
+            pct = DEFAULT_LEVELS[k] if v is None else _pct(v)
+            if pct is None:
+                return False
+            new_levels[k] = pct
+        self.colors, self.levels = new, new_levels
+        self._sent = None  # a running show takes the new looks at once
         try:
             tmp = self.colors_path + ".tmp"
             with open(tmp, "w") as f:
-                json.dump(self.colors_hex(), f)
+                json.dump({**self.colors_hex(), "pct": self.levels}, f)
             os.replace(tmp, self.colors_path)
         except Exception as e:
             logger.warning("Lamp show: could not save the colours: %s", e)
@@ -223,7 +266,8 @@ class LampShow:
         is in a conversation or another test runs."""
         if not self.available:
             return "off"
-        if mode not in ("listen", "think", "speak"):
+        sad, mode = mode.startswith(SAD), mode.removeprefix(SAD)
+        if mode not in MODES:
             return "bad"
         if self._active:
             return "busy"
@@ -231,6 +275,7 @@ class LampShow:
         try:
             if self._worker is None:
                 return "error"
+            self.mood_low = sad or None  # `end` takes it back
             if mode == "think":
                 self._mode = "think"
             steps = int(PREVIEW_S / 0.6)
@@ -260,7 +305,7 @@ class LampShow:
             async with httpx.AsyncClient(timeout=5.0) as client:
                 states = {e: await self._read_state(client, e) for e in self.entities}
             for entity, st in states.items():
-                if st.get("state") == "on" and is_show_look(st, self.colors):
+                if st.get("state") == "on" and is_show_look(st, self.colors, self.levels):
                     if await self._restore_one(entity, {"state": "off"}):
                         fixed.append(entity)
         logger.info("Lamp show: reset from the app (%s)", ", ".join(fixed) or "nothing stuck")
@@ -306,7 +351,7 @@ class LampShow:
                     continue
                 now = await self._read_state(client, entity)
                 self._before[entity] = now
-                if now.get("state") == "on" and now.get("brightness") and not is_show_look(now, self.colors):
+                if now.get("state") == "on" and now.get("brightness") and not is_show_look(now, self.colors, self.levels):
                     self._last_on[entity] = dict(now)
         self._pending = {e: dict(b) for e, b in self._before.items()}
         self._save_memory()
@@ -334,9 +379,10 @@ class LampShow:
         self._mode, self._level, self._sent = "listen", 0.0, None
         self._worker = asyncio.create_task(self._run())
 
-    def set_mood_pct(self, pct: Optional[int]) -> None:
-        """Leyla's mood after the code word: every look uses this brightness (None = normal)."""
-        self.mood_pct = pct
+    def set_mood(self, low: Optional[bool]) -> None:
+        """Leyla's mood in a talk with Metin: while she is low the show uses its second set of
+        looks (None or False = the normal ones). `end` forgets it."""
+        self.mood_low = low
 
     def phase(self, name: str) -> None:
         if self._worker is None:
@@ -372,7 +418,7 @@ class LampShow:
         self._active -= 1
         if self._active > 0:
             return
-        self.mood_pct = None
+        self.mood_low = None
         worker, self._worker = self._worker, None
         if worker:
             worker.cancel()
@@ -443,17 +489,14 @@ class LampShow:
 
     # ---- The breathing ----
     def _look(self) -> tuple[tuple, int]:
-        rgb, pct = self._base_look()
-        return rgb, (self.mood_pct if self.mood_pct is not None else pct)
-
-    def _base_look(self) -> tuple[tuple, int]:
+        sad = bool(self.mood_low)
+        pre = SAD if sad else ""
         if self._mode == "speak" and time.monotonic() - self._last_audio > SPEECH_HOLD_S:
             self._mode = "listen"
         if self._mode == "speak":
-            return speak_look(round(self._level * LEVEL_STEPS) / LEVEL_STEPS, self.colors)
-        if self._mode == "think":
-            return self.colors["think"], THINK_PCT
-        return self.colors["listen"], LISTEN_PCT
+            return speak_look(round(self._level * LEVEL_STEPS) / LEVEL_STEPS, self.colors, sad, self.levels)
+        key = pre + ("think" if self._mode == "think" else "listen")
+        return self.colors[key], self.levels[key]
 
     async def _run(self) -> None:
         try:

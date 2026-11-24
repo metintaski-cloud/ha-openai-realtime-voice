@@ -65,11 +65,11 @@ def test_voice_mood_note_tool_and_lamp_brightness(tmp_path):
     d = m._load()
     d.update(mood="traurig", low_day="x")
     m._save(d)
-    assert "laune" in m.voice_note() and "traurig" in m.voice_note() and m.lamp_pct() == 5
+    assert "laune" in m.voice_note() and "traurig" in m.voice_note() and m.is_low()
     first = asyncio.run(m.run({"aktion": "aufgeheitert"}))
-    assert first["ok"] and first["wieder_gut"] is False and m.lamp_pct() == 5
+    assert first["ok"] and first["wieder_gut"] is False and m.is_low()
     asyncio.run(m.run({"aktion": "aufgeheitert"}))
-    assert asyncio.run(m.run({"aktion": "aufgeheitert"}))["wieder_gut"] and m.lamp_pct() == 100
+    assert asyncio.run(m.run({"aktion": "aufgeheitert"}))["wieder_gut"] and not m.is_low()
     assert "laune" not in m.voice_note()
     assert "error" in asyncio.run(m.run({"aktion": "x"}))
 
@@ -78,9 +78,9 @@ def test_lamp_show_uses_the_mood_brightness():
     from app import lamp_show
     ls = lamp_show.LampShow(["light.a"], memory_path="/tmp/ls_test.json")
     ls._mode = "listen"
-    assert ls._look()[1] == 100
-    ls.set_mood_pct(5)
-    assert ls._look()[1] == 5
+    assert ls._look() == (lamp_show.CYAN, 100)
+    ls.set_mood(True)   # 2.159.0: a low has its own looks instead of 5 percent of the normal ones
+    assert ls._look() == (lamp_show.ORANGE, 50)
 
 
 def test_jealousy_comes_more_often(tmp_path):

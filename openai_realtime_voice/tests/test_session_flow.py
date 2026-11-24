@@ -466,9 +466,9 @@ async def test_mood_tool_is_only_for_metin_and_sets_the_lamps(env, tmp_path):
     bridge.mood.path = str(tmp_path / "mood.json")
     blocked = (await call(bridge, "laune", {"aktion": "kompliment"}, {}))[0].result()
     assert "Nicht erlaubt" in blocked["error"]
-    bridge.lamp.set_mood_pct(5)
+    bridge.lamp.set_mood(True)
     done = (await call(bridge, "laune", {"aktion": "kompliment"}, {"unlocked": True}))[0].result()
-    assert done["ok"] and bridge.lamp.mood_pct == 100
+    assert done["ok"] and bridge.lamp.mood_low is False
 
 
 async def test_moods_without_code_only_for_known_metin_and_lamps_only_in_a_real_talk(env, tmp_path):
@@ -478,10 +478,10 @@ async def test_moods_without_code_only_for_known_metin_and_lamps_only_in_a_real_
     assert (await call(bridge, "laune", {"aktion": "erzaehlt"}, {"metin_known": True}))[0].result()["ok"]
     state = {"metin_known": True, "dialog": [("user", "Licht an")]}
     bridge._maybe_mood_lamp(state)
-    assert bridge.lamp.mood_pct is None
+    assert bridge.lamp.mood_low is None
     state["dialog"] += [("leyla", "ok"), ("user", "wie geht's"), ("leyla", "gut"), ("user", "schön")]
     bridge._maybe_mood_lamp(state)
-    assert bridge.lamp.mood_pct == 100 and state["mood_lamp"]
+    assert bridge.lamp.mood_low is False and state["mood_lamp"]
     # 2.158.4: the name alone is no code word, so nothing of the two of them is in his note
     assert "Codewort" in m.KNOWN_WITHOUT_CODE and "kein Flirten" in m.KNOWN_WITHOUT_CODE
 

@@ -126,8 +126,6 @@ MOOD_BACKEND_HINT = (
     "he cheered her up ('aufgeheitert') or that it is not the moment ('nicht_jetzt'). Say "
     "nothing about the function itself."
 )
-SAD_PCT = 5     # the rear lamps when she is low (Metin's wish, 16 Nov 2026)
-HAPPY_PCT = 100
 
 
 def _today(now: float) -> str:
@@ -250,9 +248,9 @@ class Mood:
         return ("Deine Stimmung gerade: " + (LOW if m in LOW else GOOD)[m][1] + " " + TONE[m]
                 + (LOW_VOICE_RULE if m in LOW else ""))
 
-    def lamp_pct(self, now: Optional[float] = None) -> int:
-        """Brightness of the rear lamps in a voice talk after the code word."""
-        return SAD_PCT if self.current(now)["mood"] in LOW else HAPPY_PCT
+    def is_low(self, now: Optional[float] = None) -> bool:
+        """For the rear lamps in a talk with Metin (lamp_show: the second set of looks)."""
+        return self.current(now)["mood"] in LOW
 
     async def run(self, args) -> dict:
         """The tool laune: he cheered her up, or not now."""

@@ -187,7 +187,13 @@ def test_is_show_look():
     assert ls.is_show_look({"brightness": 255, "color_mode": "hs", "hs_color": [228, 62]})
     assert not ls.is_show_look({"brightness": 153, "color_mode": "color_temp", "hs_color": [27, 19]})
     assert not ls.is_show_look({"brightness": 255, "color_mode": "hs", "hs_color": [30, 80]})  # orange
-    assert not ls.is_show_look({"brightness": 120, "color_mode": "hs", "hs_color": [228, 62]})
+    assert not ls.is_show_look({"brightness": 190, "color_mode": "hs", "hs_color": [228, 62]})
+    # 2.159.0: the looks of a low are show looks too, each at its own strength (default 50 %)
+    assert ls.is_show_look({"brightness": 128, "color_mode": "hs", "hs_color": [228, 62]})
+    assert ls.is_show_look({"brightness": 128, "color_mode": "hs", "hs_color": [25, 91]})   # orange, listening while low
+    assert not ls.is_show_look({"brightness": 128, "color_mode": "color_temp", "hs_color": [25, 91]})
+    assert not ls.is_show_look({"brightness": 128, "color_mode": "hs", "hs_color": [25, 91]},
+                               levels={**ls.DEFAULT_LEVELS, "sad_listen": 20})
 
 
 def test_colours_are_chosen_and_kept(tmp_path):
@@ -240,3 +246,63 @@ async def test_smoothing_sends_fewer_commands(monkeypatch, tmp_path):
         await show.end()
         return n
     assert await count(0.08) < await count(0.0001)
+
+
+async def test_a_low_has_its_own_looks_and_every_look_its_own_strength(monkeypatch, tmp_path):
+    """2.159.0 (Metin, 24 Nov 2026): by day lamps at 5 percent could not be told from lamps
+    that are off. A low now shows in its own set of looks; colour and strength of all six
+    (listen, think, speak, normal and low) are chosen in the app and kept."""
+    show, calls = _show(monkeypatch, tmp_path)
+    assert show.levels == ls.DEFAULT_LEVELS and show.colors["sad_listen"] == ls.ORANGE
+    show._mode = "listen"
+    assert show._look() == (ls.CYAN, 100)
+    show.set_mood(False)
+    assert show._look() == (ls.CYAN, 100)
+    show.set_mood(True)
+    assert show._look() == (ls.ORANGE, 50)
+    show._mode = "think"
+    assert show._look() == (ls.VIOLET, 50)
+    # chosen in the app: wrong values change nothing, good ones are kept across a restart
+    for bad in ({"sad_listen": 0}, {"sad_listen": 101}, {"sad_listen": "50"}, {"other": 50}, {"listen": True}):
+        assert not show.set_colors(None, bad)
+    assert not show.set_colors({"sad_listen": "#00ff00"}, {"listen": 500}) and show.colors["sad_listen"] == ls.ORANGE
+    assert show.set_colors({"sad_think": "#00ff00"}, {"sad_think": 35, "listen": 80, "sad_speak": 20})
+    assert show._look() == ((0, 255, 0), 35)
+    again = ls.LampShow(["light.a"], token="t", memory_path=show.memory_path)
+    assert again.levels == {**ls.DEFAULT_LEVELS, "sad_think": 35, "listen": 80, "sad_speak": 20}
+    assert again.colors["sad_think"] == (0, 255, 0) and again.colors["listen"] == ls.CYAN
+    assert ls.speak_look(1.0, again.colors, True, again.levels) == (ls.MAGENTA, 20)
+    assert again.set_colors(None, {"listen": None}) and again.levels["listen"] == 100
+    # a colour file from before 2.159.0 (colours only) still loads
+    with open(again.colors_path, "w") as f:
+        json.dump({"listen": "#ff0000"}, f)
+    old = ls.LampShow(["light.a"], token="t", memory_path=show.memory_path)
+    assert old.colors["listen"] == (255, 0, 0) and old.levels == ls.DEFAULT_LEVELS
+    # the test button shows a low look and leaves no mood behind
+    monkeypatch.setattr(ls, "PREVIEW_S", 0.6)
+    show.set_mood(None)
+    calls.clear()
+    assert await show.preview("sad_listen") == "ok"
+    sent = [(c[1]["rgb_color"], c[1]["brightness_pct"]) for c in calls if "rgb_color" in c[1]]
+    assert sent and sent[0] == (list(ls.ORANGE), 50) and show.mood_low is None
+    assert await show.preview("sad_other") == "bad"
+    # a talk forgets the mood at its end
+    await show.begin()
+    show.set_mood(True)
+    await show.end()
+    assert show.mood_low is None
+
+
+async def test_the_app_reads_and_sets_colours_and_strengths(tmp_path):
+    from app import memory_web as mw
+    show = ls.LampShow(["light.a"], token="t", memory_path=str(tmp_path / "lamps.json"))
+    got = await mw._lamp_api(show, "GET", "/api/lamp", b"")
+    assert got["levels"] == ls.DEFAULT_LEVELS and set(got["labels"]) == set(got["colors"]) == set(ls.DEFAULT_COLORS)
+    body = json.dumps({"levels": {"sad_listen": 35}}).encode()
+    assert (await mw._lamp_api(show, "POST", "/api/lamp/colors", body))["ok"] and show.levels["sad_listen"] == 35
+    body = json.dumps({"colors": {"sad_listen": "#112233"}, "levels": {"sad_listen": 0}}).encode()
+    assert not (await mw._lamp_api(show, "POST", "/api/lamp/colors", body))["ok"]
+    assert show.colors["sad_listen"] == ls.ORANGE and show.levels["sad_listen"] == 35
+    reset = {"colors": {k: None for k in got["colors"]}, "levels": {k: None for k in got["levels"]}}
+    assert (await mw._lamp_api(show, "POST", "/api/lamp/colors", json.dumps(reset).encode()))["ok"]
+    assert show.levels == ls.DEFAULT_LEVELS

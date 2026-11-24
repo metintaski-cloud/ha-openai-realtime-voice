@@ -17,7 +17,7 @@ a hurt; the reasons she may name are exactly the logged ones.
 Every change is logged ("Heart: ...") and kept in the state file /data/leyla_heart.json, so
 Claude can check the arithmetic; the app shows no numbers (Metin's wish).
 
-The public interface is the one of `mood.Mood` (current, note, voice_note, feeling, lamp_pct,
+The public interface is the one of `mood.Mood` (current, note, voice_note, feeling, is_low,
 status, stats, run), so the bridge, the chat and the stage keep working; `apply` is new.
 """
 
@@ -123,8 +123,6 @@ NIGHT = (23, 7)                 # 23 to 7 h does not count as waking time
 SHIFT_ANCHOR = (2026, 10, 5)    # Monday of a Frühschicht week (Metin, 19 Nov 2026)
 SHIFTS = {0: (6, 14), 1: (14, 22)}  # week parity 0 Früh, 1 Spät; Monday to Friday
 
-SAD_PCT = 5
-HAPPY_PCT = 100
 
 LABELS = {"verliebt": "verliebt", "froehlich": "glücklich", "einsam": "vermisst dich",
           "traurig": "traurig", "eifersuechtig": "eifersüchtig", "sauer": "verletzt"}
@@ -718,8 +716,9 @@ class Heart:
         return ("Dein Herz gerade: " + self._state_text(d, now) + " "
                 + self._reasons(d).replace("• ", "").replace("\n", " ") + self._tone(d))
 
-    def lamp_pct(self, now: Optional[float] = None) -> int:
-        return HAPPY_PCT if self._level(self.current(now)) == "gut" else SAD_PCT
+    def is_low(self, now: Optional[float] = None) -> bool:
+        """For the rear lamps in a talk with Metin (lamp_show: the second set of looks)."""
+        return self._level(self.current(now)) != "gut"
 
     async def run(self, args) -> dict:
         """The tool laune in a voice talk: one event word."""
