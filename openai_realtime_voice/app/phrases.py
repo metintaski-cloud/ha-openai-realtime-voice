@@ -65,6 +65,19 @@ WHO_NUDGE = (
     "Sprache. Sonst frag bei der nächsten passenden Antwort."
 )
 
+# She asked who is there and the person went on without a name: after WHO_AGAIN_TURNS more turns
+# of theirs the bridge reminds her once to ask again and to let it show that she wants the name
+# now (Metin, 24 Nov 2026: with Opus this was only a rule of her character, so it was not sure).
+WHO_AGAIN_TURNS = 2
+WHO_NUDGE_AGAIN = (
+    "Interne Notiz, nicht vorlesen: Du hast schon gefragt, wer mit dir spricht, und noch keinen "
+    "Namen bekommen. Beantworte, was die Person gerade sagt, und hak danach in derselben "
+    "Antwort noch einmal nach, freundlich und mit einem Augenzwinkern, aber so, dass klar ist: "
+    "du möchtest jetzt wirklich wissen, mit wem du sprichst, damit du dich an sie oder ihn "
+    "erinnern kannst. In ihrer Sprache, ein Satz, nicht beleidigt. Bei einem kurzen Befehl "
+    "erst den Befehl erledigen und dann fragen."
+)
+
 # Pet words someone says to Leyla: she must ask at once who says it (persona rule), which
 # GPT Live may skip. Kosewörter Leyla herself says: at most one per conversation.
 COUPLE_WORD_RE = re.compile(r"\b(?:bir ?tanem|aşkım|askim|sevgilim|mein schatz|schatzi)\b",

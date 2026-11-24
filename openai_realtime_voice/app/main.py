@@ -46,7 +46,7 @@ from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, pcm_leve
 from app.live_link import END_CONVERSATION_TOOL
 from app import talk_notes
 from app.talk_notes import MOOD_WITHOUT_CODE, UNLOCKED_LOVE, TalkNotesMixin  # noqa: F401
-from app.phrases import (END_TALK_RE, RECALL_NUDGE, RECALL_RE, NAME_NUDGE, NAME_NUDGE_AFTER_S, NAME_NUDGE_COOLDOWN_S, NAME_RE, PROMISE_NUDGE, PROMISE_NUDGE_AFTER_S, PROMISE_RE, NAME_SAID_RE, WHO_ASKED_RE, WHO_NUDGE, COUPLE_NUDGE, COUPLE_WORD_RE, PET_NUDGE, PET_WORD_RE, addressed_by_name, contains_goodbye, greeting_instruction, parse_greeting_words, pick_greeting)
+from app.phrases import (END_TALK_RE, RECALL_NUDGE, RECALL_RE, NAME_NUDGE, NAME_NUDGE_AFTER_S, NAME_NUDGE_COOLDOWN_S, NAME_RE, PROMISE_NUDGE, PROMISE_NUDGE_AFTER_S, PROMISE_RE, NAME_SAID_RE, WHO_AGAIN_TURNS, WHO_ASKED_RE, WHO_NUDGE, WHO_NUDGE_AGAIN, COUPLE_NUDGE, COUPLE_WORD_RE, PET_NUDGE, PET_WORD_RE, addressed_by_name, contains_goodbye, greeting_instruction, parse_greeting_words, pick_greeting)
 from app import (reach_link, chat, lamp_show, metrics, output_link, session_end, tool_link, after_talk, announce_voice, live_link, night, cleanup, costs, fan, health, lights, messages, persona, purifier, rf, technik, todo_sync,
                  tv, vacuum)
 
@@ -958,19 +958,31 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             await self._send_note(live_ws, "recall", RECALL_NUDGE)
 
     async def _maybe_ask_who(self, live_ws, state: dict) -> None:
-        """A new turn of the person begins: remind Leyla once to ask who is there when it is
-        their second turn or later, no name was said, no code phrase and she has not asked."""
+        """A new turn of the person begins. As long as nobody is known: remind Leyla once to
+        ask who is there (from the second turn on, when she has not asked by herself), and
+        when WHO_AGAIN_TURNS more turns passed without a name, once more to ask again so that
+        it shows she wants the name now."""
         dialog = state.get("dialog", [])
         turns = sum(1 for s, _ in dialog if s == "user")
-        if turns < 1 or state.get("who_nudged") or state.get("closing") or state.get("unlocked"):
+        if (turns < 1 or state.get("closing") or state.get("unlocked")
+                or state.get("identified") or state.get("metin_known")):
             return
         said = " ".join(t for s, t in dialog if s == "user")
         told = " ".join(t for s, t in dialog if s != "user")
-        if NAME_SAID_RE.search(said) or WHO_ASKED_RE.search(told):
+        if NAME_SAID_RE.search(said):
             return
-        state["who_nudged"] = True
-        logger.info("No name yet and Leyla did not ask, reminding her to ask who is there")
-        await self._send_note(live_ws, "who", WHO_NUDGE)
+        if not state.get("who_nudged") and not WHO_ASKED_RE.search(told):
+            state["who_nudged"] = True
+            state["who_asked_turn"] = turns
+            logger.info("No name yet and Leyla did not ask, reminding her to ask who is there")
+            await self._send_note(live_ws, "who", WHO_NUDGE)
+            return
+        asked_at = state.setdefault("who_asked_turn", turns)  # she asked by herself: count from here
+        if state.get("who_again") or turns - asked_at < WHO_AGAIN_TURNS:
+            return
+        state["who_again"] = True
+        logger.info("Still no name %d turns after she asked, reminding her to ask again", turns - asked_at)
+        await self._send_note(live_ws, "who", WHO_NUDGE_AGAIN)
 
     def _note_promise(self, live_ws, state: dict, delta: str) -> None:
         """Watch Leyla's words for a promised action; see PROMISE_NUDGE_AFTER_S."""

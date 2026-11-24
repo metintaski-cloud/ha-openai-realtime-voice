@@ -516,6 +516,50 @@ async def test_recall_question_from_unknown_speaker_asks_who_first():
     assert not m.RECALL_RE.search("Mach das Licht an")
 
 
+async def test_she_is_reminded_to_ask_who_is_there_and_once_more_when_no_name_comes():
+    """Metin, 24 Nov 2026: asking again was only a rule of her character; now the bridge sees to it."""
+    from app import main as m
+    bridge = m.LiveVoiceBridge.__new__(m.LiveVoiceBridge)
+    sent = []
+
+    async def note(ws, prefix, content):
+        sent.append(content)
+    bridge._send_note = note
+    state = {"dialog": [("user", "wie wird das Wetter"), ("bot", "Sonnig.")]}
+    await bridge._maybe_ask_who(None, state)                       # second turn begins: ask
+    assert sent == [m.WHO_NUDGE]
+    state["dialog"] += [("user", "und morgen"), ("bot", "Regen. Wer ist denn da?")]
+    await bridge._maybe_ask_who(None, state)                       # one turn after: not yet again
+    assert len(sent) == 1
+    state["dialog"] += [("user", "aha"), ("bot", "Ja.")]
+    await bridge._maybe_ask_who(None, state)                       # two turns without a name: once more
+    assert sent[-1] == m.WHO_NUDGE_AGAIN and len(sent) == 2
+    state["dialog"] += [("user", "noch was"), ("bot", "Gern.")]
+    await bridge._maybe_ask_who(None, state)                       # and that was it
+    assert len(sent) == 2
+    # she asked by herself: no first reminder, the second one two turns later
+    sent.clear()
+    own = {"dialog": [("user", "hallo"), ("bot", "Hallo! Mit wem spreche ich?")]}
+    await bridge._maybe_ask_who(None, own)
+    own["dialog"] += [("user", "mach das licht an"), ("bot", "Gemacht.")]
+    await bridge._maybe_ask_who(None, own)
+    assert sent == []
+    own["dialog"] += [("user", "danke"), ("bot", "Gern.")]
+    await bridge._maybe_ask_who(None, own)
+    assert sent == [m.WHO_NUDGE_AGAIN]
+    # nothing once somebody is known, by name, by the code word or by his words
+    for known in ({"identified": {"Ayse"}}, {"unlocked": True}, {"metin_known": True}):
+        sent.clear()
+        st = dict({"dialog": [("user", "a"), ("bot", "Wer ist da?"), ("user", "b"), ("bot", "c"),
+                              ("user", "d"), ("bot", "e")]}, **known)
+        await bridge._maybe_ask_who(None, st)
+        assert sent == []
+    sent.clear()
+    named = {"dialog": [("user", "ich bin Ayse"), ("bot", "Hallo"), ("user", "b"), ("bot", "c"), ("user", "d")]}
+    await bridge._maybe_ask_who(None, named)
+    assert sent == []
+
+
 async def test_with_frisch_the_code_word_puts_a_fresh_session_in_place_and_the_talk_goes_on(env, monkeypatch):
     """2.155.0: no notes are appended after the code word; a second GPT Live session starts
     with her knowledge and the talk so far, and what it says reaches the client."""

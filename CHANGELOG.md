@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.158.3 (24 Nov 2026)
+
+- `feat`: she asks a second time who is there. Until now only the first question was seen to by the bridge (`WHO_NUDGE`, from the person's second turn); asking again when no name comes was a rule of her character and not sure. Now, as long as nobody is known (no name said, no code word, not known by his words), the bridge reminds her once more two turns of the person after she asked (`phrases.WHO_NUDGE_AGAIN`, `WHO_AGAIN_TURNS`): answer first, then ask again, friendly, but so that it shows she wants the name now, because only then she can remember the person. Metin's wish of 14:17. One test (621).
+
 ## 2.158.2 (24 Nov 2026)
 
 - `fix`: after the exchange she no longer misses the start of his question. Three real talks with 2.158.1 (14:03 to 14:06): she was not cut off any more (in place 1.8 to 3.2 s after the code word), but in the first one the exchange fell exactly into the moment he began to ask, right after her short reply; his first words went to the old session, the new one heard a rest and said he should finish his sentence. There is no sign for the moment he begins to speak (GPT Live sends none, his words in the transcript come about a second late, and the microphone level is never quiet with the TV on). So the new session now gets the microphone as well from the moment it is ready (`LiveLine.listen_too`, only the audio frames, never notes or tool results) and has heard his sentence from its start whenever the exchange comes; the wait for his silence is gone. What the new session says before it is in place is thrown away (`_drain`), so an answer never comes twice. Four tests (620).
