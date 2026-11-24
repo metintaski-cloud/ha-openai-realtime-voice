@@ -178,7 +178,7 @@ In Kling eingesetzt um 20:27 (beide Bilder Favorit 4, langes Freizeitkleid, Date
 
 "0–2s: She reacts with sweet surprise to an unexpected playful sensation on her chest, gives a soft little gasp and glances down, shifting her weight onto one leg. 2–5s: With a knowing smile she lays one hand over her neckline, shielding it playfully, and slowly turns her shoulders a little away from him, her hips swaying roundly. 5–8s: She looks into the camera over her raised shoulder with a seductive, shy smile and lets her hand glide slowly down along her side to her hip. 8–10s: She turns back to him, bashful about herself, smiles lovingly and returns to her initial pose. Soft, feminine, sensual body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-Geschrieben 20:29, Bilder dafür: Favorit 4 (langes Freizeitkleid). Noch nicht in Kling. Ergebnis hier nachtragen.
+Geschrieben 20:29, in Kling eingesetzt um 20:30 (beide Bilder Favorit 4, `file_00000000530481f4977d9.png`, 4K, 10 s, Adaptive, 1, 350 Credits). Generate klickt Metin. Ergebnis hier nachtragen.
 
 ## Was am 24.11.2026 sonst noch entstand
 
