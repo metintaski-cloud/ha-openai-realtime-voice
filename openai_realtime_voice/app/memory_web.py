@@ -556,17 +556,12 @@ function goFull(){const d=document.documentElement;if(document.fullscreenElement
 function fullWant(){let v=null;try{v=localStorage.getItem('lfull');}catch(e){}return v==='1'||(v!=='0'&&PHONE);}
 for(const ev of ['pointerup','click','keydown'])document.addEventListener(ev,()=>{if(fullWant()&&!document.fullscreenElement)goFull();},true);
 if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
-/* 2.144.3 (Metin: full screen at once when he opens the app, without any tap): only the installed app can do that. Chrome tells the page when it can be installed; then a button "Als App installieren" shows and one tap on it starts the installation. The page also reports how it runs (tab or app), so the cause can be read from the server */
+/* 2.144.3 (Metin: full screen at once when he opens the app, without any tap): the page reports how it runs (tab or app), so the cause can be read from the server. 2.144.4: the install button of 2.144.3 is gone again. Metin's icon already is an installed app; Chrome opens an app whose address only exists in the home network as a tab with its bars anyway (known behaviour, see STATUS.md), so installing again changes nothing */
 let INST=null;
 function runMode(){for(const m of ['fullscreen','standalone','minimal-ui'])if(matchMedia('(display-mode: '+m+')').matches)return m;return 'browser';}
 function diag(ev){try{fetch('/api/diag',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ev,mode:runMode(),secure:!!window.isSecureContext,sw:!!(navigator.serviceWorker&&navigator.serviceWorker.controller),inst:!!INST,ua:(navigator.userAgent.match(/Chrome.[0-9]+/)||[''])[0]+(/Android/.test(navigator.userAgent)?' Android':'')})}).catch(()=>{});}catch(e){}}
-function instBtn(){let b=document.getElementById('instb');if(!INST||runMode()!=='browser'){if(b)b.remove();return;}
- if(!b){b=document.createElement('button');b.id='instb';b.textContent='Als App installieren';
-  b.style.cssText='position:fixed;left:50%;transform:translateX(-50%);top:calc(12px + env(safe-area-inset-top,0px));z-index:70;width:auto;padding:8px 14px;font-size:14px;border-radius:999px;background:#000c;color:#fff;border:1px solid #22d3ee';
-  b.onclick=async e=>{e.stopPropagation();const p=INST;if(!p)return;try{p.prompt();const r=await p.userChoice;diag('choice:'+(r&&r.outcome));}catch(x){diag('prompt failed');}INST=null;instBtn();};
-  document.body.appendChild(b);}}
-window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();INST=e;instBtn();diag('installable');});
-window.addEventListener('appinstalled',()=>{INST=null;instBtn();diag('installed');});
+window.addEventListener('beforeinstallprompt',e=>{INST=e;diag('installable');});
+window.addEventListener('appinstalled',()=>{INST=null;diag('installed');});
 setTimeout(()=>diag('open'),4000);  /* 2.134.3: only with a service worker does Chrome install the page as an app, and only then does the manifest's fullscreen apply */
 async function clipsLoad(){let outs={};try{outs=(await (await fetch('/clips.json')).json()).outfits||{};}catch(e){}
  for(const k in outs){CVER[k]=outs[k].v||0;const r=outs[k].r||{};for(const c in r)RATE[k+'/'+c]=r[c];const q=outs[k].k||{};for(const c in q)KURVE[k+'/'+c]=q[c];const sc=outs[k].s||{};for(const c in sc)SCHNITT[k+'/'+c]=sc[c];}  /* 2.136.0 (Metin): his tempo from the tester, the clip files stay untouched */

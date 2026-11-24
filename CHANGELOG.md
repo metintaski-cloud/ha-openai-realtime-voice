@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.144.4 (24 Nov 2026)
+
+- The install button of 2.144.3 is removed again. Metin's icon already is an installed app (no Chrome badge, he was right); the page's own report still showed it starting as a plain tab (`mode=browser`, 01:11). This is known Chrome behaviour for an app whose address only exists in the home network: the display mode of the manifest is ignored and it opens with the Chrome bars (chromium-discuss, "WebAPK ignores display:standalone for PWA running on local network"). Installing again cannot change that. The run mode report (`/api/diag`) stays.
+
 ## 2.144.3 (24 Nov 2026)
 
 - Metin wants full screen at once when he opens the app, without a tap; only the installed app can do that, and his icon opens a plain Chrome tab with the address bar. The page now shows a button "Als App installieren" as soon as Chrome reports that it can be installed (`beforeinstallprompt`), one tap starts the installation. It also reports how it runs (tab or app, secure context, service worker, installable) to `POST /api/diag`; `GET /api/diag` shows the last 30 reports, so the cause can be read from outside.
