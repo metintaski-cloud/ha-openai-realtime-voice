@@ -586,5 +586,6 @@ Verteilung der Bewegung, damit keine zwei Schleifen gleich aussehen: 1 Beine (Ge
 
 Herkunft: Aufbau, feste Tatsachen, Zeitabschnitte, gezählte Bewegungen, halbe Sekunde Stillstand aus den Profi Quellen. Aus unserem Log: Satz zu Gesicht und Kleidung ohne das Wort für die Brille, "her free hand", ein mildes Ausdruckswort ("shy smile"), kleine Bewegungen. Offenes Risiko, vorher gesagt: "sways her upper body" in Schleife 4 ist bei uns noch nicht gelaufen; in Clip 5902 drehte Kling sie beim Buch von selbst zur Seite.
 
-Ergebnisse hier nachtragen.
+Stand 24.11.2026, 17:39: Metin hat beide Bilder selbst eingesetzt (von Claude am Dateinamen und groß geprüft: zweimal `6_kurz_arbeit.png`, Leyla allein, Brille, Buch in ihrem linken Arm, die freie Hand ist ihre rechte). Claude hat Schleife 1 (Wiegen im Stand) eingetippt, 1.329 Zeichen, am Knopf 4K, 10 s, Adaptive, 1, 350 Credits. Generate klickt Metin. Schleifen 2 bis 4 erst nach seinem Urteil.
 
+Ergebnisse hier nachtragen.
