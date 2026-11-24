@@ -185,7 +185,7 @@ Geschrieben 20:29, in Kling eingesetzt um 20:30 (beide Bilder Favorit 4, `file_0
 
 "0–3s: Waiting for him, she gazes dreamily to the side and gently sways from one leg to the other, her fingers playing with the fabric at her hip. 3–6s: She notices him, looks into the camera and her face lights up with a sweet, surprised smile as she shifts her weight onto one leg. 6–8s: Bashful about her joy, she touches her earring with her fingertips, lowers her gaze for a moment and softly turns her shoulders. 8–10s: She lowers her hand, looks lovingly into the camera and returns to her initial pose. Soft, feminine, natural body movements. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-In Kling eingesetzt um 20:35 (beide Bilder Favorit 4, 4K, 10 s, Adaptive, 1, 350 Credits). Von Metin gestartet etwa 20:36. Ergebnis hier nachtragen.
+In Kling eingesetzt um 20:35 (beide Bilder Favorit 4, 4K, 10 s, Adaptive, 1, 350 Credits). Von Metin gestartet etwa 20:36. **Ergebnis (Clip 920, `kling_20261125_VIDEO_0_3s__Wait_920_0.mp4`, Download 20:42, Original in Leyla Kling Originale):** sie schaut verträumt zur Seite (1 bis 2,5 s), senkt kurz den Blick, schaut dann in die Kamera und strahlt (3 bis 4,5 s), hebt die Hand ans Ohr und senkt verlegen lächelnd den Blick (4,5 bis 7 s), senkt die Hand, Grundpose ab 8,5 s. Das Lächeln beim Bemerken ist breit mit Zähnen, eher Strahlen als schüchtern. Bewegungsmenge im Mittel 1,60, je Sekunde 0,9 / 2,8 / 1,9 / 0,8 / 2,3 / 0,7 / 1,3 / 3,3 / 1,6 / 0,5, Naht 0,75, letzte halbe Sekunde 0,38. Nach Ablauf Punkt 8 seit 20:44 als `schwarz/freizeitgluecklich3` in 4K ohne Ton eingebaut (Videospur bytegleich).
 
 **Schleife, langes Freizeitkleid: sie wiegt sich zu einer Melodie und wird ertappt (20:39).** Eigene Szene mit Anlass und Wendepunkt: versunken, Augen zu, wiegt sie sich und hebt den Stoff an den Hüften leicht an; sie öffnet die Augen, merkt, dass er zuschaut, und hält mit einem ertappten, schüchternen Lächeln inne.
 
@@ -203,7 +203,7 @@ In Kling eingesetzt um 20:41 (beide Bilder Favorit 2, `7_nacht.png`, 4K, 10 s, A
 
 "0–2s: She reacts with sweet surprise to an unexpected playful sensation on her chest, draws in a soft breath and gives him a playful, scolding look with one eyebrow raised. 2–5s: Bashfully she wraps her arms around herself, hugging her shoulders, and sways her hips slowly and roundly from side to side. 5–8s: With a seductive, shy smile she slowly lets her arms glide down, runs one hand through her long hair and looks into the camera from under her lashes, her weight sinking onto one leg. 8–10s: She lets her hair fall, smiles at him lovingly and returns to her initial pose. Soft, feminine, sensual body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-Geschrieben 20:43, Bilder dafür: Favorit 2 (`7_nacht.png`). Noch nicht in Kling. Ergebnis hier nachtragen.
+Geschrieben 20:43, in Kling eingesetzt um 20:43 (beide Bilder Favorit 2, `7_nacht.png`, 4K, 10 s, Adaptive, 1, 350 Credits). Generate klickt Metin. Ergebnis hier nachtragen.
 
 ## Was am 24.11.2026 sonst noch entstand
 
