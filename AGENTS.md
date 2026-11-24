@@ -56,12 +56,13 @@ Both sides must follow this. If one side changes, the other may need updates.
 |-----------------|----------------------|----------------------------------------------|
 | Client → Server | `{"type":"interrupt"}` | Stop current response and listen for input |
 | Client → Server | `{"type":"stopped","reason":"auto_stop","ms":242262}` | Device ended the conversation itself; reason for the log (see `Stop` in `state_machine.h`). |
+| Client → Server | `{"type":"preroll","rate":16000,"bytes":80000}` then exactly that many bytes in binary frames | Optional, right after the socket opens and before any audio of the talk: the last seconds of the microphone from before the wake word (16 bit mono PCM at `rate`, not resampled, no gain). The server never passes it to GPT Live; with the TV running it looks for her name in it (`app/wakecheck.py`). Firmware option `preroll` of `leyla_voice`, off by default. |
 | Server → Client | `{"type":"ready"}` | OpenAI connected; client should start sending audio and show "listening" (e.g. green LEDs). |
 | Server → Client | `{"type":"phase","phase":"thinking"}` | User stopped speaking; OpenAI is processing. |
 | Server → Client | `{"type":"phase","phase":"replying"}` | Bot started speaking. |
 | Server → Client | `{"type":"phase","phase":"searching"}` | Background tool (e.g. web search) running; client should show processing+listening state and use extended auto-stop timeout (e.g. 60s). |
 | *(client-derived)* | *(no message — client detects locally)* | "listening": client derives from `is_bot_speaking()` transitioning false while no search is active and no server phase arrived in the same loop iteration. |
-| Server → Client | `{"type":"disconnect"}` (optional: `"message"`, `"reason"`) | Session ended (e.g. user said goodbye); client should stop and go idle. |
+| Server → Client | `{"type":"disconnect"}` (optional: `"message"`, `"reason"`) | Session ended (e.g. user said goodbye); client should stop and go idle. With `"reason":"false_wake"` it comes instead of `ready`: the server found that nobody called her (server setting `weckpruefung` 2). |
 | Server → Client | `{"type":"error","code":"insufficient_quota"}` | OpenAI quota exceeded; client plays error sound, shows red-yellow LEDs for ~4s, then stops. |
 
 **Client:** Resample mic 16 kHz → 24 kHz before send; resample received 24 kHz → 48 kHz for the speaker.

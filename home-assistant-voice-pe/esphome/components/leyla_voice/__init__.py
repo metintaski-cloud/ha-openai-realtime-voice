@@ -29,6 +29,7 @@ CONF_FULL_DUPLEX = "full_duplex"
 CONF_MIC_AUTO_GAIN_MAX = "mic_auto_gain_max"
 CONF_MIC_AUTO_GAIN_TARGET = "mic_auto_gain_target"
 CONF_MIC_NOISE_FLOOR = "mic_noise_floor"
+CONF_PREROLL = "preroll"
 
 # Same names as the old component, the number is the index in LeylaVoice::set_trigger
 TRIGGERS = {
@@ -55,6 +56,10 @@ CONFIG_SCHEMA = cv.Schema(
         cv.Optional(CONF_MIC_AUTO_GAIN_MAX, default=1.0): cv.float_range(min=1.0, max=12.0),
         cv.Optional(CONF_MIC_AUTO_GAIN_TARGET, default=3000): cv.float_range(min=500, max=12000),
         cv.Optional(CONF_MIC_NOISE_FLOOR, default=150): cv.float_range(min=0, max=3000),
+        # Microphone history kept before the wake word and sent to the server when the socket
+        # opens, so it can check what woke her (0s = none; needs add on 2.157.0 or newer).
+        cv.Optional(CONF_PREROLL, default="0s"): cv.All(
+            cv.positive_time_period_milliseconds, cv.Range(max=cv.TimePeriod(seconds=4))),
         **{
             cv.Optional(key): automation.validate_automation(
                 {cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(EventTrigger)}, single=True
@@ -82,6 +87,7 @@ async def to_code(config):
     cg.add(var.set_speaker(await cg.get_variable(config[CONF_SPEAKER])))
     cg.add(var.set_auto_stop_timeout(config[CONF_AUTO_STOP_TIMEOUT]))
     cg.add(var.set_full_duplex(config[CONF_FULL_DUPLEX]))
+    cg.add(var.set_preroll(config[CONF_PREROLL]))
     cg.add(
         var.set_mic_gain(
             config[CONF_MIC_AUTO_GAIN_MAX],

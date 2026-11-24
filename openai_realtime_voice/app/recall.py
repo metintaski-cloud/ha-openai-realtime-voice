@@ -80,7 +80,10 @@ SETTINGS = {"min_sim": 0.48, "top": 4, "ask_min_sim": 0.38, "ask_top": 6, "word_
             # 1: at home, once it is clear who talks, a fresh GPT Live session with all she
             # may know about that person takes the place of the running one
             # (talk_notes._go_fresh); 0: notes within the budget, as before
-            "frisch": 0}
+            "frisch": 0,
+            # was she really called? (wakecheck.py) 0: no check, 1: watch and log, 2: with the
+            # TV running and her name not heard before the wake word, no talk begins
+            "weckpruefung": 1}
 COMPARE = (("text-embedding-3-small", 256), ("text-embedding-3-small", 1536),
            ("text-embedding-3-large", 256), ("text-embedding-3-large", 1024))
 BONUSES = (0.0, 0.05, 0.1)

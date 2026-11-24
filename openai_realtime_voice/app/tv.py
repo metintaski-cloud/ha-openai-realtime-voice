@@ -241,6 +241,16 @@ class TvController:
         except Exception:
             return {}
 
+    async def playing(self) -> bool:
+        """Is the TV on and to be heard? From Home Assistant; False when that is not known
+        (wakecheck.py: only then her name is looked for before she answers a wake)."""
+        if not self.available:
+            return False
+        player = await self._player()
+        attrs = player.get("attributes") or {}
+        return (player.get("state") not in (None, "off", "standby", "unavailable", "unknown")
+                and not attrs.get("is_volume_muted"))
+
     async def _volume(self) -> tuple[Optional[int], bool]:
         attrs = (await self._player()).get("attributes") or {}
         level = attrs.get("volume_level")

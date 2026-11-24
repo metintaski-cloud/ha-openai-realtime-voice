@@ -40,6 +40,10 @@ void LeylaVoice::setup() {
     this->mic_resampler_ = leyla::Resampler(info.get_sample_rate(), kWireRate);
   this->mono_.reserve(512);   // a microphone block is about 256 frames, growth stays safe through resize
   this->wire_.reserve(768);
+  if (this->pre_bytes_ > 0 && !this->pre_.acquire(this->pre_bytes_)) {
+    ESP_LOGW(TAG, "No external RAM for the microphone history, the server gets none");
+    this->pre_bytes_ = 0;
+  }
   this->mic_->add_data_callback([this](const std::vector<uint8_t> &data) { this->on_mic_data_(data); });
 }
 
@@ -48,6 +52,8 @@ void LeylaVoice::dump_config() {
   ESP_LOGCONFIG(TAG, "  Server: %s", this->url_.c_str());
   ESP_LOGCONFIG(TAG, "  Auto stop: %u ms, full duplex: %s", (unsigned) this->config_.auto_stop_ms,
                 YESNO(this->full_duplex_));
+  ESP_LOGCONFIG(TAG, "  Microphone history before the wake word: %u ms",
+                (unsigned) (this->pre_bytes_ / 2 * 1000 / kMicRate));
   ESP_LOGCONFIG(TAG, "  Microphone gain: %s (max %.1f)", this->gain_.enabled() ? "on" : "off", this->gain_.gain());
 }
 
@@ -126,7 +132,10 @@ void LeylaVoice::apply_(const leyla::Effects &e, uint32_t now) {
     this->playing_ = false;
     if (this->speaker_ != nullptr && !this->speaker_->is_stopped()) this->speaker_->stop();
   }
-  if (e.fire_connected) this->fire_(T_CONNECTED);
+  if (e.fire_connected) {
+    this->start_preroll_();
+    this->fire_(T_CONNECTED);
+  }
   if (e.fire_ready) this->fire_(T_READY);
   if (e.fire_thinking) this->fire_(T_THINKING);
   if (e.fire_replying) this->fire_(T_REPLYING);
@@ -141,6 +150,8 @@ void LeylaVoice::apply_(const leyla::Effects &e, uint32_t now) {
     this->log_summary_();
     if (!this->machine_.running()) {  // give the audio memory back between conversations
       this->mic_active_ = false;
+      this->pre_left_ = 0;
+      this->pre_frozen_ = false;  // the history fills again
       xSemaphoreTake(this->lock_, portMAX_DELAY);
       this->rx_.release();
       this->tx_.release();
@@ -279,8 +290,9 @@ void LeylaVoice::handle_text_(const std::string &text, uint32_t now) {
 
 // Runs in the microphone task. Never blocks: when the socket side is slow the newest audio is dropped.
 void LeylaVoice::on_mic_data_(const std::vector<uint8_t> &data) {
-  if (!this->mic_active_.load()) return;
-  if (!this->full_duplex_ && this->bot_speaking_.load()) return;
+  bool active = this->mic_active_.load();
+  if (!active && (this->pre_bytes_ == 0 || this->pre_frozen_.load())) return;
+  if (active && !this->full_duplex_ && this->bot_speaking_.load()) return;
   auto info = this->mic_->get_audio_stream_info();
   size_t bytes = info.get_bits_per_sample() / 8, channels = info.get_channels();
   if ((bytes != 2 && bytes != 4) || channels == 0) return;
@@ -299,6 +311,13 @@ void LeylaVoice::on_mic_data_(const std::vector<uint8_t> &data) {
       this->mono_[i] = v;
     }
   }
+  if (!active) {  // nobody talks to her: keep the last seconds as they came, for the server's check
+    if (xSemaphoreTake(this->lock_, pdMS_TO_TICKS(5)) != pdTRUE) return;
+    if (!this->pre_frozen_.load())
+      this->pre_.write_keep_newest(reinterpret_cast<const uint8_t *>(this->mono_.data()), frames * 2);
+    xSemaphoreGive(this->lock_);
+    return;
+  }
   this->gain_.process(this->mono_.data(), frames, (float) info.get_sample_rate());
   size_t cap = frames * kWireRate / (info.get_sample_rate() ? info.get_sample_rate() : kMicRate) + 4;
   this->wire_.resize(cap);
@@ -308,7 +327,48 @@ void LeylaVoice::on_mic_data_(const std::vector<uint8_t> &data) {
   xSemaphoreGive(this->lock_);
 }
 
+// The socket is open: tell the server how much microphone history follows, then send it in pieces
+// from the loop (pump_preroll_). Until it is through, no microphone audio of the conversation goes
+// out, so the server can count the bytes.
+void LeylaVoice::start_preroll_() {
+  if (this->pre_bytes_ == 0) return;
+  this->pre_frozen_ = true;
+  xSemaphoreTake(this->lock_, portMAX_DELAY);
+  this->pre_left_ = this->pre_.size() & ~((size_t) 1);
+  xSemaphoreGive(this->lock_);
+  if (this->pre_left_ == 0) {
+    this->pre_frozen_ = false;
+    return;
+  }
+  auto info = this->mic_->get_audio_stream_info();
+  char msg[80];
+  snprintf(msg, sizeof(msg), "{\"type\":\"preroll\",\"rate\":%u,\"bytes\":%u}",
+           (unsigned) (info.get_sample_rate() ? info.get_sample_rate() : kMicRate), (unsigned) this->pre_left_);
+  this->send_text_(msg);
+}
+
+void LeylaVoice::pump_preroll_() {
+  if (this->pre_left_ == 0) return;
+  if (this->socket_ == nullptr || !esp_websocket_client_is_connected(this->socket_)) {
+    this->pre_left_ = 0;
+    this->pre_frozen_ = false;
+    return;
+  }
+  uint8_t buf[2400];
+  for (int i = 0; i < 4 && this->pre_left_ > 0; i++) {
+    size_t want = this->pre_left_ < sizeof(buf) ? this->pre_left_ : sizeof(buf);
+    xSemaphoreTake(this->lock_, portMAX_DELAY);
+    size_t n = this->pre_.read(buf, want);
+    xSemaphoreGive(this->lock_);
+    if (n < want) memset(buf + n, 0, want - n);  // never fewer bytes than announced
+    esp_websocket_client_send_bin(this->socket_, reinterpret_cast<const char *>(buf), want, pdMS_TO_TICKS(100));
+    this->pre_left_ -= want;
+  }
+  if (this->pre_left_ == 0) this->pre_frozen_ = false;  // the history fills again for the next time
+}
+
 void LeylaVoice::pump_mic_tx_() {
+  if (this->pre_left_ > 0) return;  // first the history, whole
   if (this->socket_ == nullptr || !esp_websocket_client_is_connected(this->socket_)) return;
   uint8_t buf[2400];
   for (int i = 0; i < 2; i++) {
@@ -400,6 +460,7 @@ void LeylaVoice::loop() {
   }
 
   this->pump_speaker_(now);
+  this->pump_preroll_();
   this->pump_mic_tx_();
   this->apply_(this->machine_.tick(now), now);
 }

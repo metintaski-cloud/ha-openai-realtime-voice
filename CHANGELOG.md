@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.157.0 (24 Nov 2026)
+
+- `feat`: was she really called? Measured from the add on log and the kept recordings: 29 of the 31 false wakes of the week came while the TV ran (turned down from 23 to 7 within 2 to 3 s every time, but only after it had woken her), and 64 of the 69 kept device recordings are continuous loud sound from their first second, Turkish television where words were found. Each false wake made her greet aloud and light her lamps. Metin keeps the wake sound off on purpose ("wirkt sehr unnatürlich"), so staying silent only by a rule was no option; the server has to know whether "Hallo Leyla" was said.
+- Firmware (`leyla_voice`, option `preroll`, default off): the device keeps the last seconds of the microphone from before the wake word and sends them when the socket opens (`{"type":"preroll","rate":...,"bytes":N}`, then N bytes). `ring_buffer.h: write_keep_newest`, 85 checks in `leyla_voice_tests`.
+- Server (`app/wakecheck.py`): the history is taken off the line while the GPT Live session opens, so a wake is not slower; it never reaches GPT Live. With the TV running it is transcribed and searched for her name. Setting `weckpruefung`: 1 = watch (default), 2 = act (no talk begins, no greeting, no lamps, TV not turned down; end reason `false_wake`). The history of a false wake is kept as `falsewake_..._vorher.wav`: the sound that really woke her, for training. `tv.playing()`, `main._show_listening`, `_keep_preroll`. Old firmware sends nothing; the server waits 0.6 s for a header, inside the time the session start takes anyway.
+- Tests: `tests/test_wakecheck.py` and four whole wakes in `tests/test_session_flow.py` (600 tests). Not measured on the device yet: it has to be flashed first.
+
 ## 2.156.0 (24 Nov 2026)
 
 - `feat`: `POST /api/kopf/fehlwecker {offset, limit, text}` (code word, `app/falsewakes.py`) tells what is on the kept false wake recordings: day and time, length, loudness, how much of it is sound, when the first sound comes and what a speech recogniser hears in it. Nothing of it is stored. First step of Metin's wish of 10:34 to get rid of the false wakes (63 false starts in 210 wakes in twelve days by `/api/wakestats`, 75 recordings kept).

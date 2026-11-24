@@ -122,6 +122,25 @@ static void test_ring() {
   CHECK(rb.write(big, 20) == 8 && rb.dropped() == 12);
   rb.clear();
   CHECK(rb.size() == 0 && rb.read(o, 4) == 0);
+  {  // the microphone history: the newest stays, the oldest makes room, samples stay whole
+    RingBuffer pre(8);
+    uint8_t in1[6] = {1, 2, 3, 4, 5, 6}, in2[4] = {7, 8, 9, 10}, out[8];
+    pre.write_keep_newest(in1, 6);
+    pre.write_keep_newest(in2, 4);  // two of the oldest go
+    CHECK(pre.size() == 8 && pre.read(out, 8) == 8 && out[0] == 3 && out[7] == 10);
+    uint8_t much[20];
+    for (int i = 0; i < 20; i++) much[i] = (uint8_t) (i + 1);
+    pre.write_keep_newest(in1, 2);
+    pre.write_keep_newest(much, 20);  // more than fits: only its end
+    CHECK(pre.size() == 8 && pre.read(out, 8) == 8 && out[0] == 13 && out[7] == 20);
+    pre.write_keep_newest(in1, 6);
+    CHECK(pre.read(out, 2) == 2 && out[0] == 1);  // reading in between keeps the order
+    pre.write_keep_newest(in2, 4);
+    CHECK(pre.size() == 8 && pre.read(out, 8) == 8 && out[0] == 3 && out[3] == 6 && out[4] == 7);
+    RingBuffer none(0);
+    none.write_keep_newest(in1, 6);  // no memory: nothing happens
+    CHECK(none.size() == 0);
+  }
   // memory only held while in use: released buffer is safe to touch, acquire gives it back
   rb.release();
   CHECK(rb.capacity() == 0 && rb.write(a, 4) == 0 && rb.read(o, 4) == 0 && rb.size() == 0);

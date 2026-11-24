@@ -47,6 +47,9 @@ class LeylaVoice : public Component {
   void set_speaker(speaker::Speaker *spk) { this->speaker_ = spk; }
   void set_auto_stop_timeout(uint32_t ms) { this->config_.auto_stop_ms = ms; }
   void set_full_duplex(bool on) { this->full_duplex_ = on; }
+  // The microphone history kept before the wake word and sent to the server when the socket opens,
+  // so the server can check what woke her (0 = none). At most 4 s.
+  void set_preroll(uint32_t ms) { this->pre_bytes_ = (size_t) (ms > 4000 ? 4000 : ms) * kMicRate / 1000 * 2; }
   void set_mic_gain(float max_gain, float target, float floor) { this->gain_.configure(max_gain, target, floor); }
   void set_trigger(uint8_t index, EventTrigger *trigger) {
     if (index < kTriggers) this->triggers_[index] = trigger;
@@ -82,6 +85,8 @@ class LeylaVoice : public Component {
   void on_mic_data_(const std::vector<uint8_t> &data);
   void pump_speaker_(uint32_t now);
   void pump_mic_tx_();
+  void start_preroll_();
+  void pump_preroll_();
   void handle_text_(const std::string &text, uint32_t now);
   void log_summary_();
 
@@ -103,6 +108,10 @@ class LeylaVoice : public Component {
   leyla::Resampler mic_resampler_{kMicRate, kWireRate};
   leyla::RingBuffer rx_{0};  // reply audio from the socket thread to the loop
   leyla::RingBuffer tx_{0};  // microphone audio from the microphone thread to the loop
+  leyla::RingBuffer pre_{0};  // the last seconds of the microphone while nobody talks to her (always held)
+  size_t pre_bytes_{0};       // its size, 0 = no history
+  size_t pre_left_{0};        // bytes of the history still to send for this conversation
+  std::atomic<bool> pre_frozen_{false};  // while it is being sent the microphone does not write into it
   SemaphoreHandle_t lock_{nullptr};
 
   // Socket

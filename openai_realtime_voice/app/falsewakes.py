@@ -15,7 +15,7 @@ import wave
 
 import httpx
 
-from app import chat
+from app import wakecheck
 from app.pacing import pcm_level
 
 logger = logging.getLogger(__name__)
@@ -23,7 +23,8 @@ logger = logging.getLogger(__name__)
 WINDOW_S = 0.1
 SOUND_RMS = 300      # a window louder than this counts as sound (voice.py: a voice is 300 to 400)
 PARALLEL = 5
-NAME_RE = re.compile(r"falsewake_(?P<who>.+)_(?P<day>\d{8})_(?P<time>\d{6})\.wav$")
+# "_vorher": the microphone history from before the wake word (wakecheck.py), else what came after
+NAME_RE = re.compile(r"falsewake_(?P<who>.+)_(?P<day>\d{8})_(?P<time>\d{6})(?P<pre>_vorher)?\.wav$")
 
 
 def listing(folder: str) -> list:
@@ -58,25 +59,14 @@ def describe(name: str) -> dict:
         return {"datei": name}
     day, t = m["day"], m["time"]
     return {"tag": f"{day[:4]}-{day[4:6]}-{day[6:]}", "uhrzeit": f"{t[:2]}:{t[2:4]}",
-            "app": m["who"].startswith("app_")}  # a live talk from the app is no wake word
+            "app": m["who"].startswith("app_"),  # a live talk from the app is no wake word
+            "vorher": bool(m["pre"])}
 
 
 async def heard(path: str, api_key: str, client: httpx.AsyncClient) -> str:
     """What a speech recogniser hears in it ("" for nothing)."""
     with open(path, "rb") as f:
-        audio = f.read()
-    for model in chat.TRANSCRIBE_MODELS:
-        try:
-            resp = await client.post(chat.TRANSCRIBE_URL,
-                                     headers={"Authorization": f"Bearer {api_key}"},
-                                     data={"model": model},
-                                     files={"file": ("wake.wav", audio, "audio/wav")})
-        except Exception as e:
-            logger.warning("False wake not transcribed (%s): %s", model, e)
-            continue
-        if resp.status_code == 200:
-            return (resp.json().get("text") or "").strip()
-    return ""
+        return await wakecheck.transcribe(f.read(), api_key, client)
 
 
 async def analyse(folder: str, api_key: str = "", offset: int = 0, limit: int = 25,

@@ -30,7 +30,8 @@ def test_a_recording_is_measured_without_its_content(tmp_path):
 
 def test_the_name_tells_when_and_whether_it_came_from_the_app():
     assert falsewakes.describe("falsewake_192_168_2_241_20261124_092934.wav") == {
-        "tag": "2026-11-24", "uhrzeit": "09:29", "app": False}
+        "tag": "2026-11-24", "uhrzeit": "09:29", "app": False, "vorher": False}
+    assert falsewakes.describe("falsewake_192_168_2_241_20261124_092934_vorher.wav")["vorher"] is True
     assert falsewakes.describe("falsewake_app_100_112_116_21_20261124_062611.wav")["app"] is True
     assert falsewakes.describe("other.wav") == {"datei": "other.wav"}
 

@@ -550,3 +550,71 @@ async def test_with_frisch_the_code_word_puts_a_fresh_session_in_place_and_the_t
         assert ("user", "sesam") in said
         notes = [e for e in fake.received if e["type"] == "session.commentary.append"]
         assert not any("Codewort" in e["content"] for e in notes)   # nothing appended about it
+
+
+async def _wake_talk(env, monkeypatch, mode, tv, heard, send_history=True):
+    """One wake at home with the microphone history sent first, as firmware 2.157.0 does."""
+    from app import wakecheck
+    calls = {"shown": 0, "asked": 0}
+
+    async def transcribe(audio, api_key, client):
+        calls["asked"] += 1
+        return heard
+
+    async def script(ws, fake):
+        await asyncio.sleep(0.3)
+        await ws.send(json.dumps({"type": "session.output_audio.delta",
+                                  "delta": base64.b64encode(b"\x10\x27" * 2400).decode()}))
+
+    monkeypatch.setattr(wakecheck, "transcribe", transcribe)
+    monkeypatch.setattr(wakecheck, "HEADER_WAIT_S", 0.3)
+    monkeypatch.setenv("FALSE_WAKE_DIR", str(env / "false_wakes"))
+    async with FakeLive(script) as fake, Bridge() as b:
+        b.bridge.recall.settings["weckpruefung"] = mode
+        b.bridge.record_false_wakes = True
+
+        async def playing():
+            return tv
+        b.bridge.tv.playing = playing
+        b.bridge._show_listening = lambda: calls.__setitem__("shown", calls["shown"] + 1)
+        async with b.connect() as client:
+            if send_history:
+                await client.send(json.dumps({"type": "preroll", "rate": 16000, "bytes": 32000}))
+                for _ in range(10):
+                    await client.send(b"\x05\x00" * 1600)
+            got = await collect(client, lambda msg: isinstance(msg, bytes) or '"disconnect"' in str(msg), timeout=5.0)
+            await asyncio.sleep(0.1)
+        await asyncio.sleep(0.3)
+        audio_in = [e for e in fake.received if e["type"] == "session.input_audio.append"]
+    kept = sorted(p.name for p in (env / "false_wakes").glob("*.wav")) if (env / "false_wakes").exists() else []
+    return got, calls, audio_in, kept
+
+
+async def test_the_microphone_history_never_reaches_gpt_live_as_audio_of_the_talk(env, monkeypatch):
+    got, calls, audio_in, kept = await _wake_talk(env, monkeypatch, mode=1, tv=True, heard="Hallo Leyla")
+    texts = [json.loads(g)["type"] for g in got if isinstance(g, str)]
+    assert "ready" in texts and any(isinstance(g, bytes) for g in got)     # the talk runs as always
+    assert calls == {"shown": 1, "asked": 1}
+    sent = sum(len(base64.b64decode(e["audio"])) for e in audio_in)
+    assert sent < 32000                                                    # only silence fill, not the history
+
+
+async def test_watching_changes_nothing_even_when_her_name_was_not_heard(env, monkeypatch):
+    got, calls, _, _ = await _wake_talk(env, monkeypatch, mode=1, tv=True, heard="television talk")
+    assert any('"ready"' in g for g in got if isinstance(g, str)) and calls["shown"] == 1
+
+
+async def test_acting_ends_a_wake_by_the_television_before_anything_shows(env, monkeypatch):
+    got, calls, _, kept = await _wake_talk(env, monkeypatch, mode=2, tv=True, heard="television talk")
+    texts = [json.loads(g) for g in got if isinstance(g, str)]
+    assert {"type": "disconnect", "reason": "false_wake"} in texts
+    assert not any(t["type"] == "ready" for t in texts) and not any(isinstance(g, bytes) for g in got)
+    assert calls["shown"] == 0                                             # no lamps, TV not turned down
+    assert len(kept) == 1 and kept[0].endswith("_vorher.wav")              # the real trigger sound is kept
+
+
+async def test_acting_lets_a_real_call_through_and_old_firmware_too(env, monkeypatch):
+    got, calls, _, kept = await _wake_talk(env, monkeypatch, mode=2, tv=True, heard="Hallo Leyla, mach das Licht an")
+    assert any('"ready"' in g for g in got if isinstance(g, str)) and calls["shown"] == 1 and not kept
+    got, calls, _, _ = await _wake_talk(env, monkeypatch, mode=2, tv=True, heard="x", send_history=False)
+    assert any('"ready"' in g for g in got if isinstance(g, str)) and calls == {"shown": 1, "asked": 0}

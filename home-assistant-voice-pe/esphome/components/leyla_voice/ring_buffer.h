@@ -54,6 +54,25 @@ class RingBuffer {
     dropped_ += len - n;
     return n;
   }
+  // Keeps the newest: when full, the oldest bytes make room. For the microphone history before the
+  // wake word, where only the last seconds count. Even lengths keep 16 bit samples whole.
+  void write_keep_newest(const uint8_t *data, size_t len) {
+    if (cap_ == 0) return;
+    if (len >= cap_) {  // more than fits: only its end stays
+      data += len - cap_;
+      len = cap_;
+      head_ = 0;
+      size_ = 0;
+    }
+    size_t room = cap_ - size_;
+    if (len > room) {
+      size_t drop = len - room;
+      head_ = (head_ + drop) % cap_;
+      size_ -= drop;
+    }
+    for (size_t i = 0; i < len; i++) buf_[(head_ + size_ + i) % cap_] = data[i];
+    size_ += len;
+  }
   size_t read(uint8_t *out, size_t len) {
     size_t n = len < size_ ? len : size_;
     if (n == 0) return 0;
