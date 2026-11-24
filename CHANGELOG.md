@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.150.11 (24 Nov 2026)
+
+- Measured after 2.150.10 with a live talk from the app and silence on the line: no note rejected any more (28 pieces confirmed in 14 s: code word 2, heart 2, private list 14 of 14, diary 9 of 17 before the talk ended). The private list is 10 851 characters, the diary note 13 051; one piece takes about 0.5 s on GPT Live's clock, so all 38 pieces need about 19 s. Slimming them is the next step.
+- `fix`: in the app nobody says the code word aloud, but the note still told her to answer "Habibi"; she did, and then answered a later note as if Metin had spoken. The note for the app now says he typed the code word there, and both versions say that she never answers notes aloud.
+
 ## 2.150.10 (24 Nov 2026)
 
 - `fix`: in a spoken talk Leyla never got what the code word should hand her. GPT Live rejects a note of more than 500 tokens ("Context append text must not exceed 500 tokens."), the bridge only logged it. The add on log (back to 17 Nov, 77 talks): the note after the code word rejected 6 of 6 times (Metin's private list, their closeness, her mood), her diary note 20 times, a personal part once. This also hit live talk in the app, which sends the code word note at once. New `app/notes.py`: a long note is cut at line ends (a long line at sentence ends) into pieces of at most 1000 characters, later pieces under a line that says the note continues; `_send_note` sends the pieces and logs `Note <kind>: N characters in M pieces`. The code word now sends three notes (`unlock`, `heart`, `private`) instead of one. A piece GPT Live still rejects goes out again in two halves (`notes.Sent`, `_on_live_error`). Tests: `tests/test_notes.py`, `tests/test_code_phrase.py`.

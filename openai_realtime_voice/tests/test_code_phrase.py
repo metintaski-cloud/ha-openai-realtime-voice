@@ -76,5 +76,9 @@ async def test_private_list_only_after_code(tmp_path, monkeypatch):
     assert "16. Juli" in everything and "privat bleiben" in everything
     # 24 Nov 2026: GPT Live rejected the one long note every time; now every piece is short
     assert all(len(x["content"]) <= notes.NOTE_MAX_CHARS for x in sent)
+    assert "Habibi" in sent[0]["content"] and "nie laut" in everything
     kinds = [x["event_id"].split("_")[0] for x in sent]
     assert kinds[0] == "unlock" and "heart" in kinds and "private" in kinds
+    sent.clear()
+    await bridge._unlock(WS(), {}, app=True)   # typed in the app: nothing to answer aloud
+    assert "Habibi" not in sent[0]["content"] and "App" in sent[0]["content"]

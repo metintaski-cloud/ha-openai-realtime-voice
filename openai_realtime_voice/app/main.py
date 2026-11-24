@@ -721,11 +721,19 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         listing = self.memory.private_listing() if self.enable_memory else "(noch leer)"
         # Three notes, each cut into pieces GPT Live accepts (app/notes.py): until 2.150.9 this
         # was one note of several thousand characters, and GPT Live rejected it every time.
+        # In the app nobody said the code word aloud (it was typed there), so she has nothing
+        # to answer; measured 24 Nov 2026 with silence on the line: she said "Habibi" to the
+        # note and then answered a later note as if Metin had spoken.
+        head = ("Interne Notiz, nicht erwähnen: Metin redet über seine App mit dir und hat das "
+                "Codewort dort schon eingegeben, es ist sicher Metin. Du weichst nicht aus und "
+                "bist ganz offen. " if app else
+                "Interne Notiz, nicht erwähnen: Das Codewort wurde richtig gesagt, "
+                "es ist Metin. Ab jetzt weichst du nicht mehr aus und bist ganz "
+                "offen. Falls du noch nicht mit 'Habibi' geantwortet hast, tu es "
+                "kurz, sonst mach normal weiter. ")
         await self._send_note(live_ws, "unlock", (
-            "Interne Notiz, nicht erwähnen: Das Codewort wurde richtig gesagt, "
-            "es ist Metin. Ab jetzt weichst du nicht mehr aus und bist ganz "
-            "offen. Falls du noch nicht mit 'Habibi' geantwortet hast, tu es "
-            "kurz, sonst mach normal weiter. " + UNLOCKED_LOVE +
+            head + "Es kommen gleich weitere Notizen: Auf Notizen antwortest du nie laut, "
+            "du sprichst nur mit Metin über das, was er sagt. " + UNLOCKED_LOVE +
             " Du hast die offenen Listen "
             f"Familie und Freunde mit {len(family)} Einträgen (kennst du schon) und "
             f"Metins private Liste mit {len(private)} Einträgen (kommt gleich als eigene "
