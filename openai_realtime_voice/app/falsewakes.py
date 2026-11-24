@@ -66,7 +66,51 @@ def describe(name: str) -> dict:
 async def heard(path: str, api_key: str, client: httpx.AsyncClient) -> str:
     """What a speech recogniser hears in it ("" for nothing)."""
     with open(path, "rb") as f:
-        return await wakecheck.transcribe(f.read(), api_key, client)
+        return await wakecheck.transcribe(f.read(), api_key, client) or ""
+
+
+PROBE_S = 2.5   # as long as the history the device sends
+
+
+def clip(path: str) -> tuple:
+    """(pcm, rate) of what the wake check would have got: a kept history as it is, of any other
+    recording its first PROBE_S seconds."""
+    with wave.open(path, "rb") as w:
+        rate = w.getframerate()
+        if w.getsampwidth() != 2 or w.getnchannels() != 1:
+            raise ValueError("not 16 bit mono")
+        pcm = w.readframes(w.getnframes())
+    return (pcm if path.endswith("_vorher.wav") else pcm[:int(rate * PROBE_S) * 2]), rate
+
+
+async def probe(folder: str, api_key: str, offset: int = 0, limit: int = 20,
+                text: bool = False, pre=None) -> dict:
+    """Every way of listening of the wake check over the kept recordings: per file, which way
+    heard her name. `pre` True: only kept histories, False: only the others."""
+    names = [n for n in listing(folder)
+             if pre is None or n.endswith("_vorher.wav") == bool(pre)]
+    part = names[max(0, offset):max(0, offset) + max(1, min(limit, 30))]
+    gate = asyncio.Semaphore(PARALLEL)
+
+    async def one(name: str, client) -> dict:
+        item = describe(name)
+        try:
+            pcm, rate = await asyncio.to_thread(clip, os.path.join(folder, name))
+            async with gate:
+                texts = await wakecheck.hear(pcm, rate, api_key, client, timeout=20.0)
+        except Exception as e:
+            item["fehler"] = str(e)[:80]
+            return item
+        item["v"] = {n: (None if t is None else wakecheck.named(t)) for n, t in texts.items()}
+        if text:
+            item["gehoert"] = {n: (t or "")[:120] for n, t in texts.items()}
+        return item
+
+    async with httpx.AsyncClient(timeout=40.0) as client:
+        items = await asyncio.gather(*(one(n, client) for n in part))
+    counts = {w: sum(1 for i in items if (i.get("v") or {}).get(w)) for w in wakecheck.WAYS}
+    return {"ok": True, "anzahl": len(names), "offset": offset, "name_gehoert": counts,
+            "items": list(items)}
 
 
 async def analyse(folder: str, api_key: str = "", offset: int = 0, limit: int = 25,

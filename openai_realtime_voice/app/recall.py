@@ -22,6 +22,7 @@ import logging
 import math
 import operator
 import os
+import re
 import time
 import zlib
 from typing import Optional
@@ -83,7 +84,10 @@ SETTINGS = {"min_sim": 0.48, "top": 4, "ask_min_sim": 0.38, "ask_top": 6, "word_
             "frisch": 0,
             # was she really called? (wakecheck.py) 0: no check, 1: watch and log, 2: with the
             # TV running and her name not heard before the wake word, no talk begins
-            "weckpruefung": 1}
+            "weckpruefung": 1,
+            # the ways of listening that count for it, joined with + (wakecheck.WAYS): she is
+            # called when any of them heard her name
+            "weckart": "ganz"}
 COMPARE = (("text-embedding-3-small", 256), ("text-embedding-3-small", 1536),
            ("text-embedding-3-large", 256), ("text-embedding-3-large", 1024))
 BONUSES = (0.0, 0.05, 0.1)
@@ -189,6 +193,9 @@ class Index:
                     self.settings[k] = v
             elif k in ("chat_model", "schwer_model"):
                 if v == "" or (isinstance(v, str) and v.startswith("gpt-") and len(v) < 40):
+                    self.settings[k] = v
+            elif k == "weckart":
+                if isinstance(v, str) and re.fullmatch(r"[a-z_+]{1,60}", v):
                     self.settings[k] = v
             elif k in SETTINGS and isinstance(v, (int, float)) and not isinstance(v, bool):
                 self.settings[k] = type(SETTINGS[k])(v)

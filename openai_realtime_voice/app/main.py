@@ -1728,6 +1728,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                     client_id, duration, reason)
         metrics.record("session_end", duration_s=duration, reason=reason,
                        followup=bool(state.get("followup")), app=bool(state.get("from_app")),
+                       **({"wake": state["wake_v"]} if state.get("wake_v") else {}),
                        **metrics.mic_summary(state.get("mic_stats")))
 
     async def handle_client(self, client_ws) -> None:
@@ -1747,7 +1748,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         wake_mode = 0 if app else int(self.recall.settings.get("weckpruefung") or 0)
         wake_state: dict = {}
         wake_task = None if app else asyncio.create_task(wakecheck.check(
-            client_ws, wake_state, wake_mode, self.tv.playing, self.openai_api_key))
+            client_ws, wake_state, wake_mode, self.tv.playing, self.openai_api_key,
+            self.recall.settings.get("weckart")))
         held = wake_mode >= 2
         if not app and not held:  # the phone app may be anywhere: no TV ducking, no lamp show
             self._show_listening()
@@ -1802,14 +1804,19 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 verdict = await wake_task
                 state.update(wake_state)
                 if verdict["pre"]:
-                    logger.info("Wake check: %.1f s of history, TV %s, her name %s (%.2f s)%s%s",
+                    marks = " ".join("%s=%s" % (n, {True: 1, False: 0, None: "?"}[v])
+                                     for n, v in (verdict.get("v") or {}).items())
+                    logger.info("Wake check: %.1f s of history, TV %s, her name %s (%.2f s)%s%s%s",
                                 verdict["pre"], "on" if verdict["tv"] else "off",
                                 {True: "heard", False: "not heard", None: "not looked for"}[verdict["named"]],
-                                verdict["s"], ", heard: " + verdict["heard"] if verdict.get("heard") else "",
+                                verdict["s"], " [" + marks + "]" if marks else "",
+                                ", heard: " + verdict["heard"] if verdict.get("heard") else "",
                                 " -> no talk" if verdict["reject"] else "")
                     metrics.record("wake_check", tv=verdict["tv"], named=verdict["named"],
-                                   reject=verdict["reject"], s=verdict["s"])
+                                   reject=verdict["reject"], s=verdict["s"],
+                                   **({"v": verdict["v"]} if verdict.get("v") else {}))
                     state["wake_named"] = verdict["named"]
+                    state["wake_v"] = verdict.get("v")  # logged again with how the talk ended
                 if verdict["reject"]:
                     raise wakecheck.FalseWake()
                 if held:
@@ -1847,7 +1854,12 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self._in_background(self.lamp.begin())
 
     async def _false_wakes_api(self, d: dict) -> dict:
-        """/api/kopf/fehlwecker (code word): what is on the kept false wake recordings."""
+        """/api/kopf/fehlwecker (code word): what is on the kept false wake recordings; with
+        `probe`, which way of listening of the wake check hears her name in them."""
+        if d.get("probe"):
+            return await falsewakes.probe(self.false_wake_dir, self.openai_api_key,
+                                          int(d.get("offset") or 0), int(d.get("limit") or 20),
+                                          text=bool(d.get("text")), pre=d.get("vorher"))
         return await falsewakes.analyse(self.false_wake_dir, self.openai_api_key,
                                         int(d.get("offset") or 0), int(d.get("limit") or 25),
                                         text=d.get("text", True) is not False)

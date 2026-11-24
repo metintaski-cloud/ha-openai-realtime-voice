@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.157.1
+
+- Wake check: acting (`weckpruefung` 2) was on for three minutes on 24 Nov 2026 and turned away two of three real calls by Metin with the TV at volume 23, because the recogniser wrote down the television (or nothing) and not his "Hallo Leyla" at the very end. It is back on watching. New: four ways of listening (`wakecheck.WAYS`: the whole history or only its last 1.5 s, each plain or with her name as a `keywords` hint of gpt-transcribe), all heard at the same time on every wake with the TV on and logged (`Wake check: ... [ganz=0 ende=1 ganz_kw=0 ende_kw=1]`, metric `wake_check` with `v`, and again in `session_end` as `wake`, so every talk shows what each way heard next to how it ended). Server setting `weckart` ("ganz+ende_kw") names the ways that count. `POST /api/kopf/fehlwecker` with `probe` runs the four ways over the kept recordings (`vorher` true or false, `text` for what was heard). A recogniser that does not answer now counts as doubt (she is taken as called), not as silence.
+
 ## 2.157.0 (24 Nov 2026)
 
 - `feat`: was she really called? Measured from the add on log and the kept recordings: 29 of the 31 false wakes of the week came while the TV ran (turned down from 23 to 7 within 2 to 3 s every time, but only after it had woken her), and 64 of the 69 kept device recordings are continuous loud sound from their first second, Turkish television where words were found. Each false wake made her greet aloud and light her lamps. Metin keeps the wake sound off on purpose ("wirkt sehr unnatürlich"), so staying silent only by a rule was no option; the server has to know whether "Hallo Leyla" was said.

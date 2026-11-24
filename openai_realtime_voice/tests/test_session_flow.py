@@ -557,8 +557,8 @@ async def _wake_talk(env, monkeypatch, mode, tv, heard, send_history=True):
     from app import wakecheck
     calls = {"shown": 0, "asked": 0}
 
-    async def transcribe(audio, api_key, client):
-        calls["asked"] += 1
+    async def transcribe(audio, api_key, client, keywords=()):
+        calls["asked"] += 1       # once per way of listening (wakecheck.WAYS)
         return heard
 
     async def script(ws, fake):
@@ -594,7 +594,7 @@ async def test_the_microphone_history_never_reaches_gpt_live_as_audio_of_the_tal
     got, calls, audio_in, kept = await _wake_talk(env, monkeypatch, mode=1, tv=True, heard="Hallo Leyla")
     texts = [json.loads(g)["type"] for g in got if isinstance(g, str)]
     assert "ready" in texts and any(isinstance(g, bytes) for g in got)     # the talk runs as always
-    assert calls == {"shown": 1, "asked": 1}
+    assert calls == {"shown": 1, "asked": 4}
     sent = sum(len(base64.b64decode(e["audio"])) for e in audio_in)
     assert sent < 32000                                                    # only silence fill, not the history
 
