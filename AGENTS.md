@@ -164,6 +164,8 @@ Optional scope in parentheses: `fix(client):`, `feat(server):`, `chore(build):`.
 
 Read `STATUS.md` first in every new session: it holds decisions, current state and open items. Update it whenever one of them changes.
 
+Before any work on the wake word (false wakes, missed calls, thresholds, training), read `docs/WECKWORT.md`: research of 24 Nov 2026 on how it really works, what was tried and dropped, and the plan.
+
 Before any work on Kling clips (prompts, settings, replacing clips), read `docs/KLING_PROMPTS.md`, starting with the note at its top: the section on professional Kling 4.0 knowledge of 23 Nov 2026 is the standard and overrides older sections. Metin asked for professional knowledge only, nothing invented, and wants to be told which part of a prompt comes from the sources and which from our own log. Every new clip, with prompt, settings and result, goes into that file. Before a prompt is handed to Metin it must pass `python3 tools/kling_check.py` (brake words, movements per second, negatives, known traps); this is mandatory since clip 5030 came out in slow motion on 23 Nov 2026 because the prompt itself was slow.
 
 | What changed                         | Update |
