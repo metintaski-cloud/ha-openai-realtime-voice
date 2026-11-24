@@ -12,6 +12,17 @@ Anlass: Clip 5030 kam in Zeitlupe, 350 Credits. Kling hatte den Prompt befolgt, 
 4. **Bilder groß prüfen, Einstellungen und Preis vom Knopf ablesen** (4K, Länge, Credits), wie im Abschnitt Bedienung beschrieben.
 5. **Erst dann Metin Bescheid geben**, mit Herkunft der Teile und der gezählten Bewegung. Er klickt Generate.
 
+## Unmittelbar vor der Prompt Eingabe: Wissen zurückholen (seit 24.11.2026, 17:28)
+
+Metin um 17:28 und 17:29: "kurz vor Prompt Eingabe immer alles zurückholen an Wissen und dann Prompt einsetzen", "das jetzt immer so. Kein Raten, kein Ausprobieren." Und für alle Clips: "muss sie zierlich und feminin sein".
+
+Ablauf, jedes Mal, direkt bevor der Prompt in Kling getippt wird (nicht aus dem Gedächtnis, sondern die Abschnitte wirklich neu lesen):
+1. Diese Datei neu lesen: Pflichtprüfung, Stillstand am Ende, Ausdruck, Nachbau ohne Erfinden, die Fallen aus dem Erfahrungslog (Brille, fremde Hand, Lippenbiss, eingefrorener Arm).
+2. Den fertigen Prompt Satz für Satz dagegen halten und für jede Bewegung fragen: steht sie im alten Clip oder hat Metin sie gewünscht? Was keins von beidem ist, kommt raus.
+3. Prüfskript laufen lassen, Bilder groß ansehen, Einstellungen und Preis vom Knopf ablesen.
+4. Metin in einem Satz sagen, was sie tut, und was davon nicht aus dem alten Clip stammt. Kein Raten: ist etwas unklar (zum Beispiel wie der alte Clip genau aussieht oder was Kling aus einem Wort macht), wird gefragt oder das Wort weggelassen, nicht ausprobiert.
+5. Grundton aller Clips: zierlich und feminin, kleine Bewegungen, schüchternes Lächeln statt Lachen, außer Metin wünscht ausdrücklich etwas anderes.
+
 ## Stillstand am Ende höchstens eine halbe Sekunde (seit 24.11.2026, 16:35)
 
 Metin um 16:31 zu `schwarz/freizeitbrust`: "hängt am Ende sehr auffallend". Gemessen: von 8,5 bis 10 s keine Bewegung (Bewegungsmenge 0,15, dann 0,02 und 0,01), also 1,5 s eingefrorenes Bild, bevor die App übergibt. Unsere Prompts seit dem 23.11. schrieben am Ende "8.5 to 10 seconds: she holds ... completely still" vor; die offiziellen Kling Beispiele reservieren nur die letzte halbe Sekunde. Ab jetzt: Stillstand nur von 9,5 bis 10 s, die Rückkehr in die Grundpose füllt die Zeit davor. `tools/kling_check.py` hält bei mehr als 0,75 s Stillstand an. Für Clips, die schon so entstanden sind, setzt Claude nach Metins Ja eine Endmarke (`POST /api/schnitt`, Datei bleibt unverändert): `schwarz/freizeitbrust` endet seit 16:34 bei 8,6 s. Die drei Clips von heute Nachmittag (gluecklich2, begruessung, brust im langen Arbeitskleid) haben noch 1,5 s Stillstand im Prompt: nach dem Download messen und Metin eine Endmarke vorschlagen.
@@ -531,3 +542,19 @@ Gezählt: erschrecken (3), an sich heruntersehen, aufblicken, Kopf neigen (3), z
 Herkunft: Aufbau und Zählen aus den Profi Quellen. Aus unserem Log: bei Berührungs Clips nur ihre eigene Reaktion, keine andere Person und keine Hand erwähnen (21.11.), kein Lippenbiss, Satz zu Gesicht und Kleidung ohne das Wort für die Brille.
 
 Ergebnis (Clip 5932, 24.11.2026): verworfen, nicht eingebaut. Aus "she shimmies her shoulders" machte Kling eine Hand, die an ihrer Schulter wedelt (Metin: "die klopft sich auf ihre Schulter?"), dazu ein erschrockenes Gesicht, fliegende Haare und Lachen mit dem Kopf im Nacken. Der Shimmy stand nicht im alten Clip, Claude hatte ihn dazu erfunden. Zuerst verworfen; um 17:21 entschied Metin anders ("Nimm das neue Brust berühren und setze es ein"): unverändert mit Ton als `schwarz/brust.mp4` eingebaut (Bildstrom bitgleich), Bewegungsmenge im Mittel 2,15, je Sekunde 1,0 / 0,9 / 2,4 / 3,4 / 4,9 / 4,6 / 1,8 / 1,3 / 0,8 / 0,4, Naht 0,68, kein eingefrorenes Ende, kein Faktor gespeichert. Der alte Clip liegt als `schwarz_brust_alt.mp4` in Leyla aussortiert.
+
+## Begrüßung kurzes Arbeitskleid neu in 4K: kurz/begruessung (24.11.2026, vorbereitet 17:30)
+
+Metin um 17:25 und 17:26: die Begrüßung im kurzen Arbeitskleid ist noch 1176 x 1764 (10,4 s); ersetzen in 4K, "aber dieses Mal schüchtern lächeln und kein Lachen". Alter Clip (Kontaktbogen): sie hebt die freie Hand, winkt rund 7 s mit leicht geneigtem Kopf und lachendem Gesicht, senkt die Hand, Grundpose; das Buch bleibt im Arm.
+
+Erster Clip nach dem neuen Ablauf (Wissen direkt vor der Eingabe neu gelesen). Dabei gestrichen: "she dips her chin a little", weil es weder im alten Clip steht noch von Metin gewünscht war.
+
+Einstellungen (ausgelesen): Kling 4.0, Keyframes, beide Bilder `6_kurz_arbeit.png` (groß geprüft: Leyla allein, kurzes Arbeitskleid, Brille, Buch im Arm), 4K, 10 s, Adaptive, 1 Ausgabe, 350 Credits am Knopf.
+
+Prompt (durch `tools/kling_check.py`, kein Bremswort, kein starkes Ausdruckswort, Stillstand 0,5 s): "Use the first keyframe as the first frame and the last keyframe as the last frame. A single continuous shot with no cuts. The camera stays fixed on a tripod and keeps the full body framing of the keyframes; the background and the reflections on the floor stay exactly as they are. Exactly one woman and exactly one book; the closed book stays against her side in the same arm the whole time, and both of her feet stay planted on the same spot. Her face, her hair and everything she wears stay exactly as in the keyframes the whole time. She keeps a shy smile the whole time. Every movement is small and keeps natural weight and real-time speed. 0 to 1 seconds: she lifts her free hand beside her shoulder, palm to the lens. 1 to 2.5 seconds: she waves her hand three times from the wrist. 2.5 to 4 seconds: she waves three more times and she tilts her head to her right. 4 to 5.5 seconds: she waves three times. 5.5 to 7 seconds: she waves three times and she straightens her head. 7 to 9.5 seconds: she lowers her hand to her side and she settles into the stance of the first frame. 9.5 to 10 seconds: she holds exactly the pose of the last frame, completely still. No subtitles, no background music."
+
+Gezählt: Hand heben (1), zwölfmal klein winken in 6 s, Kopf neigen und wieder gerade (2), Hand senken und Grundpose (2), dann 0,5 s Stillstand.
+
+Herkunft: Abfolge aus dem alten Clip (Hand heben, winken, Kopf leicht neigen, Hand senken). Von Metin gewünscht: schüchternes Lächeln statt Lachen, zierlich und feminin (umgesetzt als "Every movement is small" und Winken aus dem Handgelenk). Aufbau aus den Profi Quellen. Nichts sonst hinzugefügt.
+
+Ergebnis hier nachtragen.
