@@ -803,3 +803,24 @@ def test_small_slips_of_a_model_in_the_arguments_are_understood(tmp_path):
     r = p.add(plan(uhrzeit="23:15", schritte=[{"geraet": "ansage", "argumente": "Der Tee ist fertig"}]))
     assert r["was"] == "Ansage: „Der Tee ist fertig“"
     assert "error" in p.add(plan(schritte=[{"geraet": "licht_steuern", "argumente": "Licht aus"}]))
+
+
+# ---- she shows what she can do, like a teacher (2.162.0) ----
+def test_at_home_she_guides_from_wish_to_deed_and_never_slows_a_clear_request():
+    from app import persona
+    text = persona.build(["die 4 Stehlampen", "etwas für später planen"])
+    assert "ZEIGEN, WAS DU KANNST" in text and text.index("ERLEDIGEN") < text.index("ZEIGEN, WAS DU KANNST")
+    for part in ("geduldige Lehrerin", "höchstens drei Möglichkeiten", "immer nur eine Frage auf einmal",
+                 "Zähl nie alles auf", "bekommt es sofort, ohne Erklären und ohne Rückfragen",
+                 "Was nur Metin darf"):
+        assert part in text, part
+    assert "{" not in persona.GUIDE  # appended after the format, braces would stay
+    assert text.count("ERLEDIGEN") == 1  # section names stay unique in her rules
+    assert "ZEIGEN, WAS DU KANNST" not in persona.build([])  # the chat has its own line
+
+
+async def test_in_the_chat_she_guides_too():
+    from app import chat
+    rules = await chat.with_abilities("R", "Was kannst du?")
+    assert "geduldige Lehrerin" in rules and "höchstens drei passende Möglichkeiten" in rules
+    assert "ohne Erklären und ohne Rückfragen" in rules
