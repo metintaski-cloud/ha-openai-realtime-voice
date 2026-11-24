@@ -24,6 +24,12 @@ SPEAK_INSTRUCTIONS = (
 # idle frames GPT Live streams are exactly 0, so a low threshold keeps the breath and drops nothing else.
 ANNOUNCE_START_PEAK = 30
 SPEECH_END_GAP_S = 1.2  # GPT Live keeps sending silence after the speech: stop after this
+# 24 Nov 2026: three of eight voice replies in the app came back empty (0.0 s after waiting the
+# whole 60 s, or 0.2 s: one loud chunk, then the 1.2 s gap ended it before she spoke), and the
+# app showed a speaker sign without any sound. So: no audio within FIRST_AUDIO_S gives up early,
+# a blip shorter than MIN_SPEECH_S does not count as the end, and _speak_once tries once more.
+FIRST_AUDIO_S = 12.0
+MIN_SPEECH_S = 0.3
 
 
 class AnnounceVoiceMixin:
@@ -64,12 +70,19 @@ class AnnounceVoiceMixin:
             started = False
             last_audio = None
             loud_end = 0
+            give_up = loop.time() + FIRST_AUDIO_S
+
+            def spoken() -> bool:  # more than a blip: the gap after it is the end of her speech
+                return loud_end >= MIN_SPEECH_S * BYTES_PER_SEC
+
             while loop.time() < end:
-                wait = SPEECH_END_GAP_S if last_audio else end - loop.time()
+                if not spoken() and loop.time() > give_up:
+                    break  # she did not start to speak: the caller tries again
+                wait = SPEECH_END_GAP_S if last_audio else min(end, give_up) - loop.time()
                 try:
                     raw = await asyncio.wait_for(ws.recv(), timeout=max(0.1, wait))
                 except asyncio.TimeoutError:
-                    if last_audio:
+                    if last_audio and spoken():
                         break
                     continue
                 if not isinstance(raw, str):
@@ -96,7 +109,7 @@ class AnnounceVoiceMixin:
                         pcm += chunk_pcm  # pauses inside the speech
                         if on_chunk:
                             on_chunk(chunk_pcm)
-                    if last_audio and loop.time() - last_audio > SPEECH_END_GAP_S:
+                    if last_audio and spoken() and loop.time() - last_audio > SPEECH_END_GAP_S:
                         break
                 elif t == "error":
                     raise RuntimeError(f"GPT Live: {ev.get('error')}")
@@ -114,12 +127,18 @@ class AnnounceVoiceMixin:
         """Let GPT Live speak one announcement without a listener; return 24 kHz PCM.
         `instructions`: who speaks; the default is the announcement voice, a voice reply in
         the app chat passes Leyla talking to Metin (2.98.7)."""
-        ws, _ = await self._take_live()
-        try:
-            pcm = await self._collect_speech(ws, prompt, max_s, instructions, on_chunk)
-        finally:
-            await ws.close()
-        logger.info("Announcement audio: %.1f s", len(pcm) / BYTES_PER_SEC)
+        pcm = b""
+        for attempt in (1, 2):
+            ws, _ = await self._take_live()
+            try:
+                pcm = await self._collect_speech(ws, prompt, max_s, instructions, on_chunk)
+            finally:
+                await ws.close()
+            logger.info("Announcement audio: %.1f s", len(pcm) / BYTES_PER_SEC)
+            if len(pcm) >= MIN_SPEECH_S * BYTES_PER_SEC:
+                break
+            if attempt == 1:
+                logger.warning("GPT Live did not speak, trying once more")
         return pcm
 
     async def _tv_down_for_announcement(self) -> None:

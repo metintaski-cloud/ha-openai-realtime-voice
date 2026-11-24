@@ -693,7 +693,12 @@ function stageFit(){const ch=document.getElementById('chat');if(ch.style.display
 function stageView(){stageFit();const ch=document.getElementById('chat');if(ch.style.display==='block')window.scrollTo({top:ch.getBoundingClientRect().top+scrollY-6,behavior:'smooth'});}
 window.addEventListener('resize',stageFit);if(window.visualViewport)visualViewport.addEventListener('resize',stageView);
 /* 2.150.6 (Metin: with the keyboard open he could not see what he typed): in the full screen stage the keyboard lies over the page instead of making it smaller, so the text field and the messages are lifted by the height the keyboard covers (--kb); the stage itself stays as it is */
-function kbFit(){const vv=window.visualViewport;if(!vv)return;const kb=Math.round(window.innerHeight-vv.height-vv.offsetTop);document.documentElement.style.setProperty('--kb',(kb>80?kb:0)+'px');}
+/* 2.150.7: on Metin's phone the field still stood behind the keyboard by about its own height: in the installed full screen app the bar with the three system buttons comes back together with the keyboard and Chrome does not count it. KBPLUS lifts the field by that bar; the real numbers are reported once a minute to /api/diag (sizes only), so the lift can be made exact */
+const KBPLUS=56;let KBREP=0;
+function kbFit(){const vv=window.visualViewport;if(!vv)return;const kb=Math.round(window.innerHeight-vv.height-vv.offsetTop),open=kb>80;
+ document.documentElement.style.setProperty('--kb',(open?kb+(runMode()==='browser'?0:KBPLUS):0)+'px');
+ if(open&&Date.now()-KBREP>60000){KBREP=Date.now();try{const p=document.createElement('div');p.style.cssText='position:fixed;visibility:hidden;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)';document.body.appendChild(p);const cs=getComputedStyle(p);
+  diag('kb '+[innerHeight,Math.round(vv.height),Math.round(vv.offsetTop),screen.height,document.getElementById('chat').offsetHeight,parseInt(cs.paddingTop)||0,parseInt(cs.paddingBottom)||0,devicePixelRatio].join(' '));p.remove();}catch(e){}}}
 if(window.visualViewport){visualViewport.addEventListener('resize',kbFit);visualViewport.addEventListener('scroll',kbFit);}
 document.getElementById('ctext').addEventListener('focus',()=>setTimeout(stageView,300));
 document.getElementById('stage').addEventListener('contextmenu',e=>e.preventDefault());
@@ -776,9 +781,9 @@ document.getElementById('cmic').onclick=async()=>{const b=document.getElementByI
  if(!navigator.mediaDevices||!window.MediaRecorder){CHAT.push({role:'info',text:'Das Mikrofon ist auf dieser Seite nicht frei (Chrome Einstellung fehlt).'});chatSave();chatDraw();return;}
  let st;try{st=await navigator.mediaDevices.getUserMedia({audio:true});}catch(e){CHAT.push({role:'info',text:'Kein Zugriff aufs Mikrofon.'});chatSave();chatDraw();return;}
  const parts=[];REC=new MediaRecorder(st);REC.ondataavailable=e=>{if(e.data.size)parts.push(e.data);};
- REC.onstop=()=>{st.getTracks().forEach(t=>t.stop());clearTimeout(RECT);const mime=REC.mimeType||'audio/webm';REC=null;bgmTick();b.classList.remove('rec');b.innerHTML='&#127908; Mikro';
+ REC.onstop=()=>{st.getTracks().forEach(t=>t.stop());clearTimeout(RECT);const mime=REC.mimeType||'audio/webm';REC=null;bgmTick();b.classList.remove('rec');b.innerHTML='&#127908;';
   const blob=new Blob(parts,{type:mime});if(blob.size>2000)voiceSend(blob,mime);};
- REC.start();bgmTick();b.classList.add('rec');b.innerHTML='&#9632; Stopp';snd.on();RECT=setTimeout(()=>{if(REC)REC.stop();},60000);};
+ REC.start();bgmTick();b.classList.add('rec');b.innerHTML='&#9632;';snd.on();RECT=setTimeout(()=>{if(REC)REC.stop();},60000);};
 /* Dictation instead of the keyboard (2.140.0, Metin: "wenn ich unten auf chat zum
    schreiben druecke die Tastatur nicht mehr erscheint aber dafuer mikro was Sprache zu
    text umwandelt was ich dann nur noch senden muss"). The field is readonly, so Android

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.150.7 (24 Nov 2026)
+
+- `fix`: voice replies without sound. In the add on log of 24 Nov, 05:03 to 05:15, three of eight voice replies came back empty: twice 0.0 s after GPT Live had been waited on for the whole 60 s, once 0.2 s (one loud chunk, then the 1.2 s end gap closed the reply before she spoke). The app showed a speaker sign and stayed silent. Now `_collect_speech` gives up after 12 s without speech (`FIRST_AUDIO_S`), a blip under 0.3 s is not the end of her speech (`MIN_SPEECH_S`), and `_speak_once` tries a second time on a fresh connection. Why GPT Live stays silent now and then is not known. Tests: `tests/test_voice_reply_silence.py`.
+- `fix(app)`: the text field was still behind the keyboard on Metin's phone, by about its own height: the lift of 2.150.6 worked, but in the installed full screen app the bar with the three system buttons comes back with the keyboard and Chrome does not count it. The field is lifted 56 px more there (`KBPLUS`, not in a browser tab), and the page reports the real sizes to `/api/diag` (`ev: "kb innerHeight visualHeight offsetTop screenHeight chatHeight safeTop safeBottom dpr"`, at most once a minute) so the lift can be made exact.
+- `fix(app)`: the microphone button kept the word "Mikro" after a recording and showed "Stopp" while recording, both too wide for the symbol column of 2.146.0. Symbols only now.
+
 ## 2.150.6 (24 Nov 2026)
 
 - Decided on 24 Nov 2026, 05:11 (a setting on the server, no new version): Metin tried gpt-6.2-astra in the real chat for half an hour and turned it down as emotionless ("sie sagt es, aber es fühlt sich nicht so an"). gpt-6-luna answers again. The three answer pairs that read tender to Claude did not predict how the talk would feel to him.
