@@ -203,7 +203,13 @@ In Kling eingesetzt um 20:41 (beide Bilder Favorit 2, `7_nacht.png`, 4K, 10 s, A
 
 "0–2s: She reacts with sweet surprise to an unexpected playful sensation on her chest, draws in a soft breath and gives him a playful, scolding look with one eyebrow raised. 2–5s: Bashfully she wraps her arms around herself, hugging her shoulders, and sways her hips slowly and roundly from side to side. 5–8s: With a seductive, shy smile she slowly lets her arms glide down, runs one hand through her long hair and looks into the camera from under her lashes, her weight sinking onto one leg. 8–10s: She lets her hair fall, smiles at him lovingly and returns to her initial pose. Soft, feminine, sensual body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-Geschrieben 20:43, in Kling eingesetzt um 20:43 (beide Bilder Favorit 2, `7_nacht.png`, 4K, 10 s, Adaptive, 1, 350 Credits). Generate klickt Metin. Ergebnis hier nachtragen.
+Geschrieben 20:43, in Kling eingesetzt um 20:43 (beide Bilder Favorit 2, `7_nacht.png`, 4K, 10 s, Adaptive, 1, 350 Credits). Von Metin gestartet 20:45 ("läuft"). Ergebnis hier nachtragen.
+
+**Schleife, Nachtkleid: verschlafen strecken (20:47).** Eigene Szene, die nur zur Nacht passt: sie streckt sich verschlafen, versteckt ein kleines Gähnen hinter der Hand, sieht ihn und lächelt müde und zärtlich.
+
+"0–3s: Sleepy and content, she stretches softly, raising her arms above her head and rising gently onto her toes with closed eyes. 3–6s: She lets her arms sink, hides a sweet little yawn behind one hand and sways from one leg to the other. 6–8s: She sees him, lowers her hand and gives him a small, shy smile with sleepy, tender eyes, softly turning her shoulders. 8–10s: She shifts her weight, looks lovingly into the camera and returns to her initial pose. Soft, feminine, natural body movements. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
+
+Geschrieben 20:47, Bilder dafür: Favorit 2 (`7_nacht.png`). Noch nicht in Kling. Ergebnis hier nachtragen.
 
 ## Was am 24.11.2026 sonst noch entstand
 
