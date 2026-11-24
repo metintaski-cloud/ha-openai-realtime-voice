@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.157.1
+## 2.157.1 (24 Nov 2026)
 
 - Wake check: acting (`weckpruefung` 2) was on for three minutes on 24 Nov 2026 and turned away two of three real calls by Metin with the TV at volume 23, because the recogniser wrote down the television (or nothing) and not his "Hallo Leyla" at the very end. It is back on watching. New: four ways of listening (`wakecheck.WAYS`: the whole history or only its last 1.5 s, each plain or with her name as a `keywords` hint of gpt-transcribe), all heard at the same time on every wake with the TV on and logged (`Wake check: ... [ganz=0 ende=1 ganz_kw=0 ende_kw=1]`, metric `wake_check` with `v`, and again in `session_end` as `wake`, so every talk shows what each way heard next to how it ended). Server setting `weckart` ("ganz+ende_kw") names the ways that count. `POST /api/kopf/fehlwecker` with `probe` runs the four ways over the kept recordings (`vorher` true or false, `text` for what was heard). A recogniser that does not answer now counts as doubt (she is taken as called), not as silence.
 
