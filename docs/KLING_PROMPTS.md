@@ -215,7 +215,13 @@ Geschrieben 20:43, in Kling eingesetzt um 20:43 (beide Bilder Favorit 2, `7_nach
 
 "0–3s: Sleepy and content, she stretches softly, raising her arms above her head and rising gently onto her toes with closed eyes. 3–6s: She lets her arms sink, hides a sweet little yawn behind one hand and sways from one leg to the other. 6–8s: She sees him, lowers her hand and gives him a small, shy smile with sleepy, tender eyes, softly turning her shoulders. 8–10s: She shifts her weight, looks lovingly into the camera and returns to her initial pose. Soft, feminine, natural body movements. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-Geschrieben 20:47, Bilder dafür: Favorit 2 (`7_nacht.png`). Noch nicht in Kling. Ergebnis hier nachtragen.
+Geschrieben 20:47, Bilder dafür: Favorit 2 (`7_nacht.png`). Von Metin selbst in Kling einkopiert und gestartet, 20:53 ("läuft"). Ergebnis hier nachtragen.
+
+**Schleife, Nachtkleid: ein Wunsch (20:54).** Eigene Szene, die zur Nacht passt: sie faltet die Hände vor der Brust, schaut kurz nach oben wie zu einer Sternschnuppe, schließt nur einen Moment die Augen für einen Wunsch und schaut ihn dann wissend an. Lehre aus Clip 933 beachtet: Blick zu ihm von Anfang an, Augen nur kurz zu.
+
+"0–3s: Dreamy and in love, she looks into the camera with a sweet smile, clasps her hands in front of her chest and gently sways from one leg to the other. 3–6s: She glances up as if at a falling star, closes her eyes for a brief moment to make a wish, then opens them and looks at him with a shy, knowing smile, lifting one heel. 6–8s: Bashful, she lowers her hands, softly draws her shoulders in and shifts her weight onto the other leg. 8–10s: She looks lovingly into the camera and returns to her initial pose. Soft, feminine, natural body movements. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
+
+Geschrieben 20:54, Bilder dafür: Favorit 2 (`7_nacht.png`); Metin kopiert den Text selbst ein. Ergebnis hier nachtragen.
 
 ## Was am 24.11.2026 sonst noch entstand
 
