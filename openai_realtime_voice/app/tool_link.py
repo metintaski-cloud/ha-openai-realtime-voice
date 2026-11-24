@@ -7,7 +7,7 @@ import asyncio
 import json
 import logging
 
-from app import agenda, cleanup, diary, heart, mood, reminders, costs, fan, inbox, lights, mail, messages, purifier, technik, vacuum
+from app import agenda, befehle, cleanup, diary, heart, mood, reminders, costs, fan, inbox, lights, mail, messages, purifier, technik, vacuum
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +56,14 @@ class ToolLinkMixin:
             if not self._only_metin(state):
                 return metin_error("Termine verwaltet")
 
+        def command_gate(args, state):  # code word, or Metin known by his words
+            if not (self._only_metin(state) or state.get("metin_known")):
+                return {"error": "Nicht erlaubt: Feste Befehle legt nur Metin fest. Frag, wer "
+                                 "spricht; ist es Metin, soll er es selbst sagen."}
+
+        async def command_set(args):
+            return self.commands.define(args)
+
         def mood_gate(args, state):  # code word, or Metin known by his words
             if not (self._only_metin(state) or state.get("metin_known")):
                 return metin_error("Laune")
@@ -96,6 +104,16 @@ class ToolLinkMixin:
             lights.LIGHTS_TOOL["name"]: {
                 "label": "Lights", "timeout": 25.0, "run": self.lights.run,
                 "error": "Die Lampen konnten gerade nicht gesteuert werden."},
+            befehle.RUN_TOOL["name"]: {
+                "label": "Fixed command", "timeout": 30.0, "run": self.commands.run,
+                "error": "Der feste Befehl konnte gerade nicht ausgeführt werden.",
+                "log": lambda a, r: f"{a.get('name')} -> " + (
+                    "ok" if r.get("ok") else str(r.get("probleme") or r.get("error", ""))[:80])},
+            befehle.SET_TOOL["name"]: {
+                "label": "Fixed command set", "timeout": 5.0, "run": command_set,
+                "gate": command_gate, "error": "Der feste Befehl konnte gerade nicht geändert werden.",
+                "log": lambda a, r: f"{a.get('name')} -> " + str(
+                    r.get("gilt_jetzt") or r.get("geloescht") or r.get("error", ""))[:80]},
             fan.FAN_TOOL["name"]: {
                 "label": "Fan", "timeout": 15.0, "run": self.fan.run,
                 "error": "Der Ventilator konnte gerade nicht gesteuert werden."},
