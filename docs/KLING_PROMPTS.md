@@ -197,7 +197,7 @@ In Kling eingesetzt um 20:39 (beide Bilder Favorit 4, 4K, 10 s, Adaptive, 1, 350
 
 "0–3s: Happy to see him, she looks into the camera with a sweet, loving smile and gently sways from one leg to the other. 3–6s: As if checking that no one is watching, she glances shyly to one side and to the other, softly turning her shoulders and lifting one heel. 6–8s: She looks into the camera again, lays one finger on her lips with a bashful, knowing smile and shifts her weight onto one leg. 8–10s: She lowers her hand, looks at him lovingly and returns to her initial pose. Soft, feminine, natural body movements. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-Ergebnis hier nachtragen.
+Von Metin selbst einkopiert und gestartet, etwa 20:50. **Ergebnis (Clip 964, `kling_20261125_VIDEO_0_3s__Happ_964_0.mp4`, Download 20:55, Original in Leyla Kling Originale):** sie lächelt in die Kamera und wiegt sich (0 bis 2,5 s), schaut verstohlen zur einen und zur anderen Seite (3 bis 5 s), legt den Finger an die Lippen und lächelt wissend (5,5 bis 7,5 s), senkt die Hand, Grundpose ab 8,5 s. Blick zu ihm von Anfang an, wie gewollt. Bewegungsmenge im Mittel 2,77, je Sekunde 2,1 / 2,4 / 3,5 / 3,0 / 4,3 / 2,6 / 0,8 / 5,0 / 3,3 / 0,8, Naht 0,68, letzte halbe Sekunde 0,41. Nach Ablauf Punkt 8 seit 20:55 als `schwarz/freizeitgluecklich4` in 4K ohne Ton eingebaut (Videospur bytegleich).
 
 **Berührung im Gesicht, Nachtkleid (20:41).** Eigene Szene, anders als die drei anderen Gesichtsszenen (Schmollmund und Wange an die Schulter; Lächeln hinter dem Buch; Wange hineinschmiegen und Fingerspitzen): hier kräuselt sie überrascht die Nase, wird rot und legt beide Handflächen an die warmen Wangen, schaut dann wieder zu ihm.
 
