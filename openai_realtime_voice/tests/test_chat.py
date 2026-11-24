@@ -476,6 +476,7 @@ def test_the_chat_model_can_be_switched_on_the_server_and_has_a_budget(tmp_path,
     assert b._chat_models() == ["gpt-6-luna", "back"]
     assert b.recall.set({"chat_model": "gpt-6.2-astra", "budget": 300})["chat_model"] == "gpt-6.2-astra"
     assert b._chat_models() == ["gpt-6.2-astra", "gpt-6-luna", "back"]
+    assert b._chat_models(strong=False) == ["gpt-6-luna", "back"]      # touches stay with the small one
     chat.spend_add("gpt-6.2-astra", {"input_tokens": 40_000_000, "output_tokens": 0})   # 320 dollars
     assert b._chat_models() == ["gpt-6-luna", "back"]                                    # over the budget
     assert b.recall.set({"chat_model": "etwas anderes"})["chat_model"] == "gpt-6.2-astra"

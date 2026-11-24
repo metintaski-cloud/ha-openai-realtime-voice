@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.150.4 (24 Nov 2026)
+
+- Metin tries gpt-6.2-astra for the chat with a budget of 50 dollars a month (24 Nov 2026, 04:39: "50 € ist ok"; 300 was too much). Set on the server (`chat_model`, `budget`), not in the code. When the budget is used up, Luna answers until the next month.
+- Her one line reactions to a touch always come from the small model (`_chat_models(strong=False)`): at about 10 cents an answer the touches alone would use up the budget.
+
 ## 2.150.3 (24 Nov 2026)
 
 - The menu shows the number of diary entries next to "Tagebuch", like the counts of the lists (Metin: there was no number). `POST /api/lists` carries `diary_n` behind the code word.

@@ -422,9 +422,9 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             rules += await asyncio.wait_for(minded, recall.QUERY_TIMEOUT_S + 1.0)
         except Exception as e:  # her memory never keeps an answer waiting or failing
             logger.warning("Recall for the chat: %s", type(e).__name__)
-        models = self._chat_models()
+        models = self._chat_models(strong=not chat.touch_zone(message))
         wanted = self.recall.settings.get("chat_model") or self.chat_model
-        if wanted and models[0] != wanted:
+        if wanted and models[0] != wanted and not chat.touch_zone(message):
             logger.info("Chat: monthly budget of the chat model used up, answering with %s",
                         self.memory_model)
         out = await chat.answer(self.openai_api_key, models,
@@ -534,7 +534,12 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             if self.todo_sync:
                 self.todo_sync.kick()
 
-    def _chat_models(self) -> list:
+    def _chat_models(self, strong: bool = True) -> list:
+        """The models for a chat answer, the stronger one first while its month's budget lasts.
+        strong False: the small model alone (her one line reactions to a touch; with a strong
+        model at about 10 cents an answer they would use up the budget, 2.150.4)."""
+        if not strong:
+            return list(dict.fromkeys(m for m in (self.memory_model, self.backend_model) if m))
         wanted = self.recall.settings.get("chat_model") or self.chat_model
         budget = float(self.recall.settings.get("budget") or 0) or self.chat_budget
         strong = wanted if chat.month_spend() < budget else ""
