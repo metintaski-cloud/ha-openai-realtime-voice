@@ -27,6 +27,7 @@ Regel ab jetzt:
 2. Die gezählten Bewegungen sind kleine Körperbewegungen (Gewicht wechseln, Kopf neigen, Hand heben, Haare zurückstreichen), keine Gefühlsausbrüche.
 3. Bei einem Nachbau gibt der alte Clip auch die Stärke des Ausdrucks vor, nicht nur die Abfolge.
 4. `tools/kling_check.py` hält bei mehr als einem starken Ausdruckswort an (Liste `STRONG`).
+5. **Nie mehrere Clips mit derselben neuen Schreibweise hintereinander starten.** Die 1.050 Credits gingen verloren, weil Claude drei Clips startete, bevor Metin den ersten gesehen hatte (Metin um 17:04: "das sind über 900 Credits"). Ab jetzt: einen Clip starten, Metins Urteil abwarten, dann erst den nächsten. Das gilt auch mit seiner Erlaubnis, Generate ohne Rückfrage zu klicken; die Erlaubnis betrifft den einzelnen Klick, nicht eine Serie ohne Kontrolle.
 
 ## Alter Standard vom 21.11.2026 (Verlauf)
 
