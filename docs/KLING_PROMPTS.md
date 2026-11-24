@@ -156,6 +156,12 @@ In Kling eingesetzt um 20:05 (beide Bilder `5_lang_arbeit.png`, 4K, 10 s, Adapti
 
 Geschrieben 20:09, in Kling eingesetzt um 20:12 (beide Bilder `5_lang_arbeit.png`, 4K, 10 s, Adaptive, 1, 350 Credits), Generate klickt Metin. Offenes Risiko, Metin gesagt: das Gesicht ist kurz halb verdeckt und muss hinter dem Buch unverändert wieder hervorkommen. Ergebnis hier nachtragen.
 
+**Schleife, langes Arbeitskleid: sie liest und schaut über die Brille hoch (Metin, 20:17: "was noch"; Claude nannte die Szene vorab auf Deutsch).** Eigene Szene, die es bei den Schleifen noch nicht gibt (bisher: Wiegen, Haarsträhne, Blick senken, Buch an die Brust, Hände hinter dem Rücken); sie nutzt Buch und Brille, die es nur im Arbeitskleid gibt. Bewusst keine Hand am Gesicht (Flimmern an der Brille bei den Clips 181 und 226).
+
+"0–3s: Calm and content, she opens her book and reads a line, gently swaying from one leg to the other with a soft smile. 3–6s: Her thoughts drift to him, she looks up at him over the rim of her glasses and smiles shyly, slowly shifting her weight onto one leg. 6–8s: Bashful at being caught dreaming, she lowers her gaze to the page again and softly turns her shoulders, her hip swaying gently. 8–10s: She closes the book, looks lovingly into the camera and returns to her initial pose. Soft, feminine, natural body movements. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
+
+In Kling eingesetzt um 20:18 (beide Bilder `5_lang_arbeit.png`, 4K, 10 s, Adaptive, 1, 350 Credits). Generate klickt Metin. Ergebnis hier nachtragen.
+
 ## Was am 24.11.2026 sonst noch entstand
 
 - `kurz/gluecklich5` (Clip 308, Haarsträhne, Metin: "ist für die Schleife von Arbeit kurz glücklich"): unverändert im Originaltempo eingebaut, Bewegungsmenge 1,15, Naht 0,64, Gesicht stabil, der ganze Körper lebt. Geschrieben noch in Claudes Zwischenform (verschiedene Handlungen je einmal, ein Satz, dass der Körper mitgeht, keine Klemmsätze). Der Clip ist gut, die Form ist trotzdem abgelöst; neue Schleifen entstehen nach dem Baukasten.
