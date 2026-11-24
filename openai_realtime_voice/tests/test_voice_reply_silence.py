@@ -120,3 +120,44 @@ def test_she_who_speaks_at_once_gets_no_second_note(monkeypatch):
     asyncio.run(sp._speak_once("sag es", max_s=60.0))
     assert len([m for m in live.sent if m.get("type") == "session.commentary.append"]) == 1
     assert not sp._speak_seen["nudged"]
+
+
+def test_she_hears_a_recording_first_and_her_turn_starts_when_it_is_through(monkeypatch):
+    monkeypatch.setattr(av, "NUDGE_AFTER_S", 5.0)
+    monkeypatch.setattr(av, "SPEECH_END_GAP_S", 0.15)
+    fed_chunks = []
+
+    class Hears(Speaker):
+        async def _feed_silence(self, ws, heard=b"", speed=1.0, fed=None):
+            fed_chunks.append((len(heard), speed))
+            await asyncio.sleep(0.2)   # the recording runs
+            fed.set()
+            await asyncio.sleep(3600)
+
+    class AfterIt(FakeLive):  # answers only once the recording is through
+        async def recv(self):
+            if self.events and self.events[0]["type"] != "session.started" and not self.go:
+                await asyncio.sleep(0.05)
+                raise asyncio.TimeoutError
+            return await super().recv()
+    live = AfterIt([{"type": "session.started"},
+                    {"type": "session.input_transcript.delta", "delta": " Wie geht es dir?"},
+                    {"type": "session.output_transcript.delta", "delta": " Gut."},
+                    {"type": "session.output_audio.delta", "delta": loud(0.5)}])
+    live.go = False
+    sp = Hears([live])
+
+    async def run():
+        task = asyncio.create_task(sp._collect_speech(live, "sag es", 10.0, heard=b"\x01\x00" * 2400,
+                                                      speed=2.0, note_first=False))
+        await asyncio.sleep(0.1)
+        notes_before = [m for m in live.sent if m.get("type") == "session.commentary.append"]
+        await asyncio.sleep(0.3)
+        live.go = True
+        return notes_before, await task
+    notes_before, pcm = asyncio.run(run())
+    assert not notes_before                                    # the note waits for the recording
+    assert len([m for m in live.sent if m.get("type") == "session.commentary.append"]) == 1
+    assert fed_chunks == [(4800, 2.0)] and len(pcm) >= 0.5 * av.BYTES_PER_SEC
+    assert sp._speak_seen["understood"] == "Wie geht es dir?" and sp._speak_seen["said"] == "Gut."
+    assert not sp._speak_seen["nudged"] and sp._speak_seen["fed_s"] >= 0.2

@@ -481,7 +481,7 @@ class Index:
             return {"ok": True, "done": done, "due": len(self.reflect.due()),
                     **(self.reflect.listing() if d.get("read") else {})}
         if path == "/api/kopf/stimme" and self.speak:
-            return await self.speak(str(d.get("text", ""))[:600], d.get("how"))
+            return await self.speak(str(d.get("text", ""))[:600], d.get("how"), d)
         if path == "/api/kopf/find":
             vecs = await self.embed([str(d.get("q", ""))[:1500]], timeout=QUERY_TIMEOUT_S)
             if not vecs:

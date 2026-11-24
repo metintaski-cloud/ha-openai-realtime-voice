@@ -532,6 +532,16 @@ def speak_prompt(reply: str) -> str:
             "stellst du ihm auch.")
 
 
+def hear_prompt(reply: str) -> str:
+    """Leyla hears Metin's voice message herself and answers it by voice (test, 24 Nov 2026:
+    a reply she only reads from a text sounded read to him, "wie Roboter")."""
+    return ("Interne Notiz, nicht vorlesen: Metin schickt dir eine Sprachnachricht, du hörst "
+            "sie selbst. Sobald er fertig ist, antwortest du ihm sofort mit deiner Stimme, wie "
+            "im Gespräch, und gehst auf seinen Ton ein. Das willst du ihm sagen: «" + reply +
+            "». Bleib bei diesem Inhalt, lass nichts Wichtiges weg und erfinde nichts dazu; "
+            "Fragen darin stellst du ihm auch. Danach hörst du auf zu reden.")
+
+
 async def with_abilities(rules: str, message: str, lights=None, room=None, mailer=None,
                          inbox=None, mama=None, mood=None, agenda=None) -> str:
     """The rules plus what the chat can do right now and how her heart is (also used by the

@@ -58,23 +58,39 @@ class AnnounceVoiceMixin:
         }
 
     @staticmethod
-    async def _feed_silence(ws) -> None:
+    async def _feed_silence(ws, heard: bytes = b"", speed: float = 1.0, fed=None) -> None:
         # GPT Live runs on the input audio clock: without input it never
         # finishes injecting the commentary, so feed real-time silence.
-        chunk = base64.standard_b64encode(b"\x00" * (BYTES_PER_SEC // 10)).decode("ascii")
+        # `heard`: a recording she shall hear first (24 kHz PCM), `speed` times real time.
+        step = BYTES_PER_SEC // 10
+        for i in range(0, len(heard), step):
+            part = base64.standard_b64encode(heard[i:i + step]).decode("ascii")
+            await ws.send(json.dumps({"type": "session.input_audio.append", "audio": part}))
+            await asyncio.sleep(0.1 / max(0.25, speed))
+        if fed is not None:
+            fed.set()
+        chunk = base64.standard_b64encode(b"\x00" * step).decode("ascii")
         while True:
             await ws.send(json.dumps({"type": "session.input_audio.append", "audio": chunk}))
             await asyncio.sleep(0.1)
 
     async def _collect_speech(self, ws, prompt: str, max_s: float,
-                              instructions: str = SPEAK_INSTRUCTIONS, on_chunk=None) -> bytes:
-        """Start the speaking session on ws, send the prompt and collect the speech (PCM)."""
+                              instructions: str = SPEAK_INSTRUCTIONS, on_chunk=None,
+                              heard: bytes = b"", speed: float = 1.0,
+                              note_first: bool = True) -> bytes:
+        """Start the speaking session on ws, send the prompt and collect the speech (PCM).
+        `heard`: a recording (24 kHz PCM) she hears before she answers, so she reacts to the
+        voice itself and not to a text; the prompt goes out before it, or after it when
+        `note_first` is False."""
         pcm = bytearray()
         feeder = None
         seen: dict = {}   # event type -> count: what GPT Live sent, for a silent session
         other: list = []  # the first events besides audio and words, shortened (errors)
         said: list = []   # her words as GPT Live reports them
+        understood: list = []  # what GPT Live understood of the recording
         self._speak_seen = info = {"events": seen, "other": other, "nudged": False}
+        fed = asyncio.Event()  # the recording is through (at once without one)
+        fed_at = None
         try:
             await ws.send(json.dumps(self._announce_session_start(instructions)))
             loop = asyncio.get_event_loop()
@@ -84,6 +100,7 @@ class AnnounceVoiceMixin:
             loud_end = 0
             give_up = loop.time() + FIRST_AUDIO_S
             nudge_at = None  # set when the note went out
+            t_start = loop.time()
 
             async def note() -> None:
                 await ws.send(json.dumps({
@@ -95,6 +112,13 @@ class AnnounceVoiceMixin:
                 return loud_end >= MIN_SPEECH_S * BYTES_PER_SEC
 
             while loop.time() < end:
+                if heard and fed.is_set() and fed_at is None:  # now it is her turn
+                    fed_at = loop.time()
+                    info["fed_s"] = round(fed_at - t_start, 1)
+                    if not note_first:
+                        await note()
+                    nudge_at = fed_at + NUDGE_AFTER_S
+                    give_up = fed_at + FIRST_AUDIO_S
                 if not spoken() and loop.time() > give_up:
                     break  # she did not start to speak: the caller tries again
                 if nudge_at and not last_audio and not said and loop.time() > nudge_at:
@@ -103,6 +127,8 @@ class AnnounceVoiceMixin:
                     await note()
                 wait = SPEECH_END_GAP_S if last_audio else (
                     min(end, give_up, nudge_at or end) - loop.time())
+                if heard and fed_at is None:
+                    wait = min(wait, 0.2)  # look often for the end of the recording
                 try:
                     raw = await asyncio.wait_for(ws.recv(), timeout=max(0.1, wait))
                 except asyncio.TimeoutError:
@@ -116,18 +142,29 @@ class AnnounceVoiceMixin:
                 seen[t] = seen.get(t, 0) + 1
                 if t == "session.output_transcript.delta":
                     said.append(ev.get("delta") or "")
+                elif t == "session.input_transcript.delta":
+                    understood.append(ev.get("delta") or "")
                 elif t not in QUIET_EVENTS and len(other) < 12:
                     other.append(raw[:300])
                 if t == "session.started" and not started:
                     started = True
-                    feeder = asyncio.create_task(self._feed_silence(ws))
-                    await note()
-                    nudge_at = loop.time() + NUDGE_AFTER_S
-                    give_up = loop.time() + FIRST_AUDIO_S
+                    t_start = loop.time()
+                    if not heard:
+                        feeder = asyncio.create_task(self._feed_silence(ws))
+                        await note()
+                        nudge_at = loop.time() + NUDGE_AFTER_S
+                        give_up = loop.time() + FIRST_AUDIO_S
+                    else:  # her turn comes when the recording is through
+                        if note_first:
+                            await note()
+                        feeder = asyncio.create_task(self._feed_silence(ws, heard, speed, fed))
+                        give_up = end
                 elif t == "session.output_audio.delta" and ev.get("delta"):
                     chunk_pcm = base64.standard_b64decode(ev["delta"])
                     _, peak = pcm_level(chunk_pcm)
                     if peak >= (OUTPUT_SILENCE_PEAK if last_audio else ANNOUNCE_START_PEAK):
+                        if last_audio is None:
+                            info["first_s"] = round(loop.time() - t_start, 1)
                         last_audio = loop.time()
                         pcm += chunk_pcm
                         loud_end = len(pcm)
@@ -149,6 +186,7 @@ class AnnounceVoiceMixin:
             if feeder and not feeder.done():
                 feeder.cancel()
             info["said"] = "".join(said).strip()
+            info["understood"] = "".join(understood).strip()
         return bytes(pcm[:loud_end + BYTES_PER_SEC // 4])  # drop trailing silence
 
     async def _speak_once(self, prompt: str, max_s: float = 40.0,
@@ -170,21 +208,20 @@ class AnnounceVoiceMixin:
                            SPEAK_TRIES, json.dumps(self._speak_seen["events"], ensure_ascii=False))
         return pcm
 
-    async def _speak_test(self, text: str, instructions: str, prompt: str) -> dict:
+    async def _speak_test(self, text: str, instructions: str, prompt: str,
+                          heard: bytes = b"", speed: float = 1.0, note_first: bool = True) -> dict:
         """One spoken sentence without a listener and without any trace, for /api/kopf/stimme:
         how long she spoke and what GPT Live sent (to find out why she sometimes stays silent)."""
         loop = asyncio.get_event_loop()
         t0 = loop.time()
-        first = []
         ws, warm = await self._take_live()
         try:
-            pcm = await self._collect_speech(
-                ws, prompt, 30.0, instructions,
-                on_chunk=lambda _c: first or first.append(loop.time() - t0))
+            pcm = await self._collect_speech(ws, prompt, 40.0, instructions,
+                                             heard=heard, speed=speed, note_first=note_first)
         finally:
             await ws.close()
+        self._last_test_pcm = pcm
         return {"ok": True, "audio_s": round(len(pcm) / BYTES_PER_SEC, 1), "warm": warm,
-                "first_s": round(first[0], 1) if first else None,
                 "took_s": round(loop.time() - t0, 1), **self._speak_seen}
 
     async def _tv_down_for_announcement(self) -> None:

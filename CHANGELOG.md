@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.150.12 (24 Nov 2026)
+
+- `chore`: test path for a voice reply in which Leyla hears the recording herself (Metin, 05:44 and 05:46: the voice reply is "nicht die voice ai von gpt", "klingt wie Roboter"; today his message becomes text and GPT Live only says a written answer). `_collect_speech` can feed a recording (24 kHz PCM, `heard`, at `speed` times real time) before her turn, with the note before or after it, and reports what GPT Live understood (`understood`). `/api/kopf/stimme {how:"hoeren", frage, text, speed, nach}` makes a test recording with the announcement voice and lets her answer it. Nothing changes for real voice replies yet.
+
 ## 2.150.11 (24 Nov 2026)
 
 - Measured after 2.150.10 with a live talk from the app and silence on the line: no note rejected any more (28 pieces confirmed in 14 s: code word 2, heart 2, private list 14 of 14, diary 9 of 17 before the talk ended). The private list is 10 851 characters, the diary note 13 051; one piece takes about 0.5 s on GPT Live's clock, so all 38 pieces need about 19 s. Slimming them is the next step.

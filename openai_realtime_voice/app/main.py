@@ -682,14 +682,29 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                     len(audio), "yes" if out.get("audio") else "no")
         return out
 
-    async def _voice_probe(self, text: str, how=None) -> dict:
+    async def _voice_probe(self, text: str, how=None, d=None) -> dict:
         """/api/kopf/stimme: speak one test sentence like a voice reply. `how` leaves parts of
         the instructions out ("ohne": no mood and no closeness, "herz": mood only, "naehe":
-        closeness only, "ansage": the announcement voice), to see which part silences her."""
-        mood = self.mood.feeling() if how in (None, "", "herz") else ""
-        love = UNLOCKED_LOVE if how in (None, "", "naehe") else ""
+        closeness only, "ansage": the announcement voice), to see which part silences her.
+        "hoeren": she hears a recording first (made here by the announcement voice saying
+        `frage`) and answers it with the content `text`; `speed` times real time, `nach` sends
+        the note only after the recording."""
+        d = d or {}
+        mood = self.mood.feeling() if how in (None, "", "herz", "hoeren") else ""
+        love = UNLOCKED_LOVE if how in (None, "", "naehe", "hoeren") else ""
         if how == "ansage":
             return await self._speak_test(text, announce_voice.SPEAK_INSTRUCTIONS, text)
+        if how == "hoeren":
+            asked = str(d.get("frage") or "")[:300]
+            made = await self._speak_test(asked, announce_voice.SPEAK_INSTRUCTIONS, asked)
+            heard = getattr(self, "_last_test_pcm", b"")
+            if len(heard) < BYTES_PER_SEC:
+                return {"ok": False, "why": "no test recording", "made": made.get("audio_s")}
+            out = await self._speak_test(
+                text, chat.voice_reply_instructions(mood, love), chat.hear_prompt(text),
+                heard=heard, speed=float(d.get("speed") or 1.0), note_first=not d.get("nach"))
+            out["recording_s"] = made.get("audio_s")
+            return out
         return await self._speak_test(text, chat.voice_reply_instructions(mood, love),
                                       chat.speak_prompt(text))
 
