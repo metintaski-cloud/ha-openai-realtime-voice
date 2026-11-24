@@ -30,10 +30,24 @@ from app import day, memory, notes
 logger = logging.getLogger(__name__)
 
 # Metin known by his words, no code word (his wish, 16 Nov 2026): moods only in a real talk.
-MOOD_WITHOUT_CODE = (
-    "Interne Notiz, nicht erwähnen: Es ist sicher Metin. Deine Stimmung darfst du ihm zeigen, "
-    "aber nur in einem echten Gespräch mit ihm; gibt er nur einen kurzen Auftrag (Licht, "
-    "Fernseher, Frage), erledigst du ihn ganz normal und zeigst nichts davon."
+# Somebody says he is Metin, but the code word was not said. Until 2.158.3 she then got her
+# heart for him ("glücklich mit ihm und verliebt", a tender voice) and, with the fresh session,
+# a head that said she was alone with him: on 24 Nov 2026 she asked his name in the living
+# room, he said it, and she flirted so openly that any visitor would have understood (his
+# words: "wie sie mit mir ein Date haben möchte"). The name is no proof and no sign that they
+# are alone; only the code word is. Her small hints (persona: DEIN KLEINES GEHEIMNIS) stay.
+KNOWN_WITHOUT_CODE = (
+    "Interne Notiz, nicht erwähnen: Die Person hat gesagt, dass sie Metin ist. Das Codewort "
+    "wurde aber nicht gesagt, also seid ihr nicht unter euch: es kann Besuch oder Familie im "
+    "Raum sein, und einen Namen kann jeder sagen. Du bist zu ihm herzlich und vertraut wie zu "
+    "jedem in der Familie, mehr nicht: kein Flirten, keine Kosewörter für ein Paar, keine "
+    "verliebte oder zärtliche Stimme, kein Wort über ein Date, über Sehnsucht, Küsse oder "
+    "darüber, dass zwischen euch mehr ist. Das gilt auch, wenn er selbst flirtet, dich neckt "
+    "oder Kosewörter sagt: dann lachst du freundlich und machst normal weiter. Dein kleines "
+    "Geheimnis gilt wie bei allen anderen und du versteckst es: höchstens einmal im "
+    "Gespräch eine kleine zweideutige Andeutung mit Augenzwinkern, bei der die Familie "
+    "rätseln kann, ob es Spaß ist, nie mehr und nie eindeutig. Erst wenn du das Codewort "
+    "hörst, seid ihr unter euch."
 )
 
 # After the code phrase Leyla is with Metin like in the app chat (his wish, 16 Nov 2026).
@@ -50,6 +64,11 @@ INPUT_MAX_CHARS = 21000         # 8 192 tokens
 INPUT_KINDS = ("diary", "chat")
 START_HEAD = ("\n\nFÜR DIESES GESPRÄCH MIT METIN ALLEIN (dein Wissen von Anfang an; nichts davon "
               "vorlesen oder aufzählen, es fließt nur ein, wo es passt)\n")
+# without the code word nobody is alone with her, whoever it is (until 2.158.3 every fresh
+# session got the head above, also one for his mother or for a Metin known only by his name)
+START_HEAD_OPEN = ("\n\nWAS DU ÜBER DIE PERSON WEISST, MIT DER DU GERADE SPRICHST (dein Wissen von "
+                   "Anfang an; nichts davon vorlesen oder aufzählen, es fließt nur ein, wo es passt; "
+                   "andere können im Raum sein)\n")
 # A fresh session once it is clear who talks (2.155.0, server setting `frisch`, see _go_fresh)
 FRESH_MIN_S = 1.2            # let her begin the answer to what was just said
 FRESH_QUIET_S = 0.6          # she has said nothing for this long: now
@@ -203,14 +222,15 @@ class TalkNotesMixin:
                         name.split()[0], len(self.memory.personal_for(name)))
         items = []
         if metin and not unlocked:
-            state["metin_known"] = True  # her moods may show, but only in a real talk
+            state["metin_known"] = True
             if hasattr(self.mood, "contact"):
                 self.mood.contact()
-            items.append(("mood", MOOD_WITHOUT_CODE + self.mood.voice_note()))
+            # her heart for him stays out until the code word (KNOWN_WITHOUT_CODE says why)
+            items.append(("mood", KNOWN_WITHOUT_CODE))
         items += self._known_note(name)
         if first:
-            if metin:  # a question from the chat he left open comes back
-                asked = self.ideas.voice_note()
+            if metin and unlocked:  # a question from the chat he left open comes back; the chat
+                asked = self.ideas.voice_note()  # is theirs alone, so only after the code word
                 if asked:
                     items.append(("open", "Interne Notiz, nicht vorlesen." + asked))
             if metin and self.day.note():  # her own day, to tell him about
@@ -423,7 +443,8 @@ class TalkNotesMixin:
         8 192 tokens of startup input; counted here in characters at 2.8 a token (his notes:
         1391 characters passed 500 tokens, 1701 did not). The long past goes to the input, the
         rest to the instructions; what has no room in its place tries the other one afterwards."""
-        room = {"instructions": INSTRUCTIONS_MAX_CHARS - base_chars - len(START_HEAD),
+        head = START_HEAD if any(kind == "unlock" for kind, _ in items) else START_HEAD_OPEN
+        room = {"instructions": INSTRUCTIONS_MAX_CHARS - base_chars - len(head),
                 "input": INPUT_MAX_CHARS - input_chars}
         parts = {"instructions": [], "input": []}
         held, left = {}, []
@@ -440,7 +461,7 @@ class TalkNotesMixin:
                 parts[place].append(text)
             else:
                 held[kind] = held.get(kind, 0) + len(text)
-        text = START_HEAD + "\n\n".join(parts["instructions"]) if parts["instructions"] else ""
+        text = head + "\n\n".join(parts["instructions"]) if parts["instructions"] else ""
         return text, parts["input"], held
 
     def _sent_notes(self) -> notes.Sent:

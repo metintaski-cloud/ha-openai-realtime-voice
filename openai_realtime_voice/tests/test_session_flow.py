@@ -482,7 +482,8 @@ async def test_moods_without_code_only_for_known_metin_and_lamps_only_in_a_real_
     state["dialog"] += [("leyla", "ok"), ("user", "wie geht's"), ("leyla", "gut"), ("user", "schön")]
     bridge._maybe_mood_lamp(state)
     assert bridge.lamp.mood_pct == 100 and state["mood_lamp"]
-    assert "kurzen Auftrag" in m.MOOD_WITHOUT_CODE
+    # 2.158.4: the name alone is no code word, so nothing of the two of them is in his note
+    assert "Codewort" in m.KNOWN_WITHOUT_CODE and "kein Flirten" in m.KNOWN_WITHOUT_CODE
 
 
 def test_ending_the_talk_by_words_counts_as_goodbye():

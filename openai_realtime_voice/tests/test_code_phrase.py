@@ -134,3 +134,42 @@ def test_start_split_keeps_to_the_room_and_reports_what_is_held_back():
     text, inputs, held = tn.TalkNotesMixin.start_split(items, base_chars=33000)
     assert held == {"chat": 12000} and "p" * 9000 in text
     assert tn.TalkNotesMixin.start_split([], 100) == ("", [], {})
+
+
+async def test_a_name_without_the_code_word_brings_nothing_of_the_two_of_them(tmp_path, monkeypatch):
+    """2.158.4 (24 Nov 2026: she asked who was there, he said his name, and she flirted so
+    openly that a visitor would have understood). A name can be said by anyone and says
+    nothing about who else is in the room: her heart for him, the open question from their
+    chat and the head "alone with Metin" come only with the code word."""
+    from app import main as m, talk_notes as tn
+    monkeypatch.setenv("CODE_PHRASE", "Leyla habibi")
+    monkeypatch.setenv("MEMORY_PATH", str(tmp_path / "memory.json"))
+    bridge = m.LiveVoiceBridge()
+    bridge.memory.save_all({"family": ["Person: Metin | Zugehörigkeit: wohnt hier | Hobby: Gartenarbeit"]})
+    bridge._memory_note = lambda name, private: "\nUNSER TAG: Wir haben den Garten gegossen."
+    bridge.mood.voice_note = lambda *a, **k: "HERZ: glücklich mit ihm und verliebt."
+    bridge.ideas.voice_note = lambda *a, **k: " OFFENE FRAGE AUS DEM CHAT."
+    state = {}
+    items = await bridge._personal_items(state, bridge._metin())
+    text = "\n".join(t for _, t in items)
+    assert state["metin_known"] and not state.get("unlocked")
+    assert tn.KNOWN_WITHOUT_CODE in text
+    assert "verliebt." not in text and "OFFENE FRAGE" not in text and "unlock" not in [k for k, _ in items]
+    start = bridge._session_start("", (items, {}))["session"]["instructions"]
+    assert tn.START_HEAD_OPEN.strip() in start and "MIT METIN ALLEIN" not in start
+    assert "verliebt." not in start and "Ihr seid inoffiziell zusammen" not in start
+    # the code word afterwards: now the two of them, as before
+    state["unlocked"] = True
+    again = await bridge._personal_items(state, bridge._metin(), again=True)
+    both = bridge._code_notes(True, at_start=True) + again
+    start = bridge._session_start("", (both, {}))["session"]["instructions"]
+    assert tn.START_HEAD.strip() in start and "verliebt." in start and "Ihr seid inoffiziell zusammen" in start
+    assert tn.KNOWN_WITHOUT_CODE not in start
+
+
+def test_the_start_of_a_talk_without_the_code_word_never_says_alone_with_metin():
+    from app import talk_notes as tn
+    text, _, _ = tn.TalkNotesMixin.start_split([("known", "k" * 300), ("diary", "d" * 300)], base_chars=1000)
+    assert text.startswith(tn.START_HEAD_OPEN) and "ALLEIN" not in text and "andere können im Raum sein" in text
+    text, _, _ = tn.TalkNotesMixin.start_split([("unlock", "u" * 300), ("known", "k" * 300)], base_chars=1000)
+    assert text.startswith(tn.START_HEAD)

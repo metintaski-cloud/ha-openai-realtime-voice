@@ -45,7 +45,7 @@ from app import context
 from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, pcm_level
 from app.live_link import END_CONVERSATION_TOOL
 from app import talk_notes
-from app.talk_notes import MOOD_WITHOUT_CODE, UNLOCKED_LOVE, TalkNotesMixin  # noqa: F401
+from app.talk_notes import KNOWN_WITHOUT_CODE, UNLOCKED_LOVE, TalkNotesMixin  # noqa: F401
 from app.phrases import (END_TALK_RE, RECALL_NUDGE, RECALL_RE, NAME_NUDGE, NAME_NUDGE_AFTER_S, NAME_NUDGE_COOLDOWN_S, NAME_RE, PROMISE_NUDGE, PROMISE_NUDGE_AFTER_S, PROMISE_RE, NAME_SAID_RE, WHO_AGAIN_TURNS, WHO_ASKED_RE, WHO_NUDGE, WHO_NUDGE_AGAIN, COUPLE_NUDGE, COUPLE_WORD_RE, PET_NUDGE, PET_WORD_RE, addressed_by_name, contains_goodbye, greeting_instruction, parse_greeting_words, pick_greeting)
 from app import (reach_link, chat, lamp_show, metrics, output_link, session_end, tool_link, after_talk, announce_voice, live_link, night, cleanup, costs, fan, health, lights, messages, persona, purifier, rf, technik, todo_sync,
                  tv, vacuum)
