@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.155.1 (24 Nov 2026)
+
+- `fix`: a fixed command reports a fan key press that the power meter did not confirm as a problem instead of as done (Metin, 11:01: she shall check quietly whether it really is so; the fan light has a power meter she can read). The check itself was already there: `fan.set_light` reads the meter first, presses nothing when the light already is as wanted, and looks at the change after a press; the floor lamps are confirmed by their state in Home Assistant and sent again when they did not switch (`lights.run`). What was missing: the case "key pressed, no clear change seen" came back as a note and the fixed command passed it on as done.
+
 ## 2.155.0 (24 Nov 2026; prepared on the branch `vorbereitet-fuer-metin` while Metin slept, installed after his yes at 10:43)
 
 - `feat`: fixed commands (`app/befehle.py`). A sentence of the family ("Lambaları kapat", "alle Lichter aus") can be set as a command that always switches exactly the same: floor lamps on, floor lamps off, the fan light, the fan. Metin sets or changes one by saying it (`befehl_festlegen`, only after the code word or when he is known by his words; "ab jetzt heißt Lichter aus auch das Ventilatorlicht"), it applies in the same talk, and she tells him what applies now. Anyone uses one (`fester_befehl`): the backend only has to recognise the sentence and call the command by name, the code switches what was set and reports a lamp that is not reachable. Why: a lamp rule lived only as a free sentence in her memory, was stored after the talk and worked out anew every time; Metin taught it from 19 to 22 Nov. Stored in `/data/leyla_befehle.json`, read or set with `POST /api/kopf/befehle`. Tests: `tests/test_befehle.py`.

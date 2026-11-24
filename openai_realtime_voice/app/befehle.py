@@ -216,6 +216,13 @@ class Commands:
                 if isinstance(r, dict) and r.get("unavailable"):
                     problems.append("Nicht erreichbar: Stehlampe "
                                     + ", ".join(map(str, r["unavailable"])))
+                # The fan light is checked against its power meter (fan.set_light). A key
+                # press the meter did not confirm is not "done" (Metin, 24 Nov 2026: she
+                # shall check quietly whether it really is so).
+                for step in (r if isinstance(r, list) else []):
+                    if isinstance(step, dict) and step.get("pressed") and not step.get("done"):
+                        problems.append("Ventilator: Taste gedrückt, aber der Stromzähler hat "
+                                        "es nicht bestätigt. Sag das ehrlich dazu.")
         if problems:
             out["ok"] = False
             out["probleme"] = problems

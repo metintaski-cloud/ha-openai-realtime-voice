@@ -108,6 +108,7 @@ def test_only_metin_sets_a_command_and_anyone_uses_one(tmp_path, monkeypatch):
     from app import main as m
     monkeypatch.setenv("CODE_PHRASE", "Leyla habibi")
     monkeypatch.setenv("MEMORY_PATH", str(tmp_path / "memory.json"))
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")   # also when this file runs alone
     bridge = m.LiveVoiceBridge()
     bridge.commands.path = str(tmp_path / "befehle.json")
     tools = bridge._build_tools()
@@ -118,3 +119,15 @@ def test_only_metin_sets_a_command_and_anyone_uses_one(tmp_path, monkeypatch):
     assert "gate" not in runner
     bridge.commands.lights = Lights()
     assert asyncio.run(setter["run"](new()))["ok"] and len(bridge.commands.load()) == 1
+
+
+def test_a_key_press_the_power_meter_did_not_confirm_is_not_reported_as_done(tmp_path):
+    c, lights, fan = store(tmp_path)
+
+    async def unsure(args):
+        return {"pressed": "licht", "note": "Lichttaste gedrückt, der Strommesser hat keine klare Änderung gesehen."}
+    c.define(new(ventilatorlicht="aus"))
+    assert asyncio.run(c.run({"name": "lichter aus"}))["ok"] is True      # confirmed by the meter
+    fan.run = unsure
+    out = asyncio.run(c.run({"name": "lichter aus"}))
+    assert out["ok"] is False and "Stromzähler" in out["probleme"][0]
