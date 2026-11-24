@@ -273,7 +273,33 @@ Geschrieben 21:11, Bilder dafür: Favorit 2 (`7_nacht.png`); von Metin selbst ei
 
 "0–2s: She feels an unexpected gentle sensation on her cheek, gives a tiny start and glances curiously to the side where it came from, shifting her weight onto one leg. 2–5s: Realizing it was him, she looks into the camera, her eyes widening with sweet delight, and happily lifts her shoulders with her eyes squeezed shut for a moment, her hips swaying gently. 5–8s: She lets her shoulders sink, tilts her head and gives him a shy, grateful smile, shifting her weight onto the other leg. 8–10s: She looks at him with loving eyes and returns to her initial pose. Soft, feminine, natural body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-Geschrieben 21:35, Bilder dafür: Favorit 3 (`6_kurz_arbeit.png`); Metin kopiert den Text selbst ein. Vorgesehen als `kurz/gesicht2`. Ergebnis hier nachtragen.
+Geschrieben 21:35. Metin um 21:35: "leg los", 21:36: "du weißt, worauf ich stehe"; Claude hat die Szene selbst eingesetzt (beide Bilder `6_kurz_arbeit.png`, 4K, 10 s, Adaptive, 1, 350 Credits, abgelesen) und um 21:37 selbst auf Generate geklickt. Vorgesehen als `kurz/gesicht2`. Ergebnis hier nachtragen.
+
+Bedienung im kleineren Fenster (800x777, seit etwa 20:51): First frame (301,685) → Asset (341,687); Last frame (358,685) → Asset (398,687); im Dialog Uploads (313,146), Favorites (596,175), Favoriten in der Reihe y=240 bei x=188 (langes Arbeitskleid), 294 (Nacht), 400 (kurzes Arbeitskleid), 506 (langes Freizeitkleid), 612 (kurzes Freizeitkleid), Confirm (639,628), Textfeld (460,715), Generate (596,740). Vor jedem Klick die Fenstergröße prüfen.
+
+**Gesicht 2, kurzes Freizeitkleid: die andere Wange (21:38).** Sie schließt bei der Berührung kurz lächelnd die Augen, dreht dann verspielt den Kopf, hält ihm die andere Wange hin und tippt mit einer Fingerspitze darauf, als wollte sie dort auch eine; hoffnungsvoller, schüchterner Blick.
+
+"0–2s: She feels an unexpected gentle sensation on her cheek, closes her eyes for a moment with a sweet smile and shifts her weight onto one leg. 2–5s: Playfully she turns her head, offering him her other cheek, and taps it lightly with one fingertip as if asking for one more, her hips swaying gently. 5–8s: She looks into the camera with a shy, hopeful smile, softly lifting her shoulders and shifting her weight onto the other leg. 8–10s: She lowers her hand, looks at him with loving eyes and returns to her initial pose. Soft, feminine, natural body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
+
+Vorgesehen als `kurz/freizeitgesicht2`. Ergebnis hier nachtragen.
+
+**Gesicht 2, langes Arbeitskleid: Buch umarmen (21:38).** Überraschter, glücklicher Blick, dann drückt sie das Buch mit beiden Armen an sich und wiegt sich wie ein verliebtes Mädchen, schaut ihn von unten dankbar an. Keine Hand am Gesicht (Brille); Blick als "looks into the camera".
+
+"0–2s: She feels an unexpected gentle sensation on her cheek, her lips part in sweet surprise and she looks into the camera with wide, happy eyes, shifting her weight onto one leg. 2–5s: Overjoyed and bashful, she hugs her book to her chest with both arms and sways softly from side to side like a girl in love, lowering her gaze with a shy smile. 5–8s: She tilts her head, looks into the camera from under her lashes with a tender, grateful smile and shifts her weight onto the other leg. 8–10s: She brings the book back to her side, looks at him with loving eyes and returns to her initial pose. Soft, feminine, natural body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
+
+Vorgesehen als `schwarz/gesicht2`. Ergebnis hier nachtragen.
+
+**Gesicht 2, langes Freizeitkleid: Luft zufächeln (21:38).** Sie holt überrascht Luft, wird rot, schaut weg und fächelt sich mit einer Hand Luft ins warme Gesicht, schaut ihn dann strahlend und verlegen an, die Hand sinkt ans Schlüsselbein.
+
+"0–2s: She feels an unexpected gentle sensation on her cheek, draws in a soft breath and looks into the camera with a sweet, surprised smile, shifting her weight onto one leg. 2–5s: Blushing, she glances away and gently fans her warm face with one hand, her shoulders turning softly, her hips swaying. 5–8s: She looks into the camera again with a glowing, bashful smile, lets her hand sink to her collarbone and shifts her weight onto the other leg. 8–10s: She lowers her hand, looks at him with loving eyes and returns to her initial pose. Soft, feminine, natural body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
+
+Vorgesehen als `schwarz/freizeitgesicht2`. Ergebnis hier nachtragen.
+
+**Gesicht 2, Nachtkleid: wie auf ein Kissen (21:38).** Sie schließt verträumt die Augen, legt die Handflächen aneinander und schmiegt die Wange einen Moment darauf wie auf ein Kissen, öffnet die Augen und lächelt ihn müde und verliebt an. Die Geste nur einen Takt lang, Füße am Platz (Lehre aus Clip 978).
+
+"0–2s: She feels an unexpected gentle sensation on her cheek, closes her eyes with a dreamy smile and shifts her weight onto one leg. 2–5s: Sweetly she lays her palms together and rests her cheek on them for a moment as if on a pillow, her head tilting, her hips swaying gently. 5–8s: She opens her eyes, lets her hands sink and looks into the camera with a tender, sleepy, loving smile, shifting her weight onto the other leg. 8–10s: She looks at him with bright, loving eyes and returns to her initial pose. Soft, feminine, natural body movements. Subtle facial expressions, no exaggerated reactions. Both feet remain in place. No speaking. Static camera, full body visible, unchanged background."
+
+Vorgesehen als `nacht/gesicht2`. Ergebnis hier nachtragen.
 
 ## Was am 24.11.2026 sonst noch entstand
 
