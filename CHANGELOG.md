@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.146.2 (24 Nov 2026)
+
+- `fix`: the phone copies keep their sound. They were made without a sound track, and since the phone always gets the copy (2.143.0) every clip with sound (kiss, rose, touch reactions) was silent on the phone. The sound track is now copied unchanged into the copy; all copies are made once more. Tested with a clip with and without sound.
+
 ## 2.146.1 (24 Nov 2026)
 
 - The phone copies are checked every 2 minutes instead of every 30 (Metin: a newly installed clip must not stutter on the go). A new or replaced clip gets its copy at phone size within about 3 minutes; until then the phone would get the 4K original.

@@ -461,5 +461,5 @@ Gezählt: 12 eigene Bewegungen in 8,5 s, dann 1,5 s Stillstand. Ausdruck wechsel
 
 Herkunft: Aufbau aus den Profi Quellen (ein Take, feste Tatsachen, Zeitabschnitte, gezählte Bewegungen wie "twice", "four times", "once", Stillstand am Ende). Aus unserem Log: Gesicht Satz ohne das Wort für Brille, wechselnder Ausdruck, kein Lippenbiss, erste Handlung mit eigener Bewegung statt nur Blick.
 
-Ergebnis hier nachtragen.
+Ergebnis (Clip 2441, 24.11.2026 02:49, beim ersten Versuch): 2352 x 3524, 241 Bilder, 10,04 s. Im Kontaktbogen geprüft: Blick nach unten mit Haarsträhne (0 bis 2,5 s), Blick hoch und Strahlen, Kopf schief, Winken mit den Fingern (3,5 bis 6 s), linke Hand an der Hüfte (5 bis 7,5 s), Hände runter, Pose ab etwa 8,5 s; keine Brille, keine zweite Person. Bewegungsmenge im Mittel 1,71 (ruhiger Clip, passend für eine Begrüßung), Naht Anfang zu Ende 0,65, Ende gegen Anfang der Schleife freizeitgluecklich2 1,6. Der Ton von Kling war unbrauchbar (Metin: "ein komisches Klick Boom Klock"), deshalb ohne Tonspur eingebaut; die Begrüßung läuft in der App ohnehin stumm. Unverändert im Bild als `schwarz/freizeitbegruessung.mp4` eingebaut (Bildstrom bitgleich), der alte 1176 breite Clip (15 s) liegt als `schwarz_freizeitbegruessung_alt.mp4` in "Leyla aussortiert".
 

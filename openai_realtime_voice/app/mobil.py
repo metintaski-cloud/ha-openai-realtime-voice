@@ -24,7 +24,10 @@ MAX_RATE = "7M"           # 2.141.3: 8M still gave a mini stutter now and then; 
 BUF = "10M"               # 8.7 Mbit/s (2.141.1: 10M had peaked at 13, above Metin's limit of about 11)
 MAX_W = 1440              # 2.143.0: the copies are made at phone size; a 1080 px wide screen showed the 2352 px
                           # wide 4K clip at less than half its pixels and the phone got warm decoding it (Metin)
-CAP = f"{MAX_RATE}/{MAX_W}"   # what a copy was made with; a change makes every copy once more
+# what a copy was made with; a change makes every copy once more. "ton" since 2.146.2: the copies
+# were made without sound, and since the phone always gets the copy (2.143.0) every clip with sound
+# (kiss, rose, touch reactions) was silent on the phone. The sound track is now copied unchanged.
+CAP = f"{MAX_RATE}/{MAX_W}/ton"
 PROBE_TIMEOUT = 30.0
 ENCODE_TIMEOUT = 1800.0
 RESCAN_S = 120            # 2.146.1: was 30 min; a clip Metin has just swapped in then played as the 4K original on
@@ -129,7 +132,8 @@ class Mobil:
     async def _encode(self, src: str, dst: str) -> bool:
         os.makedirs(os.path.dirname(dst), exist_ok=True)
         tmp = dst + ".part.mp4"
-        cmd = ("nice", "-n", "19", "ffmpeg", "-v", "error", "-y", "-i", src, "-an",
+        cmd = ("nice", "-n", "19", "ffmpeg", "-v", "error", "-y", "-i", src,
+               "-map", "0:v:0", "-map", "0:a:0?", "-c:a", "copy",   # 2.146.2: keep the sound, see CAP
                "-vf", f"scale='min({MAX_W},iw)':-2:flags=lanczos",
                "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-profile:v", "high",
                "-level", "5.1", "-pix_fmt", "yuv420p", "-g", "48", "-bf", "3",
