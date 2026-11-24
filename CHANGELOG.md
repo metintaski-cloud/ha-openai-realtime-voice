@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.144.2 (24 Nov 2026)
+
+- The rest of the black above Leyla's head (Metin: "ganz weg"): in full screen Android keeps the strip beside the camera hole black unless the page says `viewport-fit=cover`. The page now says so, the stage fills the strip (`env(safe-area-inset-top)`), and buttons, chat, menu and lists stay below it.
+- The black fade at the bottom edge of the stage is gone too (Metin); only the fades at the sides remain.
+- Full screen at once (Metin: not by hand through the menu): on a phone full screen is now the default (`fullWant`, until he turns it off in the menu), and it switches at the first tap. Before, the switch hung on `pointerdown`, which a browser does not count as a user action for a finger (only when it lifts), so on the phone only the menu worked. Tested in headless Chrome with touch: full screen after one tap. A browser never allows full screen without any touch; only the installed app opens that way.
+
 ## 2.144.1 (24 Nov 2026)
 
 - The black fade at the top edge of the stage is gone (`#stage::after`): it reached down to 7 % of the screen and covered the top of Leyla's head (Metin). The fades at the sides and at the bottom stay.
