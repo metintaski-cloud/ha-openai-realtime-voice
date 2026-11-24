@@ -2,6 +2,8 @@
 
 ## 2.150.6 (24 Nov 2026)
 
+- Decided on 24 Nov 2026, 05:11 (a setting on the server, no new version): Metin tried gpt-6.2-astra in the real chat for half an hour and turned it down as emotionless ("sie sagt es, aber es fühlt sich nicht so an"). gpt-6-luna answers again. The three answer pairs that read tender to Claude did not predict how the talk would feel to him.
+
 - `fix(app)`: with the keyboard open Metin could not see what he typed. In the full screen stage the keyboard lies over the page instead of making it smaller, so the text field stayed behind it. The page now measures how much the keyboard covers (`kbFit`, `visualViewport`) and lifts the text field and the messages by that height (`--kb`); the stage itself does not move. Checked in headless Chrome with a simulated keyboard of 380 px: text field 388 px and messages 450 px above the bottom, back to 8 and 70 when it closes.
 - Second run of her night thinking with the corrected prompts, read on the server: the lamp agreement stands complete and right in the day text, our story only says that there is one. The open story is dropped (`STORY_KINDS` holds only the private one): with few open entries it was a list of dated trifles and it said "meine Mutter" for Metin's mother; without the code word she has the open day texts. A thread that stays open another day is kept once (`_same`), not once per night.
 

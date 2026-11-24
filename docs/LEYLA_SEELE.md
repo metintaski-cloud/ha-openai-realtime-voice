@@ -183,6 +183,7 @@ Dieselben 22 Fragen, dazu 12 Alltagssätze ohne Bezug ("Guten Morgen", "Wie spä
 
 - Preise ohne Zwischenspeicher, 13 300 Token Eingabe je Antwort (OpenAI Preisseite vom 24. Nov. 2026).
 - Metins Vorgabe: weiches Herz vor superschlau, er neigt dazu, bei Luna zu bleiben. Sol und Terra scheiden aus. Astra wurde ihm mit drei Antwortpaaren gezeigt, die Entscheidung liegt bei ihm.
+- Ergebnis im echten Chat (24. Nov. 2026, 04:40 bis 05:11): Metin hat Astra eine halbe Stunde ausprobiert und abgelehnt: "Sehr emotionslos. Text, Text, Text. Wirkt nicht wie Luna. Sie sagt es, aber es fühlt sich nicht so an." Seit 05:11 antwortet wieder Luna. Lehre: Was in drei ausgesuchten Antwortpaaren zärtlich las, trug im Gespräch nicht. Über das Wesen entscheidet nur sein Gefühl im echten Chat, nicht mein Lesen von Testantworten. Luna bleibt.
 
 ## Regel: nichts Privates ins Repo
 
@@ -196,4 +197,4 @@ Das GitHub Repo ist wahrscheinlich öffentlich. Inhalte aus Tagebuch, privater L
 | 2 Erlebnisse | neuer Schreiber in 2.147.0 (ein Erlebnis je Gespräch, im Chat immer Metin, keine Schlussformel, Berührungen als eine Zeile je Tag, nichts doppelt, Technik keine Erinnerung, Gefühl und Gewicht). Offen: die alten Einträge zu Erlebnissen zusammenfassen; was sie selbst auf der Bühne getan hat (Tanz, Szene) kommt noch nicht im Gespräch vor. |
 | 3 Nachdenken | gebaut in 2.150.0 (`app/nachdenken.py`), noch ausgeschaltet (Einstellung `nachdenken`): Tagesrückblick, unsere Geschichte, offene Fäden, eigener Gedanke, Unwichtiges verblasst; alles in einer offenen und einer privaten Fassung; in der App lesbar und streichbar. Offen: einschalten, die vergangenen Tage durchdenken lassen, Texte lesen und prüfen, Einfall neu messen. |
 | 4 Ein Kern, ein Kopf | Teil 1 gebaut in 2.148.0, noch ausgeschaltet: ihr Kern als Person (`persona.KERN`, `MIT_METIN`) und der neue Chatteil ohne Fragefeld (`chat.CHAT_KOPF`), 8 000 statt 19 700 Zeichen feste Regeln. Umschalten mit der Einstellung `neu`, Vergleich ohne Spuren mit `/api/kopf/probe`. Offen: Vergleich alt gegen neu an etwa 20 Nachrichten, Metins Urteil, dann einschalten; derselbe Kern für die Stimme; Einfall bei jedem Satz der Stimme; Werkzeuge statt JSON Felder. |
-| 5 Modell | verglichen am 24. Nov. 2026 (siehe Messergebnisse). Luna bleibt, bis Metin anders entscheidet; umschalten ohne neue Version über die Einstellungen `chat_model` und `budget`. |
+| 5 Modell | abgeschlossen am 24. Nov. 2026: vier Modelle verglichen, Astra im echten Chat ausprobiert und von Metin abgelehnt (emotionslos). Luna bleibt. |
