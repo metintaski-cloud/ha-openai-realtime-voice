@@ -1031,7 +1031,7 @@ document.getElementById('del').onclick=async()=>{if(!sel.size)return;
 
 let lampOn=false;
 const LROWS=[['listen','Zuhören',['listen']],['think','Denken und Suchen',['think']],['speak','Reden',['speak_low','speak_high']]];
-const LSETS=[['','Wenn Leyla glücklich ist'],['sad_','Wenn Leyla traurig oder eifersüchtig ist']];
+const LSETS=[['','Wenn Leyla glücklich ist','glücklich'],['sad_','Wenn Leyla traurig oder eifersüchtig ist','traurig']];
 function lmsg(t){document.getElementById('lmsg').textContent=t;}
 const LTXT={ok:'',busy:'Leyla spricht gerade, bitte danach testen.',off:'Lampenshow ist aus.',failed:'Eine Lampe antwortet nicht, Leyla versucht es weiter.',error:'Hat nicht geklappt.'};
 async function lampPost(path,body){try{const r=await fetch(path,{method:'POST',body:JSON.stringify(body||{})});return await r.json();}catch(e){return {result:'error'};}}
@@ -1040,9 +1040,9 @@ async function loadLamps(){let d;try{d=await (await fetch('/api/lamp')).json();}
  lampOn=!!d.available;const box=document.getElementById('lamps');box.innerHTML='';if(!lampOn){box.style.display='none';return;}
  box.style.display=(sec==='lamps'&&!view)?'block':'none';
  const h=document.createElement('h2');h.textContent='Lampenfarben';box.appendChild(h);
- for(const [pre,title] of LSETS){const t=document.createElement('h3');t.textContent=title;box.appendChild(t);
+ for(const [pre,title,tag] of LSETS){const t=document.createElement('h3');t.textContent=title;box.appendChild(t);
  for(const [m0,name,k0] of LROWS){const mode=pre+m0,keys=k0.map(k=>pre+k);const c=document.createElement('div');c.className='card';
-  const n=document.createElement('div');n.className='n';n.innerHTML=esc(name)+(keys.length>1?'<small>leise und laut, das Licht wechselt mit ihrer Stimme</small>':'');c.appendChild(n);
+  const n=document.createElement('div');n.className='n';n.innerHTML=esc(name+', '+tag)+(keys.length>1?'<small>leise und laut, das Licht wechselt mit ihrer Stimme</small>':'');c.appendChild(n);
   for(const k of keys){const i=document.createElement('input');i.type='color';i.value=d.colors[k];i.title=d.labels[k];
    i.onchange=()=>lampSave({colors:{[k]:i.value}});c.appendChild(i);}
   const b=document.createElement('button');b.textContent='Testen';

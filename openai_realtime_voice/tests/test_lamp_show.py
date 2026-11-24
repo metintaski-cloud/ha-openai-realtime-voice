@@ -306,3 +306,63 @@ async def test_the_app_reads_and_sets_colours_and_strengths(tmp_path):
     reset = {"colors": {k: None for k in got["colors"]}, "levels": {k: None for k in got["levels"]}}
     assert (await mw._lamp_api(show, "POST", "/api/lamp/colors", json.dumps(reset).encode()))["ok"]
     assert show.levels == ls.DEFAULT_LEVELS
+
+
+async def test_lamps_that_were_on_come_back_even_when_they_report_late(monkeypatch, tmp_path):
+    """24 Nov 2026, 15:11: the rear lamps were on, Metin tried looks in the app one after the
+    other and changed colours and strengths in between; the lamps stayed in a test look (orange,
+    15 percent) and "Lampen zurücksetzen" found nothing. Three holes: "on" alone counted as
+    restored for a lamp that was on before; a look that was still reported became the state to
+    go back to; and after a change in the app the old look was no longer known as one."""
+    show, calls = _show(monkeypatch, tmp_path)
+    white = dict(show.lamps["light.b"])
+    late = {"on": True}   # the lamp keeps reporting the look of the show for a while
+    orig = show._service
+
+    async def service(name, data, timeout=None):
+        before = {e: dict(v) for e, v in show.lamps.items()}
+        await orig(name, data, timeout)
+        ents = data["entity_id"] if isinstance(data["entity_id"], list) else [data["entity_id"]]
+        for e in ents:
+            if name == "turn_on" and "rgb_color" in data:   # report the look that was really sent
+                hue, sat = ls._hue(tuple(data["rgb_color"]))
+                show.lamps[e].update(brightness=round(data["brightness_pct"] * 2.55), hs_color=[hue, sat])
+            elif name == "turn_on" and late["on"] and before[e].get("color_mode") == "hs":
+                show.lamps[e] = before[e]                    # the old report still stands
+            elif name == "turn_on":
+                show.lamps[e] = dict(white)
+
+    monkeypatch.setattr(show, "_service", service)
+    monkeypatch.setattr(ls, "RETRY_DELAYS_S", (60.0,))
+    monkeypatch.setattr(ls, "PREVIEW_S", 0.6)
+    show.set_colors(None, {"sad_listen": 15})
+    assert await show.preview("sad_listen") == "ok"
+    assert show.lamps["light.b"]["brightness"] == 38       # still orange at 15 percent
+    assert "light.b" in show._pending                       # so it is not counted as restored
+    assert "light.b" not in show._last_on or show._last_on["light.b"].get("color_mode") == "color_temp"
+    # he changes colour and strength in the app: the old look is still known as a leftover
+    show.set_colors({"sad_listen": "#00ff00"}, {"sad_listen": 100})
+    assert show._leftover(show.lamps["light.b"])
+    again = ls.LampShow(["light.a", "light.b"], token="t", memory_path=show.memory_path)
+    assert again._leftover(show.lamps["light.b"])           # also after a restart
+    # the next test starts from the pending state and brings the white back
+    late["on"] = False
+    assert await show.preview("listen") == "ok"
+    assert show.lamps["light.b"] == white and show._pending == {}
+    # nothing pending and still a look of the show: it counts as off, never as normal
+    show.lamps["light.b"] = {"state": "on", "brightness": 38, "color_mode": "hs", "hs_color": [24.6, 91.2]}
+    await show.begin()
+    assert show._before["light.b"] == {"state": "off"}
+    await show.end()
+    assert show.lamps["light.b"]["state"] == "off"
+
+
+def test_learned_states_of_an_older_file_are_learned_afresh(tmp_path):
+    path = tmp_path / "lamps.json"
+    orange = {"state": "on", "brightness": 38, "color_mode": "hs", "hs_color": [21.3, 90.9]}
+    path.write_text(json.dumps({"last_on": {"light.a": orange}, "pending": {"light.a": {"state": "off"}}}))
+    show = ls.LampShow(["light.a"], token="t", memory_path=str(path))
+    assert show._last_on == {} and show._pending == {"light.a": {"state": "off"}}   # white ones stay, see the test above
+    show._last_on = {"light.a": {"state": "on", "brightness": 200, "color_mode": "color_temp", "color_temp_kelvin": 2700}}
+    show._save_memory()
+    assert ls.LampShow(["light.a"], token="t", memory_path=str(path))._last_on["light.a"]["brightness"] == 200

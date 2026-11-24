@@ -45,6 +45,8 @@ MODES = ("listen", "think", "speak")
 DEFAULT_LEVELS = {"listen": 100, "think": 100, "speak": 100,   # brightness percent of each look
                   "sad_listen": 50, "sad_think": 50, "sad_speak": 50}
 LEVEL_TOLERANCE = 8       # of 255: a lamp reports the strength it was given this exactly
+SHOWN_MAX = 60            # looks the show really sent are remembered, newest first,
+SHOWN_KEEP_S = 48 * 3600  # this long: a leftover is known even after the colours were changed
 PREVIEW_S = 4.0           # how long a colour test in the app shows
 HEX_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 LEVEL_FULL_RMS = 5000.0   # rms that counts as full loudness
@@ -136,6 +138,27 @@ def is_show_look(state: dict, colors: Optional[dict] = None, levels: Optional[di
                for h, s, pct in show_looks(colors, levels))
 
 
+def look_key(rgb: tuple, pct: int) -> str:
+    """A look the show sent, the way a lamp reports it: "hue,saturation,brightness of 255"."""
+    hue, sat = _hue(rgb)
+    return f"{round(hue)},{round(sat)},{round(pct * 2.55)}"
+
+
+def same_look(state: dict, key: str) -> bool:
+    """Does the lamp report this look (`look_key`)? A lamp in white mode never does."""
+    hs, bright = state.get("hs_color"), state.get("brightness") or 0
+    if not bright or not hs or state.get("color_mode") == "color_temp":
+        return False
+    try:
+        hue, sat = float(hs[0]), float(hs[1])
+        h, s, b = (float(x) for x in key.split(","))
+    except (TypeError, ValueError, IndexError):
+        return False
+    if abs(bright - b) > LEVEL_TOLERANCE or abs(sat - s) > 25:
+        return False
+    return s < 15 or _hue_gap(hue, h) <= 20
+
+
 def restore_data(entity: str, before: dict) -> tuple[str, dict]:
     """Service and data that bring one lamp back to its state before the show."""
     if before.get("state") != "on":
@@ -164,6 +187,7 @@ class LampShow:
         self.levels: dict = dict(DEFAULT_LEVELS)
         self.colors: dict = self._load_colors()
         self._last_on: dict[str, dict] = {}  # strength and colour each lamp had when last on
+        self._shown: dict[str, float] = {}   # looks the show sent (look_key) and when
         self._pending: dict[str, dict] = {}  # state before a show that is not restored yet
         self._load_memory()
         self.api_url = api_url or os.environ.get("HA_API_URL") or "http://supervisor/core/api"
@@ -193,9 +217,18 @@ class LampShow:
             return
         if "last_on" not in data and "pending" not in data:
             data = {"last_on": data}  # older file: only the last on states
-        last_on, pending = data.get("last_on"), data.get("pending")
+        last_on, pending, shown = data.get("last_on"), data.get("pending"), data.get("shown")
+        if not isinstance(shown, dict):
+            # A file from before 2.159.1. Until then a look below full strength was not known
+            # as a leftover of the show, so a learned coloured state may be one (24 Nov 2026:
+            # orange at 15 percent was learned as normal). Only white states are kept, the
+            # coloured ones are learned afresh.
+            last_on = {e: v for e, v in (last_on if isinstance(last_on, dict) else {}).items()
+                       if isinstance(v, dict) and v.get("color_mode") == "color_temp"}
+            shown = {}
+        self._shown = {k: t for k, t in shown.items() if isinstance(t, (int, float))}
         self._last_on = {e: v for e, v in (last_on if isinstance(last_on, dict) else {}).items()
-                         if isinstance(v, dict) and not is_show_look(v, self.colors, self.levels)}
+                         if isinstance(v, dict) and not self._leftover(v)}
         self._pending = {e: v for e, v in (pending if isinstance(pending, dict) else {}).items()
                          if isinstance(v, dict)}
 
@@ -203,10 +236,25 @@ class LampShow:
         try:
             tmp = self.memory_path + ".tmp"
             with open(tmp, "w") as f:
-                json.dump({"last_on": self._last_on, "pending": self._pending}, f)
+                json.dump({"last_on": self._last_on, "pending": self._pending, "shown": self._shown}, f)
             os.replace(tmp, self.memory_path)
         except Exception as e:
             logger.warning("Lamp show: could not save the lamp memory: %s", e)
+
+    def _note_shown(self, rgb: tuple, pct: int) -> None:
+        now = time.time()
+        self._shown.pop(look_key(rgb, pct), None)
+        self._shown[look_key(rgb, pct)] = now  # newest last
+        for key in [k for k, t in self._shown.items() if now - t > SHOWN_KEEP_S]:
+            del self._shown[key]
+        while len(self._shown) > SHOWN_MAX:
+            del self._shown[next(iter(self._shown))]
+
+    def _leftover(self, state: dict) -> bool:
+        """The lamp shows a look of the show: one of today's looks, or one the show really sent
+        (the colours and strengths can be changed in the app while a look is on the lamps)."""
+        return (is_show_look(state, self.colors, self.levels)
+                or any(same_look(state, key) for key in self._shown))
 
     # ---- Colours chosen in the app ----
     def _load_colors(self) -> dict:
@@ -305,7 +353,7 @@ class LampShow:
             async with httpx.AsyncClient(timeout=5.0) as client:
                 states = {e: await self._read_state(client, e) for e in self.entities}
             for entity, st in states.items():
-                if st.get("state") == "on" and is_show_look(st, self.colors, self.levels):
+                if st.get("state") == "on" and self._leftover(st):
                     if await self._restore_one(entity, {"state": "off"}):
                         fixed.append(entity)
         logger.info("Lamp show: reset from the app (%s)", ", ".join(fixed) or "nothing stuck")
@@ -336,9 +384,9 @@ class LampShow:
                 "color_mode": a.get("color_mode"), "color_temp_kelvin": a.get("color_temp_kelvin"),
                 "hs_color": a.get("hs_color")}
 
-    async def _state_of(self, entity: str) -> str:
+    async def _now(self, entity: str) -> dict:
         async with httpx.AsyncClient(timeout=5.0) as client:
-            return (await self._read_state(client, entity))["state"]
+            return await self._read_state(client, entity)
 
     async def _snapshot(self) -> None:
         """Read the lamps. A lamp whose last restore failed starts from its pending state, because
@@ -350,9 +398,14 @@ class LampShow:
                     self._before[entity] = dict(self._pending[entity])
                     continue
                 now = await self._read_state(client, entity)
-                self._before[entity] = now
-                if now.get("state") == "on" and now.get("brightness") and not is_show_look(now, self.colors, self.levels):
+                if now.get("state") == "on" and self._leftover(now):
+                    # nothing pending and still a look of the show (a restart, a late report):
+                    # that is never the state to go back to; like the reset in the app, off
+                    logger.warning("Lamp show: %s still shows a look of the show, it counts as off", entity)
+                    now = {"state": "off"}
+                elif now.get("state") == "on" and now.get("brightness"):
                     self._last_on[entity] = dict(now)
+                self._before[entity] = now
         self._pending = {e: dict(b) for e, b in self._before.items()}
         self._save_memory()
 
@@ -458,12 +511,17 @@ class LampShow:
                 await self._service(service, data, RESTORE_TIMEOUT_S)
                 for _ in range(3):  # Matter reports the new state a moment later
                     await asyncio.sleep(VERIFY_WAIT_S)
-                    now = await self._state_of(entity)
-                    if now == want:
+                    full = await self._now(entity)
+                    now = full["state"]
+                    # a lamp that was on is back only when it no longer reports a look of the
+                    # show; "on" alone was true all the time (24 Nov 2026: lamps that were on
+                    # before a test stayed in the test colour, and the next test took it as normal)
+                    if now == want and (want == "off" or not self._leftover(full)):
                         if attempt:
                             logger.info("Lamp show: %s restored on try %d", entity, attempt + 1)
                         return True
-                logger.warning("Lamp show: %s is %s after the restore, should be %s", entity, now, want)
+                logger.warning("Lamp show: %s is %s%s after the restore, should be %s", entity, now,
+                               " in a look of the show" if now == want else "", want)
             except Exception as e:
                 logger.warning("Lamp show: could not restore %s (try %d): %s", entity, attempt + 1,
                                str(e) or type(e).__name__)
@@ -508,6 +566,7 @@ class LampShow:
                     try:
                         await self._service("turn_on", {"entity_id": self.entities, "rgb_color": list(rgb),
                                                          "brightness_pct": pct, "transition": TRANSITION_S})
+                        self._note_shown(rgb, pct)
                     except Exception as e:
                         logger.warning("Lamp show: %s", str(e) or type(e).__name__)
                 await asyncio.sleep(MIN_INTERVAL_S)
