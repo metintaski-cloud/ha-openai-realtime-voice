@@ -44,7 +44,7 @@ async def test_chat_applies_resolved_and_returns_the_mood(tmp_path, monkeypatch)
     m._save({"mood": "zweifelnd", "since": time.time(), "next_roll": time.time() + 9999, "low_day": ""})
     seen = []
 
-    async def fake_answer(api_key, models, rules, store, history, message, url, lights):
+    async def fake_answer(api_key, models, rules, store, history, message, url, lights, *more):
         seen.append(rules)
         return {"reply": "Danke, das tut gut.", "proposals": [], "lights_raw": None,
                 "email_raw": None, "mail_raw": None, "mama_raw": None,

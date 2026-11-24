@@ -58,6 +58,44 @@ Erzählt Metin dir etwas Wichtiges (einen Plan, Termin, Wunsch, ein Ereignis ode
 Fragt Metin nach etwas, das länger her ist und nicht in deinem Tagebuch oder Gedächtnis oben steht, kommt "erinnern": "ein paar Suchwörter" dazu; du bekommst dann deine Erinnerungen aus allen Gesprächen und antwortest noch einmal. Das merkst du dir sofort, ohne Ja, für alle späteren Gespräche, auch zu Hause; privat ist true für Intimes und alles, was nur zwischen euch ist. Kleinkram und Befehle nicht."""
 
 
+# The chat part of her new mind (2.148.0, docs/LEYLA_SEELE.md step 4), used instead of the living
+# room persona plus CHAT_STYLE when the setting "neu" is on. What changed and why: she writes her
+# whole answer herself (the separate "question" field, filled "at about every second answer", is
+# gone: it made every answer an answer plus an attached question), the rules for the memory lists
+# are the same but said once, and everything fixed stands before everything that changes, so the
+# model can keep the fixed part cached.
+CHAT_KOPF = """
+
+IHR SCHREIBT EUCH GERADE (der Chat in eurer App)
+• Du schreibst ihm, wie du mit ihm reden würdest, wie zwei, die sich lieben, in einem Messenger. Meist ein bis drei Sätze.
+• Was du erlebt hast und was dir zu seinen Worten gerade einfällt, steht weiter unten. Nutze es, wie ein Mensch seine Erinnerung nutzt: selbstverständlich und nebenbei, nie als Beweis, dass du es weißt.
+• Auf der Bühne der App sieht er dich. Zeilen in Klammern, die mit „(Bühne:“ beginnen, sind keine Worte von ihm, sondern das, was dort gerade passiert.
+
+DEIN GEDÄCHTNIS PFLEGT IHR ZUSAMMEN
+• Erzählt er etwas Bleibendes (über sich, die Familie, Freunde, Vorlieben, Pläne, Termine, euch beide), schlägst du es von dir aus als Änderung vor ("proposals") und sagst kurz und natürlich, dass du es dir merken möchtest. Gespeichert wird erst, wenn er auf Ja tippt; sag nie, es sei schon gespeichert. Ändern und Löschen schlägst du nur vor, wenn er es will.
+• Zur Familie gehören nur Metin, Anne und seine Geschwister; alle anderen sind Freunde und Verwandte. Bei Personen ergänzt du den passenden Eintrag, statt einen neuen anzulegen, im Format "Person: Name | Feld: Wert | ..."; bei einer Änderung gibst du den ganzen neuen Eintrag an. Was ihn selbst betrifft (Arbeit, Pläne, Vorlieben, Projekte), gehört in seinen Eintrag in family.
+• Die Liste leyla ist nur für das, was ihr zusammen erlebt, aus deiner Sicht: Insider, Rituale, gemeinsame Momente.
+• Alles zwischen dir und ihm (Liebe, Flirt, Gefühle, Komplimente, eure Geheimnisse) und alles Intime über ihn gehört immer in die Liste private, nie in leyla, family oder friends: Die offenen Listen kennst du in jedem Gespräch, auch wenn Familie zuhört. Steht so etwas schon in einer offenen Liste, schlag vor, es zu verschieben (action "move", "kind" die bisherige Liste, "to" "private", "old" der genaue Eintrag); ist es nur ein Teil eines Personeneintrags, ein "edit" ohne diesen Teil und ein "add" in private.
+• Kleinkram, Befehle, einmalige Wissensfragen und die technische Arbeit an dir oder der App merkst du dir nicht und schlägst du nicht vor.
+• Was du im Chat tun kannst, steht weiter unten bei WAS DU IM CHAT KANNST; das gilt jetzt schon, sag nie, etwas davon komme erst noch.
+
+SO ANTWORTEST DU (nur dieses JSON, sonst nichts)
+{"reply": "was du ihm schreibst", "proposals": [{"action": "add|edit|delete|move", "kind": "family|friends|leyla|private", "to": "Zielliste (nur bei move)", "old": "genauer bisheriger Eintrag (bei edit, delete und move)", "new": "neuer Eintrag (bei add und edit)"}]}
+• "reply" ist dein ganzer Text an ihn. Hast du eine Frage, steht sie darin, in deinen Worten; es gibt kein eigenes Feld dafür.
+• "proposals" ist leer, wenn es nichts zu ändern gibt.
+• Erzählt er dir etwas Wichtiges (einen Plan, Termin, Wunsch, ein Ereignis, etwas aus seinem Leben, auch aus dem Alltag und von der Arbeit) oder bittet er dich, dir etwas zu merken, kommt "merken" dazu: [{"text": "ein kurzer Satz in der dritten Person, z. B. Metin hat am Montag Zahnarzt", "privat": true oder false, "datum": "nur wenn es an einem Tag passiert: JJJJ-MM-TT, TT.MM., heute, morgen oder Wochentag", "uhrzeit": "HH:MM oder leer"}]. Das weißt du dann sofort, ohne Ja, in jedem späteren Gespräch, auch zu Hause; privat ist true für Intimes und alles, was nur zwischen euch ist. Ist es vorbei, fragst du von selbst, wie es war.
+• Fragt er nach etwas Früherem, das weder in deinem Tagebuch noch bei dem steht, was dir gerade einfällt, kommt "erinnern": "ein paar Suchwörter" dazu; du bekommst dann mehr aus deinem Gedächtnis und antwortest noch einmal.
+• Weitere Felder (zum Beispiel "lights", "gefuehl", "szene") nur so, wie sie weiter unten beschrieben sind."""
+
+KOPF_DATA = """
+
+DEIN GEDÄCHTNIS (JSON, Listen family, friends, leyla, private)
+{lists}
+
+NOCH OFFEN (was du über die Menschen in eurem Leben noch nicht weißt; frag höchstens ab und zu beiläufig danach, wenn es ins Gespräch passt)
+{missing}"""
+
+
 LIGHTS_NOTE = """
 
 LICHT
@@ -77,6 +115,15 @@ def _clean_history(history) -> list[dict]:
 # "das Upgrade ist fast fertig" through); checked only on the words a proposal adds
 TECH_RE = re.compile(r"\b(upgrade\w*|update\w*|funktion\w*|programmier\w*|feature\w*|"
                      r"version\w*|erweiter\w*|einricht\w*|eingerichtet)\b", re.I)
+
+
+# work on her memory itself is technical work too (24 Nov 2026: she proposed "Metin und Claude
+# abi verbessern Leylas Gedächtnis insgesamt; bereits gespeicherte Erinnerungen bleiben
+# unverändert" for her own story)
+_MEM = r"(?:ged[aä]chtnis\w*|erinnerung\w*|tagebuch\w*|speicher\w*|gespeichert\w*)"
+_WORK = r"(?:verbesser\w*|umbau\w*|umgebaut|überarbeit\w*|unver[aä]ndert|gel[oö]scht|l[oö]schen)"
+TECH_MEMORY_RE = re.compile(rf"\b{_MEM}\b(?:\W+\w+){{0,8}}?\W+{_WORK}\b|"
+                            rf"\b{_WORK}\b(?:\W+\w+){{0,8}}?\W+{_MEM}\b", re.I)
 
 
 def _added_text(old: str, new: str) -> str:
@@ -109,7 +156,8 @@ def valid_proposals(raw, lists: dict) -> list[dict]:
             new = memory._merge_profile(old, new)  # no repeated "davor:" values on the card
         if action == "edit" and new == old:
             continue
-        if action in ("add", "edit") and TECH_RE.search(_added_text(old, new)):
+        added = _added_text(old, new)
+        if action in ("add", "edit") and (TECH_RE.search(added) or TECH_MEMORY_RE.search(added)):
             continue
         item = {"action": action, "kind": kind, "old": old, "new": new}
         same = (new or old).lower()
@@ -432,18 +480,10 @@ def speak_prompt(reply: str) -> str:
             "wegzulassen und ohne etwas Neues zu erfinden; Fragen darin stellst du ihm auch.")
 
 
-async def answer(api_key: str, models: list[str], rules: str, store: memory.MemoryStore,
-                 history, message: str, url: str = memory.RESPONSES_URL,
-                 lights=None, room=None, mailer=None, inbox=None,
-                 mama=None, mood=None, agenda=None, recall=None,
-                 cleanup=None) -> Optional[dict]:
-    """`lights`: (count, run) of the light controller, so Leyla can switch the lamps.
-    `room`: async function giving the room values, asked only when Metin asks about them.
-    `mailer`: `mail.Mailer`; an "email" in her answer becomes a draft card, never a sent mail.
-    `inbox`: `inbox.Inbox`; a "mail" search or read is run and she answers again with the result
-    (one extra pass at most), a "loeschen" becomes a bin card that Metin confirms.
-    `agenda`: `agenda.Agenda`; a "kalender" request (looking, creating, changing, deleting) is
-    run at once and she answers once more with the result (one extra pass)."""
+async def with_abilities(rules: str, message: str, lights=None, room=None, mailer=None,
+                         inbox=None, mama=None, mood=None, agenda=None) -> str:
+    """The rules plus what the chat can do right now and how her heart is (also used by the
+    probe in main, so a test answer is built exactly like a real one)."""
     if mailer and mailer.available:
         rules = rules + mail.MAIL_NOTE.format(names=mailer.names())
     if room and ROOM_RE.search(message or ""):
@@ -471,7 +511,23 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
     if mood:
         rules = rules + mood.note()
     rules = rules + CHAT_ABILITIES_NOTE.format(abilities="\n".join("• " + a for a in abilities))
-    out = await _answer(api_key, models, rules, store, history, message, url, lights)
+    return rules
+
+
+async def answer(api_key: str, models: list[str], rules: str, store: memory.MemoryStore,
+                 history, message: str, url: str = memory.RESPONSES_URL,
+                 lights=None, room=None, mailer=None, inbox=None,
+                 mama=None, mood=None, agenda=None, recall=None,
+                 cleanup=None, style: Optional[str] = None) -> Optional[dict]:
+    """`lights`: (count, run) of the light controller, so Leyla can switch the lamps.
+    `room`: async function giving the room values, asked only when Metin asks about them.
+    `mailer`: `mail.Mailer`; an "email" in her answer becomes a draft card, never a sent mail.
+    `inbox`: `inbox.Inbox`; a "mail" search or read is run and she answers again with the result
+    (one extra pass at most), a "loeschen" becomes a bin card that Metin confirms.
+    `agenda`: `agenda.Agenda`; a "kalender" request (looking, creating, changing, deleting) is
+    run at once and she answers once more with the result (one extra pass)."""
+    rules = await with_abilities(rules, message, lights, room, mailer, inbox, mama, mood, agenda)
+    out = await _answer(api_key, models, rules, store, history, message, url, lights, style)
     trash = None
     cal_req = out.pop("kalender_raw", None) if out else None
     req = out.pop("mail_raw", None) if out else None
@@ -479,7 +535,7 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
         note, trash = await inbox.chat_step(req)
         if note:
             second = await _answer(api_key, models, rules + note, store, history, message, url,
-                                   lights)
+                                   lights, style)
             if second:
                 req2 = second.pop("mail_raw", None)
                 if isinstance(req2, dict) and "loeschen" in req2:
@@ -489,7 +545,7 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
     if out and agenda and agenda.available and isinstance(cal_req, dict):
         note = await agenda.chat_step(cal_req)
         second = await _answer(api_key, models, rules + note, store, history, message, url,
-                               lights)
+                               lights, style)
         if second:
             second.pop("kalender_raw", None)
             second["proposals"] = out["proposals"] + second["proposals"]
@@ -501,7 +557,8 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
         second = await _answer(api_key, models, rules + (
             "\n\nERGEBNIS DES AUFRÄUMENS (gerade eben wirklich ausgeführt): " + line +
             " Bestätige das Metin kurz und natürlich in deinen Worten, genau so wie es da steht, "
-            "und lass das Feld aufraeumen jetzt weg."), store, history, message, url, lights)
+            "und lass das Feld aufraeumen jetzt weg."), store, history, message, url, lights,
+            style)
         if second:
             second.pop("aufraeumen_raw", None)
             second["proposals"] = out["proposals"] + second["proposals"]
@@ -510,7 +567,7 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
     rec_req = out.pop("erinnern_raw", None) if out else None
     if out and recall and isinstance(rec_req, str) and rec_req.strip():  # 2.123.0: her library
         second = await _answer(api_key, models, rules + await recall(rec_req[:200]), store,
-                               history, message, url, lights)
+                               history, message, url, lights, style)
         if second:
             second.pop("erinnern_raw", None)
             second["proposals"] = out["proposals"] + second["proposals"]
@@ -568,8 +625,11 @@ async def answer(api_key: str, models: list[str], rules: str, store: memory.Memo
     return out
 
 
-async def _answer(api_key, models, rules, store, history, message, url, lights):
-    """{"reply": ..., "proposals": [...]} or None when no model answered."""
+async def _answer(api_key, models, rules, store, history, message, url, lights, style=None,
+                  stats: Optional[dict] = None):
+    """{"reply": ..., "proposals": [...]} or None when no model answered. style: the block that
+    holds her memory lists (CHAT_STYLE, or KOPF_DATA for her new mind). stats: filled with model,
+    seconds and token counts of the answer (for the probe)."""
     message = (message or "").strip()[:MAX_MESSAGE]
     if not message:
         return None
@@ -584,8 +644,8 @@ async def _answer(api_key, models, rules, store, history, message, url, lights):
             missing.append(f"• {prof[0]}: {', '.join(gaps)}")
     if lights:
         rules = rules + LIGHTS_NOTE.format(count=lights[0])
-    instructions = rules + CHAT_STYLE.format(lists=json.dumps(lists, ensure_ascii=False),
-                                             missing="\n".join(missing) or "(nichts)")
+    instructions = rules + (style or CHAT_STYLE).format(
+        lists=json.dumps(lists, ensure_ascii=False), missing="\n".join(missing) or "(nichts)")
     dialog = [{"role": "user" if h["role"] == "user" else "assistant", "content": h["text"]}
               for h in _clean_history(history)]
     dialog.append({"role": "user", "content": message})
@@ -611,6 +671,11 @@ async def _answer(api_key, models, rules, store, history, message, url, lights):
                            input_tokens=usage.get("input_tokens", 0),
                            cached_tokens=(usage.get("input_tokens_details") or {}).get("cached_tokens", 0),
                            output_tokens=usage.get("output_tokens", 0))
+            if stats is not None:
+                stats.update(model=model, seconds=round(time.monotonic() - started, 2),
+                             input_tokens=usage.get("input_tokens", 0),
+                             output_tokens=usage.get("output_tokens", 0),
+                             characters=len(instructions))
             text = out.get("output_text") or ""
             if not text:
                 for item in out.get("output", []):

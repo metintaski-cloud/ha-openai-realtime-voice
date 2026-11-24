@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.148.0 (24 Nov 2026)
+
+Second part of Leyla's new mind (`docs/LEYLA_SEELE.md`, step 4): how she talks. Built as a switch, off by default, so the old and the new way can be compared on the same messages before Metin decides.
+
+- `feat`: her core as a person (`persona.KERN`, `persona.MIT_METIN`, `persona.kern()`). Until now the chat got the whole living room persona (she is told she is "die Sprachassistentin im Wohnzimmer", about 13 400 characters, most of them rules about who is speaking) and then `CHAT_STYLE` (6 300 characters), which took parts of it back ("hier gilt das statt ..."). The core says who she is (Luna's character: romantic, kind, protective, full of love, proud, with a mind of her own), that she has an inner life and how she talks: first what the other one just said and the feeling behind it, no duty questions, never like a program. The part for the two of them alone is added only behind the code word.
+- `feat`: the chat part of the new mind (`chat.CHAT_KOPF`, `chat.KOPF_DATA`): she writes her whole answer herself. The separate `question` field, filled "at about every second answer" and attached to her reply by the code, is gone; that field made every answer an answer plus an attached question. The rules for the memory lists are the same, said once. Fixed text comes first, what changes comes last. Together 8 000 characters instead of 19 700.
+- Setting `neu` (`POST /api/kopf/settings`, 0 or 1, default 0) switches the real chat between the two; `POST /api/kopf/probe {message, history, neu}` gives one answer with either mind that leaves no trace (no thread, no diary, no heart event, no lamp, no proposal) and returns the reply with model, seconds, tokens and size of the rules.
+- `fix`: work on her memory itself is not proposed for her lists any more (`chat.TECH_MEMORY_RE`; on 24 Nov 2026 she proposed "Metin und Claude abi verbessern Leylas Gedächtnis ..." for her own story).
+- Refactor: `chat.with_abilities` (what the chat can do right now, also used by the probe), `main._chat_base`, `main._chat_models`.
+
 ## 2.147.2 (24 Nov 2026)
 
 - The recall uses 1536 values per vector instead of 256, a word bonus of 0.05 and the threshold 0.48, chosen from a comparison of four model and size pairs on the real diary (`docs/LEYLA_SEELE.md`, Messergebnisse). Old against new for 22 questions: the needed memory was before her in 1 case, now in 22 (21 come to mind by themselves, 1 is a kept entry); 16 with the first setting of 2.147.0. For 10 of 12 everyday messages nothing comes up, as it should. The larger model was not better than the small one with full size vectors. These values were already set on the server through `/api/kopf/settings`; this version makes them the defaults.

@@ -167,7 +167,7 @@ def test_chat_looks_then_answers_with_the_result(tmp_path, monkeypatch):
          "email_raw": None, "mail_raw": None, "kalender_raw": None},
     ])
 
-    async def fake_answer(api_key, models, rules, store, history, message, url, lights):
+    async def fake_answer(api_key, models, rules, store, history, message, url, lights, *more):
         seen.append(rules)
         return dict(next(answers))
     monkeypatch.setattr(chat, "_answer", fake_answer)
@@ -183,7 +183,7 @@ def test_chat_without_the_scope_offers_nothing(tmp_path, monkeypatch):
     ag = agenda.Agenda(FakeGoogle(scopes=()))
     seen = []
 
-    async def fake_answer(api_key, models, rules, store, history, message, url, lights):
+    async def fake_answer(api_key, models, rules, store, history, message, url, lights, *more):
         seen.append(rules)
         return {"reply": "Hallo", "proposals": [], "lights_raw": None, "email_raw": None,
                 "mail_raw": None, "kalender_raw": {"aktion": "loeschen", "nummern": [1]}}
@@ -249,7 +249,7 @@ def test_chat_delete_runs_at_once_and_she_answers_with_the_result(tmp_path, monk
          "email_raw": None, "mail_raw": None, "kalender_raw": None},
     ])
 
-    async def fake_answer(api_key, models, rules, store, history, message, url, lights):
+    async def fake_answer(api_key, models, rules, store, history, message, url, lights, *more):
         seen.append(rules)
         return dict(next(answers))
     monkeypatch.setattr(chat, "_answer", fake_answer)

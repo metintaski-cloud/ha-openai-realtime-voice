@@ -112,7 +112,7 @@ def test_chat_searches_then_answers_with_the_result(tmp_path, monkeypatch):
          "lights_raw": None, "email_raw": None, "mail_raw": None},
     ])
 
-    async def fake_answer(api_key, models, rules, store, history, message, url, lights):
+    async def fake_answer(api_key, models, rules, store, history, message, url, lights, *more):
         seen.append(rules)
         return dict(next(answers))
     monkeypatch.setattr(chat, "_answer", fake_answer)

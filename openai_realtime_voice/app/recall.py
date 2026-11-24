@@ -47,7 +47,11 @@ SAME = 0.92                        # two hits this close say the same thing: onl
 # only be set well with the real diary, which never leaves the server.
 # word_bonus: added to the similarity for the share of the question's words an entry holds.
 SETTINGS = {"min_sim": 0.48, "top": 4, "ask_min_sim": 0.38, "ask_top": 6, "word_bonus": 0.05,
-            "model": MODEL, "dims": DIMS}
+            "model": MODEL, "dims": DIMS,
+            # 1: the chat answers with her new mind (persona.KERN, chat.CHAT_KOPF) instead of the
+            # living room persona plus CHAT_STYLE; switched here so both can be compared and the
+            # way back needs no new version
+            "neu": 0}
 COMPARE = (("text-embedding-3-small", 256), ("text-embedding-3-small", 1536),
            ("text-embedding-3-large", 256), ("text-embedding-3-large", 1024))
 BONUSES = (0.0, 0.05, 0.1)
@@ -113,6 +117,7 @@ class Index:
         self._lock = asyncio.Lock()
         self._syncing: Optional[asyncio.Task] = None
         self.compared: dict = {}
+        self.probe = None  # main sets it: one chat answer without any trace, old or new mind
         self._load()
 
     @property
@@ -442,6 +447,9 @@ class Index:
                 self.compared = {"running": True, "started": time.time()}
                 self._comparing = asyncio.create_task(self.compare())
             return {"ok": True, **(self.compared or {})}
+        if path == "/api/kopf/probe" and self.probe:
+            return await self.probe(str(d.get("message", ""))[:2000], d.get("history"),
+                                    bool(d.get("neu")))
         if path == "/api/kopf/find":
             vecs = await self.embed([str(d.get("q", ""))[:1500]], timeout=QUERY_TIMEOUT_S)
             if not vecs:

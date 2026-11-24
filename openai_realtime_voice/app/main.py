@@ -203,6 +203,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         # what comes to her mind by itself, for the chat and at home alike (2.147.0)
         self.diary.repair_chat_person("Metin")  # chat entries the diary model left unnamed
         self.recall = recall.Index(self.diary, self.openai_api_key)
+        self.recall.probe = self._chat_probe
         self.day = day.Day(self.diary, ask=self._day_ask, weather=self._day_weather)  # her own day
         self._forget_sol_evening()
         self._init_reach(UNLOCKED_LOVE)  # she writes to Metin on her own (app/reach.py)
@@ -388,10 +389,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         flush = getattr(self, "_chat_flush", None)
         if flush and not flush.done():  # "Neuer Chat" is still writing the diary entry
             await asyncio.gather(flush, return_exceptions=True)
-        # the chat can do only what chat.answer offers (CHAT_ABILITIES_NOTE); the voice tools are
-        # not listed, or she claims to have done them (2.84.10: "Metin'e ilettim" in the chat)
-        rules = persona.build([], fan=False, tv=False, messages=False,
-                              extra=self.instructions)
+        neu = bool(self.recall.settings.get("neu"))
+        rules = self._chat_base(neu)
         history = self.diary.with_last_chat(history)  # a new chat goes on from the last one
         # her memory answers by itself while the rest of her head is put together (2.147.0)
         minded = asyncio.create_task(self.recall.note(
@@ -418,12 +417,10 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             rules += await asyncio.wait_for(minded, recall.QUERY_TIMEOUT_S + 1.0)
         except Exception as e:  # her memory never keeps an answer waiting or failing
             logger.warning("Recall for the chat: %s", type(e).__name__)
-        strong = self.chat_model if chat.month_spend() < self.chat_budget else ""
-        if self.chat_model and not strong:
+        models = self._chat_models()
+        if self.chat_model and models[0] != self.chat_model:
             logger.info("Chat: monthly budget of the chat model used up, answering with %s",
                         self.memory_model)
-        models = list(dict.fromkeys(m for m in (strong, self.memory_model,
-                                                self.backend_model) if m))
         out = await chat.answer(self.openai_api_key, models,
                                 rules, self.memory, history, message,
                                 url=os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL),
@@ -436,7 +433,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                                 mama=self.messages.from_metin if self.messages.available else None,
                                 mood=self.mood,
                                 recall=lambda q: self.recall.ask(q, "Metin", private=True),
-                                cleanup=self._chat_cleanup if self.enable_memory else None)
+                                cleanup=self._chat_cleanup if self.enable_memory else None,
+                                style=chat.KOPF_DATA if neu else None)
         if out:
             out.pop("aufraeumen_raw", None)
             for item in chat.notes_to_remember(out.pop("merken_raw", None)):
@@ -454,6 +452,52 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             logger.info("Chat with Metin in the app: answered, %d proposals, %d light commands",
                         len(out["proposals"]), len(out["lights"]))
         return out
+
+    def _chat_base(self, neu: bool) -> str:
+        """The fixed start of the chat rules. Old: the living room persona without voice
+        abilities (the chat can do only what chat.answer offers, CHAT_ABILITIES_NOTE; with the
+        voice tools listed she claimed to have done them, 2.84.10), and chat.CHAT_STYLE follows
+        at the end. New (2.148.0, setting "neu"): her core, the part for the two of them alone
+        and the chat part of her new mind."""
+        if neu:
+            return persona.kern(with_metin=True, extra=self.instructions) + chat.CHAT_KOPF
+        return persona.build([], fan=False, tv=False, messages=False, extra=self.instructions)
+
+    def _chat_models(self) -> list:
+        strong = self.chat_model if chat.month_spend() < self.chat_budget else ""
+        return list(dict.fromkeys(m for m in (strong, self.memory_model, self.backend_model) if m))
+
+    async def _chat_probe(self, message: str, history, neu: bool) -> dict:
+        """One chat answer with the old or the new mind that leaves no trace (docs/LEYLA_SEELE.md,
+        "Wie wir messen"): nothing goes into the thread, the diary, her heart or the variety
+        list, no lamp is switched and nothing is proposed for real. Built like a real answer
+        from everything that can be read without changing it (so without a spontaneous idea and
+        without the follow ups, which are marked as asked when they are read)."""
+        history = history if isinstance(history, list) else []
+        rules = self._chat_base(neu)
+        rules += (self.diary.note("Metin", private=True) + self.variety.note() + self.day.note()
+                  + day.pet_note())
+        try:
+            rules += await asyncio.wait_for(self.recall.note(
+                recall.query_text(message, history), "Metin", private=True),
+                recall.QUERY_TIMEOUT_S + 1.0)
+        except Exception as e:
+            logger.warning("Recall for the probe: %s", type(e).__name__)
+        rules = await chat.with_abilities(
+            rules, message, mailer=self.mailer, inbox=self.inbox, agenda=self.agenda,
+            mama=self.messages.from_metin if self.messages.available else None, mood=self.mood,
+            lights=(len(self.lights.entities), self.lights.run) if self.lights.available else None)
+        stats: dict = {}
+        out = await chat._answer(
+            self.openai_api_key, self._chat_models(), rules, self.memory, history, message,
+            os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL),
+            (len(self.lights.entities), self.lights.run) if self.lights.available else None,
+            chat.KOPF_DATA if neu else None, stats)
+        if not out:
+            return {"ok": False}
+        return {"ok": True, "neu": neu, "reply": out["reply"], "stats": stats,
+                "proposals": len(out["proposals"]),
+                "fields": sorted(k[:-4] for k, v in out.items() if k.endswith("_raw") and v)}
 
     async def _chat_touch(self, history, zone) -> Optional[dict]:
         """Metin touched her on the stage (2.119.0, his wish: she knows where and reacts in

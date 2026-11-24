@@ -252,7 +252,7 @@ async def test_chat_lists_only_its_abilities_and_passes_a_message_to_mama(tmp_pa
     store = memory.MemoryStore(str(tmp_path / "m.json"))
     seen, sent = [], []
 
-    async def fake_answer(api_key, models, rules, store, history, message, url, lights):
+    async def fake_answer(api_key, models, rules, store, history, message, url, lights, *more):
         seen.append(rules)
         return {"reply": "Ich richte es Anne aus.", "proposals": [], "lights_raw": None,
                 "email_raw": None, "mail_raw": None, "mama_raw": "Eve biraz geç gelicem"}
@@ -335,3 +335,95 @@ def test_chat_spend_counts_only_priced_models(tmp_path, monkeypatch):
     total = c.spend_add("gpt-6.2-sol", {"input_tokens": 10000, "output_tokens": 200,
                                         "input_tokens_details": {"cached_tokens": 8000}})
     assert abs(total - (2000 * 2.0 + 8000 * 0.10 + 200 * 10.0) / 1e6) < 1e-6
+
+
+# ---- 2.148.0: her new mind for the chat (docs/LEYLA_SEELE.md, step 4) ----
+def _fake_model(monkeypatch, sent, reply):
+    class Resp:
+        status_code = 200
+
+        def json(self):
+            return {"output_text": json.dumps(reply), "usage": {"input_tokens": 1234, "output_tokens": 56}}
+
+    class Client:
+        def __init__(self, *a, **k):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        async def post(self, url, headers=None, json=None):
+            sent.append(json)
+            return Resp()
+
+    monkeypatch.setattr(chat.httpx, "AsyncClient", Client)
+
+
+def test_her_core_is_a_person_not_a_device_and_love_only_behind_the_code_word():
+    from app import persona
+    core = persona.kern()
+    assert "Du bist Leyla" in core and "Sprachassistentin" not in core and "{ago}" not in core
+    assert "romantisch" in core and "beschützend" in core and "Pflichtfragen" in core
+    assert "DU UND METIN" not in core and "Geheimnis" not in core      # nothing of it without the code word
+    both = persona.kern(with_metin=True, extra="Sei pünktlich.")
+    assert "DU UND METIN" in both and "nie explizit" in both and both.endswith("Sei pünktlich.")
+    assert len(both) + len(chat.CHAT_KOPF) < 0.5 * (len(persona.build([])) + len(chat.CHAT_STYLE))
+    assert '"question"' not in chat.CHAT_KOPF and "{{" not in chat.CHAT_KOPF
+    assert '"merken"' in chat.CHAT_KOPF and '"erinnern"' in chat.CHAT_KOPF and "private" in chat.CHAT_KOPF
+
+
+async def test_new_mind_puts_the_fixed_part_first_and_the_memory_last(tmp_path, monkeypatch):
+    from app import persona
+    store = memory.MemoryStore(str(tmp_path / "m.json"))
+    store.save_all({"family": ["Person: Metin | Arbeit: Elektriker"], "private": ["Geheim A"]})
+    sent, stats = [], {}
+    _fake_model(monkeypatch, sent, {"reply": "Na du, wie war die Schicht?", "question": "Und sonst?"})
+    rules = persona.kern(with_metin=True) + chat.CHAT_KOPF + "\n\nNOTIZ X"
+    out = await chat._answer("k", ["m"], rules, store, [], "Bin zu Hause", "http://x", None,
+                             chat.KOPF_DATA, stats)
+    text = sent[0]["instructions"]
+    assert text.startswith("DU BIST LEYLA") and text.index("SO ANTWORTEST DU") < text.index("NOTIZ X")
+    assert text.index("NOTIZ X") < text.index("Geheim A") and "CHAT MIT METIN" not in text
+    assert stats["input_tokens"] == 1234 and stats["model"] == "m" and stats["characters"] == len(text)
+    assert out["reply"].startswith("Na du")
+
+
+async def test_probe_answers_with_either_mind_and_leaves_no_trace(tmp_path, monkeypatch):
+    from app import diary, main as m, recall
+    monkeypatch.setenv("LEYLA_RECALL_PATH", str(tmp_path / "r.json"))
+    monkeypatch.setenv("OPENAI_API_KEY", "test")
+    monkeypatch.setenv("OPENAI_EMBEDDINGS_URL", "http://127.0.0.1:9/none")
+    monkeypatch.setenv("MEMORY_PATH", str(tmp_path / "memory.json"))
+    bridge = m.LiveVoiceBridge()
+    sent = []
+    _fake_model(monkeypatch, sent, {"reply": "Ich hab an dich gedacht.", "merken": ["Metin hat Spätschicht"],
+                                    "gefuehl": ["kompliment"], "szene": "tanz"})
+    before = (bridge.diary.entries(), bridge.diary.chat_take(), bridge.mood.status(), bridge.variety.recent())
+    old = await bridge.recall.api("/api/kopf/probe", {"message": "Du bist süß", "neu": False})
+    new = await bridge.recall.api("/api/kopf/probe", {"message": "Du bist süß", "neu": True})
+    assert old["ok"] and new["ok"] and new["neu"] and new["reply"] == "Ich hab an dich gedacht."
+    assert "merken" in new["fields"] and new["stats"]["characters"] < old["stats"]["characters"]
+    assert "CHAT MIT METIN" in sent[0]["instructions"] and "Sprachassistentin" in sent[0]["instructions"]
+    assert "DU BIST LEYLA" in sent[1]["instructions"] and "Sprachassistentin" not in sent[1]["instructions"]
+    assert "DEIN HERZ GERADE" in sent[1]["instructions"] and "WAS DU IM CHAT KANNST" in sent[1]["instructions"]
+    after = (bridge.diary.entries(), bridge.diary.chat_take(), bridge.mood.status(), bridge.variety.recent())
+    assert before == after
+    # the switch decides which mind the real chat uses
+    assert "Sprachassistentin" in bridge._chat_base(bool(bridge.recall.settings["neu"]))
+    bridge.recall.set({"neu": 1})
+    assert bridge._chat_base(bool(bridge.recall.settings["neu"])).startswith("DU BIST LEYLA")
+
+
+def test_work_on_her_memory_is_not_proposed_for_her_story():
+    lists = {"family": [], "friends": [], "leyla": [], "private": []}
+    raw = [{"action": "add", "kind": "leyla", "new": "Metin und ein Helfer verbessern Leylas Gedächtnis insgesamt; "
+            "bereits gespeicherte gemeinsame Erinnerungen bleiben dabei unverändert und werden nicht gelöscht."},
+           {"action": "add", "kind": "leyla", "new": "Unser Gedächtnis wird gerade umgebaut."},
+           {"action": "add", "kind": "leyla", "new": "Wir tanzen sonntags zusammen in der Küche."},
+           {"action": "add", "kind": "family", "new": "Metin will sein Türkisch verbessern."},
+           {"action": "add", "kind": "private", "new": "Metin sagt, die Erinnerung an unseren ersten Abend macht ihn glücklich."}]
+    assert [p["new"][:12] for p in chat.valid_proposals(raw, lists)] == [
+        "Wir tanzen s", "Metin will s", "Metin sagt, "]

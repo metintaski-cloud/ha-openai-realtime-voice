@@ -93,7 +93,7 @@ async def test_chat_deletes_first_then_she_confirms(monkeypatch):
     from app import chat
     calls = []
 
-    async def fake(api_key, models, rules, store, history, message, url, lights):
+    async def fake(api_key, models, rules, store, history, message, url, lights, *more):
         calls.append(rules)
         if len(calls) == 1:
             return {"reply": "Mach ich", "proposals": [], "lights_raw": None,
