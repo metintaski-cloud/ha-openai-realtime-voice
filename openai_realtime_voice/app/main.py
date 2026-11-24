@@ -36,7 +36,7 @@ import dotenv
 import websockets
 
 from app.audio_recorder import AudioRecorder
-from app import agenda, befehle, day, diary, gcontacts, textmodel, heart, ideas, inbox, mail, memory, memory_web, mood, nachdenken, reach, recall, reminders, schwer, tls, variety, voice_in, voice_stream
+from app import agenda, befehle, day, diary, falsewakes, gcontacts, textmodel, heart, ideas, inbox, mail, memory, memory_web, mood, nachdenken, reach, recall, reminders, schwer, tls, variety, voice_in, voice_stream
 
 # Scene concept 2.0 (2.104.0): her feelings come from what really happens (app/heart.py); env
 # LEYLA_HEART=0 brings back the old dice of app/mood.py as a safety net.
@@ -204,6 +204,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self.recall.notes = self._notes_hear_probe
         self.recall.hard = self._hard_probe
         self.recall.commands = self._commands_api
+        self.recall.false_wakes = self._false_wakes_api
         self.day = day.Day(self.diary, ask=self._day_ask, weather=self._day_weather)  # her own day
         self._forget_sol_evening()
         self._init_reach(UNLOCKED_LOVE)  # she writes to Metin on her own (app/reach.py)
@@ -1714,7 +1715,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         logger.info("Session ended: %s (duration: %.1fs, reason: %s)",
                     client_id, duration, reason)
         metrics.record("session_end", duration_s=duration, reason=reason,
-                       followup=bool(state.get("followup")),
+                       followup=bool(state.get("followup")), app=bool(state.get("from_app")),
                        **metrics.mic_summary(state.get("mic_stats")))
 
     async def handle_client(self, client_ws) -> None:
@@ -1748,6 +1749,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         end_reason: dict = {}
         output_queue: asyncio.Queue = asyncio.Queue()
         state: dict = {
+            "from_app": bool(app),  # started by a tap in the app, not by the wake word
             "closing": False,
             "fatal": False,
             "last_audio_time": 0.0,
@@ -1795,6 +1797,12 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         finally:
             await self._end_session(client_id, client_ws, state, end_reason, start_time)
 
+    async def _false_wakes_api(self, d: dict) -> dict:
+        """/api/kopf/fehlwecker (code word): what is on the kept false wake recordings."""
+        return await falsewakes.analyse(self.false_wake_dir, self.openai_api_key,
+                                        int(d.get("offset") or 0), int(d.get("limit") or 25),
+                                        text=d.get("text", True) is not False)
+
     def _finish_recording(self, path: Optional[str], reason: str, state: dict) -> None:
         """Keep the microphone recording only of a false wake (the wake word fired, nobody
         spoke, and Leyla did not start it herself), as training material for a better wake
@@ -1803,7 +1811,10 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         if not path or self.enable_recording or not os.path.exists(path):
             return
         try:
+            # a live talk from the app is started by a tap, not by the wake word (until
+            # 2.155.1 such talks were kept and counted as false wakes too)
             false_wake = (reason == "no_speech" and not state.get("followup")
+                          and not state.get("from_app")
                           and os.path.getsize(path) > 48000)  # more than about a second
             if not false_wake:
                 os.remove(path)

@@ -153,6 +153,7 @@ class Index:
         self.notes = None   # main sets it: the notes of a talk's start, measured (async)
         self.hard = None    # main sets it: how she sorts questions into hard and easy (async)
         self.commands = None  # main sets it: the fixed commands, read, set or run (async)
+        self.false_wakes = None  # main sets it: what is on the false wake recordings (async)
         self._load()
 
     @property
@@ -503,6 +504,8 @@ class Index:
             done = await self.think() if (d.get("now") and self.think) else 0
             return {"ok": True, "done": done, "due": len(self.reflect.due()),
                     **(self.reflect.listing() if d.get("read") else {})}
+        if path == "/api/kopf/fehlwecker" and self.false_wakes:
+            return await self.false_wakes(d)
         if path == "/api/kopf/befehle" and self.commands:
             return await self.commands(d)
         if path == "/api/kopf/schwer" and self.hard:

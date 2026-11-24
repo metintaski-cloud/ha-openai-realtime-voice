@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.156.0 (24 Nov 2026)
+
+- `feat`: `POST /api/kopf/fehlwecker {offset, limit, text}` (code word, `app/falsewakes.py`) tells what is on the kept false wake recordings: day and time, length, loudness, how much of it is sound, when the first sound comes and what a speech recogniser hears in it. Nothing of it is stored. First step of Metin's wish of 10:34 to get rid of the false wakes (63 false starts in 210 wakes in twelve days by `/api/wakestats`, 75 recordings kept).
+- `fix`: a live talk from the app that ended without speech was kept as a false wake recording and counted in `/api/wakestats`, although it is started by a tap and not by the wake word (today's numbers hold the test talks of the night). The talk's state now carries `from_app`, `session_end` carries `app`, and both places leave such talks out. Older entries have no mark and stay counted.
+
 ## 2.155.1 (24 Nov 2026)
 
 - `fix`: a fixed command reports a fan key press that the power meter did not confirm as a problem instead of as done (Metin, 11:01: she shall check quietly whether it really is so; the fan light has a power meter she can read). The check itself was already there: `fan.set_light` reads the meter first, presses nothing when the light already is as wanted, and looks at the change after a press; the floor lamps are confirmed by their state in Home Assistant and sent again when they did not switch (`lights.run`). What was missing: the case "key pressed, no clear change seen" came back as a note and the fixed command passed it on as done.

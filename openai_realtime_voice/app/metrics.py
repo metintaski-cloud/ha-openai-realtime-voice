@@ -70,8 +70,8 @@ def wake_stats(entries: list, days: int = 14) -> list:
     wakes (ended with no_speech). Talks Leyla started herself (followup) do not count."""
     by_day: dict = {}
     for e in entries:
-        if e.get("event") != "session_end" or e.get("followup"):
-            continue
+        if e.get("event") != "session_end" or e.get("followup") or e.get("app"):
+            continue  # a live talk from the app is started by a tap (marked since 2.156.0)
         day = time.strftime("%Y-%m-%d", time.localtime(e.get("ts", 0)))
         d = by_day.setdefault(day, {"tag": day, "geweckt": 0, "fehlstarts": 0})
         d["geweckt"] += 1
