@@ -514,3 +514,39 @@ async def test_recall_question_from_unknown_speaker_asks_who_first():
     for q in ("Wo tut es mir weh?", "Weißt du noch, was ich gesagt habe?", "hatırlıyor musun"):
         assert m.RECALL_RE.search(q), q
     assert not m.RECALL_RE.search("Mach das Licht an")
+
+
+async def test_with_frisch_the_code_word_puts_a_fresh_session_in_place_and_the_talk_goes_on(env, monkeypatch):
+    """2.155.0: no notes are appended after the code word; a second GPT Live session starts
+    with her knowledge and the talk so far, and what it says reaches the client."""
+    from app import talk_notes
+    monkeypatch.setattr(talk_notes, "FRESH_MIN_S", 0.1)
+    monkeypatch.setattr(talk_notes, "FRESH_QUIET_S", 0.1)
+
+    async def script(ws, fake):
+        await asyncio.sleep(0.2)
+        if len(fake.session_conns) == 1:      # the first session: he says the code word
+            await ws.send(json.dumps({"type": "session.input_transcript.delta", "delta": " sesam "}))
+        else:                                 # the fresh one speaks
+            await asyncio.sleep(0.2)
+            await ws.send(json.dumps({"type": "session.output_transcript.delta", "delta": "Da bin ich"}))
+            await ws.send(json.dumps({"type": "session.output_audio.delta",
+                                      "delta": base64.b64encode(b"\x10\x27" * 2400).decode()}))
+
+    async with FakeLive(script) as fake, Bridge() as b:
+        b.bridge.recall.settings["frisch"] = 1
+        async with b.connect() as client:
+            assert json.loads(await asyncio.wait_for(client.recv(), 5))["type"] == "ready"
+            got = await collect(client, lambda msg: isinstance(msg, bytes), timeout=6.0)
+            assert any(isinstance(g, bytes) for g in got)          # the fresh session is heard
+            await client.send(b"\x00\x00" * 480)                   # and it gets his voice
+            await asyncio.sleep(0.2)
+        starts = [e["session"] for e in fake.received if e["type"] == "session.start"]
+        assert len(starts) == 2 and fake.session_conns == [1, 2]
+        assert "Codewort wurde richtig gesagt" in starts[1]["instructions"]
+        assert talk_notes.START_HEAD.strip() in starts[1]["instructions"]
+        assert "Codewort wurde richtig gesagt" not in starts[0]["instructions"]
+        said = [(msg["role"], msg["content"][0]["text"]) for msg in starts[1]["input"] if msg["role"] != "developer"]
+        assert ("user", "sesam") in said
+        notes = [e for e in fake.received if e["type"] == "session.commentary.append"]
+        assert not any("Codewort" in e["content"] for e in notes)   # nothing appended about it

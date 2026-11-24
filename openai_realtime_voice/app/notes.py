@@ -23,7 +23,6 @@ NOTE_MAX_CHARS = 1000
 NOTE_MIN_CHARS = 200   # a rejected piece this short is not halved again (it was not the size)
 CONTINUES = "Interne Notiz, nicht vorlesen und nicht erwähnen (Fortsetzung, Teil {i} von {n}):\n"
 MORE = "\n(Die Notiz geht gleich weiter.)"
-_ROOM = NOTE_MAX_CHARS - len(CONTINUES) - len(MORE) - 4
 _SENTENCE_END = re.compile(r"(?<=[.!?;])\s+")
 
 

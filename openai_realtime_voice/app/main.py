@@ -36,7 +36,7 @@ import dotenv
 import websockets
 
 from app.audio_recorder import AudioRecorder
-from app import agenda, day, diary, gcontacts, textmodel, heart, ideas, inbox, mail, memory, memory_web, mood, nachdenken, reach, recall, reminders, schwer, tls, variety, voice_in, voice_stream
+from app import agenda, befehle, day, diary, gcontacts, textmodel, heart, ideas, inbox, mail, memory, memory_web, mood, nachdenken, reach, recall, reminders, schwer, tls, variety, voice_in, voice_stream
 
 # Scene concept 2.0 (2.104.0): her feelings come from what really happens (app/heart.py); env
 # LEYLA_HEART=0 brings back the old dice of app/mood.py as a safety net.
@@ -174,6 +174,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self.fan = fan.FanController(self.rf, state_path=os.path.join(
             os.path.dirname(os.environ.get("MEMORY_PATH", "/data/memory.json")) or "/data",
             "fan_state.json") if os.path.isdir("/data") else None)
+        # sentences of the family that always do exactly the same (app/befehle.py, 2.155.0)
+        self.commands = befehle.Commands(self.lights, self.fan)
         self.tv = tv.from_env(self.rf)
         self.lamp = lamp_show.from_env()  # rear lamps follow the conversation in the icon colours
         self.vacuum = vacuum.VacuumController()
@@ -201,6 +203,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self.recall.speak = self._voice_probe
         self.recall.notes = self._notes_hear_probe
         self.recall.hard = self._hard_probe
+        self.recall.commands = self._commands_api
         self.day = day.Day(self.diary, ask=self._day_ask, weather=self._day_weather)  # her own day
         self._forget_sol_evening()
         self._init_reach(UNLOCKED_LOVE)  # she writes to Metin on her own (app/reach.py)
@@ -280,6 +283,12 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             (self.lights.available, lights.LIGHTS_TOOL,
              lights.LIGHTS_BACKEND_HINT.format(count=lamp_count) if self.lights.available else "",
              f"die {lamp_count} Stehlampen (an, aus, Helligkeit, warm oder kalt, Farben)"),
+            (self.lights.available or self.fan.available, befehle.RUN_TOOL,
+             self.commands.hint(),
+             "feste Befehle für Sätze der Familie wie „alle Lichter aus“ (was dabei geschaltet "
+             "wird, hat Metin festgelegt)"),
+            (self.lights.available or self.fan.available, befehle.SET_TOOL, "",
+             "einen festen Befehl neu festlegen oder ändern, wenn Metin es sagt (gilt sofort)"),
             (self.fan.available, fan.FAN_TOOL, fan.FAN_BACKEND_HINT,
              "den Deckenventilator (aus, Stufe 1 bis 6, Licht am Ventilator, "
              "Naturwind, Drehrichtung, Timer; ein Strommesser zeigt, was an ist, "
@@ -324,10 +333,12 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
              "deine eigene Laune Metin gegenüber festhalten (nur nach seinem Codewort)"),
         ]
 
-    def _session_start(self, extra: str = "", start=None) -> dict:
+    def _session_start(self, extra: str = "", start=None, history=None) -> dict:
         """Build the session.start payload for GPT Live. `start`: the items of a live talk
         from the app (talk_notes._app_start) and the state they are reported in; they go into
-        the instructions and the startup input, so she knows them from the first moment."""
+        the instructions and the startup input, so she knows them from the first moment.
+        `history`: the talk so far as messages (a fresh session in a running talk,
+        talk_notes._go_fresh); it stands in place of the greeting."""
         tools: list[dict] = [END_CONVERSATION_TOOL]
         backend_instructions = self.backend_instructions
         devices: list[str] = []
@@ -345,7 +356,9 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         if start:
             items, state = start
             text, start_input, held = self.start_split(
-                items, len(instructions), len(self.greeting or ""))
+                items, len(instructions),
+                sum(len(m["content"][0]["text"]) for m in history) if history is not None
+                else len(self.greeting or ""))
             logger.info("Start of the session: %d characters of rules, %d of her knowledge in "
                         "them, %d in the startup input%s", len(instructions), len(text),
                         sum(len(t) for t in start_input),
@@ -379,11 +392,13 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 "effort": self.backend_effort}
         messages_in = [{"type": "message", "role": "developer",
                         "content": [{"type": "input_text", "text": t}]} for t in start_input]
-        if self.greeting:
+        if history is not None:
+            messages_in += history
+        elif self.greeting:
             # Developer message so the greeting instruction is known from the start; the
             # commentary.append after session.started makes GPT Live actually speak first.
             messages_in.append({
-                "role": "developer",
+                "type": "message", "role": "developer",
                 "content": [{"type": "input_text", "text": self.greeting}],
             })
         if messages_in:
@@ -794,6 +809,17 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         return await self._speak_test(text, chat.voice_reply_instructions(mood, love),
                                       chat.speak_prompt(text))
 
+    async def _commands_api(self, d: dict) -> dict:
+        """/api/kopf/befehle (code word): read the fixed commands, set one ("set": the fields
+        of befehl_festlegen), or run one ("run": name)."""
+        out = {"ok": True}
+        if isinstance(d.get("set"), dict):
+            out["set"] = self.commands.define(d["set"])
+        if d.get("run"):
+            out["run"] = await self.commands.run({"name": str(d["run"])})
+        out["items"] = self.commands.listing()
+        return out
+
     async def _notes_hear_probe(self, d: dict) -> dict:
         """/api/kopf/notizen: sizes -> how GPT Live takes the notes; hears ([[channel, budget],
         ...]) -> does she hear a recording that starts right after the notes, and know them?"""
@@ -1022,6 +1048,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 extra = await asyncio.wait_for(context.build_context(), timeout=4.0)
             except Exception as e:
                 logger.info("Context not added: %s", e)
+        self._context_extra = extra  # a fresh session of this talk starts with the same
         await live_ws.send(json.dumps(self._session_start(extra, start)))
         loop = asyncio.get_event_loop()
         deadline = loop.time() + timeout
@@ -1733,6 +1760,9 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             t_live = time.monotonic()
             start = (await self._app_start(state), state) if app else None
             live_ws, started = await self._open_live(state, start)
+            # one object for the whole talk, so the session behind it can be exchanged
+            live_ws = state["live_ws"] = live_link.LiveLine(live_ws)
+            state["context_extra"] = getattr(self, "_context_extra", "")
             live_open_s = time.monotonic() - t_live
             state["live_started"] = True
             self._in_background(self.health.openai_ok())

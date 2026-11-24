@@ -76,7 +76,11 @@ SETTINGS = {"min_sim": 0.48, "top": 4, "ask_min_sim": 0.38, "ask_top": 6, "word_
             # says "denk genau nach", and with schwer 1 also when the small model judges so
             # schwer_tag: the most the strong model may cost on one day, in dollars (Metin,
             # 07:08: "Ich befürchte Astra wird mehr Fragen bekommen"); then Luna answers
-            "schwer_model": "gpt-6.2-astra", "schwer": 0, "schwer_tag": 1.5}
+            "schwer_model": "gpt-6.2-astra", "schwer": 0, "schwer_tag": 1.5,
+            # 1: at home, once it is clear who talks, a fresh GPT Live session with all she
+            # may know about that person takes the place of the running one
+            # (talk_notes._go_fresh); 0: notes within the budget, as before
+            "frisch": 0}
 COMPARE = (("text-embedding-3-small", 256), ("text-embedding-3-small", 1536),
            ("text-embedding-3-large", 256), ("text-embedding-3-large", 1024))
 BONUSES = (0.0, 0.05, 0.1)
@@ -148,6 +152,7 @@ class Index:
         self.speak = None   # main sets it: one spoken test sentence (async, returns what came)
         self.notes = None   # main sets it: the notes of a talk's start, measured (async)
         self.hard = None    # main sets it: how she sorts questions into hard and easy (async)
+        self.commands = None  # main sets it: the fixed commands, read, set or run (async)
         self._load()
 
     @property
@@ -498,6 +503,8 @@ class Index:
             done = await self.think() if (d.get("now") and self.think) else 0
             return {"ok": True, "done": done, "due": len(self.reflect.due()),
                     **(self.reflect.listing() if d.get("read") else {})}
+        if path == "/api/kopf/befehle" and self.commands:
+            return await self.commands(d)
         if path == "/api/kopf/schwer" and self.hard:
             return await self.hard(d.get("fragen"))
         if path == "/api/kopf/notizen" and self.notes:

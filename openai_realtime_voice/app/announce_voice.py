@@ -131,17 +131,18 @@ class AnnounceVoiceMixin:
                 return loud_end >= MIN_SPEECH_S * BYTES_PER_SEC
 
             while loop.time() < end:
-                if started and not armed and (fed.is_set() or not heard) and (
-                        not later or prompt.done()):
-                    if later:
-                        text = "" if prompt.cancelled() or prompt.exception() else prompt.result()
+                if later and not armed and prompt.done():
+                    text = "" if prompt.cancelled() or prompt.exception() else prompt.result()
                     if not text:
-                        break  # nothing to say
+                        break  # nothing to say: no need to play the rest of the recording
+                if started and not armed and text and (fed.is_set() or not heard):
                     await arm()
                 if not started and loop.time() > t_start + FIRST_AUDIO_S:
                     break  # the session did not even start
-                if armed and not spoken() and loop.time() > give_up:
-                    break  # she did not start to speak: the caller tries again
+                if (armed and not spoken() and loop.time() > give_up
+                        and (last_audio is None or loop.time() - last_audio > SPEECH_END_GAP_S)):
+                    break  # she did not start to speak: the caller tries again (found in the
+                    # review of 24 Nov: a first word just before the limit was cut off)
                 if nudge_at and not last_audio and not said and loop.time() > nudge_at:
                     nudge_at = None  # she let her turn pass: the same note once more
                     info["nudged"] = True

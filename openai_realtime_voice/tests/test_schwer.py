@@ -25,6 +25,8 @@ def test_his_own_words_send_it_to_the_strong_model(text):
     "Ich denke gerade an dich",
     "Ich habe gut geschlafen und denke nach",
     "Seni düşünüyorum",
+    "Senin hakkında hep iyi düşünüyorum",      # "I think well of you": no request to think
+    "Dün seni iyi düşündüm",
     "Mach bitte das Licht aus",
     "",
 ])
