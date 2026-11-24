@@ -369,6 +369,24 @@ Von Claude eingesetzt (beide Bilder und "4K · 10s · Adaptive · 1", 350 Credit
 
 **Stand der zweiten Runde um 22:16.** Eingebaut: `schwarz/gesicht2`, `schwarz/freizeitgesicht2`, `kurz/freizeitgesicht2`, `nacht/gesicht2`, `schwarz/brust2` (ohne Ton), `schwarz/freizeitbrust2`, `kurz/brust2`, `kurz/freizeitbrust2`, `nacht/po8`, `kurz/freizeitpo9`; der Brust Clip fürs Nachtkleid (1224, Zucken) läuft auf Metins Wort als Schleife `nacht/gluecklich10`. Offen: `nacht/brust2` (neu schreiben, Reaktion nur über Gesicht und Atem), `kurz/po2` (neue Fassung steht in Kling), `schwarz/freizeitpo2` (fehlgeschlagen, neu schreiben). Nie bei Claude angekommen und im Kling Raster nicht mehr zu sehen: Gesicht 2 kurzes Arbeitskleid (`kurz/gesicht2`) und Po 2 langes Arbeitskleid (`schwarz/po2`); Metin gefragt. Merke: Kling vergibt Dateinummern doppelt; `~/proc.sh` auf dem Gerät erkennt jetzt gleichen Namen mit anderem Inhalt.
 
+**Nachzügler der zweiten Runde, von Claude eingesetzt und gestartet 22:38 bis 22:40 (Metin, 22:37: "ok, mach weiter"; je beide Bilder, "4K · 10s · Adaptive · 1" und 350 Credits abgelesen; Guthaben danach 2,8k).**
+
+Brust 2, Nachtkleid, neu (Reaktion nur über Atem und Gesicht, der Ort wird nicht genannt, "Her upper body stays calm"), vorgesehen als `nacht/brust2`:
+
+"0–2s: She feels an unexpected playful sensation, draws in a soft, surprised breath with wide eyes and shifts her weight onto one leg. 2–5s: Bashfully she lays one hand on her collarbone, glances to the side and softly bites her lip, her hips swaying slowly. 5–8s: She looks into the camera from under her lashes with a seductive, shy smile and lets her hand glide slowly down along her other arm, her weight sinking onto the other leg. 8–10s: She lets her hand sink, smiles at him lovingly and returns to her initial pose. Soft, feminine, sensual body movements. Subtle facial expressions, no exaggerated reactions. Her upper body stays calm. Both feet remain in place. No speaking. Static camera, full body visible, unchanged background."
+
+Po 2, langes Freizeitkleid, neu (ohne "revealing her back" und "bare shoulder"), vorgesehen als `schwarz/freizeitpo2`:
+
+"0–2s: She reacts with a sweet little start to an unexpected playful sensation on her bottom and smiles knowingly, her eyes on the camera. 2–5s: Slowly she turns her back to him and with one hand lays her long hair forward over one shoulder, her weight sinking onto one leg. 5–8s: She looks at him over her shoulder with a seductive, shy smile and sways her hips softly once to each side. 8–10s: She lets her hair fall back, turns to face him again, smiles at him lovingly and returns to her initial pose. Soft, feminine, sensual body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
+
+Gesicht 2, kurzes Arbeitskleid: derselbe Text wie oben ("woher kam das?"), zweiter Lauf, vorgesehen als `kurz/gesicht2`.
+
+Po 2, langes Arbeitskleid, überarbeitet (das Buch bleibt im selben Arm, die freie Hand in die Hüfte), vorgesehen als `schwarz/po2`:
+
+"0–2s: She reacts with sweet surprise to an unexpected playful sensation on her bottom, hugs her book a little closer and glances back over her shoulder. 2–5s: Slowly she turns until he sees her from behind at an angle, sets her free hand on her hip like a strict teacher and gives him a scolding, amused look over her shoulder. 5–8s: Her strict look melts into a seductive, shy smile and she sways her hips slowly from side to side, her long hair moving along her back. 8–10s: She turns back to face him, smiles at him lovingly and returns to her initial pose. She holds only one book, always in the same arm. Soft, feminine, sensual body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
+
+Ergebnisse hier nachtragen.
+
 ## Was am 24.11.2026 sonst noch entstand
 
 - `kurz/gluecklich5` (Clip 308, Haarsträhne, Metin: "ist für die Schleife von Arbeit kurz glücklich"): unverändert im Originaltempo eingebaut, Bewegungsmenge 1,15, Naht 0,64, Gesicht stabil, der ganze Körper lebt. Geschrieben noch in Claudes Zwischenform (verschiedene Handlungen je einmal, ein Satz, dass der Körper mitgeht, keine Klemmsätze). Der Clip ist gut, die Form ist trotzdem abgelöst; neue Schleifen entstehen nach dem Baukasten.
