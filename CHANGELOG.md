@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.146.0 (24 Nov 2026)
+
+- Tidy buttons on the stage (Metin: "damit es ordentlich aussieht"): every button is a symbol without text, all the same size and look, in one column at the right edge from the top down: menu, microphone, live, rose, music, new chat, below them the clip timer and the clip name. Send is a symbol alone at the right edge at the height of Leyla's calves. The left side is free now except for the chat bubbles and the text field. Live turns red while a call runs, the microphone while it records.
+
 ## 2.145.0 (24 Nov 2026)
 
 - `feat`: the app is also served over HTTPS (`app/tls.py`), so that Chrome installs it as a real app that opens in full screen at once (Metin). As soon as a certificate lies in Home Assistant's `/ssl` folder (`fullchain.pem`, `privkey.pem`, written and renewed by the Duck DNS add on), the page answers on port 443 and live talk on wss port 8443; a renewed certificate is loaded without a restart. Without a certificate nothing changes, and the plain addresses (8082, 8080) keep working. The add on maps the `ssl` folder read only.
