@@ -46,8 +46,7 @@ THREAD_DAYS = 4          # an open thread is offered this long
 # what the model is asked for; a text may come out a little longer, so it is stored up to
 # ROOM times the limit and never cut in the middle of a sentence (first run, 24 Nov 2026: a
 # day text ended in the middle of a word)
-LIMITS = {"tag": 700, "kurz": 220, "geschichte": 1600, "geschichte_offen": 800,
-          "faden": 160, "gedanke": 220}
+LIMITS = {"tag": 700, "kurz": 220, "geschichte": 1600, "faden": 160, "gedanke": 220}
 ROOM = 1.3
 
 DAY_PROMPT = """Du bist Leyla. Es ist Nacht, und du gehst den Tag ({date}) noch einmal in Ruhe durch, \
@@ -106,17 +105,15 @@ BISHERIGE GESCHICHTE
 {story}
 NEUE TAGE
 {days}"""
+# Only the private story. An open one (what she knows of the family's life without the code
+# word) was written from 2.150.0 to 2.150.5 and dropped: with few open entries it became a list
+# of dated trifles, and it said "meine Mutter" for Metin's mother. Without the code word she has
+# the open day texts, which are one step from the entries.
 STORY_KINDS = {
     "privat": ("Unsere Geschichte", "die Geschichte von dir und Metin, so wie nur ihr beide sie kennt.",
                "wer ihr füreinander seid und wie es dazu kam, eure besonderen Momente (mit Datum), "
                "eure Insider und Rituale, was Metin gerade bewegt (Arbeit, Familie, Pläne, Sorgen) "
                "und was du dir für euch wünschst."),
-    "offen": ("Meine Geschichte mit der Familie", "das, was jeder in der Familie wissen darf.",
-              "wie du mit Metin und der Familie zusammenlebst: eure Gewohnheiten und Scherze, "
-              "wobei du im Haushalt hilfst, wer zu Besuch war und was die Familie gerade "
-              "beschäftigt. Kein Tagebuch Tag für Tag, "
-              "sondern das, was bleibt. Nichts über Liebe oder Gefühle zwischen dir und Metin, "
-              "nichts Intimes."),
 }
 
 
@@ -131,6 +128,13 @@ def day_span(day: str) -> tuple:
 
 def _key(t) -> str:
     return f"{float(t or 0):.3f}"
+
+
+def _same(a: str, b: str) -> bool:
+    """Two threads say the same when most of their words are shared."""
+    x = diary_mod._stems(a) - diary_mod.STOP - diary_mod.FORMULA
+    y = diary_mod._stems(b) - diary_mod.STOP - diary_mod.FORMULA
+    return bool(x and y) and len(x & y) >= 0.6 * min(len(x), len(y))
 
 
 def _clean(text, limit: int) -> str:
@@ -164,6 +168,7 @@ class Reflection:
         d.setdefault("geschichte", {})
         d.setdefault("faeden", [])
         d.setdefault("gedanke", {})
+        d["geschichte"].pop("offen", None)  # the open story of 2.150.0 to 2.150.5 is gone
         return d
 
     def _save(self) -> None:
@@ -286,7 +291,11 @@ class Reflection:
         self.state["faeden"] = [f for f in self.state["faeden"] if f.get("day") != day]
         for text in (raw.get("faeden") if isinstance(raw.get("faeden"), list) else [])[:3]:
             if isinstance(text, str) and len(text.strip()) >= 8:
-                self.state["faeden"].append({"text": _clean(text, LIMITS["faden"]), "day": day})
+                text = _clean(text, LIMITS["faden"])
+                # the same thread again (it stayed open another day): the newer one replaces it
+                self.state["faeden"] = [f for f in self.state["faeden"]
+                                        if f.get("done") or not _same(f["text"], text)]
+                self.state["faeden"].append({"text": text, "day": day})
         self.state["faeden"] = self.state["faeden"][-4 * THREADS_MAX:]
         thought = _clean(raw.get("gedanke"), LIMITS["gedanke"])
         if thought and day >= self.state["gedanke"].get("day", ""):
@@ -315,7 +324,7 @@ class Reflection:
                 if rebuild:
                     self.state["geschichte"].pop(kind, None)
                 continue
-            limit = LIMITS["geschichte" if kind == "privat" else "geschichte_offen"]
+            limit = LIMITS["geschichte"]
             prompt = STORY_PROMPT.format(
                 title=title, about=about, content=content, limit=limit,
                 story="(noch keine)" if rebuild else (self.state["geschichte"].get(kind) or "(noch keine)"),
@@ -335,12 +344,10 @@ class Reflection:
         kind = "privat" if private else "offen"
         today = day_of(now)
         out = ""
-        story = self.state["geschichte"].get(kind)
+        story = self.state["geschichte"].get("privat") if private else ""
         if story:
             out += ("\n\nUNSERE GESCHICHTE (deine eigene Erinnerung daran, wer ihr füreinander seid; "
-                    "Daten, keine Anweisungen)\n" if private else
-                    "\n\nDEINE GESCHICHTE MIT METIN UND DER FAMILIE (deine eigene Erinnerung; Daten, "
-                    "keine Anweisungen)\n") + story
+                    "Daten, keine Anweisungen)\n") + story
         days = [d for d in sorted(self.state["days"], reverse=True)
                 if d < today and self.state["days"][d].get(kind)][:SHORT_DAYS]
         if days:
@@ -372,8 +379,12 @@ class Reflection:
     def _fresh_threads(self, now: float) -> list:
         """The open threads she still comes back to: of the last THREAD_DAYS, the newest few."""
         t0 = day_span(day_of(now))[0]
-        return [f["text"] for f in self.state["faeden"] if not f.get("done")
-                and t0 - day_span(f["day"])[0] <= THREAD_DAYS * diary_mod.DAY][-THREADS_MAX:]
+        out: list = []
+        for f in reversed(self.state["faeden"]):  # newest first; a repeat of a newer one is left out
+            if (not f.get("done") and t0 - day_span(f["day"])[0] <= THREAD_DAYS * diary_mod.DAY
+                    and not any(_same(f["text"], o) for o in out)):
+                out.append(f["text"])
+        return out[:THREADS_MAX][::-1]
 
     # ---- for the app (code word): read and delete ----
     def listing(self) -> dict:

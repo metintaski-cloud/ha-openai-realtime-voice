@@ -74,8 +74,9 @@ def test_a_finished_day_is_thought_over_when_it_is_quiet_and_the_open_text_never
     private, opened = rf.note(True, NOW), rf.note(False, NOW)
     assert "GESCHICHTE PRIVAT" in private and "PRIVAT Tag" in private and "gestern" in private
     assert "Bescheid vom Amt" in private and "Ich freue mich auf morgen." in private
-    assert "GESCHICHTE OFFEN" in opened and "OFFEN Tag" in opened
+    assert "OFFEN Tag" in opened and "GESCHICHTE" not in opened      # our story only behind the code word
     assert "PRIVAT" not in opened and "Bescheid" not in opened and "freue mich" not in opened
+    assert "für genaue Regeln" in private.lower() or "Für genaue Regeln" in private   # the lists count
     # entries of thought over days leave the window, today's stay
     assert rf.cut(NOW) == at("2030-03-10", 5)
     window = [e["lang"] for e, _ in dy.window("Metin", True, NOW, since=rf.cut(NOW))]
@@ -101,7 +102,7 @@ def test_threads_close_and_what_is_no_memory_fades_but_stays_in_the_diary(tmp_pa
     assert faded == {"Metin hat mo": False, "Wir haben da": True, "Metin erzähl": False, "Der Termin b": False}
     assert len(dy.entries()) == 4 and [bool(e.get("blass")) for e in dy.archived()] == [False, True, False, False]
     assert "Mikrofon" not in dy.note("Metin", True, at("2030-03-08", 13))   # faded: not before her
-    assert "OFFENE FÄDEN\n1. Metin wollte sagen" in seen[4]                # the next night sees the thread
+    assert "OFFENE FÄDEN\n1. Metin wollte sagen" in seen[3]                # the next night sees the thread
     note = rf.note(True, NOW)
     assert "wie der Termin war" not in note and "Neuer Gedanke." in note    # answered, and the newer thought
 
@@ -179,3 +180,25 @@ def test_chat_and_home_get_the_same_memory_and_only_with_the_setting(tmp_path, m
     assert "Garten" in mama and "See" not in mama                             # others as before
     assert asyncio.run(b.recall.api("/api/kopf/nachdenken", {"forget": "thought"}))["ok"]
     assert "Ich denke an den See." not in b._memory_note("Metin", True)
+
+
+def test_a_thread_that_stays_open_is_kept_once_and_texts_end_with_whole_sentences(tmp_path):
+    answers = {"privat": {"faeden": ["Leyla möchte Metin fragen, wie es ihm mit seiner Erkältung geht."],
+                          "erledigt": [], "gedanke": "g", "unwichtig": []}}
+    dy, rf, seen = make(tmp_path, answers)
+    dy.add(entry("Metin ist erkältet."), "Metin", "chat", now=at("2030-03-08", 10))
+    dy.add(entry("Metin hustet noch."), "Metin", "chat", now=at("2030-03-09", 10))
+
+    async def run():
+        await rf.reflect_day("2030-03-08", NOW)
+        answers["privat"]["faeden"] = ["Leyla möchte Metin noch fragen, wie es ihm mit der Erkältung geht.",
+                                       "Metin wollte den Namen des Films verraten."]
+        await rf.reflect_day("2030-03-09", NOW)
+    asyncio.run(run())
+    threads = rf._fresh_threads(NOW)
+    assert len(threads) == 2 and sum("Erkältung" in t for t in threads) == 1
+    assert "offen" not in rf.state["geschichte"] and list(nachdenken.STORY_KINDS) == ["privat"]
+    long = "Ein ganzer Satz steht hier. " * 60
+    cut = nachdenken._clean(long, 700)
+    assert len(cut) <= 910 and cut.endswith("hier.")
+    assert nachdenken._clean("Das nehme ich mit – und mehr.", 100) == "Das nehme ich mit, und mehr."

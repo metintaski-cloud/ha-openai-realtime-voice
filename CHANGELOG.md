@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.150.6 (24 Nov 2026)
+
+- `fix(app)`: with the keyboard open Metin could not see what he typed. In the full screen stage the keyboard lies over the page instead of making it smaller, so the text field stayed behind it. The page now measures how much the keyboard covers (`kbFit`, `visualViewport`) and lifts the text field and the messages by that height (`--kb`); the stage itself does not move. Checked in headless Chrome with a simulated keyboard of 380 px: text field 388 px and messages 450 px above the bottom, back to 8 and 70 when it closes.
+- Second run of her night thinking with the corrected prompts, read on the server: the lamp agreement stands complete and right in the day text, our story only says that there is one. The open story is dropped (`STORY_KINDS` holds only the private one): with few open entries it was a list of dated trifles and it said "meine Mutter" for Metin's mother; without the code word she has the open day texts. A thread that stays open another day is kept once (`_same`), not once per night.
+
 ## 2.150.5 (24 Nov 2026)
 
 - Touches are of the moment (Metin, 24 Nov 2026, 04:43: she need not keep remembering them, over time it gets too much). She still reacts to a touch, but nothing of it reaches the diary or her night texts: `Diary.chat_turn` keeps a stage note out of the diary buffer and only the newest one in her word for word thread, so touches no longer push the real talk out of her last ten exchanges. The one line a day of 2.147.0 (`Diary.touched`) is removed again, its lines fade at the next start, and the night marks single touch entries of the past as no memory.
