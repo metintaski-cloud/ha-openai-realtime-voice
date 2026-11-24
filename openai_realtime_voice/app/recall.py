@@ -51,7 +51,10 @@ SETTINGS = {"min_sim": 0.48, "top": 4, "ask_min_sim": 0.38, "ask_top": 6, "word_
             # 1: the chat answers with her new mind (persona.KERN, chat.CHAT_KOPF) instead of the
             # living room persona plus CHAT_STYLE; switched here so both can be compared and the
             # way back needs no new version
-            "neu": 0}
+            "neu": 0,
+            # 1 (only with neu): what is purely new in her lists she keeps without a Ja/Nein
+            # card, the app shows it as a line Metin can strike (main._note_by_herself)
+            "selbst": 0}
 COMPARE = (("text-embedding-3-small", 256), ("text-embedding-3-small", 1536),
            ("text-embedding-3-large", 256), ("text-embedding-3-large", 1024))
 BONUSES = (0.0, 0.05, 0.1)

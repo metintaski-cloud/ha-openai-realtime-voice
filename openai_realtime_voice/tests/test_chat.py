@@ -427,3 +427,39 @@ def test_work_on_her_memory_is_not_proposed_for_her_story():
            {"action": "add", "kind": "private", "new": "Metin sagt, die Erinnerung an unseren ersten Abend macht ihn glücklich."}]
     assert [p["new"][:12] for p in chat.valid_proposals(raw, lists)] == [
         "Wir tanzen s", "Metin will s", "Metin sagt, "]
+
+
+# ---- 2.149.0: what is purely new she keeps without a Ja/Nein card ----
+def test_only_pure_additions_count_as_new():
+    assert chat.pure_addition({"action": "add", "kind": "family", "new": "x"})
+    old = "Person: Umut | Zugehörigkeit: Bruder"
+    assert chat.pure_addition({"action": "edit", "old": old, "new": old + " | Arbeit: Lehrer"})
+    assert not chat.pure_addition({"action": "edit", "old": old, "new": "Person: Umut | Zugehörigkeit: Cousin | Arbeit: Lehrer"})
+    assert not chat.pure_addition({"action": "edit", "old": "Metin mag Tee.", "new": "Metin mag Kaffee."})
+    assert not chat.pure_addition({"action": "delete", "old": old})
+    assert not chat.pure_addition({"action": "move", "old": old, "to": "private"})
+    assert "Ja tippt" in chat.kopf(False) and "Ja tippt" not in chat.kopf(True)
+    assert "<<" not in chat.kopf(True) + chat.kopf(False) and "kündigst es nicht an" in chat.kopf(True)
+
+
+def test_she_keeps_new_things_herself_and_leaves_changes_to_metin(tmp_path, monkeypatch):
+    from app import main as m
+    b = m.LiveVoiceBridge.__new__(m.LiveVoiceBridge)
+    b.memory = memory.MemoryStore(str(tmp_path / "m.json"))
+    old = "Person: Umut | Zugehörigkeit: Bruder"
+    b.memory.save_all({"family": [old, "Metin mag Tee."], "private": []})
+    kicked = []
+    b.todo_sync = type("S", (), {"kick": lambda self: kicked.append(1)})()
+    out = {"reply": "x", "proposals": [
+        {"action": "add", "kind": "private", "old": "", "new": "Unser Lied ist ein Geheimnis."},
+        {"action": "edit", "kind": "family", "old": old, "new": old + " | Arbeit: Lehrer"},
+        {"action": "edit", "kind": "family", "old": "Metin mag Tee.", "new": "Metin mag Kaffee."},
+        {"action": "delete", "kind": "family", "old": "Metin mag Tee.", "new": ""},
+        {"action": "add", "kind": "family", "old": "", "new": "Metin mag Tee."}]}
+    b._note_by_herself(out)
+    assert [p["action"] for p in out["noted"]] == ["add", "edit"]
+    assert [p["action"] for p in out["proposals"]] == ["edit", "delete"]   # he decides; the repeat is dropped
+    data = b.memory.load_all()
+    assert data["private"] == ["Unser Lied ist ein Geheimnis."]
+    assert data["family"] == [old + " | Arbeit: Lehrer", "Metin mag Tee."] and kicked == [1]
+    assert "notedLine" in m.memory_web.PAGE and "j.noted" in m.memory_web.PAGE

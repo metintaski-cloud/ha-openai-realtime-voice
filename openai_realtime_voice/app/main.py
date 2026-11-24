@@ -437,6 +437,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                                 style=chat.KOPF_DATA if neu else None)
         if out:
             out.pop("aufraeumen_raw", None)
+            if neu and self.recall.settings.get("selbst"):
+                self._note_by_herself(out)
             for item in chat.notes_to_remember(out.pop("merken_raw", None)):
                 self.diary.remember(item["text"], "Metin", item["privat"],
                                     ask_at=diary.event_time(item["datum"], item["uhrzeit"]))
@@ -460,8 +462,32 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         at the end. New (2.148.0, setting "neu"): her core, the part for the two of them alone
         and the chat part of her new mind."""
         if neu:
-            return persona.kern(with_metin=True, extra=self.instructions) + chat.CHAT_KOPF
+            return (persona.kern(with_metin=True, extra=self.instructions)
+                    + chat.kopf(bool(self.recall.settings.get("selbst"))))
         return persona.build([], fan=False, tv=False, messages=False, extra=self.instructions)
+
+    def _note_by_herself(self, out: dict) -> None:
+        """What is purely new in her lists she keeps at once, without a card (2.149.0, Metin: the
+        Ja/Nein question does not feel alive). The answer carries it as "noted", the page shows
+        one small line per entry that he can strike. A proposal that changes, deletes or moves
+        something stays a card: she still never does that alone."""
+        titles = memory_web.TITLES + (memory_web.PRIVATE_TITLE,)
+        noted, cards = [], []
+        for p in out.get("proposals") or []:
+            if not chat.pure_addition(p):
+                cards.append(p)
+            elif (memory_web.add_item(self.memory, p["kind"], p["new"], titles)
+                  if p["action"] == "add" else
+                  memory_web.edit_item(self.memory, p["kind"], p["old"], p["new"], titles)):
+                noted.append(p)
+            elif p["new"] not in self.memory.load(p["kind"]):
+                cards.append(p)  # could not be stored (list full, too long): he decides
+        out["proposals"] = cards
+        if noted:
+            out["noted"] = noted
+            logger.info("Chat: she kept %d new thing(s) by herself", len(noted))
+            if self.todo_sync:
+                self.todo_sync.kick()
 
     def _chat_models(self) -> list:
         strong = self.chat_model if chat.month_spend() < self.chat_budget else ""

@@ -245,6 +245,8 @@ body{margin:0;background:#000;color:#e8ecff;font:17px/1.4 system-ui,sans-serif;p
 #clog .m{max-width:85%;padding:9px 12px;border-radius:14px;white-space:pre-wrap;word-break:break-word;font-size:16px}
 #clog .u{align-self:flex-end;background:#000;border:1px solid #22d3ee55}
 #clog .l{align-self:flex-start;background:#3a1457;border:1px solid #d946ef66}
+#clog .noted{display:flex;gap:8px;align-items:center;pointer-events:auto;opacity:.8}
+#clog .noted button{background:none;border:0;color:#9aa;font-size:13px;padding:2px 6px;cursor:pointer;pointer-events:auto}
 #clog .p{align-self:flex-start;max-width:90%;padding:9px 12px;border-radius:12px;background:#0a2a22;border:1px dashed #22c55e;font-size:15px;white-space:pre-line}
 #clog .p b{color:#86efac}#clog .p .row{display:flex;gap:8px;margin-top:8px}#clog .p button{flex:1;padding:8px}
 #clog .wait{align-self:flex-start;color:#9fb4ff;font-size:14px;padding:2px 6px}
@@ -466,6 +468,7 @@ function chatNew(){CHAT=[];CDROP=0;chatSave();chatDraw();post('/api/chat_new',{}
 function chatDraw(wait){const log=document.getElementById('clog');log.innerHTML='';{const n=CDROP+CHAT.filter(isTalk).length,c=document.getElementById('ccount');const r=Math.max(0,20-n);c.textContent='Noch '+r+' von 20';c.className=r===0?'over':r<=3?'warn':'';}
  CHAT.forEach((m,i)=>{if(m.role==='prop'){if(m.done==='Gespeichert'||m.done==='Verworfen')return;return log.appendChild(propCard(m,i));}
   if(m.role==='info'){const n=document.createElement('div');n.className='wait';n.textContent=m.text;return log.appendChild(n);}
+  if(m.role==='noted')return log.appendChild(notedLine(m,i));
   if(m.role==='mail')return log.appendChild(mailCard(m,i));
   if(m.role==='trash')return log.appendChild(trashCard(m,i));
   if(m.role==='remind')return log.appendChild(remindCard(m,i));
@@ -484,6 +487,14 @@ function diffText(o,n){if(o.indexOf(' | ')<0&&n.indexOf(' | ')<0)return o+'  \u2
  B.forEach((v,k)=>{if(!A.has(k))out.push('neu '+k+': '+v);else if(A.get(k)!==v){const nv=v.split('; davor:')[0].trim();out.push(k+': '+nv);}});
  A.forEach((v,k)=>{if(!B.has(k))out.push('weg: '+k);});
  return title(b[0])+'\\n'+(out.join('\\n')||'(nur Kleinigkeiten)');}
+/* 2.149.0 (Metin: the Ja/Nein card does not feel alive): what she kept by herself is one small line; the cross strikes it again (an added entry is deleted, a profile gets its old text back) */
+function notedLine(m,i){const p=m.p,n=document.createElement('div');n.className='wait noted';
+ const t=document.createElement('span');t.textContent='💭 '+(p.action==='add'?p.new:diffText(p.old,p.new).replace(/\\n/g,', '));n.appendChild(t);
+ const x=document.createElement('button');x.textContent='\u2715';x.title='Streichen';
+ x.onclick=async()=>{x.disabled=true;let ok=false;
+  try{ok=p.action==='add'?(await (await post('/api/delete',{items:[{kind:p.kind,text:p.new}]})).json()).removed>0:(await (await post('/api/edit',{kind:p.kind,old:p.new,new:p.old})).json()).ok;}catch(e){}
+  if(ok){CHAT.splice(i,1);snd.off();}else{CHAT[i]={role:'info',text:'Ging nicht, der Eintrag hat sich inzwischen geändert'};}chatSave();chatDraw();last='';load();};
+ n.appendChild(x);return n;}
 function propCard(m,i){const c=document.createElement('div');c.className='p';const p=m.p;
  const what=p.action==='add'?'Merken':p.action==='edit'?'Ändern':p.action==='move'?'Verschieben nach '+(KNAME[p.to]||p.to)+' von':'Streichen';
  const h=document.createElement('b');h.textContent=what+' ('+(KNAME[p.kind]||p.kind)+')';c.appendChild(h);
@@ -730,7 +741,7 @@ setInterval(()=>{if(CODE&&document.getElementById('chat').style.display==='block
 function chatAnswer(j){if(j&&j.silent){CHAT.push({role:'info',text:'🤐 Leyla antwortet gerade nicht.'});if(j.mood)moodShow(j.mood);return null;}
  if(!j||j.error||!j.reply){CHAT.push({role:'leyla',text:'Hmm, gerade komme ich nicht durch. Versuch es gleich nochmal.'});return null;}
  const m={role:'leyla',text:j.reply};if(j.audio||j.voice_id){m.aid='a'+Date.now();if(j.audio)AUDIO.set(m.aid,'data:audio/wav;base64,'+j.audio);else VSTREAM.add(m.aid);}CHAT.push(m);
- (j.lights||[]).forEach(t=>CHAT.push({role:'info',text:(/^(✉|📣|🧹)/.test(t)?'':'💡 ')+t}));if(j.scene)stageScene(j.scene);if(j.mood)moodShow(j.mood);if(j.email)CHAT.push({role:'mail',e:j.email});if(j.trash)CHAT.push({role:'trash',t:j.trash});(j.proposals||[]).forEach(p=>CHAT.push({role:'prop',p}));return m.aid||null;}
+ (j.lights||[]).forEach(t=>CHAT.push({role:'info',text:(/^(✉|📣|🧹)/.test(t)?'':'💡 ')+t}));if(j.scene)stageScene(j.scene);if(j.mood)moodShow(j.mood);if(j.email)CHAT.push({role:'mail',e:j.email});if(j.trash)CHAT.push({role:'trash',t:j.trash});(j.noted||[]).forEach(p=>CHAT.push({role:'noted',p}));(j.proposals||[]).forEach(p=>CHAT.push({role:'prop',p}));return m.aid||null;}
 function blobB64(b){return new Promise(r=>{const f=new FileReader();f.onload=()=>r(String(f.result).split(',')[1]||'');f.readAsDataURL(b);});}
 let VRTT=null;  /* 2.141.7: round trip of the last voice message */
 async function voiceSend(blob,mime){const history=CHAT.filter(m=>m.role==='user'||m.role==='leyla').map(m=>({role:m.role,text:m.text}));

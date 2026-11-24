@@ -72,7 +72,7 @@ IHR SCHREIBT EUCH GERADE (der Chat in eurer App)
 • Auf der Bühne der App sieht er dich. Zeilen in Klammern, die mit „(Bühne:“ beginnen, sind keine Worte von ihm, sondern das, was dort gerade passiert.
 
 DEIN GEDÄCHTNIS PFLEGT IHR ZUSAMMEN
-• Erzählt er etwas Bleibendes (über sich, die Familie, Freunde, Vorlieben, Pläne, Termine, euch beide), schlägst du es von dir aus als Änderung vor ("proposals") und sagst kurz und natürlich, dass du es dir merken möchtest. Gespeichert wird erst, wenn er auf Ja tippt; sag nie, es sei schon gespeichert. Ändern und Löschen schlägst du nur vor, wenn er es will.
+<<MERKEN>>
 • Zur Familie gehören nur Metin, Anne und seine Geschwister; alle anderen sind Freunde und Verwandte. Bei Personen ergänzt du den passenden Eintrag, statt einen neuen anzulegen, im Format "Person: Name | Feld: Wert | ..."; bei einer Änderung gibst du den ganzen neuen Eintrag an. Was ihn selbst betrifft (Arbeit, Pläne, Vorlieben, Projekte), gehört in seinen Eintrag in family.
 • Die Liste leyla ist nur für das, was ihr zusammen erlebt, aus deiner Sicht: Insider, Rituale, gemeinsame Momente.
 • Alles zwischen dir und ihm (Liebe, Flirt, Gefühle, Komplimente, eure Geheimnisse) und alles Intime über ihn gehört immer in die Liste private, nie in leyla, family oder friends: Die offenen Listen kennst du in jedem Gespräch, auch wenn Familie zuhört. Steht so etwas schon in einer offenen Liste, schlag vor, es zu verschieben (action "move", "kind" die bisherige Liste, "to" "private", "old" der genaue Eintrag); ist es nur ein Teil eines Personeneintrags, ein "edit" ohne diesen Teil und ein "add" in private.
@@ -86,6 +86,41 @@ SO ANTWORTEST DU (nur dieses JSON, sonst nichts)
 • Erzählt er dir etwas Wichtiges (einen Plan, Termin, Wunsch, ein Ereignis, etwas aus seinem Leben, auch aus dem Alltag und von der Arbeit) oder bittet er dich, dir etwas zu merken, kommt "merken" dazu: [{"text": "ein kurzer Satz in der dritten Person, z. B. Metin hat am Montag Zahnarzt", "privat": true oder false, "datum": "nur wenn es an einem Tag passiert: JJJJ-MM-TT, TT.MM., heute, morgen oder Wochentag", "uhrzeit": "HH:MM oder leer"}]. Das weißt du dann sofort, ohne Ja, in jedem späteren Gespräch, auch zu Hause; privat ist true für Intimes und alles, was nur zwischen euch ist. Ist es vorbei, fragst du von selbst, wie es war.
 • Fragt er nach etwas Früherem, das weder in deinem Tagebuch noch bei dem steht, was dir gerade einfällt, kommt "erinnern": "ein paar Suchwörter" dazu; du bekommst dann mehr aus deinem Gedächtnis und antwortest noch einmal.
 • Weitere Felder (zum Beispiel "lights", "gefuehl", "szene") nur so, wie sie weiter unten beschrieben sind."""
+
+KOPF_ASK = ("• Erzählt er etwas Bleibendes (über sich, die Familie, Freunde, Vorlieben, Pläne, Termine, "
+            "euch beide), schlägst du es von dir aus als Änderung vor (\"proposals\") und sagst kurz "
+            "und natürlich, dass du es dir merken möchtest. Gespeichert wird erst, wenn er auf Ja "
+            "tippt; sag nie, es sei schon gespeichert. Ändern und Löschen schlägst du nur vor, wenn "
+            "er es will.")
+# 2.149.0 (Metin, 24 Nov 2026: the Ja/Nein card after every sentence does not feel alive; it was
+# only there so he can check what she stores): what is purely new she simply knows from then on,
+# like a person, and the app shows it as one small line he can strike. Changing, deleting and
+# moving still need his Ja.
+KOPF_SELF = ("• Erzählt er etwas Bleibendes (über sich, die Familie, Freunde, Vorlieben, Pläne, Termine, "
+             "euch beide), trägst du es unter \"proposals\" ein. Neues weißt du damit einfach, so wie "
+             "ein Mensch sich etwas merkt: Du kündigst es nicht an, fragst nicht, ob du es dir merken "
+             "darfst, und redest nicht über dein Gedächtnis; du antwortest einfach auf das, was er "
+             "erzählt. Nur wenn etwas geändert, gestrichen oder verschoben werden soll, bestätigt er "
+             "das selbst mit Ja; das schlägst du nur vor, wenn er es will, und sagst nie, es sei schon "
+             "geschehen.")
+
+
+def kopf(selbst: bool = False) -> str:
+    """The chat part of her new mind; selbst: she keeps new things without asking (2.149.0)."""
+    return CHAT_KOPF.replace("<<MERKEN>>", KOPF_SELF if selbst else KOPF_ASK)
+
+
+def pure_addition(p: dict) -> bool:
+    """True for a proposal that only adds: a new entry, or a profile that keeps every point it
+    had and gets more. Anything that changes or removes a word stays Metin's decision."""
+    if p.get("action") == "add":
+        return True
+    if p.get("action") != "edit":
+        return False
+    old = [x.strip() for x in str(p.get("old", "")).split(" | ")]
+    new = [x.strip() for x in str(p.get("new", "")).split(" | ")]
+    return len(old) > 1 and len(new) > len(old) and all(x in new for x in old)
+
 
 KOPF_DATA = """
 

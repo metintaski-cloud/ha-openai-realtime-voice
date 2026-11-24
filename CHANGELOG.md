@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.149.0 (24 Nov 2026)
+
+- First comparison of the old and the new mind on Metin's server (24 Nov 2026, 04:03, 14 everyday messages, each answered once with either mind through `/api/kopf/probe`, model gpt-6-luna both times): the old mind ended 11 of 14 answers with a question, the new one 6; rules 55 400 characters against 44 000 (14 450 against 11 530 input tokens), 4.5 s against 3.6 s per answer, answers a little shorter (344 against 246 output tokens). Asked "Was machst du gerade?" the old mind said she was enjoying the chat and asked the same back; the new one told what she was doing. Asked to tell about herself the old mind introduced herself to Metin as "Metins rechte Hand". Metin switched the new mind on at 04:07 (`neu: 1`).
+- `feat`: no Ja/Nein card for what is purely new (Metin: the question does not feel alive; it was only there so he can check what she stores). With the settings `neu` and `selbst` a proposal that only adds (a new entry, or a profile that keeps every point and gets more: `chat.pure_addition`) is stored at once by `main._note_by_herself`; the answer carries it as `noted` and the page shows one small line "💭 ..." with a cross that strikes it again (`notedLine`). Proposals that change, delete or move something stay cards with Ja and Nein: she still never does that alone. The chat rules say it accordingly (`chat.kopf(selbst)`: she does not announce that she wants to remember something and does not talk about her memory).
+- Her core says that Metin's mother is Anne to her, also when she talks with him about her (the new mind wrote "deine Mutter").
+- docs: the clock times of the night of 24 Nov in `docs/LEYLA_SEELE.md` and `STATUS.md` were estimated and ran ahead; corrected with the real clock.
+
 ## 2.148.0 (24 Nov 2026)
 
 Second part of Leyla's new mind (`docs/LEYLA_SEELE.md`, step 4): how she talks. Built as a switch, off by default, so the old and the new way can be compared on the same messages before Metin decides.

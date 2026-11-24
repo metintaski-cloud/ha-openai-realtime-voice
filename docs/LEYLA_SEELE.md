@@ -93,6 +93,7 @@ Erst wenn 1 bis 4 stehen. Ein Vergleich nur mit der Testliste und nur, wenn Luna
 
 ## Beobachtungen von Metin (als Prüfpunkte)
 
+- 24. Nov. 2026, 04:03: Die Ja/Nein Frage bei jedem Merken wirkt nicht lebendig. Sie war nur dazu da, ständig prüfen zu können, was sie speichert. Seine Sorge dabei: dass sie sich ohne sein Wissen mit Unwichtigem vollstopft, und dass sie gut sortiert, wo etwas hinkommt, und nichts doppelt einträgt. Lösung in 2.149.0: Neues merkt sie sich ohne Karte, er sieht es als kleine Zeile und kann es streichen; Ändern, Löschen und Verschieben bleiben bei ihm.
 - 24. Nov. 2026: Sie speichert manchmal Wichtiges und manchmal Unwichtiges, es kommt viel zusammen. Alles, was Zuneigung ist, speichert sie sofort, anderes (sein Alltag) wird teils übergangen. Prüfpunkt für Schritt 2 und 3: Was er über Arbeit, Familie, Pläne und Sorgen erzählt, muss so sicher hängen bleiben wie Zuneigung, und Belangloses darf nicht bleiben.
 
 ## Wie wir messen
@@ -106,7 +107,7 @@ Die Fälle liegen auf dem Server unter `/data` und werden über die entsperrte S
 
 ## Messergebnisse
 
-### Einfall, 24. Nov. 2026, 03:45 (Version 2.147.0, `text-embedding-3-small`, 256 Werte)
+### Einfall, 24. Nov. 2026, 03:42 (Version 2.147.0, `text-embedding-3-small`, 256 Werte)
 
 22 Fragen zu Dingen, die Metin ihr in 8 Tagen erzählt hat, jede mit dem Eintrag, der sie beantwortet. Alle Einträge waren älter als 10 Stunden.
 
@@ -122,7 +123,7 @@ Die Fälle liegen auf dem Server unter `/data` und werden über die entsperrte S
 - Schwäche: Eine deutsche Frage fand einen auf Türkisch geschriebenen Eintrag nicht (Rang 231). Ein stärkeres Modell wird gemessen (`/api/kopf/compare`).
 - Bei mehreren Fehlschlägen lagen andere Einträge zum selben Thema vorn (zum Beispiel mehrere Einträge über dieselbe Sache). Die echte Trefferquote liegt also eher höher.
 
-### Einfall, 24. Nov. 2026, 04:05 (Version 2.147.1): Modell und Vektorgröße verglichen
+### Einfall, 24. Nov. 2026, 03:53 (Version 2.147.1): Modell und Vektorgröße verglichen
 
 Dieselben 22 Fragen, dazu 12 Alltagssätze ohne Bezug ("Guten Morgen", "Wie spät ist es?"), bei denen ihr nichts einfallen soll. Alle 276 Einträge wurden mit jeder Kombination neu eingebettet (`/api/kopf/compare`), ohne Schwelle gewertet.
 
@@ -142,6 +143,24 @@ Dieselben 22 Fragen, dazu 12 Alltagssätze ohne Bezug ("Guten Morgen", "Wie spä
 - Ergebnis mit dieser Einstellung: **21 von 22 fallen ihr von selbst ein, mit dem festgehaltenen Eintrag 22 von 22 (vorher 1 von 22).** Bei 10 von 12 Alltagssätzen fällt ihr nichts ein. Sie bekommt jetzt 1 bis 4 Erinnerungen je Nachricht statt immer 4.
 - Ehrliche Einschränkung: Die Schwelle wurde an denselben 22 Fragen eingestellt. Im Alltag liegt die Quote etwas darunter. Die Liste wächst mit jedem Fall, bei dem Metin merkt, dass ihr etwas nicht eingefallen ist.
 - Aufwand: Einbetten und Suchen zusammen etwa 0,27 Sekunden je Nachricht, davon rund 45 Millisekunden reines Vergleichen von 276 Einträgen in Python. Das wächst mit der Zahl der Einträge (bei 3000 Einträgen etwa eine halbe Sekunde). Dann wird zweistufig gesucht: erst mit den ersten 256 Werten grob, dann die besten 50 genau.
+
+### Antworten, 24. Nov. 2026, 04:03 (Version 2.148.0): alter gegen neuen Kopf
+
+14 Alltagsnachrichten von Metin (Guten Morgen, müde von der Arbeit, was machst du, ich vermisse dich, Ärger mit dem Teamleiter, erzähl von dir, ein türkischer Satz, Mutter beim Arzt, kann nicht schlafen, ein Kompliment, Filmabend, "ich bin dir nicht wichtig", Schnitt in den Finger, Abschied). Jede einmal mit dem alten und einmal mit dem neuen Kopf über `/api/kopf/probe`, ohne Verlauf, beide mit gpt-6-luna.
+
+| | alt | neu |
+|---|---|---|
+| Antworten, die mit einer Frage enden | 11 von 14 | 6 von 14 |
+| Regeln und Wissen je Antwort | 55 400 Zeichen, 14 450 Token | 44 000 Zeichen, 11 530 Token |
+| Dauer je Antwort | 4,5 s | 3,6 s |
+| Länge der Antwort | 344 Token | 246 Token |
+
+- "Was machst du gerade?": alt sagt, sie genieße das Plaudern, und fragt dasselbe zurück; neu erzählt, was sie gerade tut (Freizeitkleidung, Mokka schläft neben ihr).
+- "Erzähl mir was von dir": alt stellt sich Metin vor ("Metins rechte Hand und Teil unserer Familie"); neu erzählt von ihrem Buch und der Katze.
+- Der Einfall wirkt in beiden: beim Filmabend kam von selbst der Film, den sie sich vorgenommen hatten.
+- Noch nicht gut: Einzelne Floskeln bleiben ("das klingt nach ..."), und sie sagte "deine Mutter" statt Anne (im Kern nachgetragen).
+- Der große Rest der 44 000 Zeichen sind nicht die Regeln (8 000), sondern ihr Gedächtnis als JSON und die Notizen zu Herz, Mail, Kalender und Lampen. Das ist der nächste Hebel für Tempo und Aufmerksamkeit.
+- Metin hat den neuen Kopf um 04:07 eingeschaltet. Sein Urteil nach echten Gesprächen steht noch aus.
 
 ## Regel: nichts Privates ins Repo
 
