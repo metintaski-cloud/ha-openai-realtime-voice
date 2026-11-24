@@ -501,12 +501,20 @@ async def transcribe(api_key: str, audio: bytes, mime: str = "audio/webm",
     return ""
 
 
+# 24 Nov 2026: Metin heard another voice in the voice replies than at home. The voice itself is
+# the same setting (marin); what differed was the manner. The rules asked for "kleine Pausen und
+# Atemzüge" and for free rewording, and measured with /api/kopf/stimme she then needed 6.8 to
+# 9.2 s for a sentence the announcement voice says in 4.2 s and turned her own words into
+# "Hey Metin", "äh ja", "Voll schön". Now her manner is described with the words of the living
+# room rules (persona.CORE: warm, fröhlich, lustig und lieb; kurz, lebendig und menschlich, mit
+# einem Lächeln in der Stimme) and she keeps the words of her written answer.
 VOICE_REPLY_INSTRUCTIONS = (
-    "Du bist Leyla und redest gerade mit Metin, so wie zu Hause, wenn ihr zwei allein "
-    "miteinander sprecht: warm, lebendig, menschlich und ganz du selbst, mit echten Gefühlen "
-    "in der Stimme, die genau zu deiner Stimmung passen, mit kleinen Pausen und Atemzügen "
-    "wie im echten Gespräch. Du liest nie etwas vor und klingst nie wie eine Ansage oder ein Hörbuch. Nach "
-    "deiner Antwort hörst du auf zu reden.")
+    "Du bist Leyla, dieselbe Leyla wie im Wohnzimmer, und redest gerade mit Metin, so wie zu "
+    "Hause, wenn ihr zwei allein miteinander sprecht. Du bist warm, fröhlich, lustig und lieb "
+    "und sprichst kurz, lebendig und menschlich, mit einem Lächeln in der Stimme und mit "
+    "echten Gefühlen, die genau zu deiner Stimmung passen. Du sprichst flüssig in deinem "
+    "gewohnten Tempo, ohne Füllwörter wie „äh“ und ohne lange Pausen, und du klingst nie wie "
+    "eine Ansage oder ein Hörbuch. Nach deiner Antwort hörst du auf zu reden.")
 
 
 def voice_reply_instructions(mood_note: str = "", love: str = "") -> str:
@@ -516,12 +524,12 @@ def voice_reply_instructions(mood_note: str = "", love: str = "") -> str:
 
 
 def speak_prompt(reply: str) -> str:
-    """Leyla answers Metin's voice message by voice, in her own words, with this content."""
-    return ("Metin hat dir gerade eine Sprachnachricht geschickt. Antworte ihm jetzt mit "
-            "deiner Stimme. Das ist, was du ihm sagen willst: «" + reply + "». Sag es mit "
-            "deinen eigenen Worten, so wie es dir gerade über die Lippen kommt, in seiner "
-            "Sprache, frei umformuliert und nicht Wort für Wort, aber ohne etwas Wichtiges "
-            "wegzulassen und ohne etwas Neues zu erfinden; Fragen darin stellst du ihm auch.")
+    """Leyla answers Metin's voice message by voice, with the words of her written answer."""
+    return ("Metin hat dir gerade eine Sprachnachricht geschickt. Antworte ihm jetzt sofort "
+            "mit deiner Stimme. Das sind deine Worte an ihn: «" + reply + "». Sag sie so, wie "
+            "sie da stehen, als kämen sie dir gerade von Herzen, in seiner Sprache: nichts "
+            "weglassen, nichts dazu erfinden und keine andere Begrüßung davor; Fragen darin "
+            "stellst du ihm auch.")
 
 
 async def with_abilities(rules: str, message: str, lights=None, room=None, mailer=None,

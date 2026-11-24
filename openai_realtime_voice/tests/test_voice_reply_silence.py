@@ -1,5 +1,5 @@
 """A voice reply that stays silent (24 Nov 2026: three of eight came back empty and the app
-showed a speaker sign without sound): give up early and try once more."""
+showed a speaker sign without sound): give up early, send the note once more and try again."""
 import asyncio
 import base64
 import json
@@ -78,7 +78,45 @@ def test_a_blip_before_she_speaks_is_not_the_end(monkeypatch):
     assert len(pcm) >= 0.6 * av.BYTES_PER_SEC
 
 
-def test_two_silent_tries_end_without_waiting_the_whole_minute(monkeypatch):
+def test_silent_tries_end_without_waiting_the_whole_minute(monkeypatch):
     monkeypatch.setattr(av, "FIRST_AUDIO_S", 0.2)
-    sp = Speaker([FakeLive([{"type": "session.started"}]), FakeLive([])])
+    sp = Speaker([FakeLive([{"type": "session.started"}])] + [FakeLive([]) for _ in range(av.SPEAK_TRIES - 1)])
     assert asyncio.run(asyncio.wait_for(sp._speak_once("sag es", max_s=60.0), 3)) == b""
+    assert not sp.lives
+
+
+def test_no_word_after_the_note_sends_it_once_more_in_the_same_session(monkeypatch):
+    """Measured 24 Nov 2026: a silent GPT Live confirms the note and then says nothing."""
+    monkeypatch.setattr(av, "NUDGE_AFTER_S", 0.2)
+    monkeypatch.setattr(av, "FIRST_AUDIO_S", 2.0)
+    monkeypatch.setattr(av, "SPEECH_END_GAP_S", 0.15)
+
+    class SecondNote(FakeLive):  # speaks only after the note came twice
+        async def recv(self):
+            notes = [m for m in self.sent if m.get("type") == "session.commentary.append"]
+            if self.events and self.events[0]["type"] != "session.started" and len(notes) < 2:
+                await asyncio.sleep(0.05)
+                raise asyncio.TimeoutError
+            return await super().recv()
+    live = SecondNote([{"type": "session.started"},
+                       {"type": "session.commentary.appended"},
+                       {"type": "session.output_transcript.delta", "delta": " Hallo"},
+                       {"type": "session.output_audio.delta", "delta": loud(0.5)}])
+    sp = Speaker([live])
+    pcm = asyncio.run(sp._speak_once("sag es", max_s=60.0))
+    notes = [m for m in live.sent if m.get("type") == "session.commentary.append"]
+    assert len(notes) == 2 and notes[0]["content"] == notes[1]["content"] == "sag es"
+    assert len(pcm) >= 0.5 * av.BYTES_PER_SEC and not sp.lives
+    assert sp._speak_seen["nudged"] and sp._speak_seen["said"] == "Hallo"
+
+
+def test_she_who_speaks_at_once_gets_no_second_note(monkeypatch):
+    monkeypatch.setattr(av, "NUDGE_AFTER_S", 0.2)
+    monkeypatch.setattr(av, "SPEECH_END_GAP_S", 0.4)
+    live = FakeLive([{"type": "session.started"},
+                     {"type": "session.output_transcript.delta", "delta": " Ja"},
+                     {"type": "session.output_audio.delta", "delta": loud(0.5)}])
+    sp = Speaker([live])
+    asyncio.run(sp._speak_once("sag es", max_s=60.0))
+    assert len([m for m in live.sent if m.get("type") == "session.commentary.append"]) == 1
+    assert not sp._speak_seen["nudged"]

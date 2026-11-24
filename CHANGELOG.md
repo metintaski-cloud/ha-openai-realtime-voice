@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.150.9 (24 Nov 2026)
+
+- `fix`: voice replies without sound, cause found. Measured with `/api/kopf/stimme` on 2.150.8 (7 runs, 2 silent, with and without mood and closeness in the instructions): in a silent session GPT Live confirms the note (`session.commentary.appended`), then sends only zero audio and no word of transcript; it does not take its turn. When she speaks, the first word comes within a second. Now the same note goes out once more in the same session when no word came after 3 s (`NUDGE_AFTER_S`), a session without speech is given up after 8 s (`FIRST_AUDIO_S`, was 12), and up to three sessions are tried (`SPEAK_TRIES`, was 2).
+- `fix`: the voice reply did not sound like Leyla at home (Metin, 05:25: "Ihre Stimme war auch nicht die selbe"). The voice setting is the same (`marin`); the manner differed: the rules asked for small pauses and breaths and for free rewording, and she needed 6.8 to 9.2 s for a sentence the announcement voice says in 4.2 s and said "Hey Metin", "äh ja", "Voll schön" instead of her written words. `VOICE_REPLY_INSTRUCTIONS` now describes her with the words of the living room rules and asks for her usual tempo without filler words, and `speak_prompt` lets her say the words of her written answer.
+- `/api/kopf/stimme` also returns her words (`said`), the time to the first sound (`first_s`) and whether the second note was needed (`nudged`).
+
 ## 2.150.8 (24 Nov 2026)
 
 - `chore`: finding out why voice replies stay silent. With 2.150.7 the reply of 05:21 was still text only: GPT Live sent no speech on both tries (log: twice `Announcement audio: 0.0 s`). `_collect_speech` now counts the events GPT Live sends and keeps the first ones besides audio; a silent try logs them (`GPT Live did not speak (try N): events {...}`). New route `POST /api/kopf/stimme {text, how}` (code word) speaks one test sentence without any trace and returns seconds of audio and the events; `how` leaves parts of the instructions out (`ohne`, `herz`, `naehe`, `ansage`) to see which part silences her.
