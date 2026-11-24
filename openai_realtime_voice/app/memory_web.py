@@ -840,7 +840,7 @@ async function liveStart(){if(LIVE)return;const box=document.getElementById('liv
  let st;try{st=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});}catch(e){CHAT.push({role:'info',text:'Kein Zugriff aufs Mikrofon.'});chatSave();chatDraw();return;}
  document.getElementById('chat').classList.add('oncall');document.getElementById('clive').textContent='Auflegen';stageView();liveStat('Verbinde ...');
  const ctx=new (window.AudioContext||window.webkitAudioContext)();const ratio=ctx.sampleRate/24000;
- const ws=new WebSocket('ws://'+location.hostname+':8080/app');ws.binaryType='arraybuffer';
+ const ws=new WebSocket((location.protocol==='https:'?'wss://'+location.hostname+':8443':'ws://'+location.hostname+':8080')+'/app');  /* 2.145.0: over HTTPS live talk needs wss, served on 8443 */ws.binaryType='arraybuffer';
  const L={ws,ctx,st,ready:false,playT:0,srcs:[],last:0};LIVE=L;
  const src=ctx.createMediaStreamSource(st),proc=ctx.createScriptProcessor(2048,1,1);L.src=src;L.proc=proc;
  proc.onaudioprocess=e=>{if(!L.ready||ws.readyState!==1)return;const inp=e.inputBuffer.getChannelData(0);const n=Math.floor(inp.length/ratio);const out=new Int16Array(n);
@@ -1862,14 +1862,15 @@ async def start_http(store: memory.MemoryStore, sync: Optional[object] = None,
                      host: str = "0.0.0.0", port: int = 8082, lamp: Optional[object] = None,
                      code_phrase: str = "", rules=None, chat=None, voice=None,
                      mailer=None, google=None, inbox=None, mood=None, reminders=None,
-                     diary=None, chat_new=None, reach=None, touch=None, hear=None):
+                     diary=None, chat_new=None, reach=None, touch=None, hear=None, tls=None):
     """`rules`: a function that returns Leyla's instructions without memory and without the
-    code word; shown read only after the code word."""
+    code word; shown read only after the code word. `tls`: an ssl context; then this is the
+    HTTPS copy of the page (app/tls.py) and the background jobs are not started a second time."""
     server = await asyncio.start_server(
         lambda r, w: _handle(store, sync, r, w, lamp, code_phrase, rules, chat, voice, mailer, google,
                           inbox, mood, reminders, diary, chat_new, reach, touch, hear),
-        host, port)
-    logger.info("Memory page on port %d", port)
-    if os.environ.get("LEYLA_MOBIL", "1") == "1":
+        host, port, ssl=tls)
+    logger.info("Memory page on port %d%s", port, " (HTTPS)" if tls else "")
+    if tls is None and os.environ.get("LEYLA_MOBIL", "1") == "1":
         asyncio.get_running_loop().create_task(mobil_runner().run())
     return server

@@ -36,7 +36,7 @@ import dotenv
 import websockets
 
 from app.audio_recorder import AudioRecorder
-from app import agenda, day, diary, gcontacts, textmodel, heart, ideas, inbox, mail, memory, memory_web, mood, reach, reminders, variety, voice_stream
+from app import agenda, day, diary, gcontacts, textmodel, heart, ideas, inbox, mail, memory, memory_web, mood, reach, reminders, tls, variety, voice_stream
 
 # Scene concept 2.0 (2.104.0): her feelings come from what really happens (app/heart.py); env
 # LEYLA_HEART=0 brings back the old dice of app/mood.py as a safety net.
@@ -1627,19 +1627,29 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             self._in_background(self._cleanup_loop())
         self._in_background(self._minute_loop())
         if self.enable_memory:
+            web = dict(lamp=self.lamp, code_phrase=self.code_phrase,
+                       rules=self._readable_rules, chat=self._chat,
+                       voice=self._chat_voice, mailer=self.mailer,
+                       google=self.google, inbox=self.inbox,
+                       mood=self.mood, reminders=self.reminders,
+                       diary=self.diary, chat_new=self._chat_new,
+                       reach=self.reach, touch=self._chat_touch,
+                       hear=self._chat_hear)
             try:
                 await memory_web.start_http(self.memory, self.todo_sync,
-                                            port=int(os.environ.get("MEMORY_WEB_PORT", "8082")),
-                                            lamp=self.lamp, code_phrase=self.code_phrase,
-                                            rules=self._readable_rules, chat=self._chat,
-                                            voice=self._chat_voice, mailer=self.mailer,
-                                            google=self.google, inbox=self.inbox,
-                                            mood=self.mood, reminders=self.reminders,
-                                            diary=self.diary, chat_new=self._chat_new,
-                                            reach=self.reach, touch=self._chat_touch,
-                                            hear=self._chat_hear)
+                                            port=int(os.environ.get("MEMORY_WEB_PORT", "8082")), **web)
             except Exception as e:
                 logger.warning("Memory page could not start: %s", e)
+
+            async def start_tls(ctx):
+                # the same page over HTTPS on 443 and live talk over wss on 8443 (app/tls.py)
+                await memory_web.start_http(self.memory, self.todo_sync, port=tls.HTTPS_PORT,
+                                            tls=ctx, **web)
+                self._wss = await websockets.serve(
+                    self.handle_client, self.websocket_host, tls.WSS_PORT, ssl=ctx,
+                    ping_interval=20, ping_timeout=20, close_timeout=5)
+
+            self._in_background(tls.watch(start_tls))
         if self.messages.available:
             try:
                 self._message_tasks = await self.messages.start()

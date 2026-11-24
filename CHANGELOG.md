@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.145.0 (24 Nov 2026)
+
+- `feat`: the app is also served over HTTPS (`app/tls.py`), so that Chrome installs it as a real app that opens in full screen at once (Metin). As soon as a certificate lies in Home Assistant's `/ssl` folder (`fullchain.pem`, `privkey.pem`, written and renewed by the Duck DNS add on), the page answers on port 443 and live talk on wss port 8443; a renewed certificate is loaded without a restart. Without a certificate nothing changes, and the plain addresses (8082, 8080) keep working. The add on maps the `ssl` folder read only.
+
 ## 2.144.4 (24 Nov 2026)
 
 - The install button of 2.144.3 is removed again. Metin's icon already is an installed app (no Chrome badge, he was right); the page's own report still showed it starting as a plain tab (`mode=browser`, 01:11). This is known Chrome behaviour for an app whose address only exists in the home network: the display mode of the manifest is ignored and it opens with the Chrome bars (chromium-discuss, "WebAPK ignores display:standalone for PWA running on local network"). Installing again cannot change that. The run mode report (`/api/diag`) stays.
