@@ -333,10 +333,12 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
              "deine eigene Laune Metin gegenüber festhalten (nur nach seinem Codewort)"),
         ]
 
-    def _session_start(self, extra: str = "", start=None) -> dict:
+    def _session_start(self, extra: str = "", start=None, history=None) -> dict:
         """Build the session.start payload for GPT Live. `start`: the items of a live talk
         from the app (talk_notes._app_start) and the state they are reported in; they go into
-        the instructions and the startup input, so she knows them from the first moment."""
+        the instructions and the startup input, so she knows them from the first moment.
+        `history`: the talk so far as messages (a fresh session in a running talk,
+        talk_notes._go_fresh); it stands in place of the greeting."""
         tools: list[dict] = [END_CONVERSATION_TOOL]
         backend_instructions = self.backend_instructions
         devices: list[str] = []
@@ -354,7 +356,9 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         if start:
             items, state = start
             text, start_input, held = self.start_split(
-                items, len(instructions), len(self.greeting or ""))
+                items, len(instructions),
+                sum(len(m["content"][0]["text"]) for m in history) if history is not None
+                else len(self.greeting or ""))
             logger.info("Start of the session: %d characters of rules, %d of her knowledge in "
                         "them, %d in the startup input%s", len(instructions), len(text),
                         sum(len(t) for t in start_input),
@@ -388,7 +392,9 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 "effort": self.backend_effort}
         messages_in = [{"type": "message", "role": "developer",
                         "content": [{"type": "input_text", "text": t}]} for t in start_input]
-        if self.greeting:
+        if history is not None:
+            messages_in += history
+        elif self.greeting:
             # Developer message so the greeting instruction is known from the start; the
             # commentary.append after session.started makes GPT Live actually speak first.
             messages_in.append({
@@ -1042,6 +1048,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 extra = await asyncio.wait_for(context.build_context(), timeout=4.0)
             except Exception as e:
                 logger.info("Context not added: %s", e)
+        self._context_extra = extra  # a fresh session of this talk starts with the same
         await live_ws.send(json.dumps(self._session_start(extra, start)))
         loop = asyncio.get_event_loop()
         deadline = loop.time() + timeout
@@ -1753,6 +1760,9 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             t_live = time.monotonic()
             start = (await self._app_start(state), state) if app else None
             live_ws, started = await self._open_live(state, start)
+            # one object for the whole talk, so the session behind it can be exchanged
+            live_ws = state["live_ws"] = live_link.LiveLine(live_ws)
+            state["context_extra"] = getattr(self, "_context_extra", "")
             live_open_s = time.monotonic() - t_live
             state["live_started"] = True
             self._in_background(self.health.openai_ok())

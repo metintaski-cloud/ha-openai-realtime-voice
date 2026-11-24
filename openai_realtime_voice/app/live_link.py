@@ -10,6 +10,7 @@ import os
 import time
 
 import websockets
+import websockets.exceptions
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,53 @@ END_CONVERSATION_TOOL = {
     },
 }
 WARM_MAX_AGE_S = 90.0  # a pre opened connection older than this is replaced
+
+
+class LiveLine:
+    """The GPT Live connection of one talk, which can be exchanged while the talk runs
+    (2.155.0, talk_notes._go_fresh): the tasks of the talk keep this one object, `swap` puts a
+    new session behind it. Sending goes to the current connection; reading goes on with the
+    new one when the old one ends because it was exchanged, and what the old one still sends
+    after the exchange is dropped."""
+
+    def __init__(self, ws) -> None:
+        self.ws = ws
+        self.swaps = 0
+
+    def swap(self, ws):
+        """Put `ws` in place; returns the connection that was there (the caller closes it)."""
+        old, self.ws = self.ws, ws
+        self.swaps += 1
+        return old
+
+    async def send(self, data):
+        return await self.ws.send(data)
+
+    async def recv(self):
+        return await self.ws.recv()
+
+    async def close(self, *args, **kwargs):
+        return await self.ws.close(*args, **kwargs)
+
+    def __getattr__(self, name):  # state, closed, remote_address: of the current connection
+        return getattr(self.ws, name)
+
+    def __aiter__(self):
+        return self._read()
+
+    async def _read(self):
+        while True:
+            ws = self.ws
+            try:
+                async for raw in ws:
+                    if self.ws is not ws:
+                        break  # exchanged while this was on its way: of the old session
+                    yield raw
+            except websockets.exceptions.ConnectionClosed:
+                if self.ws is ws:
+                    raise  # the talk's own connection broke
+            if self.ws is ws:
+                return  # closed and not exchanged: the talk is over
 
 
 class LiveLinkMixin:

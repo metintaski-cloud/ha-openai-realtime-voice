@@ -176,6 +176,7 @@ class ToolLinkMixin:
     async def _run_tool(self, spec: dict, live_ws, call_id: str, raw_args, state: dict) -> None:
         """Run one backend function without blocking the audio loop and return its result."""
         args = self._tool_args(raw_args)
+        state["tools_running"] = state.get("tools_running", 0) + 1  # no session change meanwhile
         try:
             blocked = spec["gate"](args, state) if spec.get("gate") else None
             if blocked is not None:
@@ -193,6 +194,8 @@ class ToolLinkMixin:
             await self._send_function_output(live_ws, call_id, result)
         except Exception as e:
             logger.warning("Could not return %s result: %s", spec["label"], e)
+        finally:
+            state["tools_running"] = max(0, state.get("tools_running", 1) - 1)
 
     async def _send_function_output(self, live_ws, call_id: str, output: dict) -> None:
         """Return a function result to the backend and let it continue."""
