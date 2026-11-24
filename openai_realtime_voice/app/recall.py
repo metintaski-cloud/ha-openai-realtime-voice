@@ -460,8 +460,10 @@ class Index:
                 self._comparing = asyncio.create_task(self.compare())
             return {"ok": True, **(self.compared or {})}
         if path == "/api/kopf/probe" and self.probe:
+            model = str(d.get("model") or "")  # another model for this one answer (comparison)
             return await self.probe(str(d.get("message", ""))[:2000], d.get("history"),
-                                    bool(d.get("neu")))
+                                    bool(d.get("neu")),
+                                    model if model.startswith("gpt-") and len(model) < 40 else "")
         if path == "/api/kopf/nachdenken" and self.reflect:
             if d.get("forget"):
                 return {"ok": self.reflect.forget(str(d["forget"]))}

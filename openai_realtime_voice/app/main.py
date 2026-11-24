@@ -536,7 +536,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         strong = self.chat_model if chat.month_spend() < self.chat_budget else ""
         return list(dict.fromkeys(m for m in (strong, self.memory_model, self.backend_model) if m))
 
-    async def _chat_probe(self, message: str, history, neu: bool) -> dict:
+    async def _chat_probe(self, message: str, history, neu: bool, model: str = "") -> dict:
         """One chat answer with the old or the new mind that leaves no trace (docs/LEYLA_SEELE.md,
         "Wie wir messen"): nothing goes into the thread, the diary, her heart or the variety
         list, no lamp is switched and nothing is proposed for real. Built like a real answer
@@ -559,7 +559,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             lights=(len(self.lights.entities), self.lights.run) if self.lights.available else None)
         stats: dict = {}
         out = await chat._answer(
-            self.openai_api_key, self._chat_models(), rules, self.memory, history, message,
+            self.openai_api_key, [model] if model else self._chat_models(), rules, self.memory,
+            history, message,
             os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL),
             (len(self.lights.entities), self.lights.run) if self.lights.available else None,
             chat.KOPF_DATA if neu else None, stats)

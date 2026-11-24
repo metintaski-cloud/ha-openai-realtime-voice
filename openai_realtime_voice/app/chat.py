@@ -206,7 +206,12 @@ def valid_proposals(raw, lists: dict) -> list[dict]:
 
 # What the stronger chat model costs (2.124.0, Metin: test GPT-6.2 Sol, but never over 100 € a
 # month in all): USD per million tokens (input, cached input, output) of the official price list.
-PRICES = {"gpt-6.2-sol": (2.0, 0.10, 10.0), "gpt-6.1-sol": (2.0, 0.10, 10.0)}
+# USD per million input, cached input and output tokens (developers.openai.com/api/docs/pricing,
+# read on 24 Nov 2026)
+PRICES = {"gpt-6.2-sol": (2.0, 0.10, 10.0), "gpt-6.1-sol": (2.0, 0.10, 10.0),
+          "gpt-6.2-astra": (8.0, 0.40, 40.0), "gpt-6.1-terra": (1.0, 0.05, 5.0)}
+# gpt-6-luna (0.10 / 0.01 / 0.50) is left out on purpose: the month's sum is the budget of the
+# stronger chat model only
 SPEND_PATH = os.environ.get("CHAT_SPEND_PATH", "/data/chat_spend.json")
 
 

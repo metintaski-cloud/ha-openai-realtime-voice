@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.150.1 (24 Nov 2026)
+
+- First night texts read on the server (24 Nov, 04:23): the day text and the thought read like her own memory, with the details. Fixed from that reading: a text is never cut in the middle of a sentence any more (stored up to 1.3 times the asked length, then cut at the last full sentence; one day ended in the middle of a word), the day text shall not copy the protocol formulas of the old entries ("die Stimmung war ...", "offen blieb ..."), and our story keeps only what counts for the two of them instead of retelling a day.
+- `/api/kopf/probe` takes `model`, so one answer can be asked from another model without touching her chat (step 5: a comparison only, Luna stays; Metin, 24 Nov 04:22: Sol was not like Leyla). Prices of gpt-6.2-astra and gpt-6.1-terra added to the spend table (OpenAI pricing page of 24 Nov 2026).
+- Metin on 24 Nov 2026, 04:20: money is no limit for Leyla and her soul. Noted in `STATUS.md`.
+
 ## 2.150.0 (24 Nov 2026)
 
 Third part of Leyla's new mind (`docs/LEYLA_SEELE.md`, step 3): at night she thinks the day over. Behind the setting `nachdenken`, off by default.
