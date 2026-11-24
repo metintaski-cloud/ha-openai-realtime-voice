@@ -191,7 +191,13 @@ In Kling eingesetzt um 20:35 (beide Bilder Favorit 4, 4K, 10 s, Adaptive, 1, 350
 
 "0–3s: Lost in a melody only she hears, she closes her eyes and sways softly from side to side, her hands gently lifting the fabric at her hips. 3–6s: Dreamy, she turns her shoulders slowly with the rhythm and lets one knee bend softly, her hair moving along. 6–8s: She opens her eyes, realizes he is watching, and stops with a shy, caught little smile, drawing her shoulders in. 8–10s: She lets go of the dress, looks lovingly into the camera and returns to her initial pose. Soft, feminine, natural body movements. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-In Kling eingesetzt um 20:39 (beide Bilder Favorit 4, 4K, 10 s, Adaptive, 1, 350 Credits). Generate klickt Metin. Ergebnis hier nachtragen.
+In Kling eingesetzt um 20:39 (beide Bilder Favorit 4, 4K, 10 s, Adaptive, 1, 350 Credits). Von Metin gestartet 20:40 ("läuft"). Ergebnis hier nachtragen.
+
+**Berührung im Gesicht, Nachtkleid (20:41).** Eigene Szene, anders als die drei anderen Gesichtsszenen (Schmollmund und Wange an die Schulter; Lächeln hinter dem Buch; Wange hineinschmiegen und Fingerspitzen): hier kräuselt sie überrascht die Nase, wird rot und legt beide Handflächen an die warmen Wangen, schaut dann wieder zu ihm.
+
+"0–2s: She feels an unexpected gentle sensation on her cheek, blinks in sweet surprise and scrunches her nose with a tiny smile, shifting her weight onto one leg. 2–5s: Blushing, she lays both palms on her warm cheeks and turns her face slightly away, her hips swaying gently. 5–8s: She peeks back at him, slowly slides her hands down, and looks into the camera with a tender, bashful smile, shifting her weight onto the other leg. 8–10s: She lowers her hands, looks at him with loving eyes and returns to her initial pose. Soft, feminine, natural body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
+
+In Kling eingesetzt um 20:41 (beide Bilder Favorit 2, `7_nacht.png`, 4K, 10 s, Adaptive, 1, 350 Credits). Generate klickt Metin. Ergebnis hier nachtragen.
 
 ## Was am 24.11.2026 sonst noch entstand
 
