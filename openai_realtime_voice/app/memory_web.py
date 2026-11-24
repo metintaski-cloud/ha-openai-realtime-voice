@@ -572,7 +572,8 @@ setInterval(seenTick,60000);document.addEventListener('visibilitychange',seenTic
 function goFull(){const d=document.documentElement;if(document.fullscreenElement)return;(d.requestFullscreen?d.requestFullscreen({navigationUI:'hide'}):Promise.reject()).catch(()=>{});}
 /* 2.134.5: at every touch, not only the first one after loading; leaving full screen with the system gesture otherwise kept it off until he used the menu again (Metin).
    2.144.2 (Metin: full screen at once, not by hand through the menu): a finger only counts as a user action for the browser when it lifts (pointerup, click), not when it goes down, so on the phone the old pointerdown never switched; and on a phone full screen is now the default until he turns it off in the menu */
-function fullWant(){let v=null;try{v=localStorage.getItem('lfull');}catch(e){}return v==='1'||(v!=='0'&&PHONE);}
+function fullWant(){if(runMode()!=='browser')return false;  /* 2.146.4: the installed app already is full screen; asking again only made Chrome show its notice "zum Beenden des Vollbildmodus ..." at the first tap (Metin: it takes the immersion away) */
+ let v=null;try{v=localStorage.getItem('lfull');}catch(e){}return v==='1'||(v!=='0'&&PHONE);}
 for(const ev of ['pointerup','click','keydown'])document.addEventListener(ev,()=>{if(fullWant()&&!document.fullscreenElement)goFull();},true);
 if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
 /* 2.144.3 (Metin: full screen at once when he opens the app, without any tap): the page reports how it runs (tab or app), so the cause can be read from the server. 2.144.4: the install button of 2.144.3 is gone again. Metin's icon already is an installed app; Chrome opens an app whose address only exists in the home network as a tab with its bars anyway (known behaviour, see STATUS.md), so installing again changes nothing */

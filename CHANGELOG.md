@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.146.4 (24 Nov 2026)
+
+- `fix(app)`: in the installed app the first tap no longer asks for full screen. The app already runs in full screen there, and the extra request only made Chrome show its notice "zum Beenden des Vollbildmodus: von oben ziehen ..." (Metin: it takes the immersion away). In a plain browser tab the request stays, and there Chrome's notice cannot be switched off by a page.
+
 ## 2.146.3 (24 Nov 2026)
 
 - Menu entry "Kleid wechseln" (Metin wanted to look at clips of the dress she is not wearing): switches to her other dress and keeps it for the day like the one she picked herself. Tested in headless Chrome with two looks.
