@@ -479,4 +479,6 @@ Herkunft der Teile:
 - Aus unserem Log: der Satz zu Gesicht und Kleidung ohne das Wort für die Brille (sie trägt hier eine, das Wort bleibt trotzdem weg), wechselnder Ausdruck (versunken, Lachen, Strahlen), Haare schwingen nach, Füße bleiben am Platz.
 - Risiko: das Umblättern ist feine Fingerarbeit im kleinen Bildteil und kann unsauber werden; dann nach fal.ai dieses eine Ereignis streichen.
 
+Gestartet 24.11.2026 um 16:00 von Claude auf Metins Wort ("Mach das für mich", nachdem Bilder, Einstellungen und 350 Credits genannt waren): beide Bilder 5_lang_arbeit.png (am Dateinamen und groß geprüft), 4K, 10 s, Adaptive, 1 Ausgabe, Standard statt HDR, 350 am Knopf.
+
 Ergebnis hier nachtragen.
