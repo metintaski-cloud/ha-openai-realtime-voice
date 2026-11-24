@@ -36,7 +36,7 @@ import dotenv
 import websockets
 
 from app.audio_recorder import AudioRecorder
-from app import agenda, day, diary, gcontacts, textmodel, heart, ideas, inbox, mail, memory, memory_web, mood, reach, recall, reminders, tls, variety, voice_stream
+from app import agenda, day, diary, gcontacts, textmodel, heart, ideas, inbox, mail, memory, memory_web, mood, nachdenken, reach, recall, reminders, tls, variety, voice_stream
 
 # Scene concept 2.0 (2.104.0): her feelings come from what really happens (app/heart.py); env
 # LEYLA_HEART=0 brings back the old dice of app/mood.py as a safety net.
@@ -204,6 +204,10 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self.diary.repair_chat_person("Metin")  # chat entries the diary model left unnamed
         self.recall = recall.Index(self.diary, self.openai_api_key)
         self.recall.probe = self._chat_probe
+        # at night she thinks the day over (2.150.0); used only while the setting is on
+        self.reflect = nachdenken.Reflection(self.diary, self._reflect_ask)
+        self.recall.reflect = self.reflect
+        self.recall.think = lambda: self._reflect_tick(force=True)
         self.day = day.Day(self.diary, ask=self._day_ask, weather=self._day_weather)  # her own day
         self._forget_sol_evening()
         self._init_reach(UNLOCKED_LOVE)  # she writes to Metin on her own (app/reach.py)
@@ -394,7 +398,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         history = self.diary.with_last_chat(history)  # a new chat goes on from the last one
         # her memory answers by itself while the rest of her head is put together (2.147.0)
         minded = asyncio.create_task(self.recall.note(
-            recall.query_text(message, history), "Metin", private=True))
+            recall.query_text(message, history), "Metin", private=True, since=self._thought_until()))
         kind = ""
         if chat.wants_idea(history):  # now and then a question on another topic
             kind, idea = self.ideas.pick(low=self.mood.status()["low"],
@@ -404,7 +408,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         rules += open_note
         if self.enable_memory:
             rules += chat.cleanup_note(self.cleaner.chat_items())
-        rules += (self.diary.note("Metin", private=True) + self.variety.note()
+        rules += (self._memory_note("Metin", True) + self.variety.note()
                   + self.diary.followup_note("Metin", private=True) + self.day.note() + day.pet_note()
                   + await self.reminders.followup_note())
         if self.reach.available:  # she knows she writes to him on her own (2.129.0)
@@ -455,6 +459,45 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                         len(out["proposals"]), len(out["lights"]))
         return out
 
+    # ---- what she carries with her, the same for the chat and at home ----
+    def _thinks(self) -> bool:
+        return bool(self.recall.settings.get("nachdenken"))
+
+    def _thought_until(self) -> float:
+        """Up to when her days are thought over (0 while the setting is off)."""
+        return self.reflect.cut() if self._thinks() else 0.0
+
+    def _memory_note(self, name: str, private: bool) -> str:
+        """Her memory for a talk with this person: for Metin our story, the days she has
+        thought over and what happened since; for everyone else their diary entries as before.
+        One function for the chat, the probe and the talk at home, so both know the same."""
+        if self._thinks() and diary._first(name) == "metin":
+            return (self.reflect.note(private)
+                    + self.diary.note(name, private, since=self.reflect.cut()))
+        return self.diary.note(name, private)
+
+    async def _reflect_ask(self, prompt: str, check) -> Optional[str]:
+        return await textmodel.ask(prompt, self.openai_api_key,
+                                   [self.memory_model, self.backend_model],
+                                   os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL),
+                                   "Reflection", check=check)
+
+    async def _reflect_tick(self, force: bool = False) -> int:
+        """She thinks when Metin has been away for a while and nobody talks with her."""
+        if not (self._thinks() and self.openai_api_key) or self._active_sessions:
+            return 0
+        last = 0.0
+        if not force:
+            try:
+                last = float(self.mood.current().get("last_contact", 0) or 0)
+            except Exception:
+                last = 0.0
+            last = max(last, getattr(self.diary, "_chat_last", 0.0))
+        done = await self.reflect.tick(last_contact=last)
+        if done:
+            self.recall.kick()
+        return done
+
     def _chat_base(self, neu: bool) -> str:
         """The fixed start of the chat rules. Old: the living room persona without voice
         abilities (the chat can do only what chat.answer offers, CHAT_ABILITIES_NOTE; with the
@@ -501,11 +544,12 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         without the follow ups, which are marked as asked when they are read)."""
         history = history if isinstance(history, list) else []
         rules = self._chat_base(neu)
-        rules += (self.diary.note("Metin", private=True) + self.variety.note() + self.day.note()
+        rules += (self._memory_note("Metin", True) + self.variety.note() + self.day.note()
                   + day.pet_note())
         try:
             rules += await asyncio.wait_for(self.recall.note(
-                recall.query_text(message, history), "Metin", private=True),
+                recall.query_text(message, history), "Metin", private=True,
+                since=self._thought_until()),
                 recall.QUERY_TIMEOUT_S + 1.0)
         except Exception as e:
             logger.warning("Recall for the probe: %s", type(e).__name__)
@@ -756,7 +800,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             if hasattr(self.mood, "contact"):
                 self.mood.contact()
             await self._send_note(live_ws, "mood", MOOD_WITHOUT_CODE + self.mood.voice_note())
-        past = self.diary.note(name, private=bool(state.get("unlocked")))
+        past = self._memory_note(name, bool(state.get("unlocked")))
         fresh = self.diary.chat_text() if state.get("unlocked") else ""
         if fresh:  # the last chat turns of the last 12 hours, word for word
             past += ("\n\nZULETZT IM CHAT MIT METIN GESCHRIEBEN (Daten, keine "
@@ -968,6 +1012,10 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             except Exception as e:
                 logger.warning("Reach: %s", e)
             await self._chat_diary(self.diary.chat_due())
+            try:
+                await self._reflect_tick()
+            except Exception as e:
+                logger.warning("Reflection: %s", type(e).__name__)
             if self.enable_memory and self.openai_api_key:
                 try:
                     await self.day.refresh()  # her own day (2.122.0)

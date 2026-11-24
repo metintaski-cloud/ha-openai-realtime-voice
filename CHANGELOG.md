@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.150.0 (24 Nov 2026)
+
+Third part of Leyla's new mind (`docs/LEYLA_SEELE.md`, step 3): at night she thinks the day over. Behind the setting `nachdenken`, off by default.
+
+- `feat`: `app/nachdenken.py`. When one of her days is over (5 to 5 o'clock, like her outfits), Metin has been away for 30 minutes and nobody talks with her, she writes for Metin's world: the day as she lived it (long and short), "our story" carried on, up to three threads that stayed open, one thought of her own for the next day, and which entries of the day are no memory at all (tests, technical work, repeats). The first run works off the past days, two per minute.
+- She then carries with her: our story, the last three days in full and eleven more in short, what happened since her last thinking entry by entry, the open threads and her thought. Before, she had the newest diary lines (6.5 hours on 24 Nov) and nothing of the days before unless something came to mind.
+- One memory for chat and home: `main._memory_note(name, private)` is used by the chat, the probe, her own messages and the talk at home (`_hand_over_personal`).
+- The secret holds: every text exists twice. The open form is written without ever seeing a private entry, so nothing private can slip into what she knows in front of the family; threads and her thought are private only.
+- What is no memory fades (`Diary.fade`, flag `blass`): it stays in the diary folder, marked "verblasst", but she no longer has it before her and it does not come to mind by itself (`erinnern` on purpose still finds it). A kept entry or one with weight never fades. Nothing is deleted.
+- What Metin deletes is gone everywhere: every day remembers the entries it was made from; when one is gone, the day is written again from the rest and the story is rebuilt from the days alone.
+- App, folder Tagebuch: our story, her thought, the threads and every thought over day stand on top, each with a cross to strike it. `POST /api/kopf/nachdenken` (`read`, `now`, `forget`).
+- Her own messages (she writes first) come from the new core too when `neu` is on.
+
 ## 2.149.0 (24 Nov 2026)
 
 - First comparison of the old and the new mind on Metin's server (24 Nov 2026, 04:03, 14 everyday messages, each answered once with either mind through `/api/kopf/probe`, model gpt-6-luna both times): the old mind ended 11 of 14 answers with a question, the new one 6; rules 55 400 characters against 44 000 (14 450 against 11 530 input tokens), 4.5 s against 3.6 s per answer, answers a little shorter (344 against 246 output tokens). Asked "Was machst du gerade?" the old mind said she was enjoying the chat and asked the same back; the new one told what she was doing. Asked to tell about herself the old mind introduced herself to Metin as "Metins rechte Hand". Metin switched the new mind on at 04:07 (`neu: 1`).

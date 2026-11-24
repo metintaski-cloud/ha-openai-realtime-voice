@@ -54,7 +54,10 @@ SETTINGS = {"min_sim": 0.48, "top": 4, "ask_min_sim": 0.38, "ask_top": 6, "word_
             "neu": 0,
             # 1 (only with neu): what is purely new in her lists she keeps without a Ja/Nein
             # card, the app shows it as a line Metin can strike (main._note_by_herself)
-            "selbst": 0}
+            "selbst": 0,
+            # 1: at night she thinks the day over (app/nachdenken.py) and carries our story,
+            # the days and her thought with her instead of single diary lines of past days
+            "nachdenken": 0}
 COMPARE = (("text-embedding-3-small", 256), ("text-embedding-3-small", 1536),
            ("text-embedding-3-large", 256), ("text-embedding-3-large", 1024))
 BONUSES = (0.0, 0.05, 0.1)
@@ -121,6 +124,8 @@ class Index:
         self._syncing: Optional[asyncio.Task] = None
         self.compared: dict = {}
         self.probe = None  # main sets it: one chat answer without any trace, old or new mind
+        self.reflect = None  # main sets it: app/nachdenken.Reflection
+        self.think = None   # main sets it: think now (async, returns the number of days done)
         self._load()
 
     @property
@@ -240,7 +245,7 @@ class Index:
 
     # ---- finding ----
     def _rank(self, q, who: str, private: bool, skip=(), text: str = "", vectors=None,
-              bonus: Optional[float] = None) -> list:
+              bonus: Optional[float] = None, faded: bool = True) -> list:
         """[(score, entry)] of everything this person may know, best first. The score is the
         closeness in meaning plus, with a word bonus, the share of the question's words the
         entry holds (names and rare words, where meaning alone is too vague)."""
@@ -253,6 +258,8 @@ class Index:
             k = _key(e.get("t"))
             if k in skipped or k not in vectors or not diary_mod.may_know(e, who, private):
                 continue
+            if e.get("blass") and not faded:
+                continue  # no memory, she found at night: it does not come by itself
             score = _dot(q, vectors[k][1])
             if want:
                 score += bonus * diary_mod.word_hits(want, _text(e)) / len(want)
@@ -273,7 +280,8 @@ class Index:
         return out
 
     async def find(self, query: str, who: str, private: bool = False, skip=(),
-                   limit: Optional[int] = None, min_sim: Optional[float] = None) -> list:
+                   limit: Optional[int] = None, min_sim: Optional[float] = None,
+                   faded: bool = False) -> list:
         """[(sim, entry)]: the entries closest in meaning to the query, best first."""
         query = (query or "").strip()
         if not self.available or not query or not self.vectors:
@@ -285,17 +293,17 @@ class Index:
         # of 1536 values on the Home Assistant host): in a thread, so a talk at home that runs
         # at the same moment keeps its audio
         return await asyncio.to_thread(
-            lambda: self._pick(self._rank(vecs[0], who, private, skip, text=query),
+            lambda: self._pick(self._rank(vecs[0], who, private, skip, text=query, faded=faded),
                                int(limit or self.settings["top"]),
                                float(self.settings["min_sim"] if min_sim is None else min_sim)))
 
     async def note(self, query: str, who: str, private: bool = False,
-                   now: Optional[float] = None) -> str:
+                   now: Optional[float] = None, since: float = 0.0) -> str:
         """What comes to her mind for this message, as a note for her; '' when nothing does.
         What she has before her in full anyway (diary window, kept entries) is not repeated."""
         self.kick()
         now = now or time.time()
-        shown = [e.get("t") for e, level in self.diary.window(who, private, now)
+        shown = [e.get("t") for e, level in self.diary.window(who, private, now, since)
                  if level in ("lang", "fest")]
         found = await self.find(query, who, private, skip=shown)
         logger.info("Recall: %d came to mind (%s)", len(found),
@@ -315,7 +323,8 @@ class Index:
             self.kick()
             found = [e for _, e in await self.find(query, who, private,
                                                    limit=self.settings["ask_top"],
-                                                   min_sim=self.settings["ask_min_sim"])]
+                                                   min_sim=self.settings["ask_min_sim"],
+                                                   faded=True)]
         have = {_key(e.get("t")) for e in found}
         found += [e for e in self.diary.search(query, who, private) if _key(e.get("t")) not in have]
         logger.info("Recall: asked on purpose, %d found (%s)", len(found),
@@ -453,6 +462,12 @@ class Index:
         if path == "/api/kopf/probe" and self.probe:
             return await self.probe(str(d.get("message", ""))[:2000], d.get("history"),
                                     bool(d.get("neu")))
+        if path == "/api/kopf/nachdenken" and self.reflect:
+            if d.get("forget"):
+                return {"ok": self.reflect.forget(str(d["forget"]))}
+            done = await self.think() if (d.get("now") and self.think) else 0
+            return {"ok": True, "done": done, "due": len(self.reflect.due()),
+                    **(self.reflect.listing() if d.get("read") else {})}
         if path == "/api/kopf/find":
             vecs = await self.embed([str(d.get("q", ""))[:1500]], timeout=QUERY_TIMEOUT_S)
             if not vecs:

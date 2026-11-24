@@ -462,6 +462,40 @@ class Diary:
             logger.info("Diary: %d chat entries without a person now belong to %s", n, _first(name))
         return n
 
+    def fade(self, stamps) -> int:
+        """Entries that are no memory (she found that when thinking the day over, 2.150.0) get
+        `blass`: they stay in the diary for Metin to see, but she no longer has them before her
+        and they do not come to mind by themselves. A kept entry (🔑) or one with weight never
+        fades. Returns how many were faded."""
+        wanted = {round(float(s), 3) for s in stamps if isinstance(s, (int, float))}
+        if not wanted:
+            return 0
+
+        def mark(e: dict) -> bool:
+            if (round(float(e.get("t", 0)), 3) not in wanted or e.get("blass") or e.get("fest")
+                    or e.get("gewicht") in (2, 3)):
+                return False
+            e["blass"] = True
+            return True
+        items = self.entries()
+        n = sum(mark(e) for e in items)
+        if n:
+            self._save(items)
+        try:
+            if os.path.exists(self.archive_path):
+                rest = self.archived()
+                m = sum(mark(e) for e in rest)
+                if m:
+                    tmp = self.archive_path + ".tmp"
+                    with open(tmp, "w", encoding="utf-8") as f:
+                        for e in rest:
+                            f.write(json.dumps(e, ensure_ascii=False) + "\n")
+                    os.replace(tmp, self.archive_path)
+                    n = max(n, m)
+        except Exception as e:
+            logger.warning("Diary: archive not faded: %s", e)
+        return n
+
     def delete(self, stamps) -> int:
         """Metin deletes entries in the app folder; an entry is named by its time stamp."""
         wanted = {round(float(s), 3) for s in stamps if isinstance(s, (int, float))}
@@ -628,12 +662,15 @@ class Diary:
                 "• Fragt jemand danach, sag, was dir erzählt wurde, und frag, ob er das war und "
                 "wer er ist; rate nie einen Namen.\n" + "\n".join(lines[-6:]))
 
-    def window(self, who: str, private: bool = False, now: Optional[float] = None) -> list:
+    def window(self, who: str, private: bool = False, now: Optional[float] = None,
+               since: float = 0.0) -> list:
         """What she has before her at every moment: [(entry, level)], the kept entries first
         (level 'fest'), then the others newest first with the length their age gives them, as
-        many as fit into MAX_NOTE."""
+        many as fit into MAX_NOTE. since: entries before that moment are left out (the days she
+        has thought over stand in app/nachdenken.py); faded entries are never shown."""
         now = now or time.time()
-        mine = [e for e in self.entries() if may_know(e, who, private)]
+        mine = [e for e in self.entries() if may_know(e, who, private)
+                and (e.get("fest") or (e.get("t", 0) >= since and not e.get("blass")))]
         out = [(e, "fest") for e in sorted((e for e in mine if e.get("fest")),
                                            key=lambda x: x.get("t", 0))]
         used = sum(len(e.get("lang", "")) + 20 for e, _ in out)
@@ -647,9 +684,10 @@ class Diary:
             out.append((e, key))
         return out
 
-    def note(self, who: str, private: bool = False, now: Optional[float] = None) -> str:
+    def note(self, who: str, private: bool = False, now: Optional[float] = None,
+             since: float = 0.0) -> str:
         now = now or time.time()
-        shown = self.window(who, private, now)
+        shown = self.window(who, private, now, since)
         kept = [f"• am {time.strftime('%d.%m.%Y', time.localtime(e.get('t', 0)))}: {e.get('lang', '')}"
                 for e, key in shown if key == "fest"]
         lines = [f"• {_age_label(now - e.get('t', 0))}: {e.get(key, '')}"
@@ -657,8 +695,9 @@ class Diary:
         fixed = ("\n\nFESTE ERINNERUNGEN (für immer, mit Datum)\n" + "\n".join(kept)) if kept else ""
         if not lines:
             return fixed
-        return fixed + ("\n\nDEIN TAGEBUCH DER LETZTEN WOCHEN (was du erlebt hast; je älter, desto "
-                "blasser)\n• Nutze es wie echte Erinnerung, natürlich und nur wenn es passt; "
+        return fixed + ("\n\n" + ("SEIT DEINEM LETZTEN NACHDENKEN (was du seitdem erlebt hast)"
+                                   if since else "DEIN TAGEBUCH DER LETZTEN WOCHEN (was du erlebt "
+                                   "hast; je älter, desto blasser)") + "\n• Nutze es wie echte Erinnerung, natürlich und nur wenn es passt; "
                 "Älteres nur ungefähr ('vor ein paar Wochen hast du mal erzählt ...'). Bei "
                 "Widersprüchen gilt immer das Neueste: der letzte Eintrag hier schlägt ältere "
                 "Einträge und deine eigene Geschichte. Sag nie, "

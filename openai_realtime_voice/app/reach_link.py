@@ -39,11 +39,13 @@ class ReachMixin:
             notes=self._reach_notes, thread=lambda: self.diary.with_last_chat([]))
 
     def _reach_rules(self) -> str:
+        if self.recall.settings.get("neu"):  # her own messages come from the same mind as the chat
+            return persona.kern(with_metin=True, extra=self.instructions)
         return persona.build([], fan=False, tv=False, messages=False, extra=self.instructions)
 
     async def _reach_notes(self) -> str:
         # a noted plan of his that is over: her own message may ask how it went (2.121.0)
-        return (self.diary.note("Metin", private=True) + self.variety.note()
+        return (self._memory_note("Metin", True) + self.variety.note()
                 + self.diary.followup_note("Metin", private=True) + self.day.note() + day.pet_note())
 
     async def _reach_write(self, prompt: str) -> str:
