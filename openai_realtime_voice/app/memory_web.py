@@ -618,7 +618,8 @@ NIGHT=outs.nacht?outs.nacht.clips:[];NIGHTBODY=!!(outs.nacht&&outs.nacht.body);d
 function clipVars(b){const o=STM&&!CHANGE.includes(b)?STM.outfit:'';if(o==='nacht')return NIGHT.filter(n=>n.replace(/[0-9]+$/,'')===b).map(n=>'nacht/'+n);
  const k=o==='freizeit'?'freizeit'+b:b;return CLIPS.filter(n=>n.replace(/[0-9]+$/,'')===k);}  // Freizeit: freizeit<name> clips (2.113.0), night: folder nacht (2.114.0)
 function clipFor(st){const lv=st.low&&st.level&&st.mood!=='eifersuechtig'?'traurig'+st.level:'';if(lv&&clipVars(lv).length)return lv;if(clipVars(st.mood).length)return st.mood;
- const g=(st.low?['traurigleicht','traurig','eifersuechtig'].concat(st.outfit&&st.outfit!=='arbeit'?['gluecklich']:[]):['gluecklich']).filter(n=>clipVars(n).length);return g.length?g[0]:null;}
+ /* 2.169.3: the happy loop is the last resort for every outfit. The work dresses lost their sad clips when they were remade in 4K, and without this she stood still as a picture whenever she was hurt (Metin, 25 Nov 2026: "ist eingefroren") */
+ const g=(st.low?['traurigleicht','traurig','eifersuechtig','gluecklich']:['gluecklich']).filter(n=>clipVars(n).length);return g.length?g[0]:null;}
 /* light copies on the go (2.141.0, Metin: the 4K clips stall on mobile data). Automatic:
    on mobile data, or after a clip has stalled twice within a minute. */
 let LIGHT=false,STALLS=[];

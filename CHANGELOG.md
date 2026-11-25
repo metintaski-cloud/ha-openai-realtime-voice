@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.169.3 (25 Nov 2026)
+
+- `fix`: Leyla no longer stands still as a picture when she is hurt. Metin (13:09, with a screenshot): "ist eingefroren". She was hurt because a message of hers had stayed unanswered, and for a low mood the stage looked for sad or jealous clips only. The work dresses have none since they were remade in 4K, and the happy loop was allowed as a last resort only for the leisure and night outfits, so the stage showed nothing but her picture. The happy loop is now the last resort for every outfit; a sad clip still wins where there is one.
+- `fix`: she never answers Metin in English. In the same screenshot his message had arrived as "Hello." and she answered in English, which he cannot read. Both chat rule sets now say: he speaks German and Turkish and does not understand English, never answer in English, and a message that arrives in English is answered in German.
+- 738 tests (736 before): the choice of the loop for nine cases of mood and outfit, run with node on the function of the app page, and the language rule.
+
 ## 2.169.2 (25 Nov 2026)
 
 - `feat`: the fourth loop. Metin (06:12): seamless, but there is still loop 4. The short work dress has the clip `gluecklichextra`, which the app plays now and then between the three happy loops; the page "Naht" did not show it, and the app let it come in with the wide 0.8 s blend instead of the tight hand over of a loop. The page now lists it as one more loop ("Schleife 4") with everything a loop has, and the stage of the app lets it come in like a loop (tight, with its lead), so what is set on the page holds in the app. 736 tests.
