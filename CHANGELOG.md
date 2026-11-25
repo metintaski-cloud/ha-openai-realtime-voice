@@ -3,6 +3,7 @@
 ## 2.167.1 (25 Nov 2026)
 
 - `feat`: one play button for all layers on the page "Naht" (Metin, 02:29). "Alle sichtbaren abspielen" starts every visible layer in the same moment, each from its play head and in its own tempo, each stops at its own end mark; pressing again stops them all where they are. "Alle zum Anfang" puts every play head on its begin mark. 734 tests, the browser test checks that two loops start together and keep in step.
+- `feat`: a row of up to five loops under "Übergabe ansehen" (Metin, 02:31: he also needs loop 3, 4, 5): von, nach and three times "dann". "So spielt es die App" plays the whole row one after the other, every hand over as on the stage of the app (the next clip comes in its lead before the end mark, the old one holds its last picture and fades out), the same loop may come again later in the row. The browser test plays 1, 2, 3, 1 and checks the order and that never more than two clips move at once.
 
 ## 2.167.0 (25 Nov 2026)
 

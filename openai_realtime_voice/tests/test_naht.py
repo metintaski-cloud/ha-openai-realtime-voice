@@ -273,13 +273,22 @@ async def test_in_a_browser_every_loop_is_its_own_layer(tmp_path, monkeypatch):
             assert st[G2]["blend"] == "difference" and st[G2]["vop"] == "1" and st[G1]["blend"] == "normal"
             await page.click("#diff")
             assert (await state())[G2]["blend"] == "normal"
+            # the row for "So spielt es die App": up to five loops (Metin, 02:31), here 1, 2, 3 and 1 again
+            assert await page.evaluate("()=>[hf.value,ht.value,h3.value,h4.value,h5.value]") == [G1, G2, G3, "", ""]
+            assert await page.evaluate("()=>h3.options[0].textContent") == "nichts mehr"
+            await page.select_option("#h4", G1)
             await page.click("#play")
             await asyncio.sleep(0.6)
             assert await page.evaluate("()=>PLAYING")
-            for _ in range(80):
+            tops = []
+            for _ in range(220):
                 await asyncio.sleep(0.1)
                 if not await page.evaluate("()=>PLAYING"):
                     break
+                moving = [n for n, r in (await state()).items() if not r["paused"]]
+                tops.append(len(moving))
+            assert await page.evaluate("()=>window.SEEN") == [G1, G2, G3, G1]
+            assert max(tops) <= 2 and tops.count(0) < 12             # never more than the old and the new clip at once, no gap
             st = await settled()
             assert not await page.evaluate("()=>PLAYING") and all(r["paused"] for r in st.values())
             assert (st[G1]["vop"], st[G2]["vop"]) == ("1", "0.5") and abs(st[G1]["vt"] - st[G1]["e"]) < 0.05

@@ -88,8 +88,11 @@ input[type=range]{flex:1 1 120px;min-width:120px}
 <div class="card"><h2>2. Übergabe ansehen</h2>
 <div class="bar"><span class="z">von</span><select id="hf"></select></div>
 <div class="bar"><span class="z">nach</span><select id="ht"></select></div>
+<div class="bar"><span class="z">dann</span><select id="h3"></select></div>
+<div class="bar"><span class="z">dann</span><select id="h4"></select></div>
+<div class="bar"><span class="z">dann</span><select id="h5"></select></div>
 <div class="bar"><button id="hv">Übergabe zeigen</button><button id="play">So spielt es die App</button><button id="diff">Unterschied</button></div>
-<div class="t">Übergabe zeigen legt das Ende der einen und den Anfang der anderen so übereinander wie in der App. Unterschied: was schwarz ist, liegt genau aufeinander.</div></div>
+<div class="t">Übergabe zeigen legt das Ende der ersten und den Anfang der zweiten so übereinander wie in der App. So spielt es die App spielt die ganze Reihe hintereinander, bis zu fünf Schleifen, mit jeder Übergabe wie in der App. Unterschied: was schwarz ist, liegt genau aufeinander.</div></div>
 <div class="card"><h2>3. Merken</h2>
 <div class="bar"><button id="save">Alle Zeiten merken</button><button id="back">zurück auf gemerkt</button></div>
 <div class="t" id="sinfo"></div>
@@ -170,7 +173,7 @@ function fillSel(){const names=CL.filter(mine).sort(cmp),rest=names.filter(n=>!l
  const done={},add=(n,t)=>{const o=document.createElement('option');o.value=n;o.textContent=t;a.appendChild(o);};
  for(const [zone,kinds] of ZONES)rest.filter(n=>kinds.includes(base(n).slice(PRE.length))).forEach(n=>{done[n]=1;add(n,title(n)+' ('+n+')');});
  rest.forEach(n=>{if(!done[n])add(n,n);});
- for(const id of ['hf','ht']){const s=$(id),old=s.value;s.innerHTML='';LAY.forEach(L=>{const o=document.createElement('option');o.value=L.n;o.textContent=title(L.n)+(title(L.n)===L.n?'':' ('+L.n+')');s.appendChild(o);});if(lay(old))s.value=old;}}
+ for(const id of ['hf','ht','h3','h4','h5']){const s=$(id),old=s.value;s.innerHTML=id==='hf'||id==='ht'?'':'<option value="">nichts mehr</option>';LAY.forEach(L=>{const o=document.createElement('option');o.value=L.n;o.textContent=title(L.n)+(title(L.n)===L.n?'':' ('+L.n+')');s.appendChild(o);});if(lay(old))s.value=old;}}
 /* two layers on each other as the app shows them when the old clip has reached its last picture */
 function hand(a,b){if(!a||!b||a===b)return;stop();LAY.forEach(L=>{soloStop(L);L.on=false;});a.on=true;a.op=100;b.on=true;b.op=50;b.z=++ZTOP;a.mode='t';b.mode='t';
  ready(a,()=>ready(b,()=>{a.t=a.e;b.t=r3(Math.min(b.d,b.s+b.ld/rate(a.n)*rate(b.n)));show();}));show();}
@@ -179,7 +182,7 @@ function pick(i,a,b){const o=OUT[i];stop();LAY.forEach(L=>{L.play=0;L.v.pause();
  const names=CL.filter(mine).sort(cmp),loops=names.filter(isLoop);loops.forEach(n=>addLayer(n,false,100));
  for(const n of [a,b])if(n&&names.includes(n))addLayer(n,false,100);
  if(!LAY.length&&names.length)addLayer(names[0],true,100);setAx();fillSel();
- const la=lay(a)||LAY[0],lb=lay(b)&&lay(b)!==la?lay(b):LAY.find(L=>L!==la);if(la)$('hf').value=la.n;if(lb){$('ht').value=lb.n;hand(la,lb);}else if(la){la.on=true;show();}}
+ const la=lay(a)||LAY[0],lb=lay(b)&&lay(b)!==la?lay(b):LAY.find(L=>L!==la);if(la)$('hf').value=la.n;const lc=LAY.find(L=>L!==la&&L!==lb&&isLoop(L.n));$('h3').value=lc&&lb?lc.n:'';$('h4').value='';$('h5').value='';if(lb){$('ht').value=lb.n;hand(la,lb);}else if(la){la.on=true;show();}}
 async function start(){const j=await (await fetch('/clips.json?t='+Date.now())).json();window.J=j;const o=j.outfits||{};
  for(const look in o){VER[look]=o[look].v||0;for(const c in (o[look].r||{}))RATE[look+'/'+c]=o[look].r[c];
   for(const c in (o[look].k||{}))KURVE[look+'/'+c]=o[look].k[c];for(const c in (o[look].l||{}))LEAD[look+'/'+c]=o[look].l[c];for(const c in (o[look].s||{}))SCHNITT[look+'/'+c]=o[look].s[c].slice();}
@@ -207,17 +210,22 @@ async function allPlay(){if(LAY.some(L=>L.play)){for(const L of LAY)if(L.play){L
  const tick=()=>{let any=false;for(const L of go){if(L.play!==tok)continue;const t=L.v.currentTime;if(t>=L.e||L.v.ended){L.t=L.e;soloStop(L);}else{L.t=r3(t);any=true;}}
   if(any){draw();requestAnimationFrame(tick);}else show();};requestAnimationFrame(tick);}
 $('pall').onclick=allPlay;$('gall').onclick=()=>{stop();for(const L of LAY){if(!L.d)continue;soloStop(L);L.mode='t';L.t=L.s;}show();};
-/* the hand over once in real time, the way stageShow does it for a loop */
-async function play(){if(PLAYING){stop();return;}const a=lay($('hf').value),b=lay($('ht').value);if(!a||!b||a===b||!a.d||!b.d)return;LAY.forEach(soloStop);PLAYING=true;const tok=++TOK;
- document.body.classList.remove('diff');draw();
- for(const L of LAY){L.v.style.transition='none';L.v.style.mixBlendMode='normal';L.v.style.opacity=L===a?'1':'0';}a.v.style.zIndex='1';b.v.style.zIndex='2';
- document.body.classList.add('busy');await Promise.all([seeked(a.v,Math.max(a.s,a.e-2)),seeked(b.v,b.s)]);document.body.classList.remove('busy');if(tok!==TOK)return;
- a.v.playbackRate=rate(a.n);b.v.playbackRate=rate(b.n);a.v.play().catch(()=>{});let on=false;
- const tick=()=>{if(tok!==TOK)return;
-  if(!on&&a.v.currentTime>=a.e-b.ld){on=true;b.v.play().catch(()=>{});b.v.style.transition='opacity '+HAND_FADE+'s';b.v.style.opacity='1';
-   setTimeout(()=>{if(tok===TOK){a.v.style.transition='opacity '+HAND_FADE+'s';a.v.style.opacity='0';}},HAND_OFF);
-   setTimeout(()=>{if(tok===TOK)stop();},2600);}
-  if(a.v.currentTime>=a.e&&!a.v.paused)a.v.pause();requestAnimationFrame(tick);};requestAnimationFrame(tick);}
+/* the row of loops in real time (Metin, 02:31: he also needs loop 3, 4, 5), every hand over the way stageShow does it for a
+   loop: the next clip starts `lead` seconds before the end mark of the running one and fades in, the old one holds its last
+   picture and fades out. The first clip starts 2 s before its end, the others run from their begin mark to their end mark. */
+const chain=()=>['hf','ht','h3','h4','h5'].map(id=>lay($(id).value)).filter(L=>L&&L.d).filter((L,i,a)=>i===0||a[i-1]!==L);
+async function play(){if(PLAYING){stop();return;}const seq=chain();if(seq.length<2)return;LAY.forEach(soloStop);PLAYING=true;const tok=++TOK;
+ document.body.classList.remove('diff');draw();let zc=10,i=0,on=false,prep=true,t1=0,prev=null;
+ for(const L of LAY){L.v.style.transition='none';L.v.style.mixBlendMode='normal';L.v.style.opacity=L===seq[0]?'1':'0';}seq[0].v.style.zIndex=String(++zc);
+ document.body.classList.add('busy');await Promise.all([seeked(seq[0].v,Math.max(seq[0].s,seq[0].e-2)),seeked(seq[1].v,seq[1].s)]);document.body.classList.remove('busy');if(tok!==TOK)return;
+ seq[0].v.playbackRate=rate(seq[0].n);seq[0].v.play().catch(()=>{});window.SEEN=[seq[0].n];
+ const tick=()=>{if(tok!==TOK)return;const a=seq[i],b=seq[i+1],now=performance.now();
+  if(prev&&prev.v.currentTime>=prev.e&&!prev.v.paused)prev.v.pause();
+  if(b&&!prep&&now-t1>1300&&a.v.currentTime>=a.e-3){prep=true;b.v.pause();b.v.style.transition='none';b.v.style.opacity='0';try{b.v.currentTime=b.s;}catch(e){}}
+  if(b&&prep&&!on&&a.v.currentTime>=a.e-b.ld){on=true;b.v.playbackRate=rate(b.n);b.v.style.zIndex=String(++zc);b.v.play().catch(()=>{});b.v.style.transition='opacity '+HAND_FADE+'s';b.v.style.opacity='1';window.SEEN.push(b.n);
+   setTimeout(()=>{if(tok===TOK){a.v.style.transition='opacity '+HAND_FADE+'s';a.v.style.opacity='0';}},HAND_OFF);prev=a;i++;on=false;prep=false;t1=now;}
+  else if(!b&&(a.v.currentTime>=a.e||a.v.ended)){a.v.pause();setTimeout(()=>{if(tok===TOK)stop();},500);return;}
+  requestAnimationFrame(tick);};requestAnimationFrame(tick);}
 $('play').onclick=play;
 const post=async(url,body)=>{try{return await (await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();}catch(e){return null;}};
 /* store every changed begin mark, end mark and lead */
