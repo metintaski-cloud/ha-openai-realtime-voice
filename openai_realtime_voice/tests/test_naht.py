@@ -127,6 +127,7 @@ async def test_in_a_browser_every_loop_is_its_own_layer(tmp_path, monkeypatch):
     monkeypatch.setenv("LEYLA_SCHNITT", str(cut))
     monkeypatch.setenv("LEYLA_VORLAUF", str(leads))
     monkeypatch.setenv("LEYLA_TEMPO", str(tmp_path / "tempo.json"))
+    monkeypatch.setenv("LEYLA_KURVE", str(tmp_path / "clip_kurve.json"))
     cut.write_text(json.dumps({"kurz/freizeitgluecklich": [0.5, 3.5], "kurz/freizeitgluecklich2": [0.2, 5.0]}))
     leads.write_text(json.dumps({"kurz/freizeitgluecklich2": 0.4}))
     (tmp_path / "tempo.json").write_text(json.dumps([{"name": "kurz/freizeitgluecklich2", "rate": 2}]))
@@ -304,6 +305,51 @@ async def test_in_a_browser_every_loop_is_its_own_layer(tmp_path, monkeypatch):
             await page.click("#save")
             await asyncio.sleep(0.6)
             assert memory_web.list_outfits()["kurz"]["r"] == {G2: 2}
+            # a stretch with its own tempo inside a loop (Metin, 05:10 and 05:27: Kling has tempo inside the tempo)
+            kurve = tmp_path / "clip_kurve.json"
+            await page.click(key(G1, "mt"))
+            await page.evaluate("(k)=>{const e=document.querySelector(k);e.value='1.2';e.oninput();}", key(G1, "pos"))
+            await page.click(key(G1, "ka"))
+            await page.evaluate("(k)=>{const e=document.querySelector(k);e.value='2.2';e.oninput();}", key(G1, "pos"))
+            await page.click(key(G1, "kb"))
+            assert "von 1.200 bis 2.200 s" in await page.inner_text(key(G1, "klab"))
+            await page.evaluate("(k)=>{const e=document.querySelector(k);e.value='0.5';e.oninput();}", key(G1, "kr"))
+            await page.click(key(G1, "kadd"))
+            assert await page.evaluate("()=>LAY[0].k") == [[1.2, 2.2, 0.5]]
+            assert "1.200 bis 2.200 s: Tempo 0.50" in await page.inner_text(key(G1, "klist"))
+            assert await page.evaluate("()=>save.classList.contains('on')")
+            # a second stretch that overlaps cuts the first one, it does not lie on top of it
+            await page.evaluate("()=>{const L=LAY[0];L.ka=2.0;L.kb=2.6;L.kr=1.5;}")
+            await page.click(key(G1, "kadd"))
+            assert await page.evaluate("()=>LAY[0].k") == [[1.2, 2.0, 0.5], [2.0, 2.6, 1.5]]
+            # it plays that way: the tempo of the clip outside, the tempo of the stretch inside
+            base = await page.evaluate("()=>LAY[0].rt")
+            await page.evaluate("(k)=>{const e=document.querySelector(k);e.value='0.9';e.oninput();}", key(G1, "pos"))
+            await settled()
+            await page.click(key(G1, "play"))
+            got = {}
+            for _ in range(90):
+                await asyncio.sleep(0.05)
+                t, r, playing = await page.evaluate("()=>[LAY[0].v.currentTime,LAY[0].v.playbackRate,!!LAY[0].play]")
+                zone = "vor" if t < 1.15 else "erstes" if 1.3 < t < 1.9 else "zweites" if 2.1 < t < 2.5 else "nach" if t > 2.7 else ""
+                if zone and playing:
+                    got[zone] = r
+                if t > 2.9 or not playing:
+                    break
+            await page.evaluate("()=>{if(LAY[0].play)document.querySelector(\".lay[data-n='freizeitgluecklich'] [data-k='play']\").click();}")
+            assert got == {"vor": base, "erstes": 0.5, "zweites": 1.5, "nach": base}, got
+            await page.click("#save")
+            await asyncio.sleep(0.6)
+            assert json.loads(kurve.read_text()) == {"kurz/" + G1: [[1.2, 2.0, 0.5], [2.0, 2.6, 1.5]]}
+            assert memory_web.list_outfits()["kurz"]["k"] == {G1: [[1.2, 2.0, 0.5], [2.0, 2.6, 1.5]]}
+            assert not await page.evaluate("()=>save.classList.contains('on')")
+            # taking the stretches away again
+            await page.click(key(G1, "klist") + " button[data-kdel='1']")
+            await page.click(key(G1, "klist") + " button[data-kdel='0']")
+            assert await page.evaluate("()=>LAY[0].k") == []
+            await page.click("#save")
+            await asyncio.sleep(0.6)
+            assert json.loads(kurve.read_text()) == {}
             # the hand over again with the new values, the difference picture, and once in real time
             await page.click("#hv")
             st = await settled()
@@ -533,3 +579,10 @@ console.log(JSON.stringify(out));
         assert got[str(n)]["twice"] == 0                  # never the same loop twice in a row
         assert got[str(n)]["gap"] <= 2 * n - 1            # at the latest it comes again at the end of the next round
     assert got["left"] is False and got["one"] == ["x", "x"]
+
+
+def test_the_app_follows_a_stretch_with_its_own_tempo_picture_by_picture():
+    app = open(memory_web.__file__, encoding="utf-8").read()
+    assert "if(fol){const s0=b.src,rf=()=>{" in app and "requestAnimationFrame(rf)" in app
+    memory_web._kurve_set("kurz/x", [[1.2345, 2.0004, 0.5], [0, 0.3, 9], ["a", 1, 1]])
+    assert memory_web._kurve_read()["kurz/x"] == [[1.234, 2.0, 0.5]] or memory_web._kurve_read()["kurz/x"] == [[1.235, 2.0, 0.5]]

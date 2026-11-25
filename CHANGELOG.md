@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.169.0 (25 Nov 2026)
+
+- `feat`: stretches with their own tempo on the page "Naht". Metin (05:10, 05:27): loop 1 moves slowly, but when the whole clip is made faster she blinks faster than in the other loops; Kling has "tempo inside the tempo". Every layer can now hold stretches with a tempo of their own: move the white line to the beginning of the stretch, "Stück Anfang hier", move it to the end, "Stück Ende hier", choose the tempo, "Stück dazu". The stretch shows as an orange line under the bar and in a list with "weg"; a new stretch that overlaps an old one cuts it. Every player of the page (one layer, all, the row, both mixers) plays the clip at its tempo and the stretch at its own, and "Alle Zeiten merken" stores it as the tempo curve the app and the tester already use (now in thousandths of a second).
+- `fix`: the stage of the app follows such a stretch picture by picture. Until now it looked at the tempo curve only about four times a second, so a short stretch such as a blink of 0.3 s could begin and end up to a quarter second late.
+- 736 tests (735 before): in a real browser two stretches are set, played (the speed is read while the clip runs: clip tempo, 0.5, 1.5, clip tempo), stored and taken away again.
+
 ## 2.168.3 (25 Nov 2026)
 
 - `feat`: two mixers on the page "Naht" (Metin, 04:57): "der Reihe nach: 1, 2, 3" always plays the ticked loops in the order of the list, round and round; "gemischt" plays them in mixed rounds as before. Pressing the other button changes over. 735 tests, the browser test checks the order 1, 2, 3, 1, 2 and the change over.
