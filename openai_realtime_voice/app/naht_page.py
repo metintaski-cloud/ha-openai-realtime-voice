@@ -10,7 +10,8 @@ daher brauche ich Schleifen, die ich einzeln transparent oder nicht transparent 
 voller Clip Länge, die ich in der Zeitachse kürzen kann, aber nicht alle Schleifen zusammen,
 sondern jede Schleife einzeln". So the page is built from layers:
 
-Every loop of the outfit is one layer (`LAY`), and any other clip can be added as one (the touch
+Every loop of the outfit is one layer (`LAY`; the clip `gluecklichextra`, which the app plays now and then
+between the loops, counts as one more loop since 2.169.2), and any other clip can be added as one (the touch
 clips are named Kopf, Brust, Bauch, Po). A layer is a still picture of its clip that lies over the
 others. It has: visible or not (`on`), how see through (`op`), the picture it shows (`t`, its
 play head), its begin mark (`s`), its end mark (`e`), its lead (`ld`) and its tempo (`rt`, a slider of its own under
@@ -132,7 +133,7 @@ const pth=n=>LOOK+'/'+n;
 const rate=n=>RATE[pth(n)]||1;
 const r3=x=>Math.round(x*1000)/1000;
 const cmp=(x,y)=>x.localeCompare(y,'de',{numeric:true});
-const isLoop=n=>base(n)===PRE+'gluecklich';
+const isLoop=n=>base(n)===PRE+'gluecklich'||base(n)===PRE+'gluecklichextra';  /* the extra clip of the happy loop is one more loop (Metin, 06:12: "da ist noch Schleife 4") */
 const lay=n=>LAY.find(L=>L.n===n);
 const q=(L,k)=>L.el.querySelector('[data-k='+k+']');
 function title(n){const all=CL.filter(mine).sort(cmp),loops=all.filter(isLoop);if(isLoop(n))return 'Schleife '+(loops.indexOf(n)+1);

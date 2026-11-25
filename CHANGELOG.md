@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.169.2 (25 Nov 2026)
+
+- `feat`: the fourth loop. Metin (06:12): seamless, but there is still loop 4. The short work dress has the clip `gluecklichextra`, which the app plays now and then between the three happy loops; the page "Naht" did not show it, and the app let it come in with the wide 0.8 s blend instead of the tight hand over of a loop. The page now lists it as one more loop ("Schleife 4") with everything a loop has, and the stage of the app lets it come in like a loop (tight, with its lead), so what is set on the page holds in the app. 736 tests.
+
 ## 2.169.1 (25 Nov 2026)
 
 - `fix`: every press on the page "Naht" shows. Metin (05:50): "Stück Anfang hier" did not look like a button, nothing happened to see (the press had worked, only a small line of text changed). Every button now lights up green for a moment when pressed. "Stück Anfang hier" and "Stück Ende hier" then carry the time they took ("Stück Anfang: 3.210 s") and stay green, the stretch that is being marked shows on the bar of the loop (two orange lines and the part between them), "Stück dazu" turns green as soon as both are set, and a hint appears when beginning and end lie on the same picture. 736 tests.
