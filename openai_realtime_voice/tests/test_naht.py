@@ -247,6 +247,23 @@ async def test_in_a_browser_every_loop_is_its_own_layer(tmp_path, monkeypatch):
                     break
             st = await settled()
             assert not st[G1]["play"] and abs(st[G1]["t"] - st[G1]["e"]) < 0.001 and abs(st[G1]["e"] - 3.458) < 0.02
+            # all visible layers at once (Metin, 02:29): they start together, the hidden one stays where it is
+            await page.click("#gall")
+            st = await settled()
+            assert (st[G1]["t"], st[G2]["t"], st[G3]["t"]) == (st[G1]["s"], st[G2]["s"], st[G3]["s"])
+            await page.click("#pall")
+            await asyncio.sleep(0.8)
+            st = await state()
+            assert st[G1]["play"] and st[G2]["play"] and not st[G1]["paused"] and not st[G2]["paused"]
+            assert not st[G3]["play"] and st[G3]["paused"] and st[G3]["t"] == st[G3]["s"]
+            assert await page.inner_text("#pall") == "⏸ alle anhalten"
+            # they run in step: loop 2 plays at tempo 2, so it has come twice as far from its beginning
+            a1, a2 = st[G1]["vt"] - st[G1]["s"], st[G2]["vt"] - st[G2]["s"]
+            assert a1 > 0.3 and abs(a2 - 2 * a1) < 0.25, (a1, a2)
+            await page.click("#pall")
+            st = await settled()
+            assert all(r["paused"] and not r["play"] for r in st.values()) and abs(st[G2]["vt"] - st[G2]["t"]) < 0.05
+            assert await page.inner_text("#pall") == "▶ alle sichtbaren abspielen"
             # the hand over again with the new values, the difference picture, and once in real time
             await page.click("#hv")
             st = await settled()

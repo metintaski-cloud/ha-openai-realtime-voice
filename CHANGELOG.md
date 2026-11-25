@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.167.1 (25 Nov 2026)
+
+- `feat`: one play button for all layers on the page "Naht" (Metin, 02:29). "Alle sichtbaren abspielen" starts every visible layer in the same moment, each from its play head and in its own tempo, each stops at its own end mark; pressing again stops them all where they are. "Alle zum Anfang" puts every play head on its begin mark. 734 tests, the browser test checks that two loops start together and keep in step.
+
 ## 2.167.0 (25 Nov 2026)
 
 - `feat`: the page "Naht" is rebuilt from layers. Metin (02:15): he wants to fade loops in and out, so he needs loops he can make see through or not one by one, over the full length of the clip, and shorten them on the time axis, each loop on its own. Every loop of the outfit is now a layer of its own (any other clip, such as the touch clips Kopf, Brust, Bauch, Po, can be added): visible or not, its own see through slider, "nach oben" to lay it on top, its own play button, and one slider with fine steps (a picture, 0.01 s, 0.001 s) that moves what is chosen: the picture, the beginning, the end or the lead. The time axis has one bar per layer over the full length of its clip; the edges of a bar are dragged to shorten or lengthen that clip alone, a tap inside moves its play head. "Übergabe zeigen" lays two layers on each other as the app does at a hand over, "So spielt es die App" plays it once, "Unterschied" shows what does not lie on each other, and one button stores every mark and lead that changed. 2.166.0 (two fixed stencils with a time axis) was never installed; its lead per clip stays.

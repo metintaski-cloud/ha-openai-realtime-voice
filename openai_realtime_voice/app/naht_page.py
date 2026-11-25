@@ -94,6 +94,9 @@ input[type=range]{flex:1 1 120px;min-width:120px}
 <div class="bar"><button id="save">Alle Zeiten merken</button><button id="back">zurück auf gemerkt</button></div>
 <div class="t" id="sinfo"></div>
 <div class="t">Jeder Clip hat einen Anfang, ein Ende und einen Einsatz. Sie gelten bei jedem Wechsel.</div></div>
+<div class="card"><h2>4. Ebenen</h2>
+<div class="bar"><button id="pall">▶ alle sichtbaren abspielen</button><button id="gall">alle zum Anfang</button></div>
+<div class="t">Alle sichtbaren Ebenen starten im selben Augenblick, jede ab ihrem Bild, und laufen bis zu ihrem Ende. Noch einmal drücken hält alle an.</div></div>
 <div id="cards"></div></div>
 <script>
 const $=id=>document.getElementById(id);
@@ -136,7 +139,7 @@ function draw(){const diff=document.body.classList.contains('diff'),tp=top1();le
   q(L,'play').textContent=L.play?'⏸ anhalten':'▶ abspielen';const c=changed(L);ch=ch||c;
   q(L,'lab').innerHTML=!L.d?'wird geladen ...':'Bild <span class="n">'+L.t.toFixed(3)+'</span> &nbsp; Anfang <span class="n">'+L.s.toFixed(3)+'</span> &nbsp; Ende <span class="n">'+L.e.toFixed(3)+'</span> von '+L.d.toFixed(3)+' s &nbsp; Einsatz <span class="n">'+L.ld.toFixed(3)+'</span>'+(rate(L.n)!==1?' &nbsp; Tempo '+rate(L.n):'')+(KURVE[pth(L.n)]?' &nbsp; (Tempo Kurve nicht eingerechnet)':'')+(c?' &nbsp; <span style="color:#fd8">noch nicht gemerkt</span>':'');}
  $('save').classList.toggle('on',ch);$('sinfo').textContent=ch?'Noch nicht gemerkt.':'So ist es gemerkt.';$('diff').classList.toggle('on',diff);
- $('play').textContent=PLAYING?'anhalten':'So spielt es die App';axDraw();}
+ $('play').textContent=PLAYING?'anhalten':'So spielt es die App';$('pall').textContent=LAY.some(L=>L.play)?'⏸ alle anhalten':'▶ alle sichtbaren abspielen';axDraw();}
 const HTML='<div class="bar"><label><input type="checkbox" data-k="on">sichtbar</label><span class="ttl" data-k="ttl"></span><button data-k="up" title="nach oben legen">nach oben</button></div>'
  +'<div class="bar"><span class="z">Durchsicht</span><input type="range" data-k="op" min="0" max="100" step="1" value="100"><span data-k="oplab" style="min-width:38px">100 %</span></div>'
  +'<div class="bar"><span class="z">Regler</span><button data-k="mt">Bild</button><button data-k="ms">Anfang</button><button data-k="me">Ende</button><button data-k="ml">Einsatz</button></div>'
@@ -196,6 +199,14 @@ const seeked=(v,t)=>new Promise(res=>{if(Math.abs(v.currentTime-t)<0.0004&&!v.se
 async function solo(L){if(!L.d)return;if(L.play){L.t=r3(Math.min(L.e,L.v.currentTime));soloStop(L);show();return;}stop();const tok=++STOK;L.play=tok;L.on=true;L.mode='t';
  if(L.t>=L.e-0.02||L.t<L.s)L.t=L.s;draw();await seeked(L.v,L.t);if(L.play!==tok)return;busy();L.v.playbackRate=rate(L.n);L.v.play().catch(()=>{});
  const tick=()=>{if(L.play!==tok)return;const t=L.v.currentTime;if(t>=L.e||L.v.ended){L.t=L.e;soloStop(L);show();return;}L.t=r3(t);draw();requestAnimationFrame(tick);};requestAnimationFrame(tick);}
+/* all visible layers at once (Metin, 02:29): they start in the same moment, each from its play head, and each stops at its own end mark */
+async function allPlay(){if(LAY.some(L=>L.play)){for(const L of LAY)if(L.play){L.t=r3(Math.min(L.e,L.v.currentTime));soloStop(L);}show();return;}
+ const on=LAY.filter(L=>L.on&&L.d);if(!on.length)return;stop();const tok=++STOK;for(const L of on){L.play=tok;L.mode='t';if(L.t>=L.e-0.02||L.t<L.s)L.t=L.s;}draw();
+ await Promise.all(on.map(L=>seeked(L.v,L.t)));const go=on.filter(L=>L.play===tok);busy();
+ for(const L of go)L.v.playbackRate=rate(L.n);for(const L of go)L.v.play().catch(()=>{});
+ const tick=()=>{let any=false;for(const L of go){if(L.play!==tok)continue;const t=L.v.currentTime;if(t>=L.e||L.v.ended){L.t=L.e;soloStop(L);}else{L.t=r3(t);any=true;}}
+  if(any){draw();requestAnimationFrame(tick);}else show();};requestAnimationFrame(tick);}
+$('pall').onclick=allPlay;$('gall').onclick=()=>{stop();for(const L of LAY){if(!L.d)continue;soloStop(L);L.mode='t';L.t=L.s;}show();};
 /* the hand over once in real time, the way stageShow does it for a loop */
 async function play(){if(PLAYING){stop();return;}const a=lay($('hf').value),b=lay($('ht').value);if(!a||!b||a===b||!a.d||!b.d)return;LAY.forEach(soloStop);PLAYING=true;const tok=++TOK;
  document.body.classList.remove('diff');draw();
