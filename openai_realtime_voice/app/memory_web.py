@@ -627,6 +627,16 @@ let LIGHT=false,STALLS=[];
 const PHONE=Math.min(screen.width,screen.height)*(window.devicePixelRatio||1)<=1600;
 function lightNow(){try{const o=localStorage.getItem('llight');if(o==='an')return true;if(o==='aus')return false;}catch(e){}
  const c=navigator.connection;return LIGHT||PHONE||!!(c&&(c.type==='cellular'||c.saveData));}
+/* 2.171.0 (Metin, 25 Nov 2026: is it the phone's internet?): how fast a clip really arrives. Now and then the page
+   loads the first megabyte of the clip that is playing once more, times it from the first to the last byte, and
+   reports kbit/s, the wait for the first byte and how often the picture had to wait since the last report. */
+let NETSTALL=0;
+async function netProbe(){try{if(document.hidden||!CODE)return;const v=document.getElementById(SV?'svid2':'svid'),src=v&&v.getAttribute('src');if(!src)return;
+  const t0=performance.now(),r=await fetch(src+(src.includes('?')?'&':'?')+'probe='+Date.now(),{headers:{Range:'bytes=0-999999'},cache:'no-store'}),rd=r.body.getReader();let n=0,t1=0;
+  for(;;){const x=await rd.read();if(x.done)break;if(!t1)t1=performance.now();n+=x.value.length;}
+  const t2=performance.now();if(n<200000||t2-t1<3)return;const st=NETSTALL;NETSTALL=0;
+  post('/api/netstats',{kbps:Math.round(n*8/(t2-t1)),ttfb:Math.round(t1-t0),stalls:st,light:src.includes('m=1')?1:0}).catch(()=>{});}catch(e){}}
+setTimeout(netProbe,12000);setInterval(netProbe,180000);
 function stallSeen(){if(lightNow())return;const t=Date.now();STALLS=STALLS.filter(x=>t-x<60000);STALLS.push(t);if(STALLS.length>=2)LIGHT=true;}
 let RATE={},KURVE={},SCHNITT={},MUTE={},STUMM={},VOL={},LEAD={};  /* LEAD: when a loop clip comes in, seconds before the end mark of the clip before it; none = 0.25 (page /naht, 2.166.0) */  /* VOL: loudness factor of a clip, 1 = normal (2.164.0) */  /* MUTE: clips whose sound Metin switched off on the page /ganzes, STUMM: silent stretches [from,to] inside a clip (2.163.0); the files keep their sound and their length */
 /* 2.144.0 (Metin sets where a clip begins and ends, in the tester): the stage starts a clip at its mark, hands over at its end mark and holds the last picture there; the file stays whole */
@@ -669,7 +679,7 @@ function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name)&&!MUTE[name.in
   b.ontimeupdate=()=>{if(fol)fol();if(!b.duration)return;const e=endOf(b);
    if(e<b.duration-0.05&&!hold&&b.currentTime>e-0.6)hold=setTimeout(()=>{if(b.src===src0&&!b.paused){b.pause();fire();}},Math.max(0,(e-b.currentTime)*1000/(b.playbackRate||1)));  /* hold the last picture at the end mark */
    if(b.currentTime>e-PRELOAD_S||(b.currentTime>e-pre&&full()&&performance.now()-t0>2500))fire();};b.onended=fire;};
- {const pth=name.includes('/')?name:OUTFIT+'/'+name;b.dataset.pth=pth;const rt=rateAt(pth,0);b.src='/clips/'+pth+'.mp4?v='+(CVER[pth.split('/')[0]]||0)+(lightNow()?'&m=1':'');if(!b.dataset.st){b.dataset.st='1';b.addEventListener('waiting',()=>{if(b.classList.contains('on')&&b.currentTime>0.3)stallSeen();});}b.playbackRate=rt;b.onratechange=null;b.onloadedmetadata=()=>{b.playbackRate=rateAt(pth,0);const cs=cutStart(pth);if(cs)b.currentTime=cs;};}b.load();}
+ {const pth=name.includes('/')?name:OUTFIT+'/'+name;b.dataset.pth=pth;const rt=rateAt(pth,0);b.src='/clips/'+pth+'.mp4?v='+(CVER[pth.split('/')[0]]||0)+(lightNow()?'&m=1':'');if(!b.dataset.st){b.dataset.st='1';b.addEventListener('waiting',()=>{if(b.classList.contains('on')&&b.currentTime>0.3){NETSTALL++;stallSeen();}});}b.playbackRate=rt;b.onratechange=null;b.onloadedmetadata=()=>{b.playbackRate=rateAt(pth,0);const cs=cutStart(pth);if(cs)b.currentTime=cs;};}b.load();}
 /* every loop once before one comes again (Metin, 25 Nov 2026, 04:44: 1, 2, 3, then 2, 3, 2 and loop 1 only much later is wrong): a round holds each loop once in random order, and a new round never begins with the loop that just ran */
 function roundPick(R,v,cur){let b=(R.b||[]).filter(n=>v.includes(n));
  if(!b.length||(b.length===1&&b[0]===cur&&v.length>1)){b=v.slice();for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)),t=b[i];b[i]=b[j];b[j]=t;}}
@@ -1430,6 +1440,32 @@ MOBIL = None
 
 
 DIAG = collections.deque(maxlen=30)
+def net_kind(peer: str, own: str = "") -> str:
+    """Where a request came from: over Tailscale (100.64.0.0/10), from the home network, or from this
+    host itself (a subnet router may hand Tailscale traffic on under its own address)."""
+    parts = (peer or "").split(".")
+    if len(parts) == 4 and parts[0] == "100" and parts[1].isdigit() and 64 <= int(parts[1]) <= 127:
+        return "tailscale"
+    if peer and (peer == own or peer.startswith("127.") or peer == "::1"):
+        return "host"
+    if peer.startswith(("192.168.", "10.")) or (len(parts) == 4 and parts[0] == "172"):
+        return "wlan"
+    return "sonst"
+
+
+def net_stats() -> dict:
+    """The speed reports of the phones as numbers, per way they came in."""
+    out = {"n": len(NET), "letzte": list(NET)[-12:]}
+    for kind in sorted({i["weg"] for i in NET}):
+        items = [i for i in NET if i["weg"] == kind]
+        speeds = sorted(i["kbps"] for i in items)
+        out[kind] = {"n": len(items), "kbps_median": speeds[len(speeds) // 2], "kbps_min": speeds[0],
+                     "kbps_p10": speeds[len(speeds) // 10], "kbps_max": speeds[-1],
+                     "ttfb_median": sorted(i["ttfb"] for i in items)[len(items) // 2],
+                     "stalls": sum(i["stalls"] for i in items)}
+    return out
+
+
 def hand_stats() -> dict:
     """The loop hand overs the phones reported, as numbers: count, median and worst."""
     items = list(HAND)
@@ -1442,6 +1478,7 @@ def hand_stats() -> dict:
     return out
 
 
+NET = collections.deque(maxlen=400)    # 2.171.0: how fast clips arrive at the phones (numbers only)
 HAND = collections.deque(maxlen=300)   # 2.167.0: how exactly a loop handed over on the phone, in ms (numbers only)
 TIMING = collections.deque(maxlen=50)  # 2.141.6: chat times, server part against what the phone saw
 
@@ -1793,6 +1830,19 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
             if item:
                 HAND.append({"at": time.strftime("%H:%M:%S"), **item})
             await _respond(writer, "200 OK", "application/json", json.dumps({"ok": bool(item)}))
+        elif method == "POST" and path == "/api/netstats":
+            # 2.171.0: the page timed the first megabyte of a clip; kbit/s, ms to the first byte, waits of the picture
+            num = lambda k: isinstance(d.get(k), (int, float)) and not isinstance(d.get(k), bool) and 0 <= d[k] < 10 ** 7
+            ok = num("kbps") and d["kbps"] > 0
+            if ok:
+                peer = (writer.get_extra_info("peername") or ("",))[0]
+                own = (writer.get_extra_info("sockname") or ("",))[0]
+                NET.append({"at": time.strftime("%H:%M:%S"), "weg": net_kind(str(peer), str(own)),
+                            "kbps": int(d["kbps"]), "ttfb": int(d["ttfb"]) if num("ttfb") else 0,
+                            "stalls": int(d["stalls"]) if num("stalls") else 0, "light": 1 if d.get("light") else 0})
+            await _respond(writer, "200 OK", "application/json", json.dumps({"ok": bool(ok)}))
+        elif method == "GET" and path == "/api/netstats":
+            await _respond(writer, "200 OK", "application/json", json.dumps(net_stats()))
         elif method == "GET" and path == "/api/handstats":
             await _respond(writer, "200 OK", "application/json", json.dumps(hand_stats()))
         elif method == "GET" and path == "/api/diag":

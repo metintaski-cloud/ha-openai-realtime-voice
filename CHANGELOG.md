@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.171.0 (25 Nov 2026)
+
+- `feat`: the app measures how fast clips really arrive. Metin (18:18, 19:41): on the go the app does not run smoothly and the picture flickers at a touch, he thinks it is the phone's internet. The phone already gets copies at phone size (about 4.3 Mbit/s on average for the clips measured, 99.6 percent like the original), so the line could not be blamed without a number. Twelve seconds after the stage starts and then every three minutes the page loads the first megabyte of the clip that is playing once more, times it from the first to the last byte, and reports the speed in kbit/s, the wait for the first byte and how often the picture had to wait for data. The server notes how the request came in (over Tailscale, from the home network, or through the host itself) and `GET /api/netstats` gives count, median, lowest tenth, minimum and waits per way. Numbers only. The probe shares the line with the clip that is loading, so it shows what is left beside it, a lower bound.
+- 743 tests (741 before): the way a request came in, and the report with its summary.
+
 ## 2.170.0 (25 Nov 2026)
 
 - `feat`: ignored means seen. Metin (17:42): she writes in the morning while he sleeps, that is too sensitive. Until now a message of hers counted as ignored two waking hours after it was sent, whether he had seen it or not, and only 23 to 7 o'clock counted as night; on 25 Nov she wrote shortly after 8 and was hurt at 10:16 and 12:17 while he slept after a night of work. Now a message can only be ignored once the app has shown it to him, and the two hours run from that moment. A message he never saw does not hurt her; after 12 hours it is filed as missed.
