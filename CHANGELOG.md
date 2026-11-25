@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.171.1 (25 Nov 2026)
+
+- `fix`: the speed probe can no longer slow the picture. Two minutes after 2.171.0 was installed Metin wrote "stockt jetzt extrem" (20:11, on mobile data). The probe loaded a whole megabyte with no time limit; on a weak line that takes a long time beside the clip, and until it ended nothing was reported, so his phone sent no number at all. Now it asks for 300 kB at most, is cut off after 3 seconds and reports what came until then (0 if nothing came), never runs while the picture itself waits for data (then it only reports that it waits), runs at most once a minute, and also six seconds after the app comes back to the front. Measured in a test browser, line throttled: at 20 Mbit/s it takes 0.2 s and reports 17.1, at 4 it takes 0.7 s and reports 3.99, at 0.5 it takes 3.0 s and reports 0.50, at 0.05 it takes 3.0 s and reports 0.048. The old probe needed 16 s at 0.5 Mbit/s and 160 s at 0.05.
+- 743 tests, the report test now covers the cut off, the waiting picture and a line that brought nothing.
+
 ## 2.171.0 (25 Nov 2026)
 
 - `feat`: the app measures how fast clips really arrive. Metin (18:18, 19:41): on the go the app does not run smoothly and the picture flickers at a touch, he thinks it is the phone's internet. The phone already gets copies at phone size (about 4.3 Mbit/s on average for the clips measured, 99.6 percent like the original), so the line could not be blamed without a number. Twelve seconds after the stage starts and then every three minutes the page loads the first megabyte of the clip that is playing once more, times it from the first to the last byte, and reports the speed in kbit/s, the wait for the first byte and how often the picture had to wait for data. The server notes how the request came in (over Tailscale, from the home network, or through the host itself) and `GET /api/netstats` gives count, median, lowest tenth, minimum and waits per way. Numbers only. The probe shares the line with the clip that is loading, so it shows what is left beside it, a lower bound.

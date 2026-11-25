@@ -60,12 +60,16 @@ def test_where_a_request_came_from():
 
 
 async def test_the_page_reports_how_fast_clips_arrive(tmp_path):
-    """Numbers only: kbit/s of the first megabyte, the wait for the first byte, how often the picture waited."""
+    """Numbers only: kbit/s of a short probe, the wait for the first byte, how often the picture waited.
+    2.171.1: the probe is small, cut off after 3 s and never runs while the picture itself waits; a line that
+    brought nothing is reported as 0."""
     import asyncio
 
     from app import memory
     app = open(memory_web.__file__, encoding="utf-8").read()
-    assert "async function netProbe()" in app and "headers:{Range:'bytes=0-999999'}" in app and "NETSTALL++" in app
+    assert "async function netProbe()" in app and "headers:{Range:'bytes=0-299999'}" in app and "NETSTALL++" in app
+    assert "setTimeout(()=>ac.abort(),3000)" in app and "signal:ac.signal" in app and "Date.now()-NETAT<60000" in app
+    assert "if(!v.paused&&!v.ended&&v.readyState<3){post('/api/netstats',{kbps:0,ttfb:0,stalls:st,light,wait:1})" in app
     memory_web.NET.clear()
     server = await memory_web.start_http(memory.MemoryStore(str(tmp_path / "m.json")), None,
                                          host="127.0.0.1", port=0)
@@ -83,11 +87,12 @@ async def test_the_page_reports_how_fast_clips_arrive(tmp_path):
         for kbps, stalls in ((9000, 0), (2500, 2), (7000, 0)):
             assert json.loads(await call("POST", {"kbps": kbps, "ttfb": 120, "stalls": stalls, "light": 1, "code": "x"}))["ok"]
         assert not json.loads(await call("POST", {"kbps": "schnell", "text": "nothing personal is kept"}))["ok"]
-        assert not json.loads(await call("POST", {"kbps": 0}))["ok"]
+        assert not json.loads(await call("POST", {"kbps": -5}))["ok"]
+        assert json.loads(await call("POST", {"kbps": 0, "ttfb": 0, "stalls": 3, "light": 1, "wait": 1}))["ok"]
         got = json.loads(await call("GET"))
     finally:
         server.close()
         memory_web.NET.clear()
-    assert got["n"] == 3 and got["host"] == {"n": 3, "kbps_median": 7000, "kbps_min": 2500, "kbps_p10": 2500,
-                                             "kbps_max": 9000, "ttfb_median": 120, "stalls": 2}
-    assert set(got["letzte"][0]) == {"at", "weg", "kbps", "ttfb", "stalls", "light"}
+    assert got["n"] == 4 and got["host"] == {"n": 4, "kbps_median": 7000, "kbps_min": 0, "kbps_p10": 0,
+                                             "kbps_max": 9000, "ttfb_median": 120, "stalls": 5, "wartend": 1}
+    assert set(got["letzte"][0]) == {"at", "weg", "kbps", "ttfb", "stalls", "light", "wait"}

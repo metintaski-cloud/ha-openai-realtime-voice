@@ -630,13 +630,18 @@ function lightNow(){try{const o=localStorage.getItem('llight');if(o==='an')retur
 /* 2.171.0 (Metin, 25 Nov 2026: is it the phone's internet?): how fast a clip really arrives. Now and then the page
    loads the first megabyte of the clip that is playing once more, times it from the first to the last byte, and
    reports kbit/s, the wait for the first byte and how often the picture had to wait since the last report. */
-let NETSTALL=0;
-async function netProbe(){try{if(document.hidden||!CODE)return;const v=document.getElementById(SV?'svid2':'svid'),src=v&&v.getAttribute('src');if(!src)return;
-  const t0=performance.now(),r=await fetch(src+(src.includes('?')?'&':'?')+'probe='+Date.now(),{headers:{Range:'bytes=0-999999'},cache:'no-store'}),rd=r.body.getReader();let n=0,t1=0;
-  for(;;){const x=await rd.read();if(x.done)break;if(!t1)t1=performance.now();n+=x.value.length;}
-  const t2=performance.now();if(n<200000||t2-t1<3)return;const st=NETSTALL;NETSTALL=0;
-  post('/api/netstats',{kbps:Math.round(n*8/(t2-t1)),ttfb:Math.round(t1-t0),stalls:st,light:src.includes('m=1')?1:0}).catch(()=>{});}catch(e){}}
-setTimeout(netProbe,12000);setInterval(netProbe,180000);
+let NETSTALL=0,NETAT=0;
+/* 2.171.1: the probe must never slow the picture. 300 kB at most, cut off after 3 s, never while the picture
+   itself waits for data (then it only reports that), at most once a minute; what arrived until the cut counts. */
+async function netProbe(){try{if(document.hidden||!CODE||Date.now()-NETAT<60000)return;const v=document.getElementById(SV?'svid2':'svid'),src=v&&v.getAttribute('src');if(!src)return;
+  NETAT=Date.now();const st=NETSTALL,light=src.includes('m=1')?1:0;NETSTALL=0;
+  if(!v.paused&&!v.ended&&v.readyState<3){post('/api/netstats',{kbps:0,ttfb:0,stalls:st,light,wait:1}).catch(()=>{});return;}
+  const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),3000),t0=performance.now();let n=0,t1=0,t2=0;
+  try{const r=await fetch(src+(src.includes('?')?'&':'?')+'probe='+Date.now(),{headers:{Range:'bytes=0-299999'},cache:'no-store',signal:ac.signal}),rd=r.body.getReader();
+   for(;;){const x=await rd.read();if(x.done)break;if(!t1)t1=performance.now();n+=x.value.length;t2=performance.now();}}catch(e){}
+  clearTimeout(tm);const ms=t2-t1>=20?t2-t1:t2-t0;
+  post('/api/netstats',{kbps:n?Math.round(n*8/Math.max(ms,1)):0,ttfb:t1?Math.round(t1-t0):3000,stalls:st,light,wait:0}).catch(()=>{});}catch(e){}}
+setTimeout(netProbe,12000);setInterval(netProbe,180000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(netProbe,6000);});
 function stallSeen(){if(lightNow())return;const t=Date.now();STALLS=STALLS.filter(x=>t-x<60000);STALLS.push(t);if(STALLS.length>=2)LIGHT=true;}
 let RATE={},KURVE={},SCHNITT={},MUTE={},STUMM={},VOL={},LEAD={};  /* LEAD: when a loop clip comes in, seconds before the end mark of the clip before it; none = 0.25 (page /naht, 2.166.0) */  /* VOL: loudness factor of a clip, 1 = normal (2.164.0) */  /* MUTE: clips whose sound Metin switched off on the page /ganzes, STUMM: silent stretches [from,to] inside a clip (2.163.0); the files keep their sound and their length */
 /* 2.144.0 (Metin sets where a clip begins and ends, in the tester): the stage starts a clip at its mark, hands over at its end mark and holds the last picture there; the file stays whole */
@@ -1462,7 +1467,8 @@ def net_stats() -> dict:
         out[kind] = {"n": len(items), "kbps_median": speeds[len(speeds) // 2], "kbps_min": speeds[0],
                      "kbps_p10": speeds[len(speeds) // 10], "kbps_max": speeds[-1],
                      "ttfb_median": sorted(i["ttfb"] for i in items)[len(items) // 2],
-                     "stalls": sum(i["stalls"] for i in items)}
+                     "stalls": sum(i["stalls"] for i in items),
+                     "wartend": sum(i.get("wait", 0) for i in items)}
     return out
 
 
@@ -1833,13 +1839,14 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
         elif method == "POST" and path == "/api/netstats":
             # 2.171.0: the page timed the first megabyte of a clip; kbit/s, ms to the first byte, waits of the picture
             num = lambda k: isinstance(d.get(k), (int, float)) and not isinstance(d.get(k), bool) and 0 <= d[k] < 10 ** 7
-            ok = num("kbps") and d["kbps"] > 0
+            ok = num("kbps")  # 0 = nothing came within 3 s, or the picture itself was waiting (2.171.1)
             if ok:
                 peer = (writer.get_extra_info("peername") or ("",))[0]
                 own = (writer.get_extra_info("sockname") or ("",))[0]
                 NET.append({"at": time.strftime("%H:%M:%S"), "weg": net_kind(str(peer), str(own)),
                             "kbps": int(d["kbps"]), "ttfb": int(d["ttfb"]) if num("ttfb") else 0,
-                            "stalls": int(d["stalls"]) if num("stalls") else 0, "light": 1 if d.get("light") else 0})
+                            "stalls": int(d["stalls"]) if num("stalls") else 0, "light": 1 if d.get("light") else 0,
+                            "wait": 1 if d.get("wait") else 0})
             await _respond(writer, "200 OK", "application/json", json.dumps({"ok": bool(ok)}))
         elif method == "GET" and path == "/api/netstats":
             await _respond(writer, "200 OK", "application/json", json.dumps(net_stats()))
