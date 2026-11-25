@@ -623,6 +623,17 @@ function clipFor(st){const lv=st.low&&st.level&&st.mood!=='eifersuechtig'?'traur
 /* light copies on the go (2.141.0, Metin: the 4K clips stall on mobile data). Automatic:
    on mobile data, or after a clip has stalled twice within a minute. */
 let LIGHT=false,STALLS=[];
+/* 2.172.0: the small copy (m=2, about 2 Mbit/s) for a line that cannot carry the light one. Only her own
+   picture decides: three waits for data within a minute switch it on, unless the line was just measured as
+   fast. It goes back to the light copy when the line measures 9 Mbit/s or more, three minutes at the
+   earliest. Kept for half an hour, so the app starts small when Metin opens it again on the same line. */
+let SLOW=false,SLOWAT=0,SLOWST=[],NETK=0;try{const t=+localStorage.getItem('lslow')||0;if(t&&Date.now()-t<1800000){SLOW=true;SLOWAT=t;}}catch(e){}
+function slowKeep(){try{if(SLOW)localStorage.setItem('lslow',String(Date.now()));else localStorage.removeItem('lslow');}catch(e){}}
+function slowSet(on){if(SLOW===on)return;SLOW=on;SLOWAT=Date.now();SLOWST=[];slowKeep();}
+function slowStall(){const t=Date.now();SLOWST=SLOWST.filter(x=>t-x<60000);SLOWST.push(t);if(SLOW){slowKeep();return;}
+ if(SLOWST.length>=3&&lightNow()&&!(NETK>=9000&&t-NETAT<200000))slowSet(true);}
+function slowJudge(kbps){NETK=kbps;if(!SLOW)return;if(kbps>=9000&&Date.now()-SLOWAT>180000)slowSet(false);else slowKeep();}
+function tierNow(){return lightNow()?(SLOW?'&m=2':'&m=1'):'';}
 /* 2.143.0: a phone always gets the copy at phone size (1440 px wide); its screen cannot show more and decoding 4K made it warm (Metin) */
 const PHONE=Math.min(screen.width,screen.height)*(window.devicePixelRatio||1)<=1600;
 function lightNow(){try{const o=localStorage.getItem('llight');if(o==='an')return true;if(o==='aus')return false;}catch(e){}
@@ -634,13 +645,13 @@ let NETSTALL=0,NETAT=0;
 /* 2.171.1: the probe must never slow the picture. 300 kB at most, cut off after 3 s, never while the picture
    itself waits for data (then it only reports that), at most once a minute; what arrived until the cut counts. */
 async function netProbe(){try{if(document.hidden||!CODE||Date.now()-NETAT<60000)return;const v=document.getElementById(SV?'svid2':'svid'),src=v&&v.getAttribute('src');if(!src)return;
-  NETAT=Date.now();const st=NETSTALL,light=src.includes('m=1')?1:0;NETSTALL=0;
+  NETAT=Date.now();const st=NETSTALL,light=src.includes('m=2')?2:src.includes('m=1')?1:0;NETSTALL=0;
   if(!v.paused&&!v.ended&&v.readyState<3){post('/api/netstats',{kbps:0,ttfb:0,stalls:st,light,wait:1}).catch(()=>{});return;}
   const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),3000),t0=performance.now();let n=0,t1=0,t2=0;
   try{const r=await fetch(src+(src.includes('?')?'&':'?')+'probe='+Date.now(),{headers:{Range:'bytes=0-299999'},cache:'no-store',signal:ac.signal}),rd=r.body.getReader();
    for(;;){const x=await rd.read();if(x.done)break;if(!t1)t1=performance.now();n+=x.value.length;t2=performance.now();}}catch(e){}
-  clearTimeout(tm);const ms=t2-t1>=20?t2-t1:t2-t0;
-  post('/api/netstats',{kbps:n?Math.round(n*8/Math.max(ms,1)):0,ttfb:t1?Math.round(t1-t0):3000,stalls:st,light,wait:0}).catch(()=>{});}catch(e){}}
+  clearTimeout(tm);const ms=t2-t1>=20?t2-t1:t2-t0,kbps=n?Math.round(n*8/Math.max(ms,1)):0;slowJudge(kbps);
+  post('/api/netstats',{kbps,ttfb:t1?Math.round(t1-t0):3000,stalls:st,light,wait:0}).catch(()=>{});}catch(e){}}
 setTimeout(netProbe,12000);setInterval(netProbe,180000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(netProbe,6000);});
 function stallSeen(){if(lightNow())return;const t=Date.now();STALLS=STALLS.filter(x=>t-x<60000);STALLS.push(t);if(STALLS.length>=2)LIGHT=true;}
 let RATE={},KURVE={},SCHNITT={},MUTE={},STUMM={},VOL={},LEAD={};  /* LEAD: when a loop clip comes in, seconds before the end mark of the clip before it; none = 0.25 (page /naht, 2.166.0) */  /* VOL: loudness factor of a clip, 1 = normal (2.164.0) */  /* MUTE: clips whose sound Metin switched off on the page /ganzes, STUMM: silent stretches [from,to] inside a clip (2.163.0); the files keep their sound and their length */
@@ -684,7 +695,7 @@ function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name)&&!MUTE[name.in
   b.ontimeupdate=()=>{if(fol)fol();if(!b.duration)return;const e=endOf(b);
    if(e<b.duration-0.05&&!hold&&b.currentTime>e-0.6)hold=setTimeout(()=>{if(b.src===src0&&!b.paused){b.pause();fire();}},Math.max(0,(e-b.currentTime)*1000/(b.playbackRate||1)));  /* hold the last picture at the end mark */
    if(b.currentTime>e-PRELOAD_S||(b.currentTime>e-pre&&full()&&performance.now()-t0>2500))fire();};b.onended=fire;};
- {const pth=name.includes('/')?name:OUTFIT+'/'+name;b.dataset.pth=pth;const rt=rateAt(pth,0);b.src='/clips/'+pth+'.mp4?v='+(CVER[pth.split('/')[0]]||0)+(lightNow()?'&m=1':'');if(!b.dataset.st){b.dataset.st='1';b.addEventListener('waiting',()=>{if(b.classList.contains('on')&&b.currentTime>0.3){NETSTALL++;stallSeen();}});}b.playbackRate=rt;b.onratechange=null;b.onloadedmetadata=()=>{b.playbackRate=rateAt(pth,0);const cs=cutStart(pth);if(cs)b.currentTime=cs;};}b.load();}
+ {const pth=name.includes('/')?name:OUTFIT+'/'+name;b.dataset.pth=pth;const rt=rateAt(pth,0);b.src='/clips/'+pth+'.mp4?v='+(CVER[pth.split('/')[0]]||0)+tierNow();if(!b.dataset.st){b.dataset.st='1';b.addEventListener('waiting',()=>{if(b.classList.contains('on')&&b.currentTime>0.3){NETSTALL++;slowStall();stallSeen();}});}b.playbackRate=rt;b.onratechange=null;b.onloadedmetadata=()=>{b.playbackRate=rateAt(pth,0);const cs=cutStart(pth);if(cs)b.currentTime=cs;};}b.load();}
 /* every loop once before one comes again (Metin, 25 Nov 2026, 04:44: 1, 2, 3, then 2, 3, 2 and loop 1 only much later is wrong): a round holds each loop once in random order, and a new round never begins with the loop that just ran */
 function roundPick(R,v,cur){let b=(R.b||[]).filter(n=>v.includes(n));
  if(!b.length||(b.length===1&&b[0]===cur&&v.length>1)){b=v.slice();for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)),t=b[i];b[i]=b[j];b[j]=t;}}
@@ -1218,12 +1229,13 @@ def list_music() -> list:
         return []
 
 
-async def _send_clip(writer, look: str, name: str, ext: str, lines: list, light: bool = False) -> None:
+async def _send_clip(writer, look: str, name: str, ext: str, lines: list, light: int = 0) -> None:
     """One clip or still of a look, with byte ranges, because Chrome asks for parts of a video.
-    `light`: the page is on mobile data, send the light copy if there is one (2.141.0)."""
+    `light`: 1 = the page is on mobile data, send the light copy if there is one (2.141.0);
+    2 = its line cannot carry that one either, send the small copy if there is one (2.172.0)."""
     fn = os.path.join(clips_dir(), look, f"{name}.{ext}")
     if light and ext == "mp4":
-        fn = mobil_runner().copy_for(f"{look}/{name}", fn) or fn
+        fn = mobil_runner().copy_for(f"{look}/{name}", fn, small=light == 2) or fn
     try:
         size = os.path.getsize(fn)
     except OSError:
@@ -1766,7 +1778,7 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
         elif method == "GET" and CLIP_RE.match(path):
             m = CLIP_RE.match(path)
             await _send_clip(writer, m.group(1), m.group(2), m.group(3), lines,
-                             light="m=1" in query.split("&"))
+                             light=2 if "m=2" in query.split("&") else 1 if "m=1" in query.split("&") else 0)
         elif method == "GET" and path == "/manifest.json":
             await _respond(writer, "200 OK", "application/manifest+json", MANIFEST)
         elif method == "GET" and path == "/api/tempo":
@@ -1845,7 +1857,7 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                 own = (writer.get_extra_info("sockname") or ("",))[0]
                 NET.append({"at": time.strftime("%H:%M:%S"), "weg": net_kind(str(peer), str(own)),
                             "kbps": int(d["kbps"]), "ttfb": int(d["ttfb"]) if num("ttfb") else 0,
-                            "stalls": int(d["stalls"]) if num("stalls") else 0, "light": 1 if d.get("light") else 0,
+                            "stalls": int(d["stalls"]) if num("stalls") else 0, "light": 2 if d.get("light") == 2 else 1 if d.get("light") else 0,
                             "wait": 1 if d.get("wait") else 0})
             await _respond(writer, "200 OK", "application/json", json.dumps({"ok": bool(ok)}))
         elif method == "GET" and path == "/api/netstats":

@@ -10,6 +10,7 @@ The original in the media folder is never touched.
 
 Like YouTube, but simple: the page asks for the copy with ?m=1 when the phone is on mobile
 data or a clip has stalled; the server sends the copy if there is one, else the original.
+With ?m=2 it asks for the small copy (2.172.0, see SMALL_RATE); the server sends the best it has.
 """
 import asyncio
 import json
@@ -28,10 +29,26 @@ MAX_W = 1440              # 2.143.0: the copies are made at phone size; a 1080 p
 # were made without sound, and since the phone always gets the copy (2.143.0) every clip with sound
 # (kiss, rose, touch reactions) was silent on the phone. The sound track is now copied unchanged.
 CAP = f"{MAX_RATE}/{MAX_W}/ton"
+# 2.172.0, a second, smaller copy for a line that cannot carry the first. Metin on the late shift, mobile data
+# through Tailscale, 25 Nov 2026: the picture waited for data 20 times in two minutes. The copy of
+# kurz/gluecklich4 averages 5.4 Mbit/s, he plays that loop at tempo 1.5, so it needs 8.1. The small copy of the
+# same clip averages 2.1 and peaks at 2.8 (3.2 and 4.2 at his tempo), SSIM against the original at this size
+# 0.9926 instead of 0.9965. Same width: 1080 px wide at the same rate was no better (0.9920 on a 1440 screen,
+# 0.9939 against 0.9937 on a 1080 one). Made from the original, not from the copy: 14 s against 13 s here and
+# 0.9926 against 0.9920. The page asks for it with m=2 only while its own picture keeps waiting.
+SMALL_RATE = "2M"
+SMALL_BUF = "3M"
+SMALL_HEAVY = 3_000_000   # a clip whose strongest second is below this needs no small copy
+CAP_SMALL = f"{SMALL_RATE}/{MAX_W}/ton"
 PROBE_TIMEOUT = 30.0
 ENCODE_TIMEOUT = 1800.0
 RESCAN_S = 120            # 2.146.1: was 30 min; a clip Metin has just swapped in then played as the 4K original on
                           # the phone for up to half an hour. A scan only looks at file times, so it is cheap
+
+
+def loops_first(name: str) -> tuple:
+    """Order for the small copies: the loops she stands in most of the time come first."""
+    return (0 if "gluecklich" in name or "traurig" in name else 1, name)
 
 
 def peak_of(packets: str) -> int:
@@ -54,10 +71,12 @@ class Mobil:
         self.folder_of = folder_of        # () -> {"look/clip": path of the original}
         self.out_dir = out_dir
         self.index_path = os.path.join(out_dir, "index.json")
-        self.index = {}                   # "look/clip" -> {"stamp": mtime, "peak": bit/s, "cap": rate}
+        self.small_dir = out_dir.rstrip("/") + "_klein"
+        self.index = {}                   # "look/clip" -> {"stamp": mtime, "peak": bit/s, "cap": rate, "cap2": small}
         self.busy = ""
         self.done = 0
         self.failed = []
+        self.small_failed = set()
         self._load()
 
     # --- state ------------------------------------------------------------------
@@ -84,27 +103,42 @@ class Mobil:
         look, clip = name.split("/", 1)
         return os.path.join(self.out_dir, look, clip + ".mp4")
 
-    def copy_for(self, name: str, original: str) -> str:
-        """The light copy if it exists and is newer than the original, else ""."""
-        p = self.copy_path(name)
-        try:
-            if os.path.getmtime(p) >= os.path.getmtime(original):
-                return p
-        except OSError:
-            pass
+    def small_path(self, name: str) -> str:
+        look, clip = name.split("/", 1)
+        return os.path.join(self.small_dir, look, clip + ".mp4")
+
+    def copy_for(self, name: str, original: str, small: bool = False) -> str:
+        """The light copy if it exists and is newer than the original, else "".
+        `small`: the small copy if there is one, else the light one."""
+        for p in ([self.small_path(name)] if small else []) + [self.copy_path(name)]:
+            try:
+                if os.path.getmtime(p) >= os.path.getmtime(original):
+                    return p
+            except OSError:
+                pass
         return ""
+
+    def small_ready(self, name: str, original: str) -> bool:
+        return self.copy_for(name, original, small=True) == self.small_path(name)
 
     @staticmethod
     def needs_copy(m: dict) -> bool:
         """Too much for the line in its strongest second, or wider than a phone needs."""
         return m.get("peak", 0) > HEAVY or m.get("w", 0) > MAX_W
 
+    @staticmethod
+    def needs_small(m: dict) -> bool:
+        return m.get("peak", 0) > SMALL_HEAVY or m.get("w", 0) > MAX_W
+
     def status(self) -> dict:
         paths = self.folder_of()
         heavy = [n for n, m in self.index.items() if self.needs_copy(m) and n in paths]
         ready = [n for n in heavy if self.copy_for(n, paths[n])]
+        small = [n for n, m in self.index.items() if self.needs_small(m) and n in paths]
         return {"heavy": len(heavy), "ready": len(ready), "busy": self.busy,
-                "failed": self.failed[-10:], "max_rate": MAX_RATE, "max_w": MAX_W}
+                "failed": self.failed[-10:], "max_rate": MAX_RATE, "max_w": MAX_W,
+                "small": len(small), "small_ready": len([n for n in small if self.small_ready(n, paths[n])]),
+                "small_rate": SMALL_RATE}
 
     # --- work -------------------------------------------------------------------
     async def _probe(self, path: str) -> int:
@@ -129,7 +163,7 @@ class Mobil:
         except (OSError, asyncio.TimeoutError, ValueError):
             return 0
 
-    async def _encode(self, src: str, dst: str) -> bool:
+    async def _encode(self, src: str, dst: str, rate: str = MAX_RATE, buf: str = BUF) -> bool:
         os.makedirs(os.path.dirname(dst), exist_ok=True)
         tmp = dst + ".part.mp4"
         cmd = ("nice", "-n", "19", "ffmpeg", "-v", "error", "-y", "-i", src,
@@ -137,7 +171,7 @@ class Mobil:
                "-vf", f"scale='min({MAX_W},iw)':-2:flags=lanczos",
                "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-profile:v", "high",
                "-level", "5.1", "-pix_fmt", "yuv420p", "-g", "48", "-bf", "3",
-               "-maxrate", MAX_RATE, "-bufsize", BUF, "-movflags", "+faststart", tmp)
+               "-maxrate", rate, "-bufsize", buf, "-movflags", "+faststart", tmp)
         try:
             p = await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.DEVNULL,
                                                      stderr=asyncio.subprocess.PIPE)
@@ -155,8 +189,10 @@ class Mobil:
         os.replace(tmp, dst)
         return True
 
-    async def scan(self) -> None:
-        """Probe new or changed clips, make the missing copies, drop copies of clips that are gone."""
+    async def scan(self) -> bool:
+        """Probe new or changed clips, make the missing copies, drop copies of clips that are gone.
+        Then one small copy; True if more of them are still to make. One per scan, so that a clip Metin
+        has just swapped in gets its light copy at once and does not wait behind hundreds of small ones."""
         paths = self.folder_of()
         for name, path in sorted(paths.items()):
             try:
@@ -165,17 +201,16 @@ class Mobil:
                 continue
             m = self.index.get(name)
             if not m or m.get("stamp") != stamp or "peak" not in m or "w" not in m:
-                cap = m.get("cap") if m and m.get("stamp") == stamp else None
+                kept = {k: m[k] for k in ("cap", "cap2") if m and m.get("stamp") == stamp and m.get(k)}
                 self.index[name] = {"stamp": stamp, "peak": await self._probe(path),
-                                    "w": await self._width(path)}
-                if cap:
-                    self.index[name]["cap"] = cap
+                                    "w": await self._width(path), **kept}
         for name in [n for n in self.index if n not in paths]:
             self.index.pop(name, None)
-            try:
-                os.remove(self.copy_path(name))
-            except OSError:
-                pass
+            for gone in (self.copy_path(name), self.small_path(name)):
+                try:
+                    os.remove(gone)
+                except OSError:
+                    pass
         self._save()
         for name, m in sorted(self.index.items()):
             if not self.needs_copy(m):
@@ -193,12 +228,30 @@ class Mobil:
             else:
                 self.failed.append(name)
             await asyncio.sleep(1)
+        todo = [n for n in sorted(self.index, key=loops_first)
+                if self.needs_small(self.index[n]) and n not in self.small_failed
+                and not (self.small_ready(n, paths[n]) and self.index[n].get("cap2") == CAP_SMALL)]
+        if not todo:
+            return False
+        name = todo[0]
+        self.busy = name + " (klein)"
+        ok = await self._encode(paths[name], self.small_path(name), SMALL_RATE, SMALL_BUF)
+        self.busy = ""
+        if ok:
+            self.index[name]["cap2"] = CAP_SMALL
+            self._save()
+            logger.info("Mobil: small copy of %s ready (%d still to make)", name, len(todo) - 1)
+        else:
+            self.small_failed.add(name)   # not again before the next start, the loop must not spin on one clip
+            self.failed.append(name + " (klein)")
+        return len(todo) > 1
 
     async def run(self) -> None:
         await asyncio.sleep(60)           # let the add on start in peace first
         while True:
+            more = False
             try:
-                await self.scan()
+                more = await self.scan()
             except Exception as e:        # a broken clip must not stop the loop
                 logger.warning("Mobil: scan failed (%s)", e)
-            await asyncio.sleep(RESCAN_S)
+            await asyncio.sleep(2 if more else RESCAN_S)
