@@ -34,6 +34,10 @@ async def test_in_a_browser_enter_sends_on_a_pc_and_abc_stays(tmp_path):
             await asyncio.sleep(0.5)
             await page.evaluate(OPEN)
             assert await page.evaluate("()=>DESK") is True
+            box_pc = await page.evaluate("""()=>{const ta=document.getElementById('ctext'),w=()=>{const r=ta.getBoundingClientRect();return [Math.round(r.width),Math.round(r.height)];};
+              const o={can:CSS.supports('field-sizing','content'),empty:w()};ta.value='Hallo';o.short=w();ta.value='Hallo Leyla, wie war dein Tag heute so?';o.line=w();
+              ta.value='Das ist ein langer Text, der nicht mehr in eine Zeile passt und deshalb umbrechen muss, so wie ihre Blasen es auch tun.';o.long=w();
+              ta.value='x '.repeat(900);o.huge=w();ta.value='';o.again=w();return o;}""")
             await page.click("#ckb")
             await page.keyboard.type("Hallo Leyla")
             await page.keyboard.press("Shift+Enter")
@@ -63,6 +67,7 @@ async def test_in_a_browser_enter_sends_on_a_pc_and_abc_stays(tmp_path):
             await asyncio.sleep(0.5)
             await page.evaluate(OPEN)
             assert await page.evaluate("()=>DESK") is False
+            box_phone = await page.evaluate("()=>Math.round(document.getElementById('ctype').getBoundingClientRect().width)")
             await page.evaluate("()=>document.getElementById('ckb').onclick()")
             await page.keyboard.type("Hallo")
             await page.keyboard.press("Enter")
@@ -80,5 +85,16 @@ async def test_in_a_browser_enter_sends_on_a_pc_and_abc_stays(tmp_path):
     assert pc2["sent"] == ["Hallo Leyla\nzweite Zeile", "noch eine"] and pc2["abc"] and pc2["focus"], pc2
     assert pc3["readonly"] is True and pc3["abc"] is False, pc3
     assert "Naht: Schleifen einstellen" in menu and "/" in back, (menu, back)
+    # 2.172.4: on the monitor the box he writes in is as long as his text, like her bubbles (58 % were 1114 px);
+    # on the phone it stays 58 %
+    assert box_phone == 232, box_phone
+    if not box_pc["can"]:
+        pytest.skip("this browser cannot size a field by its content")
+    e, sh, ln, lo, hu = (box_pc[k] for k in ("empty", "short", "line", "long", "huge"))
+    assert 150 <= e[0] <= 260 and e[1] == 44, box_pc             # empty: the size of its hint, one line
+    assert sh[0] == 150 and sh[1] == 44, box_pc                  # a short word: the smallest size
+    assert sh[0] < ln[0] <= 440 and ln[1] == 44, box_pc          # it grows with the line
+    assert lo[0] == 440 and lo[1] > 44, box_pc                   # at 440 px it breaks the line and grows upwards
+    assert hu == [440, 110] and box_pc["again"] == e, box_pc     # never higher than 110 px, and back when empty
     assert ph["text"] == "Hallo\ndu" and ph["sent"] == [], ph                             # phone: Enter is a new line
     assert ph2["sent"] == ["Hallo\ndu"] and ph2["readonly"] is True and ph2["abc"] is False, ph2  # and back to dictation

@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.172.4 (26 Nov 2026)
+
+- `fix`: on the PC the box he writes in is as long as his text. Metin (00:00, 00:01, 00:02): "können wir auf PC meinen Texteingabe Kasten, in dem ich schreibe, was kleiner machen", "noch besser immer so lang, wie ich es schreibe darin", "wie bei Leyla". It took 58 % of the width, which is 1114 px on a 1920 px monitor. On a screen wider than high it now behaves like her bubbles: empty it has the size of its hint (150 px), it grows with the line up to 440 px, then breaks the line and grows upwards, 110 px high at most, and is small again after sending. It stands at the lower left in the dark beside her. A browser that cannot size a field by its content gets a fixed 380 px. The phone keeps its 58 % (232 of 400 px, measured before and after).
+- 752 tests, the browser test of typing now also measures the box empty, with a word, a line, a long text and a very long one.
+
 ## 2.172.3 (25 Nov 2026)
 
 - `feat`: typing to her on the PC. Metin (23:36): "dass ich auf PC mit Tastatur Enter den Text rausschicken kann und dass, wenn ich Nachricht rausschicke, abc Symbol nicht sofort umschaltet, umschalten nur wenn ich wieder mit der Maus drauf klicke". With mouse and keyboard Enter now sends the text (Shift and Enter makes a new line, an empty field sends nothing), and after sending the abc pill stays as he set it with the field ready for the next line; only his click switches it. The phone is told apart by touch instead of a mouse, not by the size of the screen (`PHONE` is true for his monitor too), and stays as it was: Enter is a new line, and after sending the field goes back to dictation.

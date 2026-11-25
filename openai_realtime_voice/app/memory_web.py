@@ -348,6 +348,12 @@ button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 #cin{position:absolute;z-index:2;left:8px;right:8px;bottom:8px;margin:0}
 #cin{display:grid;grid-template-columns:1fr auto 1fr;align-items:center}#cin #cnew{justify-self:start;margin:0;padding:9px 14px;font-size:14px}
 #ctype{display:flex;position:absolute;z-index:3;left:8px;right:auto;width:58%;bottom:8px;gap:6px;align-items:stretch}#chat #clog{bottom:70px}#ctype #cnew{width:auto;margin:0;padding:0 10px;font-size:13px;white-space:nowrap}#cin{display:none!important}
+/* 2.172.4 (Metin on the PC: the box he writes in should be smaller, "noch besser immer so lang, wie ich es schreibe, wie bei Leyla"): 58 % of a
+   monitor is over a metre of text field. On a screen wider than high the box is as long as what he has written, like her bubbles: it starts
+   at the size of its hint, grows with the text up to 440 px, then breaks the line and grows upwards. A browser that cannot size a field by
+   its content gets a fixed 380 px. Upright (phone) it stays 58 %. */
+@media (min-aspect-ratio:1/1){#chat #ctype{width:min(380px,30%)}
+ @supports (field-sizing:content){#chat #ctype{width:auto}#chat #ctype textarea{field-sizing:content;flex:none;min-width:150px;max-width:min(440px,30vw);height:auto;min-height:44px}}}
 #ctype #ckb{position:absolute;right:-2px;top:-30px;width:auto;padding:3px 9px;font-size:12px;border-radius:999px;background:#000a;border:1px solid #22d3ee66}#ctype #ckb.on{background:linear-gradient(90deg,#22d3ee,#8b5cf6);color:#04121e}
 #ctype textarea.hoert{border-color:#ef4444;box-shadow:0 0 14px #ef444488;animation:recp 1s infinite}
 #ctype textarea{flex:1;min-height:44px;max-height:110px;height:48px;font:inherit;color:#fff;background:#000a;backdrop-filter:blur(4px);border:1px solid var(--bl);border-radius:10px;padding:9px;resize:none}#ctype #csend{width:auto;padding:0 12px;font-size:15px}
