@@ -1678,7 +1678,7 @@ async function build(){
  /* left: the reference, always running */
  const rd=document.createElement('div');rd.className='p ref';
  const rt=document.createElement('div');rt.className='t g';
- const rv=document.createElement('video');rv.loop=true;rv.muted=true;rv.playsInline=true;
+ const rv=document.createElement('video');rv.loop=false;rv.muted=true;rv.playsInline=true;  /* no loop of its own: it starts again with the clip on the right (2.173.2) */
  const rrow=document.createElement('div');rrow.className='row';
  const rprev=document.createElement('button');rprev.textContent='◀';
  const rnext=document.createElement('button');rnext.textContent='▶';
@@ -1686,7 +1686,21 @@ async function build(){
  rd.append(rt,rv,rrow);
  const refShow=()=>{rt.textContent='Referenz: '+REF+'   (Tempo '+(RATES[REF]||1).toFixed(2)+')';
   rv.src='/clips/'+REF+'.mp4?t='+Date.now();rv.playbackRate=RATES[REF]||1;rv.play().catch(()=>{});save('lref',REF);};
- rv.onloadedmetadata=()=>{rv.playbackRate=RATES[REF]||1;};
+ rv.onloadedmetadata=()=>{rv.playbackRate=RATES[REF]||1;together();};
+ /* 2.173.2 (Metin: "da soll zusätzlich Referenz Clip links genau synchron laufen mit Clip rechts", "dass alle Clips synchron laufen"):
+    both clips begin together, and every time the clip on the right starts over, the reference starts over with it. The reference runs as
+    the app plays it (its begin, its end, its tempo and its stretches); if it is through first, it holds its last picture and waits. */
+ const refA=()=>{const c=SCHNITT[REF];return c&&c[0]>0?c[0]:0;};
+ const refB=()=>{const c=SCHNITT[REF],dd=rv.duration||0;return c&&c[1]>0&&c[1]<dd?c[1]:dd;};
+ const refRate=t=>{const k=KURVE[REF];if(k)for(const sg of k)if(t>=sg[0]&&t<sg[1])return sg[2];return RATES[REF]||1;};
+ const refWrap=()=>{if(!rv.duration)return;rv.currentTime=refA();if(rv.paused)rv.play().catch(()=>{});};
+ const refTick=()=>{if(rv.duration){const t=rv.currentTime,rr=refRate(t);if(Math.abs(rv.playbackRate-rr)>0.001)rv.playbackRate=rr;
+   if(!rv.paused&&t>=refB()-0.01&&refB()<rv.duration-0.02)rv.pause();}requestAnimationFrame(refTick);};
+ /* a new clip on either side: both wait at their first picture and start in the same moment */
+ let SYN=0;const together=()=>{if(!rv.duration||!v.duration)return;const id=++SYN;let n=0;
+  const go=()=>{if(id!==SYN)return;v.play().catch(()=>{});rv.play().catch(()=>{});};
+  const one=(x,t)=>{const h=()=>{x.removeEventListener('seeked',h);if(++n===2)go();};x.addEventListener('seeked',h);x.pause();x.currentTime=t;};
+  one(v,cutA());one(rv,refA());setTimeout(()=>{if(id===SYN&&n<2){n=2;go();}},700);};
  const refStep=k=>{const i=NAMES.indexOf(REF);REF=NAMES[((i<0?0:i)+k+NAMES.length)%NAMES.length];refShow();};
  rprev.onclick=()=>refStep(-1);rnext.onclick=()=>refStep(1);
  rv.addEventListener('wheel',e=>{e.preventDefault();refStep(e.deltaY>0?1:-1);},{passive:false});
@@ -1744,7 +1758,7 @@ async function build(){
  prev.onclick=()=>step(-1);next.onclick=()=>step(1);
  pick.onchange=()=>{cur=pick.value;if(!NAMES.includes(cur))NAMES.push(cur);r.value=String(RATES[cur]||1);lab.textContent=Number(r.value).toFixed(2);play();segShow();};
  /* --- begin and end --- */
- let SEAM=false,DUR=10;const FR=1/24;
+ let SEAM=false,DUR=10,LT=0;const FR=1/24;
  const cutA=()=>Number(cfrom.value),cutB=()=>Number(cto.value);
  const cutShow=()=>{const c=SCHNITT[cur],sv=c&&Math.abs(c[0]-cutA())<0.011&&Math.abs((c[1]||DUR)-cutB())<0.011;
   clab.textContent='Anfang '+cutA().toFixed(2)+' s   Ende '+cutB().toFixed(2)+' s von '+DUR.toFixed(2)+' s'+(sv?'   (gemerkt)':(cutA()>0||cutB()<DUR-0.03?'   (noch nicht gemerkt)':''))+(SEAM?'   Ansicht: Ende, dann Anfang':'');};
@@ -1765,7 +1779,7 @@ async function build(){
  cclr.onclick=async()=>{if(await cutSave(0,0)){cfrom.value='0';cto.value=String(DUR);}cutShow();};
  /* the preview follows the marks picture by picture (timeupdate only comes every quarter second) */
  const cutTick=()=>{if(!ONLY&&v.duration&&!v.paused){const A=cutA(),B=cutB(),t=v.currentTime;
-   if(t>=B-0.01||t<A-0.15)v.currentTime=A;else if(SEAM&&t>A+1.5&&t<B-2.05)v.currentTime=B-2;}
+   if(t>=B-0.01||t<A-0.15){v.currentTime=A;refWrap();LT=A;}else{if(t<LT-0.5&&t<A+0.4)refWrap();LT=t;if(SEAM&&t>A+1.5&&t<B-2.05)v.currentTime=B-2;}}
   requestAnimationFrame(cutTick);};
  v.addEventListener('wheel',e=>{e.preventDefault();step(e.deltaY>0?1:-1);},{passive:false});
  r.oninput=()=>{v.playbackRate=Number(r.value);lab.textContent=Number(r.value).toFixed(2);};
@@ -1799,8 +1813,8 @@ async function build(){
  sadd.onclick=()=>{const k=(KURVE[cur]||[]).filter(x=>x[1]<=segFrom()||x[0]>=segTo());
   k.push([Number(segFrom().toFixed(2)),Number(segTo().toFixed(2)),Number(srate.value)]);k.sort((a2,b2)=>a2[0]-b2[0]);kurveSave(k);};
  sclr.onclick=()=>kurveSave([]);
- v.addEventListener('loadedmetadata',()=>{sfrom.max=String(Math.max(1,(v.duration||10)-0.2));segShow();cutLoad();});
- w.append(rd,d);refShow();play();segShow();requestAnimationFrame(cutTick);
+ v.addEventListener('loadedmetadata',()=>{sfrom.max=String(Math.max(1,(v.duration||10)-0.2));segShow();cutLoad();LT=0;together();});
+ w.append(rd,d);refShow();play();segShow();requestAnimationFrame(cutTick);requestAnimationFrame(refTick);
 }
 async function liste(){let j={items:[]};try{j=await (await fetch('/api/tempo?t='+Date.now())).json();}catch(e){}
  let d=document.getElementById('liste');if(!d){d=document.createElement('div');d.id='liste';document.body.appendChild(d);}

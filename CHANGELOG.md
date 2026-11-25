@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.173.2 (26 Nov 2026)
+
+- `feat`: in the clip tester the reference on the left runs in step with the clip on the right. Metin (00:43): "da soll zusätzlich Referenz Clip links genau synchron laufen mit Clip rechts im Clip Tester", "dass alle Clips synchron laufen". Until now the reference looped on its own, so the two were at different places and a tempo could not be compared by eye. Now both wait at their first picture and start in the same moment, and every time the clip on the right starts over, the reference starts over with it. The reference plays as the app plays it (its begin, its end, its tempo and its stretches; before it ran the whole file at one tempo); if it is through first, it holds its last picture and waits. Measured in a test browser over a start and a restart: the two are never more than 0.12 s apart, most pictures the same.
+- What he stores in the tester reaches the open Leyla page at once as well; that came with 2.173.1, the tester uses the same three stores (tempo, stretches, begin and end).
+- 758 tests (757 before).
+
 ## 2.173.1 (26 Nov 2026)
 
 - `feat`: what he stores on "Outfit als Ganzes", on "Naht" or in the tester reaches the open Leyla page at once. Metin (00:30): "ist es möglich, PC Leyla auch synchron mit Outfit als Ganzes zu machen, dass, wenn ich ein und umstelle, sich das sofort überträgt?" Until now the app read the values of the clips once at its start, so a change showed only after a reload. Now every stored value (tempo, stretch, begin and end, lead, sound, the reset point) sends a short note over the same waiting request as the chat, and the app reads the values again without a new start. Tempo and stretches hold for the clip that is running, begin, end, lead and sound from the next clip on. Measured in a test browser: a tempo stored elsewhere is on the running clip in under one second (the page waits 0.15 s so that several saves in a row become one reading).
