@@ -830,7 +830,14 @@ setInterval(()=>{if(CODE&&document.getElementById('chat').style.display==='block
    appears here at once. One request stays open at the server until something comes; a hidden page waits and catches up when it is shown again. */
 let SYNCAT=-1,SYNCON=false;
 function syncShow(ev){if(ev.kind==='user'){CHAT.push({role:'user',text:String(ev.text||'')});chatSave();chatDraw(true);return;}
+ if(ev.kind==='clips'){clearTimeout(CLIPST);CLIPST=setTimeout(clipsRefresh,150);return;}
  if(ev.kind==='new'){CHAT=[];CDROP=0;}else if(ev.kind==='leyla')chatAnswer(ev.j||{});else return;chatSave();chatDraw();}
+/* 2.173.1 (Metin: what he sets on "Outfit als Ganzes" should reach the Leyla page at once): the values of all clips again, without a new start.
+   Tempo and stretches hold for the running clip at once, begin, end, lead and sound from the next clip on. */
+let CLIPST=0;async function clipsRefresh(){let outs=null;try{outs=(await (await fetch('/clips.json?t='+Date.now())).json()).outfits;}catch(e){}if(!outs)return;
+ const R={},K={},S={},L={},M={},ST={},V={};for(const k in outs){const o=outs[k];CVER[k]=o.v||0;for(const c in (o.r||{}))R[k+'/'+c]=o.r[c];for(const c in (o.k||{}))K[k+'/'+c]=o.k[c];for(const c in (o.s||{}))S[k+'/'+c]=o.s[c];
+  for(const c in (o.l||{}))L[k+'/'+c]=o.l[c];for(const c of (o.m||[]))M[k+'/'+c]=1;for(const c in (o.ms||{}))ST[k+'/'+c]=o.ms[c];for(const c in (o.mv||{}))V[k+'/'+c]=o.mv[c];}
+ RATE=R;KURVE=K;SCHNITT=S;LEAD=L;MUTE=M;STUMM=ST;VOL=V;const v=document.getElementById(SV?'svid2':'svid'),p=v&&v.dataset.pth;if(p&&v.classList.contains('on'))v.playbackRate=rateAt(p,v.currentTime);}
 async function syncLoop(){if(SYNCON)return;SYNCON=true;const nap=ms=>new Promise(r=>setTimeout(r,ms));
  for(;;){if(!CODE||document.hidden){await nap(1000);continue;}
   let j=null;try{j=await (await post('/api/sync',{after:SYNCAT})).json();}catch(e){}
@@ -1560,6 +1567,14 @@ def sync_add(dev, kind: str, **data) -> None:
         ev.set()
 
 
+def sync_clips() -> None:
+    """A value of a clip was stored on /ganzes, /naht or in the tester (tempo, stretch, cut, lead, sound, reset
+    point): every open app reads the values again at once (2.173.1). Several in a row stay one entry."""
+    if SYNC and SYNC[-1]["kind"] == "clips":
+        SYNC.pop()
+    sync_add("", "clips")
+
+
 def sync_reply(dev, out) -> None:
     """Her answer for the other devices: the words, the scene and her mood."""
     out = out if isinstance(out, dict) else {"error": True}
@@ -1886,6 +1901,7 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
             ok = bool(n) and 0.2 <= rate <= 3
             if ok:
                 _tempo_add(n, rate)
+                sync_clips()
                 logger.info("Tempo tester: %s at %.2f", n, rate)
             await _respond(writer, "200 OK", "application/json", json.dumps({"ok": ok}))
         elif method == "GET" and path == "/api/kurve":
@@ -1895,6 +1911,7 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
             n = str(d.get("name") or "")[:60]
             if n:
                 _kurve_set(n, d.get("segs") or [])
+                sync_clips()
                 logger.info("Tempo curve: %s -> %s", n, d.get("segs"))
             await _respond(writer, "200 OK", "application/json", json.dumps({"ok": bool(n)}))
         elif method == "GET" and path == "/api/schnitt":
@@ -1904,6 +1921,7 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
             n = str(d.get("name") or "")[:60]
             ok = bool(n) and _schnitt_set(n, d.get("start"), d.get("end"))
             if ok:
+                sync_clips()
                 logger.info("Cut marks: %s -> %s to %s", n, d.get("start"), d.get("end"))
             await _respond(writer, "200 OK", "application/json", json.dumps({"ok": ok}))
         elif method == "GET" and path == "/api/vorlauf":
@@ -1914,6 +1932,7 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
             n = str(d.get("name") or "")[:60]
             ok = bool(n) and "/" in n and _vorlauf_set(n, d.get("lead"))
             if ok:
+                sync_clips()
                 logger.info("Lead: %s comes in %s s before the end", n, d.get("lead"))
             await _respond(writer, "200 OK", "application/json", json.dumps({"ok": ok}))
         elif method == "GET" and path.startswith("/api/voice/"):
@@ -2003,6 +2022,7 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
             else:
                 ok = isinstance(d.get("aus"), bool) and ganzes_page.ton_set(n, d["aus"])
             if method == "POST" and ok:
+                sync_clips()
                 logger.info("Clip sound: %s %s", n, "silent stretches set" if "stumm" in d
                             else "loudness %s" % d.get("laut") if "laut" in d
                             else "off" if d["aus"] else "on")
@@ -2016,6 +2036,7 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                    ganzes_page.stand_save() if act == "merken" else
                    ganzes_page.stand_info() if method == "GET" else {"ok": False})
             if act in ("zurueck", "merken"):
+                sync_clips()
                 logger.info("Clip values: %s, reset point of %s", "all put back" if act == "zurueck"
                             else "new reset point", out.get("wann"))
             await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))

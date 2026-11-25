@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.173.1 (26 Nov 2026)
+
+- `feat`: what he stores on "Outfit als Ganzes", on "Naht" or in the tester reaches the open Leyla page at once. Metin (00:30): "ist es möglich, PC Leyla auch synchron mit Outfit als Ganzes zu machen, dass, wenn ich ein und umstelle, sich das sofort überträgt?" Until now the app read the values of the clips once at its start, so a change showed only after a reload. Now every stored value (tempo, stretch, begin and end, lead, sound, the reset point) sends a short note over the same waiting request as the chat, and the app reads the values again without a new start. Tempo and stretches hold for the clip that is running, begin, end, lead and sound from the next clip on. Measured in a test browser: a tempo stored elsewhere is on the running clip in under one second (the page waits 0.15 s so that several saves in a row become one reading).
+- It follows what is stored ("merken"), not a slider that is only being moved.
+- 757 tests (756 before): a stored tempo and a stored cut mark arrive in the running app, and saves in a row stay one entry.
+
 ## 2.173.0 (26 Nov 2026)
 
 - `feat`: the chat is in step on his devices. Metin (00:12 to 00:14): "ist es möglich, dass ich auf Handy schreibe und auf PC Monitor sehe", "also synchron?", "1 Sekunde geht so, aber 2?". Until now every device kept its own chat. Now what one device sends and what she answers appears on the others at once: his line the moment the server has it, her answer the moment she has written it, with her scene and her mood, and "Neuer Chat" clears both. It works both ways and for typed lines, voice messages (his words as text and her answer as text) and her reaction to a touch.

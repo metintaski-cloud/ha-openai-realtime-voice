@@ -164,3 +164,60 @@ async def test_in_two_browsers_what_he_writes_on_one_appears_on_the_other_within
     assert second == [want, want], second           # no line twice, the same order on both
     assert his < 1.0 and 0.3 <= hers < 1.3, (his, hers)   # his line at once, her answer as soon as she has it
     print(f"his line after {his * 1000:.0f} ms, her answer after {hers * 1000:.0f} ms (she thinks 300 ms)")
+
+
+async def test_a_stored_clip_value_reaches_the_open_app_at_once_without_a_new_start(tmp_path, monkeypatch):
+    """2.173.1 (Metin, 26 Nov 2026: "PC Leyla auch synchron mit Outfit als Ganzes, dass, wenn ich ein und umstelle,
+    sich das sofort überträgt"): a tempo stored on another page holds for the clip that is running in the app."""
+    import shutil
+    import subprocess
+    playwright = pytest.importorskip("playwright.async_api")
+    if not shutil.which("ffmpeg"):
+        pytest.skip("no ffmpeg here")
+    folder = tmp_path / "clips" / "kurz"
+    folder.mkdir(parents=True)
+    try:
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "testsrc2=size=240x360:rate=24:duration=6",
+                        "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p", "-movflags", "+faststart",
+                        str(folder / "gluecklich4.mp4")], check=True)
+    except subprocess.CalledProcessError:
+        pytest.skip("this ffmpeg cannot write H.264")
+    monkeypatch.setattr(memory_web, "CLIPS_DIR", str(tmp_path / "clips"))
+    monkeypatch.setattr(memory_web, "MOBIL", None)
+    monkeypatch.setattr(memory_web, "SYNC_WAIT_S", 25.0)
+    for key in ("TEMPO", "KURVE", "SCHNITT", "VORLAUF"):
+        monkeypatch.setenv("LEYLA_" + key, str(tmp_path / (key + ".json")))
+    server = await memory_web.start_http(memory.MemoryStore(str(tmp_path / "m.json")), None, host="127.0.0.1",
+                                         port=0, code_phrase=CODE)
+    port = server.sockets[0].getsockname()[1]
+    errors = []
+    try:
+        async with playwright.async_playwright() as p:
+            try:
+                browser = await p.chromium.launch(args=["--autoplay-policy=no-user-gesture-required"])
+            except Exception:
+                pytest.skip("no browser here")
+            page = await browser.new_page(viewport={"width": 400, "height": 820})
+            page.on("pageerror", lambda e: errors.append(str(e)))
+            await page.goto(f"http://127.0.0.1:{port}/")
+            await page.evaluate("""async(code)=>{const sp=document.getElementById('splash');if(sp)sp.remove();CODE=code;
+              STM={mood:'verliebt',low:false,level:'gut',outfit:'arbeit',game:{done:true}};LASTST=STM;
+              document.getElementById('chat').style.display='block';document.body.classList.add('chatfull');
+              document.getElementById('stage').style.display='block';await clipsLoad();stagePlay([],clipFor(STM));}""", CODE)
+            await page.wait_for_function("()=>{const v=document.getElementById(SV?'svid2':'svid');return v.classList.contains('on')&&v.currentTime>0.3;}", timeout=8000)
+            await asyncio.sleep(0.8)   # the app waits at the server now
+            before = await page.evaluate("()=>document.getElementById(SV?'svid2':'svid').playbackRate")
+            t0 = time.monotonic()
+            for rate in (1.2, 1.4):    # two saves in a row, as "Alles merken" does
+                await _post(port, "/api/tempo", {"name": "kurz/gluecklich4", "rate": rate})
+            await page.wait_for_function("()=>Math.abs(document.getElementById(SV?'svid2':'svid').playbackRate-1.4)<0.001", timeout=3000)
+            took = time.monotonic() - t0
+            same_clip = await page.evaluate("()=>[document.getElementById(SV?'svid2':'svid').currentTime>0.3,RATE['kurz/gluecklich4']]")
+            await _post(port, "/api/schnitt", {"name": "kurz/gluecklich4", "start": 0.2, "end": 5.5})
+            await page.wait_for_function("()=>(SCHNITT['kurz/gluecklich4']||[])[1]===5.5", timeout=3000)
+            await browser.close()
+    finally:
+        server.close()
+    assert not errors, errors
+    assert before == 1 and took < 1.0 and same_clip == [True, 1.4], (before, took, same_clip)
+    assert [e["kind"] for e in memory_web.SYNC] == ["clips"], "saves in a row stay one entry"
