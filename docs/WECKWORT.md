@@ -59,6 +59,8 @@ Recherche vom 24.11.2026, 12:50, nachdem Metin sagte: "Vielleicht sollst du dich
 - Zählen: `GET http://192.168.2.240:8082/api/wakestats`, Feld `beinahe` (gesammelt, sauber, prüfen, pro Tag).
 - Die Vorläufe echter Fehlwecker (`/data/false_wakes/..._vorher_w<ms>.wav`) kommen seit derselben Umstellung auch vom richtigen Kanal; die vom 24.11. vor der Umstellung (Kanal 0) nicht mitnehmen.
 
+**Zählung vom 25.11.2026, 13:20** (`GET /api/wakestats`, knapp 24 Stunden nach dem Start des Sammlers am 24.11. um 13:36): 132 Clips gesammelt, davon 101 sauber (`n0_f0`) und 31 zu prüfen, keiner abgelehnt, keiner durch ein Gespräch ersetzt. Je Tag: 24.11. (ab 13:36) 39 sauber und 11 zu prüfen, 25.11. (bis 13:20) 62 sauber und 20 zu prüfen. Das sind rund 100 saubere Clips am Tag, also weit über den erhofften 30: die Schwelle des Sammlers (70 Prozent) bleibt, wie sie ist. Die Marke von rund 200 sauberen Clips ist nach dieser Rate am 26.11. gegen 13 bis 14 Uhr erreicht. Fehlstarts der Woche (geweckt / davon Fehlstart): 19.11. 3 / 0, 20.11. 12 / 3, 21.11. 8 / 2, 22.11. 15 / 3, 23.11. 6 / 4, 24.11. 37 / 12, 25.11. bis mittags 4 / 4.
+
 ## Plan (mit Metin abzustimmen, immer ein Schritt)
 
 1. In `C:\mww` nachsehen, was schon da ist: wie viele echte Rufe, wie viele Gegenbeispiele, mit welcher Trainer Version das Modell vom 2.11. entstand.
