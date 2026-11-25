@@ -169,6 +169,46 @@ async def test_in_a_browser_the_two_pictures_follow_the_marks_and_one_button_sto
             assert stored == {"kurz/freizeitgluecklich": [0.5, 3.458], "kurz/freizeitgluecklich2": [0.242, 5.0]}
             st = await state()
             assert not st["save"]
+            # both stencils can be made see through (Metin, 02:01)
+            await page.evaluate("()=>{opa.value='30';opa.oninput();}")
+            assert await page.evaluate("()=>getComputedStyle(va).opacity") == "0.3"
+            await page.click("#o50")  # the buttons bring the lower one back
+            assert await page.evaluate("()=>[getComputedStyle(va).opacity,getComputedStyle(vb).opacity]") == ["1", "0.5"]
+            # the sliders reach over the last and the first 5 seconds (these test clips are shorter)
+            assert await page.evaluate("()=>[Number(ea.min),Number(ea.max),Number(bb.min),Number(bb.max)]") == [0, 4, 0, 5]
+            # the end plays on its own, the beginning stands still; pausing leaves the end on that picture
+            before = await state()
+            await page.evaluate("()=>{ea.value='1.5';ea.oninput();}")
+            await settled()
+            await page.click("#pa")
+            await asyncio.sleep(1.0)
+            mid = await state()
+            assert not mid["pa"] and mid["pb"] and 1.6 < mid["ea"] < 3.2 and abs(mid["tb"] - before["tb"]) < 0.05
+            assert await page.evaluate("()=>pa.textContent") == "⏸ anhalten"
+            await page.click("#pa")
+            st = await settled()
+            assert st["pa"] and abs(st["ta"] - st["ea"]) < 0.05 and st["ea"] > mid["ea"] - 0.001
+            # the beginning plays on its own at its tempo 2 and stops at the end of its 5 seconds
+            await page.evaluate("()=>{bb.value='4.2';bb.oninput();}")
+            await settled()
+            await page.click("#pb")
+            await asyncio.sleep(0.25)
+            assert not (await state())["pb"]
+            for _ in range(40):
+                await asyncio.sleep(0.1)
+                if (await state())["pb"]:
+                    break
+            st = await settled()
+            assert st["pb"] and st["bb"] == 5 and await page.evaluate("()=>pb.textContent") == "▶ Anfang abspielen"
+            # from the end of its stretch it starts again at the front; a step on its slider stops it
+            await page.click("#pb")
+            await asyncio.sleep(0.5)
+            assert (await state())["bb"] < 2.5
+            await page.click("#bm3")
+            st = await settled()
+            assert st["pb"]
+            await page.evaluate("()=>{ea.value='3.458';bb.value='0.242';ea.oninput();bb.oninput();}")
+            await settled()
             # a third stencil on top (Metin, 01:45): a touch clip with its end, moved and stored the same way
             third = await page.evaluate("()=>[...sc.options].map(o=>[o.value,o.textContent])")
             assert third[0] == ["", "keine"] and third[1] == ["freizeitpo8", "Po (freizeitpo8)"]

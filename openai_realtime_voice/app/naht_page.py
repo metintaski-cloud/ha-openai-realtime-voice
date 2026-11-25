@@ -6,7 +6,8 @@ He saw a small shadow where one loop hands over to the next: the two pictures do
 each other. Numbers from outside did not settle it, his eye does.
 
 The page shows two clips of one outfit as still pictures on top of each other: below the clip
-that ends (A), above it, half see through, the clip that begins (B). He moves the end mark of
+that ends (A), above it, half see through, the clip that begins (B). Both can be made see through, each with its own slider (Metin,
+02:01). He moves the end mark of
 A and the begin mark of B, by a picture, a hundredth or a thousandth of a second (his wish,
 01:43), until the outlines lie on each other, and one
 button stores both as cut marks (POST /api/schnitt, the same marks the tester and /ganzes
@@ -21,6 +22,12 @@ HAND_FADE seconds, the old clip runs on to its end mark and holds its last pictu
 rate)` and the new one `begin + tau * rate`. The slider "Stelle in der Übergabe" is that tau;
 it starts at HAND_PRE, the moment the old clip has reached its last picture and the new one is
 about half there. "So spielt es die App" plays the hand over once in real time.
+
+Each of the two can also play on its own (Metin, 02:01: the last 5 and the first 5 seconds,
+independently): `solo('a')` plays the lower clip through the last REG seconds, `solo('b')`
+the upper one through the first REG seconds, the slider follows, the other clip stands still
+as the stencil, and pausing leaves the mark on the picture that stands. The sliders reach
+only over those REG seconds, so a small move is a small step.
 
 A third stencil (Metin, 01:45: "dann noch eine dritte Schablone drauf, also die Drück Clips"):
 a third clip of the outfit, meant for the touch clips, lies on top with its own see through
@@ -76,19 +83,23 @@ input[type=range]{flex:1 1 120px;min-width:120px}
 <div class="bar"><span class="z">Anfang von</span><select id="sb"></select></div>
 <div class="t">Unten liegt der Clip, der endet. Darüber, durchsichtig, der Clip, der anfängt.</div></div>
 <div class="card"><h2>2. Schablone</h2>
-<div class="bar"><span class="z">Durchsicht</span><input type="range" id="op" min="0" max="100" step="1" value="50"><span id="oplab" style="min-width:34px">50 %</span></div>
+<div class="bar"><span class="z">Oben</span><input type="range" id="op" min="0" max="100" step="1" value="50"><span id="oplab" style="min-width:34px">50 %</span></div>
+<div class="bar"><span class="z">Unten</span><input type="range" id="opa" min="0" max="100" step="1" value="100"><span id="opalab" style="min-width:34px">100 %</span></div>
+<div class="t">Durchsicht: 100 % ist ganz zu sehen, 0 % ist weg. Beide lassen sich einzeln durchsichtig machen.</div>
 <div class="bar"><button id="o0">nur das Ende</button><button id="o50">halb</button><button id="o100">nur der Anfang</button><button id="diff">Unterschied</button></div>
 <div class="t">Unterschied: was schwarz ist, liegt genau aufeinander. Was leuchtet, liegt daneben.</div></div>
 <div class="card"><h2>3. Ende schieben (Clip unten)</h2>
 <div class="t" id="alab"></div>
 <div class="bar"><input type="range" id="ea" min="0" max="10" step="0.001" value="10"></div>
 <div class="bar"><button id="am">◀ Bild</button><button id="ap">Bild ▶</button><button id="am1">− 0,01</button><button id="ap1">+ 0,01</button><button id="am3">− 0,001</button><button id="ap3">+ 0,001</button></div>
-<div class="t">Nach links wird der Clip kürzer, hinten fällt mehr weg. Nach rechts wird er wieder länger.</div></div>
+<div class="bar"><button id="pa">▶ Ende abspielen</button><span class="t">die letzten 5 Sekunden, für sich allein</span></div>
+<div class="t">Der Regler reicht über die letzten 5 Sekunden. Nach links wird der Clip kürzer, hinten fällt mehr weg. Anhalten setzt das Ende auf das Bild, das gerade steht.</div></div>
 <div class="card"><h2>4. Anfang schieben (Clip oben)</h2>
 <div class="t" id="blab"></div>
 <div class="bar"><input type="range" id="bb" min="0" max="10" step="0.001" value="0"></div>
 <div class="bar"><button id="bm">◀ Bild</button><button id="bp">Bild ▶</button><button id="bm1">− 0,01</button><button id="bp1">+ 0,01</button><button id="bm3">− 0,001</button><button id="bp3">+ 0,001</button></div>
-<div class="t">Nach rechts fällt vorne mehr weg. Nach links wird der Clip wieder länger.</div></div>
+<div class="bar"><button id="pb">▶ Anfang abspielen</button><span class="t">die ersten 5 Sekunden, für sich allein</span></div>
+<div class="t">Der Regler reicht über die ersten 5 Sekunden. Nach rechts fällt vorne mehr weg. Anhalten setzt den Anfang auf das Bild, das gerade steht.</div></div>
 <div class="card"><h2>5. Dritte Schablone: Kopf, Brust, Bauch, Po</h2>
 <div class="bar"><span class="z">Clip</span><select id="sc"></select></div>
 <div id="cbox" style="display:none"><div class="bar"><button id="cbeg" class="on">sein Anfang</button><button id="cend">sein Ende</button></div>
@@ -107,7 +118,8 @@ const $=id=>document.getElementById(id);
 const OUT=[['Kurzes Arbeitskleid','kurz',''],['Kurzes Freizeitkleid','kurz','freizeit'],['Langes Arbeitskleid','schwarz',''],['Langes Freizeitkleid','schwarz','freizeit'],['Nachtkleid','nacht','']];
 const ZONES=[['Kopf',['gesicht']],['Brust',['brust']],['Bauch',['bauch']],['Po',['po','povorne']],['Mix',['mix']]];  /* the touch clips, as Metin names them (01:46: Kopf, Brust, Po, Bauch) */
 const HAND_PRE=0.25,HAND_OFF=300,HAND_FADE=0.8,FRAME=1/24;  /* as the loops of the app hand over (memory_web.stageShow, TIGHT) */
-let LOOK='',PRE='',CL=[],VER={},RATE={},KURVE={},SCHNITT={},A='',B='',C='',CEND=false,PLAYING=false,TOK=0;  /* C: the third stencil, CEND: with its end instead of its beginning */
+let LOOK='',PRE='',CL=[],VER={},RATE={},KURVE={},SCHNITT={},A='',B='',C='',CEND=false,PLAYING=false,TOK=0,STOK=0;
+const SOLO={a:0,b:0},REG=5;  /* SOLO: a layer that plays on its own (its token, 0 = it stands still); the sliders reach over the last and the first REG seconds (Metin, 02:01) */  /* C: the third stencil, CEND: with its end instead of its beginning */
 const va=$('va'),vb=$('vb'),vc=$('vc');
 const base=n=>n.replace(/[0-9]+$/,'');
 const mine=n=>PRE?n.startsWith(PRE):!n.startsWith('freizeit');
@@ -122,23 +134,23 @@ function want(){return [Math.max(0,Math.min(eA(),eA()-HAND_PRE+tau()*rate(A))),M
 function busy(){document.body.classList.toggle('busy',va.seeking||vb.seeking||va.readyState<2||vb.readyState<2||(!!C&&(vc.seeking||vc.readyState<2)));}
 function seek(v,t){if(Math.abs(v.currentTime-t)>0.0004){try{v.currentTime=t;}catch(e){}}}
 let PEND=0;
-function show(){if(PLAYING)return;label();clearTimeout(PEND);PEND=setTimeout(()=>{if(PLAYING)return;const w=want();seek(va,w[0]);seek(vb,w[1]);if(C)seek(vc,w[2]);busy();},60);}
+function show(){if(PLAYING)return;label();clearTimeout(PEND);PEND=setTimeout(()=>{if(PLAYING)return;const w=want();if(!SOLO.a)seek(va,w[0]);if(!SOLO.b)seek(vb,w[1]);if(C)seek(vc,w[2]);busy();},60);}
 function label(){const sa=(SCHNITT[pth(A)]||[0,0]),sb=(SCHNITT[pth(B)]||[0,0]);
  $('alab').innerHTML='Ende: <span class="n">'+eA().toFixed(3)+' s</span> von '+dur(va).toFixed(2)+' s &nbsp; gemerkt: '+(sa[1]?sa[1].toFixed(3)+' s':'bis zum Schluss')+(rate(A)!==1?' &nbsp; Tempo '+rate(A):'')+(KURVE[pth(A)]?' &nbsp; (Tempo Kurve nicht eingerechnet)':'');
  $('blab').innerHTML='Anfang: <span class="n">'+bB().toFixed(3)+' s</span> &nbsp; gemerkt: '+(sb[0]?sb[0].toFixed(3)+' s':'von vorne')+(rate(B)!==1?' &nbsp; Tempo '+rate(B):'')+(KURVE[pth(B)]?' &nbsp; (Tempo Kurve nicht eingerechnet)':'');
- $('taulab').textContent=tau().toFixed(2)+' s';$('oplab').textContent=$('op').value+' %';$('opclab').textContent=$('opc').value+' %';
+ $('taulab').textContent=tau().toFixed(2)+' s';$('oplab').textContent=$('op').value+' %';$('opalab').textContent=$('opa').value+' %';$('opclab').textContent=$('opc').value+' %';
  if(C){const sc=(SCHNITT[pth(C)]||[0,0]);$('clab').innerHTML=(CEND?'Ende: ':'Anfang: ')+'<span class="n">'+cC().toFixed(3)+' s</span>'+(CEND?' von '+dur(vc).toFixed(2)+' s':'')+' &nbsp; gemerkt: '+(CEND?(sc[1]?sc[1].toFixed(3)+' s':'bis zum Schluss'):(sc[0]?sc[0].toFixed(3)+' s':'von vorne'))+(rate(C)!==1?' &nbsp; Tempo '+rate(C):'');}
  const ch=Math.abs(eA()-savedEnd())>0.0004||Math.abs(bB()-savedStart())>0.0004||(!!C&&Math.abs(cC()-savedC())>0.0004);$('save').classList.toggle('on',ch);
  $('sinfo').textContent=ch?'Noch nicht gemerkt.':'So ist es gemerkt.';}
 const savedEnd=()=>{const c=SCHNITT[pth(A)];return c&&c[1]>0&&c[1]<dur(va)?c[1]:dur(va);};
 const savedStart=()=>{const c=SCHNITT[pth(B)];return c&&c[0]>0?c[0]:0;};
 const savedC=()=>{const c=SCHNITT[pth(C)];return CEND?(c&&c[1]>0&&c[1]<dur(vc)?c[1]:dur(vc)):(c&&c[0]>0?c[0]:0);};
-function opac(){if(PLAYING)return;vb.style.transition='none';va.style.transition='none';va.style.opacity='1';
+function opac(){if(PLAYING)return;vb.style.transition='none';va.style.transition='none';va.style.opacity=String(Number($('opa').value)/100);
  vb.style.opacity=document.body.classList.contains('diff')?'1':String(Number($('op').value)/100);
  vc.style.transition='none';vc.style.opacity=C?String(Number($('opc').value)/100):'0';label();}
 function load(v,n,then){v.onloadedmetadata=()=>{v.onloadedmetadata=null;then();};v.src='/clips/'+pth(n)+'.mp4?v='+(VER[LOOK]||0);v.load();}
-function setA(n){A=n;stop();load(va,n,()=>{$('ea').max=String(dur(va));$('ea').value=String(savedEnd());show();});}
-function setB(n){B=n;stop();load(vb,n,()=>{$('bb').max=String(Math.max(0.5,dur(vb)-0.5));$('bb').value=String(savedStart());show();});}
+function setA(n){A=n;stop();soloStop('a');load(va,n,()=>{const e=savedEnd();$('ea').max=String(dur(va));$('ea').min=String(Math.max(0,Math.min(dur(va)-REG,e-1)));$('ea').value=String(e);show();});}
+function setB(n){B=n;stop();soloStop('b');load(vb,n,()=>{const b=savedStart();$('bb').max=String(Math.max(0.5,Math.min(dur(vb)-0.5,Math.max(REG,b+1))));$('bb').value=String(b);show();});}
 function setC(n){C=n;stop();$('cbox').style.display=n?'':'none';$('cbeg').classList.toggle('on',!CEND);$('cend').classList.toggle('on',CEND);
  if(!n){vc.removeAttribute('src');vc.load();opac();busy();return;}
  load(vc,n,()=>{$('cc').max=String(CEND?dur(vc):Math.max(0.5,dur(vc)-0.5));$('cc').value=String(savedC());opac();show();});}
@@ -160,23 +172,25 @@ async function start(){const j=await (await fetch('/clips.json?t='+Date.now())).
  if(qa.includes('/')){const lk=qa.split('/')[0];a=qa.split('/')[1];b=qb.includes('/')?qb.split('/')[1]:'';i=OUT.findIndex(x=>x[1]===lk&&(x[2]==='freizeit')===a.startsWith('freizeit'));}
  if(i<0){try{i=Number(localStorage.getItem('lnaht')||1);}catch(e){i=1;}}
  if(!OUT[i]||!o[OUT[i][1]])i=Number(s.options[0].value);s.value=String(i);s.onchange=()=>pick(Number(s.value),'','');pick(i,a,b);}
-$('sa').onchange=()=>setA($('sa').value);$('sb').onchange=()=>setB($('sb').value);$('sc').onchange=()=>setC($('sc').value);
+$('sa').onchange=()=>setA($('sa').value);$('sb').onchange=()=>setB($('sb').value);$('sc').onchange=()=>{soloStop('a');soloStop('b');setC($('sc').value);};
 $('cbeg').onclick=()=>{CEND=false;setC(C);};$('cend').onclick=()=>{CEND=true;setC(C);};$('opc').oninput=opac;
 $('tog').onclick=()=>document.body.classList.toggle('hide');
 $('op').oninput=()=>{document.body.classList.remove('diff');$('diff').classList.remove('on');opac();};
-const setOp=x=>{$('op').value=String(x);$('op').oninput();};
+const setOp=x=>{$('opa').value='100';$('op').value=String(x);$('op').oninput();};$('opa').oninput=opac;
 $('o0').onclick=()=>setOp(0);$('o50').onclick=()=>setOp(50);$('o100').onclick=()=>setOp(100);
 $('diff').onclick=()=>{$('diff').classList.toggle('on',document.body.classList.toggle('diff'));opac();};
-const step=(id,d)=>()=>{const s=$(id);s.value=String(Math.max(Number(s.min),Math.min(Number(s.max),r3(Number(s.value)+d))));stop();show();};
+const lay=id=>id==='ea'?'a':id==='bb'?'b':'';
+const step=(id,d)=>()=>{stop();soloStop(lay(id));const s=$(id);s.value=String(Math.max(Number(s.min),Math.min(Number(s.max),r3(Number(s.value)+d))));show();};
 $('am').onclick=step('ea',-FRAME);$('ap').onclick=step('ea',FRAME);$('am1').onclick=step('ea',-0.01);$('ap1').onclick=step('ea',0.01);$('am3').onclick=step('ea',-0.001);$('ap3').onclick=step('ea',0.001);
 $('bm').onclick=step('bb',-FRAME);$('bp').onclick=step('bb',FRAME);$('bm1').onclick=step('bb',-0.01);$('bp1').onclick=step('bb',0.01);$('bm3').onclick=step('bb',-0.001);$('bp3').onclick=step('bb',0.001);
 $('cm').onclick=step('cc',-FRAME);$('cp').onclick=step('cc',FRAME);$('cm1').onclick=step('cc',-0.01);$('cp1').onclick=step('cc',0.01);$('cm3').onclick=step('cc',-0.001);$('cp3').onclick=step('cc',0.001);
-for(const id of ['ea','bb','cc','tau'])$(id).oninput=()=>{stop();show();};
+for(const id of ['ea','bb','cc','tau'])$(id).oninput=()=>{stop();if(id==='tau'){soloStop('a');soloStop('b');}else soloStop(lay(id));show();};
 for(const v of [va,vb,vc]){v.onseeked=busy;v.onseeking=busy;v.onloadeddata=busy;}
+function soloStop(k){if(!k||!SOLO[k])return;SOLO[k]=0;const v=k==='a'?va:vb;v.pause();v.playbackRate=1;$(k==='a'?'pa':'pb').textContent=k==='a'?'▶ Ende abspielen':'▶ Anfang abspielen';}
 function stop(){if(!PLAYING)return;PLAYING=false;TOK++;va.pause();vb.pause();va.playbackRate=1;vb.playbackRate=1;$('play').textContent='So spielt es die App';opac();}
 const seeked=(v,t)=>new Promise(res=>{if(Math.abs(v.currentTime-t)<0.0004&&!v.seeking)return res();const f=()=>{v.removeEventListener('seeked',f);res();};v.addEventListener('seeked',f);try{v.currentTime=t;}catch(e){res();}});
 /* the hand over once in real time, the way stageShow does it for a loop */
-async function play(){if(PLAYING){stop();show();return;}PLAYING=true;const tok=++TOK,e=eA(),b=bB();$('play').textContent='anhalten';
+async function play(){if(PLAYING){stop();show();return;}soloStop('a');soloStop('b');PLAYING=true;const tok=++TOK,e=eA(),b=bB();$('play').textContent='anhalten';
  document.body.classList.remove('diff');$('diff').classList.remove('on');
  vb.style.transition='none';va.style.transition='none';vb.style.opacity='0';va.style.opacity='1';vc.style.opacity='0';
  document.body.classList.add('busy');await Promise.all([seeked(va,Math.max(0,e-2)),seeked(vb,b)]);document.body.classList.remove('busy');if(tok!==TOK)return;
@@ -187,6 +201,18 @@ async function play(){if(PLAYING){stop();show();return;}PLAYING=true;const tok=+
    setTimeout(()=>{if(tok===TOK){stop();show();}},2600);}
   if(va.currentTime>=e&&!va.paused)va.pause();requestAnimationFrame(tick);};requestAnimationFrame(tick);}
 $('play').onclick=play;
+/* one layer plays on its own through its 5 seconds, the other one stands still as the stencil; pausing leaves the mark on the picture that stands */
+async function solo(k){const v=k==='a'?va:vb,s=$(k==='a'?'ea':'bb'),n=k==='a'?A:B,lim=x=>Math.max(Number(s.min),Math.min(Number(s.max),r3(x)));
+ const off=k==='a'?Math.max(0,HAND_PRE-tau()*rate(A)):-tau()*rate(B);  /* the mark is the picture time plus off (see want) */
+ if(SOLO[k]){s.value=String(lim(v.currentTime+off));soloStop(k);show();return;}
+ stop();const tok=++STOK;SOLO[k]=tok;$(k==='a'?'pa':'pb').textContent='⏸ anhalten';
+ if(Number(s.value)>=Number(s.max)-0.02)s.value=s.min;label();
+ await seeked(v,Math.max(0,Number(s.value)-off));if(SOLO[k]!==tok)return;busy();
+ v.playbackRate=rate(n);v.play().catch(()=>{});
+ const tick=()=>{if(SOLO[k]!==tok)return;const m=r3(v.currentTime+off);
+  if(m>=Number(s.max)||v.ended){s.value=s.max;soloStop(k);show();return;}
+  s.value=String(lim(m));label();requestAnimationFrame(tick);};requestAnimationFrame(tick);}
+$('pa').onclick=()=>solo('a');$('pb').onclick=()=>solo('b');
 const post=async(url,body)=>{try{return await (await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();}catch(e){return null;}};
 /* store the end of A, the begin of B and the mark of the third stencil; every other mark of these clips stays as it is */
 $('save').onclick=async()=>{stop();const M={},get=p=>M[p]||(M[p]=(SCHNITT[p]||[0,0]).slice(0,2));

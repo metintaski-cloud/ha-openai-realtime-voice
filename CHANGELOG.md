@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.166.0 (25 Nov 2026)
+
+- `feat`: the page "Naht", Metin's wishes of 02:01. Both stencils can be made see through, each with its own slider (Oben, Unten). Each of the two clips can play on its own: "Ende abspielen" runs the lower clip through its last 5 seconds, "Anfang abspielen" the upper one through its first 5 seconds, while the other one stands still as the stencil; the slider follows, and pausing leaves the mark on the picture that stands. The two sliders now reach only over those 5 seconds, so a small move of the finger is a small step; the buttons for one picture, 0.01 s and 0.001 s stay.
+- 729 tests; the browser test also makes the lower clip see through, lets the end and the beginning play on their own, pauses, and checks that the beginning stops at the end of its 5 seconds.
+
 ## 2.165.0 (25 Nov 2026)
 
 - `feat`: the page "Naht" (`/naht`, linked from "Outfit als Ganzes"). Metin (01:36): he wishes he had an end and a beginning in front of him like a see through stencil to lay on each other, and to store the time that way. Below lies the clip that ends, above it, see through, the clip that begins. He moves the end of the one and the beginning of the other (slider, one picture, 0.01 s or 0.001 s back and on) until the outlines lie on each other; "Unterschied" shows black where they do and glows where they do not; "So spielt es die App" plays the hand over once in real time; one button stores the times as the cut marks the app already uses. The two pictures are the ones the app really shows together when a loop hands over (the new clip starts 0.25 s before the end mark, the old one holds its last picture). A third stencil can lie on top: a touch clip (Kopf, Brust, Bauch, Po) with its beginning or its end. No clip file is changed.
