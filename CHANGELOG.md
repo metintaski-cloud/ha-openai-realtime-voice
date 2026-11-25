@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.172.1 (25 Nov 2026)
+
+- `fix`: the picture no longer flickers when he touches her right after a loop change. Metin (21:35, 21:36): "wenn ich auf berühren klicke, dann kommt so ein Flackern, kein Hängen", "nicht immer, aber es kommt vor, und das wirkt nicht professionell". It has nothing to do with the line. For 0.8 seconds after every swap the old video is still the picture he sees, the new one is only fading in above it. A touch (or any other new clip) in that time was loaded into the old video at once, which blanked it. Measured in a test browser, picture by picture, how much of the stage the two videos cover: touch 50 ms after a loop change 7 % (93 % of the picture gone for a moment), after 150 ms 27 %, after 400 ms 82 %, after 700 ms 99 %. Now 100, 100, 97 and 99 % (the rest is the normal blend of a hand over). A new clip now waits until the running fade is through, at most 0.86 s, and a video that is still shown is hidden without a fade before it gets a new source. With loops of about seven seconds roughly every tenth touch fell into that time, which is why it came only now and then.
+- The same wait covers every other clip that follows a swap closely (a scene asked in the chat, a very short clip), where 2.143.2 had only patched the early preload.
+- 748 tests (747 before): a touch 50 and 150 ms after a loop change in a real browser, the picture stays covered and her reaction still comes.
+
 ## 2.172.0 (25 Nov 2026)
 
 - `feat`: a second, smaller copy of every clip for a line that cannot carry the first one. Metin on the late shift, mobile data through Tailscale (20:26): the picture waited for data 20 times in two minutes, while every loop hand over was on time (16 ms late at worst). So the stage is right and the data comes too slowly. The copy the phone gets averages 5.4 Mbit/s for kurz/gluecklich4 and kurz/gesicht (peaks 7.2 and 7.8), and he plays that loop at tempo 1.5, which makes 8.1. The new small copy of the same clips averages 2.1 and peaks at 2.8 and 3.1 (3.2 and 4.2 at his tempo). Picture against the original at phone size (SSIM): 0.9926 small, 0.9965 light. Same width as the light copy: 1080 px wide at the same rate was no better. Made from the original (14 s here against 13 s from the light copy, and 0.9926 against 0.9920).

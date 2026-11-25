@@ -96,3 +96,67 @@ async def test_the_page_reports_how_fast_clips_arrive(tmp_path):
     assert got["n"] == 4 and got["host"] == {"n": 4, "kbps_median": 7000, "kbps_min": 0, "kbps_p10": 0,
                                              "kbps_max": 9000, "ttfb_median": 120, "stalls": 5, "wartend": 1}
     assert set(got["letzte"][0]) == {"at", "weg", "kbps", "ttfb", "stalls", "light", "wait"}
+
+
+async def test_a_touch_right_after_a_loop_change_never_blanks_the_picture(tmp_path, monkeypatch):
+    """2.172.1 (Metin, 25 Nov 2026: "wenn ich auf berühren klicke, kommt so ein Flackern, nicht immer"): for 0.8 s
+    after a swap the old video is still the picture he sees. A touch in that time loaded her reaction into it and
+    blanked it; 50 ms after a loop change 93 % of the picture was gone for a moment. Measured here picture by
+    picture: how much of the stage the two videos cover together."""
+    import asyncio
+    import os
+
+    from app import memory
+    playwright = pytest.importorskip("playwright.async_api")
+    if not shutil.which("ffmpeg"):
+        pytest.skip("no ffmpeg here")
+    folder = tmp_path / "clips" / "kurz"
+    folder.mkdir(parents=True)
+    try:
+        for i, (name, dur) in enumerate((("gluecklich4", 4), ("gluecklich5", 4), ("gluecklich6", 4), ("brust", 3))):
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i",
+                            f"testsrc2=size=240x360:rate=24:duration={dur}", "-vf", f"hue=h={i * 60}",
+                            "-c:v", "libx264", "-preset", "veryfast", "-b:v", "400k", "-g", "24",
+                            "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(folder / (name + ".mp4"))], check=True)
+    except subprocess.CalledProcessError:
+        pytest.skip("this ffmpeg cannot write H.264")
+    monkeypatch.setattr(memory_web, "CLIPS_DIR", str(tmp_path / "clips"))
+    monkeypatch.setattr(memory_web, "MOBIL", None)
+    app = open(memory_web.__file__, encoding="utf-8").read()
+    assert "const wt=FADEEND-performance.now();if(wt>0)setTimeout(start,wt);else start();}" in app
+    server = await memory_web.start_http(memory.MemoryStore(str(tmp_path / "m.json")), None,
+                                         host="127.0.0.1", port=0)
+    port = server.sockets[0].getsockname()[1]
+    got = {}
+    try:
+        async with playwright.async_playwright() as p:
+            try:
+                browser = await p.chromium.launch(args=["--autoplay-policy=no-user-gesture-required"])
+            except Exception:
+                pytest.skip("no browser here")
+            for delay in (50, 150):
+                page = await browser.new_page(viewport={"width": 400, "height": 820})
+                await page.goto(f"http://127.0.0.1:{port}/")
+                await asyncio.sleep(1.0)
+                await page.evaluate("""async()=>{CODE='x';STM={mood:'verliebt',low:false,level:'gut',outfit:'arbeit',game:{done:true}};LASTST=STM;
+                  const sp=document.getElementById('splash');if(sp)sp.remove();document.getElementById('chat').style.display='block';
+                  document.body.classList.add('chatfull');document.getElementById('stage').style.display='block';await clipsLoad();stagePlay([],clipFor(STM));}""")
+                await asyncio.sleep(1.5)
+                got[delay] = await page.evaluate("""async(delay)=>{
+                  const vs=[document.getElementById('svid'),document.getElementById('svid2')],sv0=SV;
+                  await new Promise(r=>{const t=()=>{if(SV!==sv0)r();else requestAnimationFrame(t);};t();});
+                  await new Promise(r=>setTimeout(r,delay));
+                  const st=document.getElementById('stage'),R=st.getBoundingClientRect(),ar=1176/1764;let w=R.width,h=w/ar;if(h<R.height){h=R.height;w=h*ar;}
+                  let min=1,run=true,touch='';
+                  const samp=()=>{if(!run)return;let gap=1;for(const v of vs){gap*=1-parseFloat(getComputedStyle(v).opacity)*(v.readyState>=2?1:0);
+                    if(v.classList.contains('on')&&(v.getAttribute('src')||'').includes('/brust.mp4'))touch='shown';}
+                   min=Math.min(min,1-gap);requestAnimationFrame(samp);};samp();
+                  st.onpointerdown(new PointerEvent('pointerdown',{clientX:R.left+(R.width-w)/2+0.5*w,clientY:R.top+(R.height-h)/2+0.23*h,button:0}));
+                  await new Promise(r=>setTimeout(r,2600));run=false;return {min,touch};}""", delay)
+                await page.close()
+            await browser.close()
+    finally:
+        server.close()
+    for delay, r in got.items():
+        assert r["min"] > 0.85, (delay, r)          # the natural dip of a tight hand over is about 0.9
+        assert r["touch"] == "shown", (delay, r)    # and her reaction still comes
