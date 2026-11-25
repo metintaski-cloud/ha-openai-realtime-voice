@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.165.0 (25 Nov 2026)
+
+- `feat`: the page "Naht" (`/naht`, linked from "Outfit als Ganzes"). Metin (01:36): he wishes he had an end and a beginning in front of him like a see through stencil to lay on each other, and to store the time that way. Below lies the clip that ends, above it, see through, the clip that begins. He moves the end of the one and the beginning of the other (slider, one picture, 0.01 s or 0.001 s back and on) until the outlines lie on each other; "Unterschied" shows black where they do and glows where they do not; "So spielt es die App" plays the hand over once in real time; one button stores the times as the cut marks the app already uses. The two pictures are the ones the app really shows together when a loop hands over (the new clip starts 0.25 s before the end mark, the old one holds its last picture). A third stencil can lie on top: a touch clip (Kopf, Brust, Bauch, Po) with its beginning or its end. No clip file is changed.
+- `feat`: cut marks are kept in thousandths of a second (hundredths before), Metin's wish (01:43).
+- 725 tests before, now 729: the new page in a real browser (pictures follow the marks and the tempo, the steps, the difference picture, the hand over in real time, storing two and three marks, the same clip on both sides, no mark at the real end), and a test that the page uses the same hand over values as the stage of the app.
+
 ## 2.164.0 (25 Nov 2026)
 
 - `feat`: a clip can be made quieter or louder (Metin, 00:39). On the page "Outfit als Ganzes", under Ton: a slider from 10 to 140 percent with the buttons leiser, lauter, normal and "Lautstärke merken". 100 is the loudness the stage always had (volume 0.7), 140 is all the phone gives. Kept as a factor per clip in `/data/clip_ton.json` (`laut`, `POST /api/ton` with `laut`), given to the app as `mv` in `/clips.json` (`VOL` in the page, used by `stageShow`); a silent stretch stays silent and the rest of the clip plays at the chosen loudness. Part of the reset point. The file is not changed.

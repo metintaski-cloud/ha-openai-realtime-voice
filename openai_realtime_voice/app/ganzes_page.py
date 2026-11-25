@@ -307,7 +307,7 @@ label{display:flex;gap:4px;align-items:center}
 </style></head><body>
 <div id="st"><video id="v0" playsinline muted></video><video id="v1" playsinline muted></video></div>
 <div id="top"><button id="tog">☰</button><span id="name">...</span></div>
-<div id="panel"><h1>Outfit als Ganzes &nbsp; <a href="/tempo" style="font-size:12px;font-weight:400">Clip Tester</a></h1>
+<div id="panel"><h1>Outfit als Ganzes &nbsp; <a href="/tempo" style="font-size:12px;font-weight:400">Clip Tester</a> &nbsp; <a href="/naht" id="naht" style="font-size:12px;font-weight:400">Naht</a></h1>
 <div class="card"><h2>1. Kleid</h2><div class="bar"><select id="look"></select></div><div class="t" id="info"></div>
 <div class="bar" id="solobar" style="display:none"><span class="t">Nur dieser Clip läuft, zum Einstellen.</span><button id="weiter">weiter mit den Schleifen</button></div></div>
 <div class="card"><h2>2. Schleifen</h2><div id="loops" class="bar"></div>
@@ -391,7 +391,7 @@ async function stkSave(k){const p=pthNow(),j=await post('/api/ton',{name:p,stumm
  if(j&&j.ok){const st=(j.stumm||{})[p];if(st)STUMM[p]=st;else delete STUMM[p];}stkShow();standLater();}
 function label(){const p=pthNow(),c=SCHNITT[p],v=vis(),d=v.duration||10;$('name').textContent=p;
  $('rate').value=String(RATE[p]||1);$('rlab').textContent=Number(RATE[p]||1).toFixed(2);
- $('cut').href='/tempo?clip='+encodeURIComponent(p);
+ $('cut').href='/tempo?clip='+encodeURIComponent(p);$('naht').href='/naht?a='+encodeURIComponent(p);
  $('cfrom').max=$('cto').max=String(d);$('cfrom').value=String(c&&c[0]||0);$('cto').value=String(c&&c[1]&&c[1]<d?c[1]:d);
  $('info').textContent=(KURVE[p]?'mit Tempo Kurve  ':'')+(v.duration?v.duration.toFixed(1)+' s lang':'');
  cutShow();tonShow();$('solobar').style.display=SOLO?'flex':'none';

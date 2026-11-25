@@ -1307,7 +1307,7 @@ def _schnitt_read() -> dict:
 def _schnitt_set(name: str, start, end) -> bool:
     """Store the marks of one clip; start 0 and end 0 removes them. False when they make no sense."""
     try:
-        a_, b_ = round(max(0.0, float(start or 0)), 2), round(max(0.0, float(end or 0)), 2)
+        a_, b_ = round(max(0.0, float(start or 0)), 3), round(max(0.0, float(end or 0)), 3)  # thousandths since 2.165.0
     except (TypeError, ValueError):
         return False
     if b_ and b_ - a_ < 0.5:      # at least half a second must remain
@@ -1767,6 +1767,10 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                 logger.info("Clip values: %s, reset point of %s", "all put back" if act == "zurueck"
                             else "new reset point", out.get("wann"))
             await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
+        elif method == "GET" and path == "/naht":
+            # the end of one clip over the beginning of the next, as a stencil (app/naht_page.py, 2.165.0)
+            from app import naht_page
+            await _respond(writer, "200 OK", "text/html; charset=utf-8", naht_page.PAGE)
         elif method == "GET" and path == "/ganzes":
             # one outfit as a whole: its loops in a row and the touch clips in between (2.163.0)
             from app import ganzes_page
