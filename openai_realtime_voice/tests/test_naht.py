@@ -31,11 +31,51 @@ def test_it_shows_the_hand_over_of_a_loop_as_the_app_does_it():
     js, app = script(), open(memory_web.__file__, encoding="utf-8").read()
     assert f"HAND_PRE={naht_page.HAND_PRE},HAND_OFF={naht_page.HAND_OFF},HAND_FADE={naht_page.HAND_FADE}" in js
     # a loop is handed over tight: PRE 0.25 s, the old clip fades from 300 ms on, the new one fades in 0.8 s
-    assert "const PRE=tight?0.25:0.8,OFF=tight?300:850" in app
+    assert "const PRE0=tight?0.25:0.8,OFF=tight?300:850" in app
+    # the lead of the clip that comes in replaces the 0.25 s, only for a loop hand over
+    assert "PRE=tight&&LEAD[lp]!==undefined?LEAD[lp]:PRE0;" in app and "LEAD[k+'/'+c]=outs[k].l[c]" in app
+    assert naht_page.HAND_PRE == memory_web.LEAD_DEFAULT
     assert app.count("TIGHT=true;") == 2 and "function stageLoop" in app
     assert "#stage video{opacity:0;transition:opacity .8s}" in app
     assert (naht_page.HAND_PRE, naht_page.HAND_OFF, naht_page.HAND_FADE) == (0.25, 300, 0.8)
     assert "LOOP_PRE=0.25,LOOP_OFF=300" in re.search(r"<script>(.*)</script>", ganzes_page.PAGE, re.S).group(1)
+
+
+def test_the_lead_of_a_clip_is_stored_checked_and_given_to_the_app(tmp_path, monkeypatch):
+    monkeypatch.setenv("LEYLA_VORLAUF", str(tmp_path / "v.json"))
+    assert memory_web._vorlauf_read() == {}
+    assert memory_web._vorlauf_set("kurz/freizeitgluecklich2", 0.4126)
+    assert memory_web._vorlauf_set("kurz/gluecklich", "0")
+    assert memory_web._vorlauf_read() == {"kurz/freizeitgluecklich2": 0.413, "kurz/gluecklich": 0.0}
+    for bad in (-0.1, 1.6, "x", None, True):
+        assert not memory_web._vorlauf_set("kurz/gluecklich", bad)
+    assert memory_web._vorlauf_set("kurz/gluecklich", 0.25)  # the default: no entry
+    assert memory_web._vorlauf_read() == {"kurz/freizeitgluecklich2": 0.413}
+    (tmp_path / "v.json").write_text('{"a/b": 9, "c/d": "x", "e/f": 0.5}')  # a broken value is not used
+    assert memory_web._vorlauf_read() == {"e/f": 0.5}
+    folder = tmp_path / "clips" / "kurz"
+    folder.mkdir(parents=True)
+    for name in ("freizeitgluecklich", "freizeitgluecklich2"):
+        (folder / (name + ".mp4")).write_bytes(b"x")
+    monkeypatch.setattr(memory_web, "CLIPS_DIR", str(tmp_path / "clips"))
+    (tmp_path / "v.json").write_text('{"kurz/freizeitgluecklich2": 0.4, "kurz/gibtesnicht": 0.3}')
+    assert memory_web.list_outfits()["kurz"]["l"] == {"freizeitgluecklich2": 0.4}
+
+
+def test_the_lead_is_part_of_the_reset_point(tmp_path, monkeypatch):
+    assert memory_web._vorlauf_set("kurz/a", 0.5)
+    ganzes_page.stand_save()
+    assert memory_web._vorlauf_set("kurz/a", 0.9) and memory_web._vorlauf_set("kurz/b", 0.1)
+    assert ganzes_page.stand_info()["geaendert"] == ["kurz/a", "kurz/b"]
+    assert ganzes_page.stand_restore()["zurueck"] == ["kurz/a", "kurz/b"]
+    assert memory_web._vorlauf_read() == {"kurz/a": 0.5}
+    # a reset point from before 2.166.0 has no leads: going back to it means none
+    import json as _json, os as _os
+    path = _os.environ["LEYLA_STAND"]
+    old = _json.load(open(path))
+    old.pop("vorlauf")
+    _json.dump(old, open(path, "w"))
+    assert ganzes_page.stand_restore()["ok"] and memory_web._vorlauf_read() == {}
 
 
 async def _get(port: int, path: str) -> str:
@@ -81,8 +121,9 @@ async def test_in_a_browser_the_two_pictures_follow_the_marks_and_one_button_sto
     except subprocess.CalledProcessError:
         pytest.skip("this ffmpeg cannot write VP9")
     monkeypatch.setattr(memory_web, "CLIPS_DIR", str(tmp_path / "clips"))
-    cut = tmp_path / "schnitt.json"
+    cut, leads = tmp_path / "schnitt.json", tmp_path / "vorlauf.json"
     monkeypatch.setenv("LEYLA_SCHNITT", str(cut))
+    monkeypatch.setenv("LEYLA_VORLAUF", str(leads))
     monkeypatch.setenv("LEYLA_TEMPO", str(tmp_path / "tempo.json"))
     cut.write_text(json.dumps({"kurz/freizeitgluecklich": [0.5, 3.5], "kurz/freizeitgluecklich2": [0.2, 5.0]}))
     (tmp_path / "tempo.json").write_text(json.dumps([{"name": "kurz/freizeitgluecklich2", "rate": 2}]))
@@ -169,6 +210,41 @@ async def test_in_a_browser_the_two_pictures_follow_the_marks_and_one_button_sto
             assert stored == {"kurz/freizeitgluecklich": [0.5, 3.458], "kurz/freizeitgluecklich2": [0.242, 5.0]}
             st = await state()
             assert not st["save"]
+            # the lead: how long before the end of the old clip the new one comes in (Metin, 02:05)
+            assert await page.evaluate("()=>Number(ld.value)") == 0.25
+            await page.evaluate("()=>{ld.value='0.75';ld.oninput();}")
+            st = await settled()
+            assert abs(st["ta"] - (3.458 - 0.75 + 0.25)) < 0.05 and abs(st["tb"] - 0.742) < 0.05 and st["save"]
+            await page.click("#l0")
+            st = await settled()
+            assert await page.evaluate("()=>Number(ld.value)") == 0.25 and abs(st["ta"] - 3.458) < 0.05
+            # the time axis: the right edge of the upper bar is the end, the lower bar is the clip that comes in
+            box = await page.evaluate("()=>{const r=ax.getBoundingClientRect();return {x:r.left,y:r.top,pps:axPps(),xe:axX(eA()),xs:axX(axStart())}}")
+            assert box["pps"] > 40 and abs(box["xe"] - box["xs"] - 0.25 * box["pps"]) < 1.5
+
+            async def drag(x: float, y: float, dx: float) -> None:
+                await page.mouse.move(box["x"] + x, box["y"] + y)
+                await page.mouse.down()
+                await page.mouse.move(box["x"] + x + dx / 2, box["y"] + y)
+                await page.mouse.move(box["x"] + x + dx, box["y"] + y)
+                await page.mouse.up()
+            pps = box["pps"]
+            await drag(box["xe"], 30, -0.5 * pps)                      # the end half a second earlier
+            st = await settled()
+            assert abs(st["ea"] - 2.958) < 0.02 and await page.evaluate("()=>Number(ld.value)") == 0.25
+            await drag(box["xe"] - 0.5 * pps, 30, 0.5 * pps)           # and back
+            assert abs((await settled())["ea"] - 3.458) < 0.02
+            await drag(box["xs"] + 60, 65, -0.3 * pps)                 # the lower bar to the left: it comes in earlier
+            st = await settled()
+            assert abs(await page.evaluate("()=>Number(ld.value)") - 0.55) < 0.02 and abs(st["bb"] - 0.242) < 0.001
+            xs = await page.evaluate("()=>axX(axStart())")
+            await drag(xs, 65, 0.2 * pps)                              # its left edge to the right: 0.2 s of the old clip
+            st = await settled()                                       # are 0.4 s of pictures at tempo 2, which stay in place
+            assert abs(await page.evaluate("()=>Number(ld.value)") - 0.35) < 0.02 and abs(st["bb"] - 0.642) < 0.04
+            await drag(xs + 0.2 * pps + 60, 65, 5 * pps)               # it cannot come in after the end
+            assert await page.evaluate("()=>Number(ld.value)") == 0
+            await page.evaluate("()=>{ld.value='0.25';bb.value='0.242';ld.oninput();}")
+            await settled()
             # both stencils can be made see through (Metin, 02:01)
             await page.evaluate("()=>{opa.value='30';opa.oninput();}")
             assert await page.evaluate("()=>getComputedStyle(va).opacity") == "0.3"
@@ -221,9 +297,11 @@ async def test_in_a_browser_the_two_pictures_follow_the_marks_and_one_button_sto
             await page.click("#cm1")
             await page.click("#cm1")
             await page.click("#cm1")
+            await page.evaluate("()=>{ld.value='0.4';ld.oninput();}")
             await page.click("#save")
             await asyncio.sleep(0.4)
             stored = json.loads(cut.read_text())
+            assert json.loads(leads.read_text()) == {"kurz/freizeitgluecklich2": 0.4}  # the lead goes with the same button
             assert stored["kurz/freizeitpo8"][0] == 0 and abs(stored["kurz/freizeitpo8"][1] - (c["v"] - 0.03)) < 0.0011
             assert stored["kurz/freizeitgluecklich"] == [0.5, 3.458]  # the others stay
             await page.click("#cbeg")
@@ -252,3 +330,48 @@ async def test_in_a_browser_the_two_pictures_follow_the_marks_and_one_button_sto
     finally:
         server.close()
     assert not errors, errors
+
+
+async def test_in_a_browser_a_loop_comes_in_as_early_as_its_lead_says(tmp_path, monkeypatch):
+    """The page /ganzes hands over like the stage of the app: with a lead of 1.2 s the second loop
+    starts 1.2 s before the end of the first one, not 0.25 s."""
+    playwright = pytest.importorskip("playwright.async_api")
+    if not shutil.which("ffmpeg"):
+        pytest.skip("no ffmpeg here")
+    folder = tmp_path / "clips" / "kurz"
+    folder.mkdir(parents=True)
+    try:
+        for name in ("freizeitgluecklich", "freizeitgluecklich2"):
+            _clip(folder / (name + ".mp4"), 4)
+    except subprocess.CalledProcessError:
+        pytest.skip("this ffmpeg cannot write VP9")
+    monkeypatch.setattr(memory_web, "CLIPS_DIR", str(tmp_path / "clips"))
+    monkeypatch.setenv("LEYLA_VORLAUF", str(tmp_path / "vorlauf.json"))
+    assert memory_web._vorlauf_set("kurz/freizeitgluecklich2", 1.2)
+    server = await memory_web.start_http(memory.MemoryStore(str(tmp_path / "m.json")), None,
+                                         host="127.0.0.1", port=0)
+    port = server.sockets[0].getsockname()[1]
+    seen = {}
+    try:
+        async with playwright.async_playwright() as p:
+            try:
+                browser = await p.chromium.launch(args=["--autoplay-policy=no-user-gesture-required"])
+            except Exception:
+                pytest.skip("no browser here")
+            page = await browser.new_page(viewport={"width": 400, "height": 800})
+            await page.goto(f"http://127.0.0.1:{port}/ganzes?clip=kurz/freizeitgluecklich")
+            # note where the old clip is at the moment each loop comes in
+            await page.evaluate("""()=>{window.IN={};const t=()=>{const vs=[v0,v1];
+              if(CUR&&window.IN[CUR]===undefined){const old=vs[1-SV];window.IN[CUR]=old.currentTime||0;}requestAnimationFrame(t);};t();}""")
+            for _ in range(120):
+                await asyncio.sleep(0.1)
+                seen = await page.evaluate("()=>window.IN")
+                if "freizeitgluecklich2" in seen and len(seen) >= 2 and any(
+                        k == "freizeitgluecklich" and i for i, k in enumerate(seen)):
+                    break
+            await asyncio.sleep(4.5)
+            seen = await page.evaluate("()=>window.IN")
+            await browser.close()
+    finally:
+        server.close()
+    assert abs(seen["freizeitgluecklich2"] - (4 - 1.2)) < 0.3, seen  # 1.2 s before the end of a 4 s clip

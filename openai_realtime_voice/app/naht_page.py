@@ -40,6 +40,12 @@ says so. A tempo curve inside a clip is not taken into account (the stored tempo
 The script is a raw string: keep it free of backslashes and check it with node --check
 (tests/test_naht.py does) before every commit. Whoever changes PRE, OFF or the fade of loops
 in memory_web.stageShow must change HAND_PRE, HAND_OFF and HAND_FADE here too (a test compares).
+
+The lead (2.166.0): how long before the end mark of the old clip the new one comes in was fixed
+(HAND_PRE, 0.25 s). It is now a value per clip (`/api/vorlauf`, `l` in /clips.json, `LEAD` in the
+app, in /ganzes and here; no entry = HAND_PRE), set with the slider "Einsatz" or by dragging the
+lower bar of the time axis, and stored with the same button. It belongs to the clip that begins
+and is used at every loop hand over into it.
 """
 
 HAND_PRE = 0.25   # the next loop starts this long (clip time) before the end mark of the running one
@@ -58,9 +64,11 @@ a{color:#9fe8ff}
 #vb{opacity:.5}
 #vc{opacity:0}
 body.diff #vb{mix-blend-mode:difference}
-#panel{position:fixed;top:0;left:0;bottom:0;width:min(58vw,360px);overflow-y:auto;background:rgba(0,0,0,.30);padding-bottom:10px;z-index:3}
+#panel{position:fixed;top:0;left:0;bottom:96px;width:min(58vw,360px);overflow-y:auto;background:rgba(0,0,0,.30);padding-bottom:10px;z-index:3}
 body.hide #panel{display:none}
 @media (min-aspect-ratio:1/1){#panel{width:calc(100vw - 100vh*2/3);max-width:none;background:#000}}
+#axbar{position:fixed;left:0;right:0;bottom:0;height:96px;z-index:4;background:rgba(0,0,0,.72)}
+#ax{width:100%;height:96px;display:block;touch-action:none;cursor:ew-resize}
 #top{position:fixed;top:6px;right:6px;z-index:4;display:flex;gap:6px;align-items:center;flex-direction:row-reverse}
 #busy{font-size:12px;color:#fd8;background:rgba(0,0,0,.55);padding:4px 7px;border-radius:8px;visibility:hidden}
 body.busy #busy{visibility:visible}
@@ -75,6 +83,7 @@ button.on{border-color:#2a6;color:#9f9}
 input[type=range]{flex:1 1 120px;min-width:120px}
 </style></head><body>
 <div id="st"><video id="va" playsinline muted preload="auto"></video><video id="vb" playsinline muted preload="auto"></video><video id="vc" playsinline muted preload="auto"></video></div>
+<div id="axbar"><canvas id="ax"></canvas></div>
 <div id="top"><button id="tog">☰</button><span id="busy">Bild wird geholt ...</span></div>
 <div id="panel"><h1>Naht: Ende und Anfang &nbsp; <a href="/ganzes" style="font-size:12px;font-weight:400">Outfit als Ganzes</a></h1>
 <div class="card"><h2>1. Welche zwei Clips</h2>
@@ -100,25 +109,31 @@ input[type=range]{flex:1 1 120px;min-width:120px}
 <div class="bar"><button id="bm">◀ Bild</button><button id="bp">Bild ▶</button><button id="bm1">− 0,01</button><button id="bp1">+ 0,01</button><button id="bm3">− 0,001</button><button id="bp3">+ 0,001</button></div>
 <div class="bar"><button id="pb">▶ Anfang abspielen</button><span class="t">die ersten 5 Sekunden, für sich allein</span></div>
 <div class="t">Der Regler reicht über die ersten 5 Sekunden. Nach rechts fällt vorne mehr weg. Anhalten setzt den Anfang auf das Bild, das gerade steht.</div></div>
-<div class="card"><h2>5. Dritte Schablone: Kopf, Brust, Bauch, Po</h2>
+<div class="card"><h2>5. Einsatz: wann der neue Clip in den alten einsetzt</h2>
+<div class="t" id="llab"></div>
+<div class="bar"><input type="range" id="ld" min="0" max="1.5" step="0.001" value="0.25"></div>
+<div class="bar"><button id="lm">◀ Bild</button><button id="lp">Bild ▶</button><button id="lm1">− 0,01</button><button id="lp1">+ 0,01</button><button id="lm3">− 0,001</button><button id="lp3">+ 0,001</button><button id="l0">normal</button></div>
+<div class="t">So viele Sekunden vor dem Ende des alten Clips startet der neue. Größer heißt: er kommt früher. Das gilt für den Clip oben, bei jedem Wechsel in ihn hinein.</div>
+<div class="t">Unten ist die Zeitachse: am rechten Rand des oberen Balkens ziehen kürzt oder verlängert das Ende. Am linken Rand des unteren Balkens ziehen kürzt oder verlängert den Anfang. Am unteren Balken selbst ziehen verschiebt ihn auf der Zeit.</div></div>
+<div class="card"><h2>6. Dritte Schablone: Kopf, Brust, Bauch, Po</h2>
 <div class="bar"><span class="z">Clip</span><select id="sc"></select></div>
 <div id="cbox" style="display:none"><div class="bar"><button id="cbeg" class="on">sein Anfang</button><button id="cend">sein Ende</button></div>
 <div class="bar"><span class="z">Durchsicht</span><input type="range" id="opc" min="0" max="100" step="1" value="50"><span id="opclab" style="min-width:34px">50 %</span></div>
 <div class="t" id="clab"></div>
 <div class="bar"><input type="range" id="cc" min="0" max="10" step="0.001" value="0"></div>
 <div class="bar"><button id="cm">◀ Bild</button><button id="cp">Bild ▶</button><button id="cm1">− 0,01</button><button id="cp1">+ 0,01</button><button id="cm3">− 0,001</button><button id="cp3">+ 0,001</button></div></div></div>
-<div class="card"><h2>6. Prüfen und merken</h2>
+<div class="card"><h2>7. Prüfen und merken</h2>
 <div class="bar"><button id="play">So spielt es die App</button><button id="save">Diese Zeiten merken</button><button id="back">zurück auf gemerkt</button></div>
 <div class="t" id="sinfo"></div>
 <div class="bar"><span class="z">Stelle</span><input type="range" id="tau" min="0" max="0.8" step="0.01" value="0.25"><span id="taulab" style="min-width:44px">0.25 s</span></div>
-<div class="t">Stelle in der Übergabe: so viele Sekunden läuft der neue Clip schon. Bei 0,25 steht der alte auf seinem letzten Bild und der neue ist halb zu sehen.</div>
+<div class="t">Stelle in der Übergabe: so viele Sekunden läuft der neue Clip schon. Die weiße Linie auf der Zeitachse zeigt sie.</div>
 <div class="t">Jeder Clip hat nur einen Anfang und ein Ende. Sie gelten bei jedem Wechsel, nicht nur für dieses Paar.</div></div></div>
 <script>
 const $=id=>document.getElementById(id);
 const OUT=[['Kurzes Arbeitskleid','kurz',''],['Kurzes Freizeitkleid','kurz','freizeit'],['Langes Arbeitskleid','schwarz',''],['Langes Freizeitkleid','schwarz','freizeit'],['Nachtkleid','nacht','']];
 const ZONES=[['Kopf',['gesicht']],['Brust',['brust']],['Bauch',['bauch']],['Po',['po','povorne']],['Mix',['mix']]];  /* the touch clips, as Metin names them (01:46: Kopf, Brust, Po, Bauch) */
 const HAND_PRE=0.25,HAND_OFF=300,HAND_FADE=0.8,FRAME=1/24;  /* as the loops of the app hand over (memory_web.stageShow, TIGHT) */
-let LOOK='',PRE='',CL=[],VER={},RATE={},KURVE={},SCHNITT={},A='',B='',C='',CEND=false,PLAYING=false,TOK=0,STOK=0;
+let LOOK='',PRE='',CL=[],VER={},RATE={},KURVE={},SCHNITT={},LEAD={},A='',B='',C='',CEND=false,PLAYING=false,TOK=0,STOK=0;
 const SOLO={a:0,b:0},REG=5;  /* SOLO: a layer that plays on its own (its token, 0 = it stands still); the sliders reach over the last and the first REG seconds (Metin, 02:01) */  /* C: the third stencil, CEND: with its end instead of its beginning */
 const va=$('va'),vb=$('vb'),vc=$('vc');
 const base=n=>n.replace(/[0-9]+$/,'');
@@ -127,9 +142,9 @@ const pth=n=>LOOK+'/'+n;
 const rate=n=>RATE[pth(n)]||1;
 const dur=v=>v.duration||10;
 const r3=x=>Math.round(x*1000)/1000;  /* marks in thousandths of a second (Metin, 01:43) */
-const eA=()=>Number($('ea').value),bB=()=>Number($('bb').value),cC=()=>Number($('cc').value),tau=()=>Number($('tau').value);
+const eA=()=>Number($('ea').value),bB=()=>Number($('bb').value),cC=()=>Number($('cc').value),tau=()=>Number($('tau').value),lead=()=>Number($('ld').value);
 /* the two pictures the app shows together `tau` seconds after the new clip started */
-function want(){return [Math.max(0,Math.min(eA(),eA()-HAND_PRE+tau()*rate(A))),Math.min(dur(vb),bB()+tau()*rate(B)),
+function want(){return [Math.max(0,Math.min(eA(),eA()-lead()+tau()*rate(A))),Math.min(dur(vb),bB()+tau()*rate(B)),
   !C?0:CEND?Math.max(0,Math.min(cC(),cC()-HAND_PRE+tau()*rate(C))):Math.min(dur(vc),cC()+tau()*rate(C))];}
 function busy(){document.body.classList.toggle('busy',va.seeking||vb.seeking||va.readyState<2||vb.readyState<2||(!!C&&(vc.seeking||vc.readyState<2)));}
 function seek(v,t){if(Math.abs(v.currentTime-t)>0.0004){try{v.currentTime=t;}catch(e){}}}
@@ -138,11 +153,13 @@ function show(){if(PLAYING)return;label();clearTimeout(PEND);PEND=setTimeout(()=
 function label(){const sa=(SCHNITT[pth(A)]||[0,0]),sb=(SCHNITT[pth(B)]||[0,0]);
  $('alab').innerHTML='Ende: <span class="n">'+eA().toFixed(3)+' s</span> von '+dur(va).toFixed(2)+' s &nbsp; gemerkt: '+(sa[1]?sa[1].toFixed(3)+' s':'bis zum Schluss')+(rate(A)!==1?' &nbsp; Tempo '+rate(A):'')+(KURVE[pth(A)]?' &nbsp; (Tempo Kurve nicht eingerechnet)':'');
  $('blab').innerHTML='Anfang: <span class="n">'+bB().toFixed(3)+' s</span> &nbsp; gemerkt: '+(sb[0]?sb[0].toFixed(3)+' s':'von vorne')+(rate(B)!==1?' &nbsp; Tempo '+rate(B):'')+(KURVE[pth(B)]?' &nbsp; (Tempo Kurve nicht eingerechnet)':'');
+ $('llab').innerHTML='Einsatz: <span class="n">'+lead().toFixed(3)+' s</span> vor dem Ende &nbsp; gemerkt: '+savedLead().toFixed(3)+' s &nbsp; (normal '+HAND_PRE.toFixed(2)+')';
  $('taulab').textContent=tau().toFixed(2)+' s';$('oplab').textContent=$('op').value+' %';$('opalab').textContent=$('opa').value+' %';$('opclab').textContent=$('opc').value+' %';
  if(C){const sc=(SCHNITT[pth(C)]||[0,0]);$('clab').innerHTML=(CEND?'Ende: ':'Anfang: ')+'<span class="n">'+cC().toFixed(3)+' s</span>'+(CEND?' von '+dur(vc).toFixed(2)+' s':'')+' &nbsp; gemerkt: '+(CEND?(sc[1]?sc[1].toFixed(3)+' s':'bis zum Schluss'):(sc[0]?sc[0].toFixed(3)+' s':'von vorne'))+(rate(C)!==1?' &nbsp; Tempo '+rate(C):'');}
- const ch=Math.abs(eA()-savedEnd())>0.0004||Math.abs(bB()-savedStart())>0.0004||(!!C&&Math.abs(cC()-savedC())>0.0004);$('save').classList.toggle('on',ch);
- $('sinfo').textContent=ch?'Noch nicht gemerkt.':'So ist es gemerkt.';}
+ const ch=Math.abs(eA()-savedEnd())>0.0004||Math.abs(bB()-savedStart())>0.0004||(!!C&&Math.abs(cC()-savedC())>0.0004)||Math.abs(lead()-savedLead())>0.0004;$('save').classList.toggle('on',ch);
+ $('sinfo').textContent=ch?'Noch nicht gemerkt.':'So ist es gemerkt.';axDraw();}
 const savedEnd=()=>{const c=SCHNITT[pth(A)];return c&&c[1]>0&&c[1]<dur(va)?c[1]:dur(va);};
+const savedLead=()=>{const l=LEAD[pth(B)];return l===undefined?HAND_PRE:l;};
 const savedStart=()=>{const c=SCHNITT[pth(B)];return c&&c[0]>0?c[0]:0;};
 const savedC=()=>{const c=SCHNITT[pth(C)];return CEND?(c&&c[1]>0&&c[1]<dur(vc)?c[1]:dur(vc)):(c&&c[0]>0?c[0]:0);};
 function opac(){if(PLAYING)return;vb.style.transition='none';va.style.transition='none';va.style.opacity=String(Number($('opa').value)/100);
@@ -150,7 +167,7 @@ function opac(){if(PLAYING)return;vb.style.transition='none';va.style.transition
  vc.style.transition='none';vc.style.opacity=C?String(Number($('opc').value)/100):'0';label();}
 function load(v,n,then){v.onloadedmetadata=()=>{v.onloadedmetadata=null;then();};v.src='/clips/'+pth(n)+'.mp4?v='+(VER[LOOK]||0);v.load();}
 function setA(n){A=n;stop();soloStop('a');load(va,n,()=>{const e=savedEnd();$('ea').max=String(dur(va));$('ea').min=String(Math.max(0,Math.min(dur(va)-REG,e-1)));$('ea').value=String(e);show();});}
-function setB(n){B=n;stop();soloStop('b');load(vb,n,()=>{const b=savedStart();$('bb').max=String(Math.max(0.5,Math.min(dur(vb)-0.5,Math.max(REG,b+1))));$('bb').value=String(b);show();});}
+function setB(n){B=n;stop();soloStop('b');load(vb,n,()=>{const b=savedStart();$('bb').max=String(Math.max(0.5,Math.min(dur(vb)-0.5,Math.max(REG,b+1))));$('bb').value=String(b);$('ld').value=String(savedLead());show();});}
 function setC(n){C=n;stop();$('cbox').style.display=n?'':'none';$('cbeg').classList.toggle('on',!CEND);$('cend').classList.toggle('on',CEND);
  if(!n){vc.removeAttribute('src');vc.load();opac();busy();return;}
  load(vc,n,()=>{$('cc').max=String(CEND?dur(vc):Math.max(0.5,dur(vc)-0.5));$('cc').value=String(savedC());opac();show();});}
@@ -166,7 +183,7 @@ function pick(i,a,b){const o=OUT[i];LOOK=o[1];PRE=o[2];CL=(window.J.outfits[LOOK
  const na=names.includes(a)?a:names[0],nb=names.includes(b)?b:(names[1]||names[0]);$('sa').value=na;$('sb').value=nb;setA(na);setB(nb);$('sc').value='';setC('');}
 async function start(){const j=await (await fetch('/clips.json?t='+Date.now())).json();window.J=j;const o=j.outfits||{};
  for(const look in o){VER[look]=o[look].v||0;for(const c in (o[look].r||{}))RATE[look+'/'+c]=o[look].r[c];
-  for(const c in (o[look].k||{}))KURVE[look+'/'+c]=o[look].k[c];for(const c in (o[look].s||{}))SCHNITT[look+'/'+c]=o[look].s[c].slice();}
+  for(const c in (o[look].k||{}))KURVE[look+'/'+c]=o[look].k[c];for(const c in (o[look].l||{}))LEAD[look+'/'+c]=o[look].l[c];for(const c in (o[look].s||{}))SCHNITT[look+'/'+c]=o[look].s[c].slice();}
  const s=$('look');OUT.forEach((x,i)=>{if(!o[x[1]])return;const op=document.createElement('option');op.value=String(i);op.textContent=x[0];s.appendChild(op);});
  const q=new URLSearchParams(location.search),qa=q.get('a')||'',qb=q.get('b')||'';let i=-1,a='',b='';
  if(qa.includes('/')){const lk=qa.split('/')[0];a=qa.split('/')[1];b=qb.includes('/')?qb.split('/')[1]:'';i=OUT.findIndex(x=>x[1]===lk&&(x[2]==='freizeit')===a.startsWith('freizeit'));}
@@ -179,31 +196,33 @@ $('op').oninput=()=>{document.body.classList.remove('diff');$('diff').classList.
 const setOp=x=>{$('opa').value='100';$('op').value=String(x);$('op').oninput();};$('opa').oninput=opac;
 $('o0').onclick=()=>setOp(0);$('o50').onclick=()=>setOp(50);$('o100').onclick=()=>setOp(100);
 $('diff').onclick=()=>{$('diff').classList.toggle('on',document.body.classList.toggle('diff'));opac();};
-const lay=id=>id==='ea'?'a':id==='bb'?'b':'';
+const lay=id=>id==='ea'?'a':id==='bb'?'b':id==='ld'?'a':'';
 const step=(id,d)=>()=>{stop();soloStop(lay(id));const s=$(id);s.value=String(Math.max(Number(s.min),Math.min(Number(s.max),r3(Number(s.value)+d))));show();};
 $('am').onclick=step('ea',-FRAME);$('ap').onclick=step('ea',FRAME);$('am1').onclick=step('ea',-0.01);$('ap1').onclick=step('ea',0.01);$('am3').onclick=step('ea',-0.001);$('ap3').onclick=step('ea',0.001);
 $('bm').onclick=step('bb',-FRAME);$('bp').onclick=step('bb',FRAME);$('bm1').onclick=step('bb',-0.01);$('bp1').onclick=step('bb',0.01);$('bm3').onclick=step('bb',-0.001);$('bp3').onclick=step('bb',0.001);
+$('lm').onclick=step('ld',-FRAME);$('lp').onclick=step('ld',FRAME);$('lm1').onclick=step('ld',-0.01);$('lp1').onclick=step('ld',0.01);$('lm3').onclick=step('ld',-0.001);$('lp3').onclick=step('ld',0.001);
+$('l0').onclick=()=>{stop();soloStop('a');$('ld').value=String(HAND_PRE);show();};
 $('cm').onclick=step('cc',-FRAME);$('cp').onclick=step('cc',FRAME);$('cm1').onclick=step('cc',-0.01);$('cp1').onclick=step('cc',0.01);$('cm3').onclick=step('cc',-0.001);$('cp3').onclick=step('cc',0.001);
-for(const id of ['ea','bb','cc','tau'])$(id).oninput=()=>{stop();if(id==='tau'){soloStop('a');soloStop('b');}else soloStop(lay(id));show();};
+for(const id of ['ea','bb','cc','tau','ld'])$(id).oninput=()=>{stop();if(id==='tau'){soloStop('a');soloStop('b');}else soloStop(lay(id));show();};
 for(const v of [va,vb,vc]){v.onseeked=busy;v.onseeking=busy;v.onloadeddata=busy;}
 function soloStop(k){if(!k||!SOLO[k])return;SOLO[k]=0;const v=k==='a'?va:vb;v.pause();v.playbackRate=1;$(k==='a'?'pa':'pb').textContent=k==='a'?'▶ Ende abspielen':'▶ Anfang abspielen';}
 function stop(){if(!PLAYING)return;PLAYING=false;TOK++;va.pause();vb.pause();va.playbackRate=1;vb.playbackRate=1;$('play').textContent='So spielt es die App';opac();}
 const seeked=(v,t)=>new Promise(res=>{if(Math.abs(v.currentTime-t)<0.0004&&!v.seeking)return res();const f=()=>{v.removeEventListener('seeked',f);res();};v.addEventListener('seeked',f);try{v.currentTime=t;}catch(e){res();}});
 /* the hand over once in real time, the way stageShow does it for a loop */
-async function play(){if(PLAYING){stop();show();return;}soloStop('a');soloStop('b');PLAYING=true;const tok=++TOK,e=eA(),b=bB();$('play').textContent='anhalten';
+async function play(){if(PLAYING){stop();show();return;}soloStop('a');soloStop('b');PLAYING=true;const tok=++TOK,e=eA(),b=bB(),ld=lead();$('play').textContent='anhalten';
  document.body.classList.remove('diff');$('diff').classList.remove('on');
  vb.style.transition='none';va.style.transition='none';vb.style.opacity='0';va.style.opacity='1';vc.style.opacity='0';
  document.body.classList.add('busy');await Promise.all([seeked(va,Math.max(0,e-2)),seeked(vb,b)]);document.body.classList.remove('busy');if(tok!==TOK)return;
  va.playbackRate=rate(A);vb.playbackRate=rate(B);va.play().catch(()=>{});let on=false;
  const tick=()=>{if(tok!==TOK)return;
-  if(!on&&va.currentTime>=e-HAND_PRE){on=true;vb.play().catch(()=>{});vb.style.transition='opacity '+HAND_FADE+'s';vb.style.opacity='1';
+  if(!on&&va.currentTime>=e-ld){on=true;vb.play().catch(()=>{});vb.style.transition='opacity '+HAND_FADE+'s';vb.style.opacity='1';
    setTimeout(()=>{if(tok===TOK){va.style.transition='opacity '+HAND_FADE+'s';va.style.opacity='0';}},HAND_OFF);
    setTimeout(()=>{if(tok===TOK){stop();show();}},2600);}
   if(va.currentTime>=e&&!va.paused)va.pause();requestAnimationFrame(tick);};requestAnimationFrame(tick);}
 $('play').onclick=play;
 /* one layer plays on its own through its 5 seconds, the other one stands still as the stencil; pausing leaves the mark on the picture that stands */
 async function solo(k){const v=k==='a'?va:vb,s=$(k==='a'?'ea':'bb'),n=k==='a'?A:B,lim=x=>Math.max(Number(s.min),Math.min(Number(s.max),r3(x)));
- const off=k==='a'?Math.max(0,HAND_PRE-tau()*rate(A)):-tau()*rate(B);  /* the mark is the picture time plus off (see want) */
+ const off=k==='a'?Math.max(0,lead()-tau()*rate(A)):-tau()*rate(B);  /* the mark is the picture time plus off (see want) */
  if(SOLO[k]){s.value=String(lim(v.currentTime+off));soloStop(k);show();return;}
  stop();const tok=++STOK;SOLO[k]=tok;$(k==='a'?'pa':'pb').textContent='⏸ anhalten';
  if(Number(s.value)>=Number(s.max)-0.02)s.value=s.min;label();
@@ -219,10 +238,44 @@ $('save').onclick=async()=>{stop();const M={},get=p=>M[p]||(M[p]=(SCHNITT[p]||[0
  get(pth(A))[1]=eA()>=dur(va)-0.02?0:r3(eA());get(pth(B))[0]=bB()<0.0005?0:r3(bB());
  if(C){if(CEND){if(C!==A)get(pth(C))[1]=cC()>=dur(vc)-0.02?0:r3(cC());}else if(C!==B)get(pth(C))[0]=cC()<0.0005?0:r3(cC());}
  let ok=true;
+ if(Math.abs(lead()-savedLead())>0.0004){const v=r3(lead()),j=await post('/api/vorlauf',{name:pth(B),lead:v});if(j&&j.ok){if(v===HAND_PRE)delete LEAD[pth(B)];else LEAD[pth(B)]=v;}else ok=false;}
  for(const n in M){const s=M[n][0]||0,x=M[n][1]||0,o=SCHNITT[n]||[0,0];if(s===(o[0]||0)&&x===(o[1]||0))continue;
   const j=await post('/api/schnitt',{name:n,start:s,end:x});if(j&&j.ok){if(s||x)SCHNITT[n]=[s,x];else delete SCHNITT[n];}else ok=false;}
  label();$('sinfo').textContent=ok?'Gemerkt. Die App nimmt es beim nächsten Öffnen.':'Ging nicht: zwischen Anfang und Ende muss mindestens eine halbe Sekunde bleiben.';};
-$('back').onclick=()=>{stop();$('ea').value=String(savedEnd());$('bb').value=String(savedStart());if(C)$('cc').value=String(savedC());show();};
+$('back').onclick=()=>{stop();$('ea').value=String(savedEnd());$('bb').value=String(savedStart());$('ld').value=String(savedLead());if(C)$('cc').value=String(savedC());show();};
+/* The time axis (Metin, 02:05: make the stencils longer or shorter, or move them on the time axis, then store).
+   Seconds of the lower clip, counted from its real end: the upper bar is the clip that ends (its right edge is the
+   end mark, the pale rest is cut away), the lower bar the clip that begins (its left edge is where it comes in).
+   Dragging the right edge of the upper bar moves the end mark, the left edge of the lower bar trims its beginning
+   while its pictures stay where they are (begin mark and lead change together), the lower bar itself moves it in
+   time (the lead). */
+const AX0=-3.2,AX1=1.3;let AXD=null;
+const axW=()=>$('ax').clientWidth||1,axPps=()=>axW()/(AX1-AX0),axX=t=>(t-dur(va)-AX0)*axPps(),axStart=()=>eA()-lead();
+function axDraw(){const c=$('ax'),w=axW(),h=c.clientHeight||96,dpr=window.devicePixelRatio||1;if(c.width!==Math.round(w*dpr)||c.height!==Math.round(h*dpr)){c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);}
+ const g=c.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);g.font='11px system-ui';g.textBaseline='middle';
+ for(let t=Math.ceil(AX0*2)/2;t<=AX1;t+=0.5){const x=(t-AX0)*axPps();g.fillStyle='#345';g.fillRect(x,0,1,h);g.fillStyle='#89a';g.fillText((t>0?'+':'')+t.toFixed(1)+' s',x+3,8);}
+ const xe=axX(eA()),xd=axX(dur(va)),xs=axX(axStart()),fade=HAND_FADE*rate(A)*axPps();
+ g.fillStyle='rgba(120,130,140,.35)';g.fillRect(xe,18,Math.max(0,xd-xe),26);          /* cut away at the end */
+ g.fillStyle='#1b8fb0';g.fillRect(0,18,Math.max(0,xe),26);g.fillStyle='#9fe8ff';g.fillRect(xe-3,16,3,30);
+ const gr=g.createLinearGradient(xs,0,xs+fade,0);gr.addColorStop(0,'rgba(150,90,220,.25)');gr.addColorStop(1,'#7a48c8');
+ g.fillStyle=gr;g.fillRect(xs,52,fade,26);g.fillStyle='#7a48c8';g.fillRect(xs+fade,52,Math.max(0,w-xs-fade),26);g.fillStyle='#d9c2ff';g.fillRect(xs,50,3,30);
+ g.fillStyle='#fff';g.fillRect(axX(axStart()+tau()*rate(A)),14,1,68);
+ g.fillStyle='#e8fbff';g.textAlign='right';g.fillText('endet: Ende '+eA().toFixed(3)+' s',Math.max(150,xe-8),31);
+ g.textAlign='left';g.fillStyle='#f1e8ff';g.fillText('beginnt: Anfang '+bB().toFixed(3)+' s, Einsatz '+lead().toFixed(3)+' s',Math.min(w-250,xs+8+fade*0),65);
+ g.fillStyle='#9ab';g.fillText('ziehen: Rand = länger oder kürzer, Balken unten = verschieben',6,89);}
+function axAt(ev){const r=$('ax').getBoundingClientRect();return [ev.clientX-r.left,ev.clientY-r.top];}
+$('ax').onpointerdown=ev=>{const [x,y]=axAt(ev),xe=axX(eA()),xs=axX(axStart());let m='';
+ if(y<48){if(Math.abs(x-xe)<=16)m='e';}else if(Math.abs(x-xs)<=12)m='trim';else if(x>xs)m='shift';
+ if(!m)return;stop();soloStop('a');soloStop('b');AXD={m,x,e:eA(),b:bB(),l:lead()};try{$('ax').setPointerCapture(ev.pointerId);}catch(e){}ev.preventDefault();};
+$('ax').onpointermove=ev=>{if(!AXD)return;const lim=(id,v)=>Math.max(Number($(id).min),Math.min(Number($(id).max),v));let dt=(axAt(ev)[0]-AXD.x)/axPps();
+ if(AXD.m==='e')$('ea').value=String(r3(lim('ea',AXD.e+dt)));
+ else{const k=AXD.m==='trim'?rate(B)/rate(A):0;                                        /* pictures of the new clip per second of the old one */
+  dt=Math.max(AXD.l-Number($('ld').max),Math.min(AXD.l,dt));                              /* the lead stays between 0 and its maximum */
+  if(k)dt=Math.max((Number($('bb').min)-AXD.b)/k,Math.min((Number($('bb').max)-AXD.b)/k,dt));
+  $('ld').value=String(r3(AXD.l-dt));if(k)$('bb').value=String(r3(AXD.b+dt*k));}
+ show();};
+$('ax').onpointerup=$('ax').onpointercancel=()=>{AXD=null;};
+window.addEventListener('resize',axDraw);
 start();
 </script></body></html>
 """

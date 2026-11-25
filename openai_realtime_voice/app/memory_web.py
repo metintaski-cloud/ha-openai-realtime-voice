@@ -604,7 +604,7 @@ window.addEventListener('beforeinstallprompt',e=>{INST=e;diag('installable');});
 window.addEventListener('appinstalled',()=>{INST=null;diag('installed');});
 setTimeout(()=>diag('open'),4000);  /* 2.134.3: only with a service worker does Chrome install the page as an app, and only then does the manifest's fullscreen apply */
 async function clipsLoad(){let outs={};try{outs=(await (await fetch('/clips.json')).json()).outfits||{};}catch(e){}
- MUTE={};STUMM={};VOL={};for(const k in outs){for(const c in (outs[k].mv||{}))VOL[k+'/'+c]=outs[k].mv[c];for(const c of (outs[k].m||[]))MUTE[k+'/'+c]=1;for(const c in (outs[k].ms||{}))STUMM[k+'/'+c]=outs[k].ms[c];CVER[k]=outs[k].v||0;const r=outs[k].r||{};for(const c in r)RATE[k+'/'+c]=r[c];const q=outs[k].k||{};for(const c in q)KURVE[k+'/'+c]=q[c];const sc=outs[k].s||{};for(const c in sc)SCHNITT[k+'/'+c]=sc[c];}  /* 2.136.0 (Metin): his tempo from the tester, the clip files stay untouched */
+ MUTE={};STUMM={};VOL={};LEAD={};for(const k in outs){for(const c in (outs[k].l||{}))LEAD[k+'/'+c]=outs[k].l[c];for(const c in (outs[k].mv||{}))VOL[k+'/'+c]=outs[k].mv[c];for(const c of (outs[k].m||[]))MUTE[k+'/'+c]=1;for(const c in (outs[k].ms||{}))STUMM[k+'/'+c]=outs[k].ms[c];CVER[k]=outs[k].v||0;const r=outs[k].r||{};for(const c in r)RATE[k+'/'+c]=r[c];const q=outs[k].k||{};for(const c in q)KURVE[k+'/'+c]=q[c];const sc=outs[k].s||{};for(const c in sc)SCHNITT[k+'/'+c]=sc[c];}  /* 2.136.0 (Metin): his tempo from the tester, the clip files stay untouched */
 NIGHT=outs.nacht?outs.nacht.clips:[];NIGHTBODY=!!(outs.nacht&&outs.nacht.body);delete outs.nacht;PET=outs.mokka&&outs.mokka.alpha||[];delete outs.mokka;const names=Object.keys(outs);LOOKS=names.slice().sort();
  let last='',lday='',seen=0;try{last=localStorage.getItem('loutfit')||'';lday=localStorage.getItem('loutfitday')||'';seen=Number(localStorage.getItem('lseen')||0);}catch(e){}
  let mokpend=false;try{mokpend=!localStorage.getItem('lmokka');}catch(e){}
@@ -627,7 +627,7 @@ const PHONE=Math.min(screen.width,screen.height)*(window.devicePixelRatio||1)<=1
 function lightNow(){try{const o=localStorage.getItem('llight');if(o==='an')return true;if(o==='aus')return false;}catch(e){}
  const c=navigator.connection;return LIGHT||PHONE||!!(c&&(c.type==='cellular'||c.saveData));}
 function stallSeen(){if(lightNow())return;const t=Date.now();STALLS=STALLS.filter(x=>t-x<60000);STALLS.push(t);if(STALLS.length>=2)LIGHT=true;}
-let RATE={},KURVE={},SCHNITT={},MUTE={},STUMM={},VOL={};  /* VOL: loudness factor of a clip, 1 = normal (2.164.0) */  /* MUTE: clips whose sound Metin switched off on the page /ganzes, STUMM: silent stretches [from,to] inside a clip (2.163.0); the files keep their sound and their length */
+let RATE={},KURVE={},SCHNITT={},MUTE={},STUMM={},VOL={},LEAD={};  /* LEAD: when a loop clip comes in, seconds before the end mark of the clip before it; none = 0.25 (page /naht, 2.166.0) */  /* VOL: loudness factor of a clip, 1 = normal (2.164.0) */  /* MUTE: clips whose sound Metin switched off on the page /ganzes, STUMM: silent stretches [from,to] inside a clip (2.163.0); the files keep their sound and their length */
 /* 2.144.0 (Metin sets where a clip begins and ends, in the tester): the stage starts a clip at its mark, hands over at its end mark and holds the last picture there; the file stays whole */
 function cutStart(pth){const c=SCHNITT[pth];return c&&c[0]>0?c[0]:0;}
 function endOf(v){const d=v.duration||0,c=SCHNITT[v.dataset.pth||''];return c&&c[1]>0&&c[1]<d?c[1]:d;}
@@ -641,7 +641,7 @@ function rateFollow(v,pth){if(!KURVE[pth])return null;return()=>{const r=rateAt(
  if(Math.abs((v.playbackRate||1)-r)>0.001)v.playbackRate=r;};}
 let SV=0,STOK=0,CONT=false,SWAP=0;const PRELOAD_S=3,PRELOAD_LIGHT_S=9;  /* 2.141.5: on the go a 7 Mbit copy needs about 7 s over an 11 Mbit line, so the next clip starts loading 9 s ahead, once the running one is fully loaded */
 let TIGHT=false;  /* a loop that replays the same clip blends only at the very end (2.133.5): nacht/eifersuechtig does not come all the way back to its start pose, and the wide blend showed both poses at once */
-function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name)&&!MUTE[name.includes('/')?name:OUTFIT+'/'+name];const tight=TIGHT;TIGHT=false;const PRE=tight?0.25:0.8,OFF=tight?300:850;const s=document.getElementById('stage'),vs=[document.getElementById('svid'),document.getElementById('svid2')],a=vs[SV],b=vs[1-SV],tok=++STOK,cont=CONT;CONT=false;
+function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name)&&!MUTE[name.includes('/')?name:OUTFIT+'/'+name];const tight=TIGHT;TIGHT=false;const PRE0=tight?0.25:0.8,OFF=tight?300:850,lp=name?(name.includes('/')?name:OUTFIT+'/'+name):'',PRE=tight&&LEAD[lp]!==undefined?LEAD[lp]:PRE0;const s=document.getElementById('stage'),vs=[document.getElementById('svid'),document.getElementById('svid2')],a=vs[SV],b=vs[1-SV],tok=++STOK,cont=CONT;CONT=false;
  if(!name){s.classList.remove('vid');vs.forEach(v=>{v.classList.remove('on');setTimeout(()=>{if(tok===STOK){v.pause();v.removeAttribute('src');v.load();}},600);});return;}
  if(loop&&a.loop&&a.classList.contains('on')&&a.src.split('?')[0].endsWith('/'+name+'.mp4'))return;
  b.onended=null;b.ontimeupdate=null;b.loop=!!loop;b.muted=!snd||document.getElementById('chat').classList.contains('oncall');b.volume=Math.min(1,.7*(VOL[name.includes('/')?name:OUTFIT+'/'+name]||1));let rdy=false;const ready=()=>{if(rdy)return;rdy=true;b.oncanplaythrough=null;if(tok!==STOK)return;
@@ -1148,6 +1148,10 @@ def list_outfits() -> dict:
         look, clip = name.split("/", 1)
         if look in out and clip in out[look]["clips"]:
             out[look].setdefault("s", {})[clip] = cut
+    for name, lead in _vorlauf_read().items():  # l: when a loop clip comes in, seconds before the end of the one before it (2.166.0)
+        look, _, clip = name.partition("/")
+        if look in out and clip in out[look]["clips"]:
+            out[look].setdefault("l", {})[clip] = lead
     # m: clips whose sound is switched off (2.163.0, the page /ganzes; the files keep their sound)
     from app import ganzes_page
     sound = ganzes_page.ton_read()
@@ -1318,6 +1322,46 @@ def _schnitt_set(name: str, start, end) -> bool:
         d[name] = [a_, b_]
     else:
         d.pop(name, None)
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(d, f, ensure_ascii=False)
+    os.replace(tmp, path)
+    return True
+
+
+VORLAUF_PATH = "/data/clip_vorlauf.json"
+LEAD_DEFAULT = 0.25  # a loop clip comes in this long before the end mark of the clip before it (stageShow, TIGHT)
+LEAD_MAX = 1.5       # the next clip is only loaded 3 s before the end, so it cannot come in much earlier
+
+
+def _vorlauf_read() -> dict:
+    """When a clip comes in (2.166.0, Metin: he wants to move a clip on the time line): seconds of
+    clip time before the end mark of the clip before it, per clip, e.g. {"kurz/freizeitgluecklich2":
+    0.4}. No entry means LEAD_DEFAULT. Used when a loop hands over; the files stay untouched."""
+    try:
+        with open(os.environ.get("LEYLA_VORLAUF", VORLAUF_PATH), encoding="utf-8") as f:
+            d = json.load(f)
+    except Exception:
+        return {}
+    return {str(n): round(float(v), 3) for n, v in d.items()
+            if isinstance(v, (int, float)) and not isinstance(v, bool) and 0 <= v <= LEAD_MAX} if isinstance(d, dict) else {}
+
+
+def _vorlauf_set(name: str, lead) -> bool:
+    """Store when one clip comes in; the default removes the entry. False when it makes no sense."""
+    try:
+        value = round(float(lead), 3)
+    except (TypeError, ValueError):
+        return False
+    if isinstance(lead, bool) or not 0 <= value <= LEAD_MAX:
+        return False
+    path = os.environ.get("LEYLA_VORLAUF", VORLAUF_PATH)
+    d = _vorlauf_read()
+    if value == LEAD_DEFAULT:
+        d.pop(name, None)
+    else:
+        d[name] = value
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     tmp = path + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
@@ -1688,6 +1732,16 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
             ok = bool(n) and _schnitt_set(n, d.get("start"), d.get("end"))
             if ok:
                 logger.info("Cut marks: %s -> %s to %s", n, d.get("start"), d.get("end"))
+            await _respond(writer, "200 OK", "application/json", json.dumps({"ok": ok}))
+        elif method == "GET" and path == "/api/vorlauf":
+            await _respond(writer, "200 OK", "application/json",
+                           json.dumps(_vorlauf_read(), ensure_ascii=False))
+        elif method == "POST" and path == "/api/vorlauf":
+            # when a loop clip comes in, seconds before the end of the clip before it (page /naht, 2.166.0)
+            n = str(d.get("name") or "")[:60]
+            ok = bool(n) and "/" in n and _vorlauf_set(n, d.get("lead"))
+            if ok:
+                logger.info("Lead: %s comes in %s s before the end", n, d.get("lead"))
             await _respond(writer, "200 OK", "application/json", json.dumps({"ok": ok}))
         elif method == "GET" and path.startswith("/api/voice/"):
             st = voice_stream.get(path.rsplit("/", 1)[1])

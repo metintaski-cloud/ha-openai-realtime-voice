@@ -186,13 +186,14 @@ def _files() -> dict:
     return {"tempo": os.environ.get("LEYLA_TEMPO", mw.TEMPO_PATH),
             "kurve": os.environ.get("LEYLA_KURVE", mw.KURVE_PATH),
             "schnitt": os.environ.get("LEYLA_SCHNITT", mw.SCHNITT_PATH),
-            "ton": os.environ.get("LEYLA_TON", TON_PATH)}
+            "ton": os.environ.get("LEYLA_TON", TON_PATH),
+            "vorlauf": os.environ.get("LEYLA_VORLAUF", mw.VORLAUF_PATH)}
 
 
 def _now() -> dict:
     from app import memory_web as mw
     return {"tempo": mw._tempo_read(), "kurve": mw._kurve_read(), "schnitt": mw._schnitt_read(),
-            "ton": ton_read()}
+            "ton": ton_read(), "vorlauf": mw._vorlauf_read()}
 
 
 def _write(path: str, data) -> None:
@@ -221,7 +222,8 @@ def _changed(a: dict, b: dict) -> list:
         names |= {n for n in set(qa) | set(qb) if qa.get(n) != qb.get(n)}
     for x, y in ((_rates(a.get("tempo")), _rates(b.get("tempo"))),
                  (a.get("kurve") or {}, b.get("kurve") or {}),
-                 (a.get("schnitt") or {}, b.get("schnitt") or {})):
+                 (a.get("schnitt") or {}, b.get("schnitt") or {}),
+                 (a.get("vorlauf") or {}, b.get("vorlauf") or {})):
         names |= {n for n in set(x) | set(y) if x.get(n) != y.get(n)}
     return sorted(names)
 
@@ -235,7 +237,8 @@ def stand_read() -> Optional[dict]:
     ok = (isinstance(d, dict) and isinstance(d.get("t"), (int, float)) and isinstance(d.get("tempo"), list)
           and isinstance(d.get("kurve"), dict) and isinstance(d.get("schnitt"), dict)
           and isinstance(d.get("ton", {}), dict))
-    return dict(d, ton=d.get("ton") or {"aus": [], "stumm": {}, "laut": {}}) if ok else None
+    lead = d.get("vorlauf") if ok and isinstance(d.get("vorlauf"), dict) else {}  # none before 2.166.0
+    return dict(d, ton=d.get("ton") or {"aus": [], "stumm": {}, "laut": {}}, vorlauf=lead) if ok else None
 
 
 def stand_save() -> dict:
@@ -264,7 +267,7 @@ def stand_restore() -> dict:
         return {"ok": False}
     back = _changed(d, _now())
     files = _files()
-    for key in ("tempo", "kurve", "schnitt", "ton"):
+    for key in ("tempo", "kurve", "schnitt", "ton", "vorlauf"):
         _write(files[key], d[key])
     return {**stand_info(), "zurueck": back}
 
@@ -342,7 +345,7 @@ const OUT=[['Kurzes Arbeitskleid','kurz',''],['Kurzes Freizeitkleid','kurz','fre
 const ZONES=[['Gesicht',['gesicht']],['Brust',['brust']],['Bauch',['bauch','mix']],['Po',['po','povorne','mix']]];
 const PRELOAD_S=3,LOOP_PRE=0.25,LOOP_OFF=300,FAST_OFF=450;
 const $=id=>document.getElementById(id);
-let LOOK='',PRE='',CL=[],VER={},RATE={},KURVE={},SCHNITT={},SAVED={},MUTE={},STUMM={},VOL={},OFF={},SV=0,TOK=0,CUR='',CURSND=false,LAST='',BUSY=false,SEQ=true,SOLO=false,PAUSED=false,SCRUB=false;
+let LOOK='',PRE='',CL=[],VER={},RATE={},KURVE={},SCHNITT={},SAVED={},MUTE={},STUMM={},VOL={},LEAD={},OFF={},SV=0,TOK=0,CUR='',CURSND=false,LAST='',BUSY=false,SEQ=true,SOLO=false,PAUSED=false,SCRUB=false;
 const base=n=>n.replace(/[0-9]+$/,'');
 const vars=b=>CL.filter(n=>base(n)===PRE+b);
 const pthNow=()=>LOOK+'/'+CUR;
@@ -402,7 +405,7 @@ function label(){const p=pthNow(),c=SCHNITT[p],v=vis(),d=v.duration||10;$('name'
    that one ends; otherwise it starts as soon as it can play. `done` is called PRELOAD_S before
    its own end, so the next clip can load in time (as on the stage of the app). */
 function show(name,opt,done){const vs=[$('v0'),$('v1')],a=vs[SV],b=vs[1-SV],tok=++TOK,pth=LOOK+'/'+name;SOLO=false;PAUSED=false;
- const pre=opt.fast?0:LOOP_PRE,off=opt.fast?FAST_OFF:LOOP_OFF;
+ const pre=opt.fast?0:(LEAD[pth]!==undefined?LEAD[pth]:LOOP_PRE),off=opt.fast?FAST_OFF:LOOP_OFF;  /* LEAD: when this clip comes in, set on the page /naht */
  b.onended=null;b.ontimeupdate=null;b.oncanplaythrough=null;b.dataset.pth=pth;b.muted=!(opt.snd&&$('ton').checked&&!MUTE[pth]);b.volume=.7;
  let rdy=false;
  const go=()=>{if(tok!==TOK)return;const cs=cutStart(pth);if(Math.abs(b.currentTime-cs)>0.04)b.currentTime=cs;
@@ -450,7 +453,7 @@ function draw(){const L=$('loops'),T=$('touch');L.innerHTML='';T.innerHTML='';
 function pick(i){const o=OUT[i];LOOK=o[1];PRE=o[2];CL=(window.J.outfits[LOOK]||{}).clips||[];LAST='';CUR='';OFF={};try{localStorage.setItem('lganz',String(i));}catch(e){}draw();loopNext(false,true);}
 async function start(){const j=await (await fetch('/clips.json?t='+Date.now())).json();window.J=j;const o=j.outfits||{};
  for(const look in o){VER[look]=o[look].v||0;for(const c in (o[look].r||{}))RATE[look+'/'+c]=o[look].r[c];
-  for(const c in (o[look].k||{}))KURVE[look+'/'+c]=o[look].k[c];for(const c of (o[look].m||[]))MUTE[look+'/'+c]=1;
+  for(const c in (o[look].k||{}))KURVE[look+'/'+c]=o[look].k[c];for(const c in (o[look].l||{}))LEAD[look+'/'+c]=o[look].l[c];for(const c of (o[look].m||[]))MUTE[look+'/'+c]=1;
   for(const c in (o[look].ms||{}))STUMM[look+'/'+c]=o[look].ms[c];for(const c in (o[look].mv||{}))VOL[look+'/'+c]=o[look].mv[c];
   for(const c in (o[look].s||{})){SCHNITT[look+'/'+c]=o[look].s[c].slice();SAVED[look+'/'+c]=o[look].s[c].slice();}}
  const s=$('look');OUT.forEach((x,i)=>{if(!o[x[1]])return;const op=document.createElement('option');op.value=String(i);op.textContent=x[0];s.appendChild(op);});
