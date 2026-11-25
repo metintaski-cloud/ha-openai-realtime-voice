@@ -14,7 +14,11 @@ Every loop of the outfit is one layer (`LAY`), and any other clip can be added a
 clips are named Kopf, Brust, Bauch, Po). A layer is a still picture of its clip that lies over the
 others. It has: visible or not (`on`), how see through (`op`), the picture it shows (`t`, its
 play head), its begin mark (`s`), its end mark (`e`), its lead (`ld`) and its tempo (`rt`, a slider of its own under
-the see through slider since 2.167.2, stored with POST /api/tempo; it also changes while the layer plays). One slider with fine
+the see through slider since 2.167.2, stored with POST /api/tempo; it also changes while the layer plays)
+and stretches with a tempo of their own (`k`, [from, to, tempo] in clip time, since 2.169.0: Metin, 05:10,
+loop 1 moves slowly, but when the whole clip is made faster she blinks faster than in loop 3; so the
+clip gets its tempo and the blink keeps its own. Set with the play head and "Stück Anfang hier", "Stück
+Ende hier", "Stück dazu"; the same tempo curve the tester and the app use, POST /api/kurve). One slider with fine
 steps (a picture, 0.01 s, 0.001 s) moves whichever of these four is chosen; moving a mark shows
 the picture at that mark. A layer can play on its own from its play head to its end mark.
 
@@ -39,8 +43,8 @@ what is below: black lies exactly on each other, what glows does not.
 
 One button stores every changed begin and end mark (POST /api/schnitt, in thousandths of a
 second) and every changed lead (POST /api/vorlauf). The clip files are never touched. A clip has
-ONE begin mark, ONE end mark and ONE lead, used at every hand over, not one per pair. A tempo
-curve inside a clip is not taken into account (the stored tempo is).
+ONE begin mark, ONE end mark and ONE lead, used at every hand over, not one per pair. The tempo
+curve of a clip is used by every player on this page (`rAt`, `follow`).
 
 The lead (2.166.0): how long before the end mark of the old clip the new one comes in was fixed
 (HAND_PRE, 0.25 s). It is a value per clip (`l` in /clips.json, `LEAD` in the app, in /ganzes
@@ -134,7 +138,11 @@ function title(n){const all=CL.filter(mine).sort(cmp),loops=all.filter(isLoop);i
 const savedS=L=>{const c=SCHNITT[pth(L.n)];return c&&c[0]>0?c[0]:0;};
 const savedE=L=>{const c=SCHNITT[pth(L.n)];return c&&c[1]>0&&c[1]<L.d?c[1]:L.d;};
 const savedL=L=>{const l=LEAD[pth(L.n)];return l===undefined?HAND_PRE:l;};
-const changed=L=>!!L.d&&(Math.abs(L.rt-rate(L.n))>0.004||Math.abs(L.s-savedS(L))>0.0004||Math.abs(L.e-savedE(L))>0.0004||Math.abs(L.ld-savedL(L))>0.0004);
+const savedK=L=>(KURVE[pth(L.n)]||[]).map(x=>x.slice(0,3));
+/* the tempo of a layer at one moment of its clip: a stretch with its own tempo wins over the tempo of the clip (Metin, 05:25) */
+const rAt=(L,t)=>{for(const k of L.k)if(t>=k[0]&&t<k[1])return k[2];return L.rt;};
+function follow(L,t){const r=rAt(L,t===undefined?L.v.currentTime:t);if(Math.abs((L.v.playbackRate||1)-r)>0.001)L.v.playbackRate=r;}
+const changed=L=>!!L.d&&(JSON.stringify(L.k)!==JSON.stringify(savedK(L))||Math.abs(L.rt-rate(L.n))>0.004||Math.abs(L.s-savedS(L))>0.0004||Math.abs(L.e-savedE(L))>0.0004||Math.abs(L.ld-savedL(L))>0.0004);
 const val=(L,k)=>k==='s'?L.s:k==='e'?L.e:k==='l'?L.ld:L.t;
 /* one value of one layer; moving a mark shows the picture at that mark */
 function setVal(L,k,x){if(!L.d)return;halt();if(!MIX)soloStop(L);
@@ -149,17 +157,22 @@ const top1=()=>LAY.filter(L=>L.on).sort((a,b)=>b.z-a.z)[0];
 function draw(){const diff=document.body.classList.contains('diff'),tp=top1();let ch=false;
  for(const L of LAY){if(!PLAYING){L.v.style.transition='none';L.v.style.zIndex=String(L.z);L.v.style.opacity=!L.on?'0':(diff&&L===tp&&LAY.filter(x=>x.on).length>1)?'1':String(L.op/100);
    L.v.style.mixBlendMode=diff&&L.on&&L===tp&&LAY.filter(x=>x.on).length>1?'difference':'normal';}
-  if(!L.el)continue;L.el.classList.toggle('off',!L.on);q(L,'on').checked=L.on;q(L,'op').value=String(L.op);q(L,'oplab').textContent=L.op+' %';q(L,'rt').value=String(L.rt);q(L,'rtlab').textContent=L.rt.toFixed(2);
+  if(!L.el)continue;L.el.classList.toggle('off',!L.on);q(L,'on').checked=L.on;q(L,'op').value=String(L.op);q(L,'oplab').textContent=L.op+' %';q(L,'rt').value=String(L.rt);q(L,'rtlab').textContent=L.rt.toFixed(2);q(L,'kr').value=String(L.kr);q(L,'krlab').textContent=L.kr.toFixed(2);
+  q(L,'klab').textContent='Ein Stück mit eigenem Tempo, zum Beispiel das Blinzeln: weißen Strich an den Anfang, "Stück Anfang hier", weißen Strich ans Ende, "Stück Ende hier", Tempo wählen, "Stück dazu".'+(L.ka!==null||L.kb!==null?' Jetzt: von '+(L.ka===null?'?':L.ka.toFixed(3))+' bis '+(L.kb===null?'?':L.kb.toFixed(3))+' s.':'');
+  const sig=JSON.stringify(L.k);if(L.ksig!==sig){L.ksig=sig;const box=q(L,'klist');box.innerHTML='';L.k.forEach((k,i)=>{const row=document.createElement('div');row.className='bar';const sp=document.createElement('span');sp.className='t';sp.textContent=k[0].toFixed(3)+' bis '+k[1].toFixed(3)+' s: Tempo '+k[2].toFixed(2);const b=document.createElement('button');b.textContent='weg';b.dataset.kdel=String(i);b.onclick=()=>{L.k.splice(i,1);halt();show();};row.appendChild(sp);row.appendChild(b);box.appendChild(row);});}
   for(const k of ['t','s','e','l'])q(L,'m'+k).classList.toggle('on',L.mode===k);
   const p=q(L,'pos');p.min=String(L.mode==='t'?L.s:0);p.max=String(L.mode==='l'?LEAD_MAX:L.mode==='t'?(L.e||10):(L.d||10));p.value=String(val(L,L.mode));
   q(L,'play').textContent=L.play?'⏸ anhalten':'▶ abspielen';const c=changed(L);ch=ch||c;
-  q(L,'lab').innerHTML=!L.d?'wird geladen ...':'Bild <span class="n">'+L.t.toFixed(3)+'</span> &nbsp; Anfang <span class="n">'+L.s.toFixed(3)+'</span> &nbsp; Ende <span class="n">'+L.e.toFixed(3)+'</span> von '+L.d.toFixed(3)+' s &nbsp; Einsatz <span class="n">'+L.ld.toFixed(3)+'</span>'+(KURVE[pth(L.n)]?' &nbsp; (Tempo Kurve nicht eingerechnet)':'')+(c?' &nbsp; <span style="color:#fd8">noch nicht gemerkt</span>':'');}
+  q(L,'lab').innerHTML=!L.d?'wird geladen ...':'Bild <span class="n">'+L.t.toFixed(3)+'</span> &nbsp; Anfang <span class="n">'+L.s.toFixed(3)+'</span> &nbsp; Ende <span class="n">'+L.e.toFixed(3)+'</span> von '+L.d.toFixed(3)+' s &nbsp; Einsatz <span class="n">'+L.ld.toFixed(3)+'</span>'+(c?' &nbsp; <span style="color:#fd8">noch nicht gemerkt</span>':'');}
  $('save').classList.toggle('on',ch);$('sinfo').textContent=ch?'Noch nicht gemerkt.':'So ist es gemerkt.';$('diff').classList.toggle('on',diff);
  $('play').textContent=PLAYING&&!MIX?'anhalten':'So spielt es die App';$('mix').textContent=MIX==='rnd'?'⏸ anhalten':'▶ gemischt';$('mixs').textContent=MIX==='seq'?'⏸ anhalten':'▶ der Reihe nach: 1, 2, 3';if(!MIX)$('minfo').textContent=MIXTXT;$('pall').textContent=LAY.some(L=>L.play)?'⏸ alle anhalten':'▶ alle sichtbaren abspielen';axDraw();}
 const HTML='<div class="bar"><label><input type="checkbox" data-k="on">sichtbar</label><span class="ttl" data-k="ttl"></span><button data-k="up" title="nach oben legen">nach oben</button></div>'
  +'<div class="bar"><span class="z">Durchsicht</span><input type="range" data-k="op" min="0" max="100" step="1" value="100"><span data-k="oplab" style="min-width:38px">100 %</span></div>'
  +'<div class="bar"><span class="z">Tempo</span><input type="range" data-k="rt" min="0.4" max="2" step="0.01" value="1"><span data-k="rtlab" style="min-width:38px">1.00</span></div>'
  +'<div class="bar"><button data-k="rm">Tempo − 0,01</button><button data-k="rp">Tempo + 0,01</button><button data-k="r1">Tempo auf 1</button></div>'
+ +'<div class="bar"><span class="z">Stück</span><button data-k="ka">Stück Anfang hier</button><button data-k="kb">Stück Ende hier</button></div>'
+ +'<div class="bar"><span class="z">Stück Tempo</span><input type="range" data-k="kr" min="0.4" max="2" step="0.01" value="1"><span data-k="krlab" style="min-width:38px">1.00</span><button data-k="kadd">Stück dazu</button></div>'
+ +'<div class="t" data-k="klab"></div><div data-k="klist"></div>'
  +'<div class="bar"><span class="z">Regler</span><button data-k="mt">Bild</button><button data-k="ms">Anfang</button><button data-k="me">Ende</button><button data-k="ml">Einsatz</button></div>'
  +'<div class="t" data-k="lab"></div>'
  +'<div class="bar"><input type="range" data-k="pos" min="0" max="10" step="0.001" value="0"></div>'
@@ -169,8 +182,13 @@ function card(L){const el=document.createElement('div');el.className='card lay';
  q(L,'ttl').textContent=title(L.n)+(title(L.n)===L.n?'':' ('+L.n+')');
  q(L,'on').onchange=()=>{L.on=q(L,'on').checked;if(!L.on&&!MIX)soloStop(L);halt();show();};
  q(L,'op').oninput=()=>{L.op=Number(q(L,'op').value);if(L.op>0&&!L.on)L.on=true;halt();show();};
- const tempo=x=>{L.rt=Math.round(Math.max(0.4,Math.min(2,x))*100)/100;if(L.play||PLAYING)L.v.playbackRate=L.rt;draw();};  /* the tempo of this layer, also while it plays (Metin, 02:39) */
+ const tempo=x=>{L.rt=Math.round(Math.max(0.4,Math.min(2,x))*100)/100;if(L.play||PLAYING)follow(L);draw();};  /* the tempo of this layer, also while it plays (Metin, 02:39) */
  q(L,'rt').oninput=()=>tempo(Number(q(L,'rt').value));q(L,'rm').onclick=()=>tempo(L.rt-0.01);q(L,'rp').onclick=()=>tempo(L.rt+0.01);q(L,'r1').onclick=()=>tempo(1);
+ q(L,'ka').onclick=()=>{L.ka=L.t;draw();};q(L,'kb').onclick=()=>{L.kb=L.t;draw();};q(L,'kr').oninput=()=>{L.kr=Number(q(L,'kr').value);draw();};
+ /* a stretch with its own tempo: it replaces what it overlaps */
+ q(L,'kadd').onclick=()=>{if(L.ka===null||L.kb===null)return;const a=r3(Math.min(L.ka,L.kb)),b=r3(Math.max(L.ka,L.kb));if(b-a<0.02)return;
+  const keep=[];for(const k of L.k){if(k[1]<=a||k[0]>=b){keep.push(k);continue;}if(k[0]<a)keep.push([k[0],a,k[2]]);if(k[1]>b)keep.push([b,k[1],k[2]]);}
+  keep.push([a,b,Math.round(L.kr*100)/100]);keep.sort((x,y)=>x[0]-y[0]);L.k=keep.slice(0,40);L.ka=null;L.kb=null;halt();show();};
  q(L,'up').onclick=()=>{L.z=++ZTOP;L.on=true;halt();show();};
  for(const k of ['t','s','e','l'])q(L,'m'+k).onclick=()=>{L.mode=k;if(k==='s'||k==='e')setVal(L,k,val(L,k));else show();};
  q(L,'pos').oninput=()=>setVal(L,L.mode,Number(q(L,'pos').value));
@@ -179,7 +197,7 @@ function card(L){const el=document.createElement('div');el.className='card lay';
  q(L,'play').onclick=()=>solo(L);q(L,'gs').onclick=()=>{L.mode='t';setVal(L,'t',L.s);};q(L,'ge').onclick=()=>{L.mode='t';setVal(L,'t',L.e);};
  q(L,'l0').onclick=()=>setVal(L,'l',HAND_PRE);}
 function addLayer(n,on,op){let L=lay(n);if(L)return L;const v=document.createElement('video');v.playsInline=true;v.muted=true;v.preload='auto';
- const c=SCHNITT[pth(n)]||[0,0];L={n,v,on:!!on,op:op===undefined?100:op,t:0,s:c[0]>0?c[0]:0,e:0,ld:0,rt:rate(n),d:0,play:0,mode:'t',el:null,z:++ZTOP,then:null};L.ld=savedL(L);
+ const c=SCHNITT[pth(n)]||[0,0];L={n,v,on:!!on,op:op===undefined?100:op,t:0,s:c[0]>0?c[0]:0,e:0,ld:0,rt:rate(n),k:[],ka:null,kb:null,kr:1,d:0,play:0,mode:'t',el:null,z:++ZTOP,then:null};L.ld=savedL(L);L.k=savedK(L);
  v.onloadedmetadata=()=>{L.d=v.duration||0;L.e=savedE(L);L.t=Math.max(L.s,Math.min(L.t,L.e));if(L.then){const f=L.then;L.then=null;f();}setAx();show();};
  v.onseeked=busy;v.onseeking=busy;v.onloadeddata=busy;
  v.src='/clips/'+pth(n)+'.mp4?v='+(VER[LOOK]||0);$('st').appendChild(v);LAY.push(L);card(L);return L;}
@@ -218,14 +236,14 @@ function stop(){if(!PLAYING)return;PLAYING=false;MIX='';TOK++;for(const L of LAY
 const seeked=(v,t)=>new Promise(res=>{if(Math.abs(v.currentTime-t)<0.0004&&!v.seeking)return res();const f=()=>{v.removeEventListener('seeked',f);res();};v.addEventListener('seeked',f);try{v.currentTime=t;}catch(e){res();}});
 /* one layer plays on its own from its play head to its end mark, the others stand still; pausing leaves the play head on the picture that stands */
 async function solo(L){if(!L.d)return;if(L.play){L.t=r3(Math.min(L.e,L.v.currentTime));soloStop(L);show();return;}stop();const tok=++STOK;L.play=tok;L.on=true;L.mode='t';
- if(L.t>=L.e-0.02||L.t<L.s)L.t=L.s;draw();await seeked(L.v,L.t);if(L.play!==tok)return;busy();L.v.playbackRate=L.rt;L.v.play().catch(()=>{});
- const tick=()=>{if(L.play!==tok)return;const t=L.v.currentTime;if(t>=L.e||L.v.ended){L.t=L.e;soloStop(L);show();return;}L.t=r3(t);draw();requestAnimationFrame(tick);};requestAnimationFrame(tick);}
+ if(L.t>=L.e-0.02||L.t<L.s)L.t=L.s;draw();await seeked(L.v,L.t);if(L.play!==tok)return;busy();follow(L,L.t);L.v.play().catch(()=>{});
+ const tick=()=>{if(L.play!==tok)return;const t=L.v.currentTime;if(t>=L.e||L.v.ended){L.t=L.e;soloStop(L);show();return;}follow(L);L.t=r3(t);draw();requestAnimationFrame(tick);};requestAnimationFrame(tick);}
 /* all visible layers at once (Metin, 02:29): they start in the same moment, each from its play head, and each stops at its own end mark */
 async function allPlay(){if(LAY.some(L=>L.play)){for(const L of LAY)if(L.play){L.t=r3(Math.min(L.e,L.v.currentTime));soloStop(L);}show();return;}
  const on=LAY.filter(L=>L.on&&L.d);if(!on.length)return;stop();const tok=++STOK;for(const L of on){L.play=tok;L.mode='t';if(L.t>=L.e-0.02||L.t<L.s)L.t=L.s;}draw();
  await Promise.all(on.map(L=>seeked(L.v,L.t)));const go=on.filter(L=>L.play===tok);busy();
- for(const L of go)L.v.playbackRate=L.rt;for(const L of go)L.v.play().catch(()=>{});
- const tick=()=>{let any=false;for(const L of go){if(L.play!==tok)continue;const t=L.v.currentTime;if(t>=L.e||L.v.ended){L.t=L.e;soloStop(L);}else{L.t=r3(t);any=true;}}
+ for(const L of go)follow(L,L.t);for(const L of go)L.v.play().catch(()=>{});
+ const tick=()=>{let any=false;for(const L of go){if(L.play!==tok)continue;const t=L.v.currentTime;if(t>=L.e||L.v.ended){L.t=L.e;soloStop(L);}else{follow(L);L.t=r3(t);any=true;}}
   if(any){draw();requestAnimationFrame(tick);}else show();};requestAnimationFrame(tick);}
 $('pall').onclick=allPlay;$('gall').onclick=()=>{stop();for(const L of LAY){if(!L.d)continue;soloStop(L);L.mode='t';L.t=L.s;}show();};
 /* the row of loops in real time (Metin, 02:31: he also needs loop 3, 4, 5), every hand over the way stageShow does it for a
@@ -236,11 +254,11 @@ async function play(){if(PLAYING){stop();return;}const seq=chain();if(seq.length
  document.body.classList.remove('diff');draw();let zc=10,i=0,on=false,prep=true,t1=0,prev=null;
  for(const L of LAY){L.v.style.transition='none';L.v.style.mixBlendMode='normal';L.v.style.opacity=L===seq[0]?'1':'0';}seq[0].v.style.zIndex=String(++zc);
  document.body.classList.add('busy');await Promise.all([seeked(seq[0].v,Math.max(seq[0].s,seq[0].e-2)),seeked(seq[1].v,seq[1].s)]);document.body.classList.remove('busy');if(tok!==TOK)return;
- seq[0].v.playbackRate=seq[0].rt;seq[0].v.play().catch(()=>{});window.SEEN=[seq[0].n];
- const tick=()=>{if(tok!==TOK)return;const a=seq[i],b=seq[i+1],now=performance.now();
+ follow(seq[0]);seq[0].v.play().catch(()=>{});window.SEEN=[seq[0].n];
+ const tick=()=>{if(tok!==TOK)return;const a=seq[i],b=seq[i+1],now=performance.now();follow(a);if(prev&&!prev.v.paused)follow(prev);
   if(prev&&prev.v.currentTime>=prev.e&&!prev.v.paused)prev.v.pause();
   if(b&&!prep&&now-t1>1300&&a.v.currentTime>=a.e-3){prep=true;b.v.pause();b.v.style.transition='none';b.v.style.opacity='0';try{b.v.currentTime=b.s;}catch(e){}}
-  if(b&&prep&&!on&&a.v.currentTime>=a.e-b.ld){on=true;b.v.playbackRate=b.rt;b.v.style.zIndex=String(++zc);b.v.play().catch(()=>{});b.v.style.transition='opacity '+HAND_FADE+'s';b.v.style.opacity='1';window.SEEN.push(b.n);
+  if(b&&prep&&!on&&a.v.currentTime>=a.e-b.ld){on=true;follow(b,b.s);b.v.style.zIndex=String(++zc);b.v.play().catch(()=>{});b.v.style.transition='opacity '+HAND_FADE+'s';b.v.style.opacity='1';window.SEEN.push(b.n);
    setTimeout(()=>{if(tok===TOK){a.v.style.transition='opacity '+HAND_FADE+'s';a.v.style.opacity='0';}},HAND_OFF);prev=a;i++;on=false;prep=false;t1=now;}
   else if(!b&&(a.v.currentTime>=a.e||a.v.ended)){a.v.pause();setTimeout(()=>{if(tok===TOK)stop();},500);return;}
   requestAnimationFrame(tick);};requestAnimationFrame(tick);}
@@ -262,12 +280,12 @@ async function mix(mode){if(PLAYING){const was=MIX;stop();if(was===mode)return;}
   const n=roundPick(RND,v,cur.n);return n===cur.n?null:lay(n);};
  draw();for(const L of LAY){L.v.pause();L.v.style.transition='none';L.v.style.mixBlendMode='normal';L.v.style.opacity=L===cur?'1':'0';}cur.v.style.zIndex=String(++zc);
  document.body.classList.add('busy');await seeked(cur.v,cur.s);document.body.classList.remove('busy');if(tok!==TOK)return;
- cur.v.playbackRate=cur.rt;cur.v.play().catch(()=>{});
- const tick=()=>{if(tok!==TOK)return;const now=performance.now(),a=cur;
+ follow(cur,cur.s);cur.v.play().catch(()=>{});
+ const tick=()=>{if(tok!==TOK)return;const now=performance.now(),a=cur;follow(a);if(prev&&!prev.v.paused)follow(prev);
   if(prev&&prev.v.currentTime>=prev.e&&!prev.v.paused)prev.v.pause();
   if(!prep&&now-t1>1300&&(a.v.currentTime>=a.e-3*a.rt||(a.e-a.s)/a.rt<4.6)){nxt=other();if(nxt){prep=true;nxt.v.pause();nxt.v.style.transition='none';nxt.v.style.opacity='0';try{nxt.v.currentTime=nxt.s;}catch(e){}}}
   if(prep&&nxt&&a.v.currentTime>=a.e-nxt.ld){const b=nxt;late=(a.v.currentTime-(a.e-b.ld))*1000/a.rt;window.LATE.push(Math.round(late));
-   b.v.playbackRate=b.rt;b.v.style.zIndex=String(++zc);b.v.play().catch(()=>{});b.v.style.transition='opacity '+HAND_FADE+'s';b.v.style.opacity='1';window.SEEN.push(b.n);
+   follow(b,b.s);b.v.style.zIndex=String(++zc);b.v.play().catch(()=>{});b.v.style.transition='opacity '+HAND_FADE+'s';b.v.style.opacity='1';window.SEEN.push(b.n);
    setTimeout(()=>{if(tok===TOK){a.v.style.transition='opacity '+HAND_FADE+'s';a.v.style.opacity='0';}},HAND_OFF);prev=a;cur=b;nxt=null;prep=false;t1=now;}
   else if(!nxt&&(a.v.currentTime>=a.e||a.v.ended)){try{a.v.currentTime=a.s;}catch(e){}a.v.play().catch(()=>{});}   /* only one loop takes part: it starts again */
   for(const L of [cur,prev])if(L&&!L.v.paused)L.t=r3(Math.min(L.e,L.v.currentTime));
@@ -275,14 +293,15 @@ async function mix(mode){if(PLAYING){const was=MIX;stop();if(was===mode)return;}
   draw();requestAnimationFrame(tick);};requestAnimationFrame(tick);}
 $('mix').onclick=()=>mix('rnd');$('mixs').onclick=()=>mix('seq');
 const post=async(url,body)=>{try{return await (await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();}catch(e){return null;}};
-/* store every changed tempo, begin mark, end mark and lead */
+/* store every changed tempo, stretch with its own tempo, begin mark, end mark and lead */
 $('save').onclick=async()=>{halt();let ok=true;
  for(const L of LAY){if(!changed(L))continue;const p=pth(L.n),s=L.s<0.0005?0:r3(L.s),e=L.e>=L.d-0.02?0:r3(L.e),o=SCHNITT[p]||[0,0];
   if(s!==(o[0]||0)||e!==(o[1]||0)){const j=await post('/api/schnitt',{name:p,start:s,end:e});if(j&&j.ok){if(s||e)SCHNITT[p]=[s,e];else delete SCHNITT[p];L.s=savedS(L);L.e=savedE(L);}else ok=false;}
+  if(JSON.stringify(L.k)!==JSON.stringify(savedK(L))){const j=await post('/api/kurve',{name:p,segs:L.k});if(j&&j.ok){if(L.k.length)KURVE[p]=L.k.map(x=>x.slice());else delete KURVE[p];}else ok=false;}
   if(Math.abs(L.rt-rate(L.n))>0.004){const j=await post('/api/tempo',{name:p,rate:L.rt});if(j&&j.ok){if(L.rt===1)delete RATE[p];else RATE[p]=L.rt;}else ok=false;}
   if(Math.abs(L.ld-savedL(L))>0.0004){const l=r3(L.ld),j=await post('/api/vorlauf',{name:p,lead:l});if(j&&j.ok){if(l===HAND_PRE)delete LEAD[p];else LEAD[p]=l;}else ok=false;}}
  draw();$('sinfo').textContent=ok?'Gemerkt. Die App nimmt es beim nächsten Öffnen.':'Ging nicht bei allen. Zwischen Anfang und Ende muss mindestens eine halbe Sekunde bleiben.';};
-$('back').onclick=()=>{stop();for(const L of LAY){if(!L.d)continue;soloStop(L);L.s=savedS(L);L.e=savedE(L);L.ld=savedL(L);L.rt=rate(L.n);L.t=Math.max(L.s,Math.min(L.e,L.t));}show();};
+$('back').onclick=()=>{stop();for(const L of LAY){if(!L.d)continue;soloStop(L);L.s=savedS(L);L.e=savedE(L);L.ld=savedL(L);L.rt=rate(L.n);L.k=savedK(L);L.ka=null;L.kb=null;L.t=Math.max(L.s,Math.min(L.e,L.t));}show();};
 /* The time axis: one bar per layer over the full length of its clip (Metin, 02:15: each loop on its own). The bright
    part is what stays; its edges are dragged to make the clip shorter or longer, a tap or drag inside moves the play head. */
 const AXP=8,AXT=20,AXR=26;
@@ -294,6 +313,7 @@ function axDraw(){const c=$('ax'),w=axW(),h=c.clientHeight||100,dpr=window.devic
   g.fillStyle='rgba(120,130,140,.32)';g.fillRect(axX(0),y,Math.max(0,axX(L.d)-axX(0)),20);
   if(L.d){g.fillStyle=loop?'#1b8fb0':'#7a48c8';g.fillRect(axX(L.s),y,Math.max(0,axX(L.e)-axX(L.s)),20);
    g.fillStyle=loop?'#9fe8ff':'#d9c2ff';g.fillRect(axX(L.s),y-2,3,24);g.fillRect(axX(L.e)-3,y-2,3,24);
+   for(const k of L.k){g.fillStyle='#ffb347';g.fillRect(axX(k[0]),y+15,Math.max(2,axX(k[1])-axX(k[0])),5);}   /* a stretch with its own tempo */
    g.fillStyle='#fff';g.fillRect(axX(L.t)-0.5,y-4,1.5,28);}
   g.fillStyle='#fff';g.fillText(title(L.n)+(L.d?'  '+L.s.toFixed(3)+' bis '+L.e.toFixed(3)+' s':''),axX(L.s)+8,y+10);g.globalAlpha=1;});}
 function axAt(ev){const r=$('ax').getBoundingClientRect();return [ev.clientX-r.left,ev.clientY-r.top];}
