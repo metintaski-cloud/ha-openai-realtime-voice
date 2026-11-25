@@ -82,6 +82,8 @@ body.busy #busy{visibility:visible}
 select,button{padding:6px 8px;border-radius:8px;background:rgba(34,34,34,.9);color:#eee;border:1px solid #445;font:inherit}
 select{max-width:100%}
 button.on{border-color:#2a6;color:#9f9}
+button:active{transform:scale(.95)}
+button.hit{background:#1f7a4a;border-color:#9f9;color:#fff}  /* every press shows (Metin, 05:50: a button did not look pressed) */
 .t{font-size:12px;color:#9ab}
 .z{color:#9ab;font-size:12px;min-width:44px}
 .n{font-weight:600;color:#fff}
@@ -158,7 +160,10 @@ function draw(){const diff=document.body.classList.contains('diff'),tp=top1();le
  for(const L of LAY){if(!PLAYING){L.v.style.transition='none';L.v.style.zIndex=String(L.z);L.v.style.opacity=!L.on?'0':(diff&&L===tp&&LAY.filter(x=>x.on).length>1)?'1':String(L.op/100);
    L.v.style.mixBlendMode=diff&&L.on&&L===tp&&LAY.filter(x=>x.on).length>1?'difference':'normal';}
   if(!L.el)continue;L.el.classList.toggle('off',!L.on);q(L,'on').checked=L.on;q(L,'op').value=String(L.op);q(L,'oplab').textContent=L.op+' %';q(L,'rt').value=String(L.rt);q(L,'rtlab').textContent=L.rt.toFixed(2);q(L,'kr').value=String(L.kr);q(L,'krlab').textContent=L.kr.toFixed(2);
-  q(L,'klab').textContent='Ein Stück mit eigenem Tempo, zum Beispiel das Blinzeln: weißen Strich an den Anfang, "Stück Anfang hier", weißen Strich ans Ende, "Stück Ende hier", Tempo wählen, "Stück dazu".'+(L.ka!==null||L.kb!==null?' Jetzt: von '+(L.ka===null?'?':L.ka.toFixed(3))+' bis '+(L.kb===null?'?':L.kb.toFixed(3))+' s.':'');
+  q(L,'ka').textContent=L.ka===null?'Stück Anfang hier':'Stück Anfang: '+L.ka.toFixed(3)+' s';q(L,'ka').classList.toggle('on',L.ka!==null);
+  q(L,'kb').textContent=L.kb===null?'Stück Ende hier':'Stück Ende: '+L.kb.toFixed(3)+' s';q(L,'kb').classList.toggle('on',L.kb!==null);
+  q(L,'kadd').classList.toggle('on',L.ka!==null&&L.kb!==null&&Math.abs(L.kb-L.ka)>=0.02);
+  q(L,'klab').textContent='Ein Stück mit eigenem Tempo, zum Beispiel das Blinzeln: weißen Strich an den Anfang, "Stück Anfang hier", weißen Strich ans Ende, "Stück Ende hier", Tempo wählen, "Stück dazu".'+(L.ka!==null||L.kb!==null?' Jetzt: von '+(L.ka===null?'?':L.ka.toFixed(3))+' bis '+(L.kb===null?'?':L.kb.toFixed(3))+' s.':'')+(L.ka!==null&&L.kb!==null&&Math.abs(L.kb-L.ka)<0.02?' Anfang und Ende liegen auf demselben Bild: den weißen Strich weiterschieben und "Stück Ende hier" noch einmal drücken.':'');
   const sig=JSON.stringify(L.k);if(L.ksig!==sig){L.ksig=sig;const box=q(L,'klist');box.innerHTML='';L.k.forEach((k,i)=>{const row=document.createElement('div');row.className='bar';const sp=document.createElement('span');sp.className='t';sp.textContent=k[0].toFixed(3)+' bis '+k[1].toFixed(3)+' s: Tempo '+k[2].toFixed(2);const b=document.createElement('button');b.textContent='weg';b.dataset.kdel=String(i);b.onclick=()=>{L.k.splice(i,1);halt();show();};row.appendChild(sp);row.appendChild(b);box.appendChild(row);});}
   for(const k of ['t','s','e','l'])q(L,'m'+k).classList.toggle('on',L.mode===k);
   const p=q(L,'pos');p.min=String(L.mode==='t'?L.s:0);p.max=String(L.mode==='l'?LEAD_MAX:L.mode==='t'?(L.e||10):(L.d||10));p.value=String(val(L,L.mode));
@@ -228,6 +233,7 @@ async function start(){const j=await (await fetch('/clips.json?t='+Date.now())).
  if(!OUT[i]||!o[OUT[i][1]])i=Number(s.options[0].value);s.value=String(i);s.onchange=()=>pick(Number(s.value),'','');pick(i,a,b);}
 $('add').onchange=()=>{const n=$('add').value;if(!n)return;const L=addLayer(n,true,50);L.z=++ZTOP;setAx();fillSel();stop();show();L.el.scrollIntoView({block:'nearest'});};
 $('tog').onclick=()=>document.body.classList.toggle('hide');
+document.addEventListener('click',ev=>{const b=ev.target&&ev.target.closest?ev.target.closest('button'):null;if(!b)return;b.classList.add('hit');setTimeout(()=>b.classList.remove('hit'),320);},true);
 $('hv').onclick=()=>hand(lay($('hf').value),lay($('ht').value));
 $('diff').onclick=()=>{document.body.classList.toggle('diff');stop();show();};
 function soloStop(L){if(!L.play)return;L.play=0;L.v.pause();L.v.playbackRate=1;}
@@ -314,6 +320,8 @@ function axDraw(){const c=$('ax'),w=axW(),h=c.clientHeight||100,dpr=window.devic
   if(L.d){g.fillStyle=loop?'#1b8fb0':'#7a48c8';g.fillRect(axX(L.s),y,Math.max(0,axX(L.e)-axX(L.s)),20);
    g.fillStyle=loop?'#9fe8ff':'#d9c2ff';g.fillRect(axX(L.s),y-2,3,24);g.fillRect(axX(L.e)-3,y-2,3,24);
    for(const k of L.k){g.fillStyle='#ffb347';g.fillRect(axX(k[0]),y+15,Math.max(2,axX(k[1])-axX(k[0])),5);}   /* a stretch with its own tempo */
+   if(L.ka!==null&&L.kb!==null){g.fillStyle='rgba(255,179,71,.45)';g.fillRect(axX(Math.min(L.ka,L.kb)),y,Math.max(2,Math.abs(axX(L.kb)-axX(L.ka))),20);}   /* the stretch that is being marked */
+   for(const m of [L.ka,L.kb])if(m!==null){g.fillStyle='#ffb347';g.fillRect(axX(m)-1,y-4,2,28);}
    g.fillStyle='#fff';g.fillRect(axX(L.t)-0.5,y-4,1.5,28);}
   g.fillStyle='#fff';g.fillText(title(L.n)+(L.d?'  '+L.s.toFixed(3)+' bis '+L.e.toFixed(3)+' s':''),axX(L.s)+8,y+10);g.globalAlpha=1;});}
 function axAt(ev){const r=$('ax').getBoundingClientRect();return [ev.clientX-r.left,ev.clientY-r.top];}

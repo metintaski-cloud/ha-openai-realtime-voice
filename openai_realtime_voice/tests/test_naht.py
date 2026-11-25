@@ -313,9 +313,15 @@ async def test_in_a_browser_every_loop_is_its_own_layer(tmp_path, monkeypatch):
             await page.evaluate("(k)=>{const e=document.querySelector(k);e.value='2.2';e.oninput();}", key(G1, "pos"))
             await page.click(key(G1, "kb"))
             assert "von 1.200 bis 2.200 s" in await page.inner_text(key(G1, "klab"))
+            # every press shows (Metin, 05:50): the button lights up and carries the time it took
+            assert await page.inner_text(key(G1, "ka")) == "Stück Anfang: 1.200 s"
+            assert await page.inner_text(key(G1, "kb")) == "Stück Ende: 2.200 s"
+            assert await page.evaluate("(k)=>document.querySelector(k).classList.contains('hit')", key(G1, "kb"))
+            assert await page.evaluate("(k)=>document.querySelector(k).classList.contains('on')", key(G1, "kadd"))
             await page.evaluate("(k)=>{const e=document.querySelector(k);e.value='0.5';e.oninput();}", key(G1, "kr"))
             await page.click(key(G1, "kadd"))
             assert await page.evaluate("()=>LAY[0].k") == [[1.2, 2.2, 0.5]]
+            assert await page.inner_text(key(G1, "ka")) == "Stück Anfang hier"
             assert "1.200 bis 2.200 s: Tempo 0.50" in await page.inner_text(key(G1, "klist"))
             assert await page.evaluate("()=>save.classList.contains('on')")
             # a second stretch that overlaps cuts the first one, it does not lie on top of it

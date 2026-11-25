@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.169.1 (25 Nov 2026)
+
+- `fix`: every press on the page "Naht" shows. Metin (05:50): "Stück Anfang hier" did not look like a button, nothing happened to see (the press had worked, only a small line of text changed). Every button now lights up green for a moment when pressed. "Stück Anfang hier" and "Stück Ende hier" then carry the time they took ("Stück Anfang: 3.210 s") and stay green, the stretch that is being marked shows on the bar of the loop (two orange lines and the part between them), "Stück dazu" turns green as soon as both are set, and a hint appears when beginning and end lie on the same picture. 736 tests.
+
 ## 2.169.0 (25 Nov 2026)
 
 - `feat`: stretches with their own tempo on the page "Naht". Metin (05:10, 05:27): loop 1 moves slowly, but when the whole clip is made faster she blinks faster than in the other loops; Kling has "tempo inside the tempo". Every layer can now hold stretches with a tempo of their own: move the white line to the beginning of the stretch, "Stück Anfang hier", move it to the end, "Stück Ende hier", choose the tempo, "Stück dazu". The stretch shows as an orange line under the bar and in a list with "weg"; a new stretch that overlaps an old one cuts it. Every player of the page (one layer, all, the row, both mixers) plays the clip at its tempo and the stretch at its own, and "Alle Zeiten merken" stores it as the tempo curve the app and the tester already use (now in thousandths of a second).
