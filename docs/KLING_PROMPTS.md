@@ -388,7 +388,13 @@ Po 2, langes Arbeitskleid, überarbeitet (das Buch bleibt im selben Arm, die fre
 
 "0–2s: She reacts with sweet surprise to an unexpected playful sensation on her bottom, hugs her book a little closer and glances back over her shoulder. 2–5s: Slowly she turns until he sees her from behind at an angle, sets her free hand on her hip like a strict teacher and gives him a scolding, amused look over her shoulder. 5–8s: Her strict look melts into a seductive, shy smile and she sways her hips slowly from side to side, her long hair moving along her back. 8–10s: She turns back to face him, smiles at him lovingly and returns to her initial pose. She holds only one book, always in the same arm. Soft, feminine, sensual body movements. Subtle facial expressions, no exaggerated reactions. She remains in the same spot. No speaking. Static camera, full body visible, unchanged background."
 
-Ergebnisse hier nachtragen.
+**Ergebnisse (Metin hat alle drei am 25.11.2026 um 01:38 heruntergeladen, Claude hat sie um 01:57 angesehen und eingebaut, Originale in Leyla Kling Originale):**
+
+- Clip 1438, `schwarz/freizeitpo2`, mit Ton: sie lächelt, dreht sich langsam weg, legt das Haar mit einer Hand nach vorn über die Schulter, schaut über die Schulter zu ihm, wiegt die Hüften, dreht sich zurück und steht wieder wie am Anfang. Die Fassung ohne "revealing her back" und "bare shoulder" lief durch. Gemessen: Bewegung 3,40 je Sekunde, Naht Anfang zu Ende 0,67, letzte halbe Sekunde 0,73. Vor dem Einbau den alten Tempowert 1,6 dieses Platzes auf 1 gesetzt (Ablauf Punkt 9).
+- Clip 1433, `kurz/gesicht2`, ohne Ton: sie schaut überrascht zur Seite, sucht kurz, legt dann den Kopf schief und lächelt breit mit geschlossenen Augen, schaut ihn wieder an; das Buch bleibt im Arm, die Füße bleiben stehen. Gemessen: Bewegung 1,56, Naht 0,60, letzte halbe Sekunde 0,53. Kein gespeichertes Tempo, keine Marke an diesem Platz.
+- Clip 1445, `schwarz/po2`, mit Ton: sie drückt das Buch an sich, dreht sich, bis er sie schräg von hinten sieht, die freie Hand in der Hüfte, Blick über die Schulter, wiegt die Hüften, dreht sich zurück. Ein Buch, immer im selben Arm; der Zusatz dazu hat gehalten. Gemessen: Bewegung 3,09, Naht 0,62, letzte halbe Sekunde 0,87. Kein gespeichertes Tempo, keine Marke an diesem Platz.
+
+Metin hat die drei in der App noch nicht beurteilt.
 
 ## Was am 24.11.2026 sonst noch entstand
 
