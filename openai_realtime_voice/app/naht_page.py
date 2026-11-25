@@ -95,7 +95,7 @@ input[type=range]{flex:1 1 120px;min-width:120px}
 <div id="st"></div>
 <div id="axbar"><canvas id="ax"></canvas></div>
 <div id="top"><button id="tog">☰</button><span id="busy">Bild wird geholt ...</span></div>
-<div id="panel"><h1>Naht: Schleifen als Ebenen &nbsp; <a href="/ganzes" style="font-size:12px;font-weight:400">Outfit als Ganzes</a></h1>
+<div id="panel"><h1>Naht: Schleifen als Ebenen &nbsp; <a href="/ganzes" style="font-size:12px;font-weight:400">Outfit als Ganzes</a> &nbsp; <a href="/" style="font-size:12px;font-weight:400">zur Leyla App</a></h1>
 <div class="card"><h2>1. Kleid</h2>
 <div class="bar"><select id="look"></select></div>
 <div class="bar"><span class="z">dazu</span><select id="add"></select></div>
@@ -231,6 +231,7 @@ async function start(){const j=await (await fetch('/clips.json?t='+Date.now())).
  const qs=new URLSearchParams(location.search),qa=qs.get('a')||'',qb=qs.get('b')||'';let i=-1,a='',b='';
  if(qa.includes('/')){const lk=qa.split('/')[0];a=qa.split('/')[1];b=qb.includes('/')?qb.split('/')[1]:'';i=OUT.findIndex(x=>x[1]===lk&&(x[2]==='freizeit')===a.startsWith('freizeit'));}
  if(i<0){try{i=Number(localStorage.getItem('lnaht')||1);}catch(e){i=1;}}
+ if(!s.options.length){document.querySelector('h1').append(' Hier gibt es noch keine Clips.');return;}
  if(!OUT[i]||!o[OUT[i][1]])i=Number(s.options[0].value);s.value=String(i);s.onchange=()=>pick(Number(s.value),'','');pick(i,a,b);}
 $('add').onchange=()=>{const n=$('add').value;if(!n)return;const L=addLayer(n,true,50);L.z=++ZTOP;setAx();fillSel();stop();show();L.el.scrollIntoView({block:'nearest'});};
 $('tog').onclick=()=>document.body.classList.toggle('hide');

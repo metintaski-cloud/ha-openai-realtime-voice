@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.172.3 (25 Nov 2026)
+
+- `feat`: typing to her on the PC. Metin (23:36): "dass ich auf PC mit Tastatur Enter den Text rausschicken kann und dass, wenn ich Nachricht rausschicke, abc Symbol nicht sofort umschaltet, umschalten nur wenn ich wieder mit der Maus drauf klicke". With mouse and keyboard Enter now sends the text (Shift and Enter makes a new line, an empty field sends nothing), and after sending the abc pill stays as he set it with the field ready for the next line; only his click switches it. The phone is told apart by touch instead of a mouse, not by the size of the screen (`PHONE` is true for his monitor too), and stays as it was: Enter is a new line, and after sending the field goes back to dictation.
+- `feat`: the page Naht is in the menu. Metin (23:38, 23:39): "von PC aus möchte ich auch gern auf die Seite kommen, Naht, um weiter zu arbeiten", "vielleicht bei Menü einordnen". The menu ☰ has the entry "Naht: Schleifen einstellen" (shown once the code word is in), and the page has a link back to the app. The page no longer throws when there are no clips at all (only seen in a test).
+- 752 tests (751 before): both devices in a real browser, the menu entry and the way back.
+
 ## 2.172.2 (25 Nov 2026)
 
 - `fix`: on a PC monitor she is shown whole. Metin (23:06, with a photo of his monitor): "auf meinem PC Monitor ist das Bild sehr groß". On a screen that is wider than high the upright clip was stretched to the full width, so only her middle was to be seen. There the stage now has the shape of the clips (2:3), as high as the window and in the middle, with black at the sides. Measured in a test browser at 1920 x 1080: the stage is 720 x 1080 and begins at 600 px (before: 1920 x 1080, which showed 37 % of the clip's height). The touch zones go by the stage box and stay right. A phone held upright is not touched by the rule: 400 x 820 stays 400 x 820.

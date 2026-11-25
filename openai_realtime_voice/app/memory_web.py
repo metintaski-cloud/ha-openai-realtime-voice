@@ -413,13 +413,14 @@ async function saveFields(fields){if(!view)return false;
  const j=await r.json();if(j.ok)view.text=j.text;return j.ok;}
 let sec=null,menuOpen=false,LASTD=null;
 const SECNAME={family:'Familie und Haushalt',friends:'Freunde und Verwandte',leyla:'Leylas Geschichte',private:'Privat',mail:'Google verbinden',lamps:'Lampenfarben',set:'Einstellungen'};
-const SECICON={family:'👪',friends:'🤝',leyla:'💜',private:'🔒',mail:'✉',lamps:'💡',rules:'📜',diary:'📔',full:'⛶',set:'⚙',outfit:'👗',arbeit:'📖',freizeit:'🌴',nacht:'🌙',mback:'‹'};
+const SECICON={family:'👪',friends:'🤝',leyla:'💜',private:'🔒',mail:'✉',lamps:'💡',rules:'📜',diary:'📔',full:'⛶',set:'⚙',naht:'🧵',outfit:'👗',arbeit:'📖',freizeit:'🌴',nacht:'🌙',mback:'‹'};
 const WEAR=[['arbeit','Arbeitskleid'],['freizeit','Freizeit'],['nacht','Nacht']];let menuSub='';  /* 2.160.0 (Metin): Umziehen is a folder in the menu, the outfits are inside */
 let LOOKS=[];  /* her dresses, filled by clipsLoad */
 function menuItems(){const it=[];const ls=(LASTD&&LASTD.lists)||[];
  for(const l of ls)it.push([l.kind,l.title,l.items.length]);
  if(CODE&&GM.shown&&GM.needs)it.push(['mail','Google verbinden','']);if(lampOn)it.push(['lamps','Lampenfarben','']);
- if(CODE){it.push(['diary','Tagebuch',LASTD&&LASTD.diary_n!=null?LASTD.diary_n:'']);it.push(['rules','So ist Leyla',''])};if(CODE&&STM&&STM.outfit)it.push(['outfit','Umziehen','']);if(LOOKS.length>1)it.push(['look','Kleid wechseln','']);it.push(['full','Vollbild','']);it.push(['set','Einstellungen','']);return it;}
+ if(CODE){it.push(['diary','Tagebuch',LASTD&&LASTD.diary_n!=null?LASTD.diary_n:'']);it.push(['rules','So ist Leyla',''])};if(CODE&&STM&&STM.outfit)it.push(['outfit','Umziehen','']);if(LOOKS.length>1)it.push(['look','Kleid wechseln','']);if(CODE)it.push(['naht','Naht: Schleifen einstellen','']);  /* 2.172.3 (Metin: he wants to reach the page from the PC, in the menu) */
+ it.push(['full','Vollbild','']);it.push(['set','Einstellungen','']);return it;}
 function drawMenu(){const m=document.getElementById('menu');m.innerHTML='';m.style.display=menuOpen?'block':'none';document.getElementById('micon').classList.toggle('open',menuOpen);if(!menuOpen){menuSub='';return;}
  const items=menuSub==='outfit'?[['mback','Umziehen','']].concat(WEAR.map(([k,t])=>[k,t,STM&&STM.outfit===k?'trägt sie':''])):menuItems();
  for(const [k,t,n] of items){const b=document.createElement('button');b.className='mi';const i=document.createElement('i');i.textContent=SECICON[k]||'•';
@@ -433,7 +434,7 @@ document.getElementById('cmenu').onclick=e=>{e.stopPropagation();document.getEle
 async function wear(k){snd.on();let st=null;try{st=await (await post('/api/outfit',{outfit:k})).json();}catch(e){}
  if(!st||!st.mood)return;moodShow(st);ZPEND=null;ZBUSY=0;stagePlay([],clipFor(st));}  /* the loop of the new outfit at once; moodShow alone only swaps the still (an outfit change normally waits for its scene) */
 function openSec(k){if(k==='outfit'){menuSub='outfit';drawMenu();return;}if(k==='mback'){menuSub='';drawMenu();return;}
- menuOpen=false;drawMenu();if(WEAR.some(w=>w[0]===k)){wear(k);return;}if(k==='rules'){openRules();return;}if(k==='diary'){openDiary();return;}
+ menuOpen=false;drawMenu();if(k==='naht'){location.href='/naht';return;}if(WEAR.some(w=>w[0]===k)){wear(k);return;}if(k==='rules'){openRules();return;}if(k==='diary'){openDiary();return;}
  if(k==='look'){  /* 2.146.3 (Metin wants to look at the clips of the other dress): the next look, kept for today like the one picked at random */
   const i=LOOKS.indexOf(OUTFIT),nx=LOOKS[(i+1)%LOOKS.length];
   try{localStorage.setItem('loutfit',nx);localStorage.setItem('loutfitday',dressDay());localStorage.setItem('lseen',String(Date.now()));}catch(e){}
@@ -525,10 +526,12 @@ function propCard(m,i){const c=document.createElement('div');c.className='p';con
  n.onclick=()=>{CHAT.splice(i,1);snd.off();chatSave();chatDraw();};
  row.append(y,n);c.appendChild(row);return c;}
 let CRTT=null;  /* 2.141.6: round trip of the last chat answer, sent with the next one */
+/* a PC with mouse and keyboard, as opposed to a phone: there Enter sends and abc stays (2.172.3). Not PHONE, which goes by the size of the screen and is true for his monitor too */
+const DESK=!!(window.matchMedia&&matchMedia('(hover:hover) and (pointer:fine)').matches);
 async function chatSend(){const ta=document.getElementById('ctext'),msg=ta.value.trim();if(!msg)return;
  const history=CHAT.filter(m=>m.role==='user'||m.role==='leyla').map(m=>({role:m.role,text:m.text}));
  CHAT.push({role:'user',text:msg});ta.value='';DIKQ=false;bgmTick();chatSave();chatDraw(true);snd.on();  /* music back on when he sends (2.140.1, Metin) */
- if(!ta.readOnly){const kb=document.getElementById('ckb');if(kb)kb.onclick();}  /* back to dictation after sending (2.140.0) */
+ if(!ta.readOnly){if(DESK)ta.focus();else{const kb=document.getElementById('ckb');if(kb)kb.onclick();}}  /* phone: back to dictation after sending (2.140.0). PC (2.172.3, Metin): abc stays as he set it until he clicks it again, and he can go on typing */
  let j=null;const t0=performance.now();try{j=await (await post('/api/chat',{history,message:msg,rtt:CRTT,light:lightNow()})).json();}catch(e){}
  CRTT=Math.round(performance.now()-t0);chatAnswer(j);chatSave();chatDraw();snd.drop();}
 const AUDIO=new Map(),VSTREAM=new Set();let REC=null,RECT=null,DIK=null,DIKT=null,DIKQ=false;  /* DIK: dictation, DIKQ: music stays off until he sends */
@@ -876,6 +879,8 @@ document.getElementById('cmic').onclick=async()=>{const b=document.getElementByI
   DIKQ=true;DIK.start();bgmTick();ta.classList.add('hoert');say('hoert zu, zum Beenden nochmal tippen');
   DIKT=setTimeout(()=>{if(DIK)stopDik();},60000);}
  ta.addEventListener('click',e=>{if(!ta.readOnly)return;e.preventDefault();if(DIK)stopDik();else startDik();});
+ /* 2.172.3 (Metin on the PC: "mit Tastatur Enter den Text rausschicken"): Enter sends, Shift and Enter makes a new line. Only with mouse and keyboard; on the phone Enter stays a new line */
+ ta.addEventListener('keydown',e=>{if(DESK&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();chatSend();}});
  kb.onclick=()=>{if(DIK)stopDik();DIKQ=false;bgmTick();ta.readOnly=!ta.readOnly;
   if(ta.readOnly){ta.setAttribute('inputmode','none');kb.classList.remove('on');ta.placeholder='Tippen und sprechen ...';ta.blur();}
   else{ta.removeAttribute('inputmode');kb.classList.add('on');ta.placeholder='Schreib Leyla ...';ta.focus();}};
