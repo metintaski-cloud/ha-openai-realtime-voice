@@ -641,6 +641,11 @@ function rateFollow(v,pth){if(!KURVE[pth])return null;return()=>{const r=rateAt(
  if(Math.abs((v.playbackRate||1)-r)>0.001)v.playbackRate=r;};}
 let SV=0,STOK=0,CONT=false,SWAP=0;const PRELOAD_S=3,PRELOAD_LIGHT_S=9;  /* 2.141.5: on the go a 7 Mbit copy needs about 7 s over an 11 Mbit line, so the next clip starts loading 9 s ahead, once the running one is fully loaded */
 let TIGHT=false;  /* a loop that replays the same clip blends only at the very end (2.133.5): nacht/eifersuechtig does not come all the way back to its start pose, and the wide blend showed both poses at once */
+/* 2.167.0 (Metin: a loop must hand over without losing time): every loop hand over is measured and reported as
+   three numbers: how late it began against the plan, how long the new clip needed for its first picture, the lead */
+function handMeasure(on,a,b,pre){try{if(!on||!a.duration||a.paused)return;const st={late:Math.round((a.currentTime-(endOf(a)-pre))*1000/(a.playbackRate||1)),lead:Math.round(pre*1000)},t0=performance.now();
+  const done=t=>{st.first=Math.round(t-t0);fetch('/api/handstats',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(st)}).catch(()=>{});};
+  if(b.requestVideoFrameCallback)b.requestVideoFrameCallback(t=>done(t));else b.addEventListener('playing',()=>done(performance.now()),{once:true});}catch(e){}}
 function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name)&&!MUTE[name.includes('/')?name:OUTFIT+'/'+name];const tight=TIGHT;TIGHT=false;const PRE0=tight?0.25:0.8,OFF=tight?300:850,lp=name?(name.includes('/')?name:OUTFIT+'/'+name):'',PRE=tight&&LEAD[lp]!==undefined?LEAD[lp]:PRE0;const s=document.getElementById('stage'),vs=[document.getElementById('svid'),document.getElementById('svid2')],a=vs[SV],b=vs[1-SV],tok=++STOK,cont=CONT;CONT=false;
  if(!name){s.classList.remove('vid');vs.forEach(v=>{v.classList.remove('on');setTimeout(()=>{if(tok===STOK){v.pause();v.removeAttribute('src');v.load();}},600);});return;}
  if(loop&&a.loop&&a.classList.contains('on')&&a.src.split('?')[0].endsWith('/'+name+'.mp4'))return;
@@ -651,7 +656,7 @@ function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name)&&!MUTE[name.in
  /* 2.141.8: Chrome does not always say it is on mobile data (through Tailscale it did not), so a clip that cannot play through after 2.5 s switches to the light copy; it starts once it shows a frame */
  setTimeout(()=>{if(rdy||tok!==STOK)return;if(!lightNow()&&!b.src.includes('&m=1')){LIGHT=true;b.src+='&m=1';b.load();}
   setTimeout(()=>{if(rdy||tok!==STOK)return;if(b.readyState>=3)ready();else b.oncanplay=()=>{b.oncanplay=null;ready();};},6000);},2500);
- const go=()=>{const cs=cutStart(b.dataset.pth||'');if(Math.abs(b.currentTime-cs)>0.04)b.currentTime=cs;b.play().catch(()=>{b.muted=true;b.play().catch(()=>{});});b.style.zIndex=1;a.style.zIndex=0;b.classList.add('on');s.classList.add('vid');SV=1-SV;
+ const go=()=>{const cs=cutStart(b.dataset.pth||'');if(Math.abs(b.currentTime-cs)>0.04)b.currentTime=cs;handMeasure(tight&&cont,a,b,PRE);b.play().catch(()=>{b.muted=true;b.play().catch(()=>{});});b.style.zIndex=1;a.style.zIndex=0;b.classList.add('on');s.classList.add('vid');SV=1-SV;
   setTimeout(()=>{if(tok===STOK)a.classList.remove('on');},OFF);setTimeout(()=>{if(!a.classList.contains('on'))a.pause();},OFF+150);let fired=false;const fire=()=>{if(fired||tok!==STOK||!done)return;fired=true;CONT=true;done();CONT=false;};
   const fol=rateFollow(b,b.dataset.pth||'');
   {const st=STUMM[b.dataset.pth||''];if(st&&!b.muted){const s0=b.src,v0=b.volume,vf=()=>{if(b.src!==s0)return;const t=b.currentTime;b.volume=st.some(x=>t>=x[0]&&t<x[1])?0:v0;if(!b.ended)requestAnimationFrame(vf);};vf();}}  /* a silent stretch: the clip plays on, only its volume is zero there, nothing shifts */
@@ -1418,6 +1423,19 @@ MOBIL = None
 
 
 DIAG = collections.deque(maxlen=30)
+def hand_stats() -> dict:
+    """The loop hand overs the phones reported, as numbers: count, median and worst."""
+    items = list(HAND)
+    out = {"n": len(items), "letzte": items[-12:]}
+    for key in ("late", "first"):
+        vals = sorted(i[key] for i in items if key in i)
+        if vals:
+            out[key] = {"median": vals[len(vals) // 2], "min": vals[0], "max": vals[-1],
+                        "p90": vals[min(len(vals) - 1, int(len(vals) * 0.9))]}
+    return out
+
+
+HAND = collections.deque(maxlen=300)   # 2.167.0: how exactly a loop handed over on the phone, in ms (numbers only)
 TIMING = collections.deque(maxlen=50)  # 2.141.6: chat times, server part against what the phone saw
 
 
@@ -1759,6 +1777,17 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
             DIAG.append({"at": time.strftime("%H:%M:%S"),
                          **{k: d.get(k) for k in ("mode", "secure", "sw", "inst", "ev", "ua") if k in d}})
             await _respond(writer, "200 OK", "application/json", json.dumps({"ok": True}))
+        elif method == "POST" and path == "/api/handstats":
+            # Metin, 25 Nov 2026: a loop must hand over without losing time. The stage reports for every loop
+            # hand over how late it began against the plan (`late`, ms), how long the new clip took from play()
+            # to its first picture (`first`, ms) and the lead it used (`lead`, ms). No names, nothing personal.
+            item = {k: int(d[k]) for k in ("late", "first", "lead") if isinstance(d.get(k), (int, float))
+                    and not isinstance(d.get(k), bool) and abs(d[k]) < 600000}
+            if item:
+                HAND.append({"at": time.strftime("%H:%M:%S"), **item})
+            await _respond(writer, "200 OK", "application/json", json.dumps({"ok": bool(item)}))
+        elif method == "GET" and path == "/api/handstats":
+            await _respond(writer, "200 OK", "application/json", json.dumps(hand_stats()))
         elif method == "GET" and path == "/api/diag":
             await _respond(writer, "200 OK", "application/json", json.dumps(list(DIAG)))
         elif method == "GET" and path == "/api/timing":

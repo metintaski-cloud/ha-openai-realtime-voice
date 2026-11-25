@@ -96,7 +96,7 @@ async def test_the_page_is_served_and_the_whole_outfit_page_links_to_it(tmp_path
         whole = await _get(port, "/ganzes")
     finally:
         server.close()
-    assert page.startswith("HTTP/1.1 200") and "Naht: Ende und Anfang" in page and 'href="/ganzes"' in page
+    assert page.startswith("HTTP/1.1 200") and "Naht: Schleifen als Ebenen" in page and 'href="/ganzes"' in page
     assert 'href="/naht"' in whole
 
 
@@ -108,15 +108,17 @@ def _clip(path, seconds: int) -> None:
                     "-g", "12", "-c:a", "libopus", "-b:a", "24k", "-f", "mp4", str(path)], check=True)
 
 
-async def test_in_a_browser_the_two_pictures_follow_the_marks_and_one_button_stores_both(tmp_path, monkeypatch):
+async def test_in_a_browser_every_loop_is_its_own_layer(tmp_path, monkeypatch):
+    """Metin, 02:15: each loop on its own, faded in or out, see through or not, over its full
+    length, shortened on the time axis one by one; then one button stores everything."""
     playwright = pytest.importorskip("playwright.async_api")
     if not shutil.which("ffmpeg"):
         pytest.skip("no ffmpeg here")
     folder = tmp_path / "clips" / "kurz"
     folder.mkdir(parents=True)
     try:
-        for name, seconds in (("freizeitgluecklich", 4), ("freizeitgluecklich2", 6), ("freizeitpo8", 3),
-                              ("gluecklich", 3)):
+        for name, seconds in (("freizeitgluecklich", 4), ("freizeitgluecklich2", 6), ("freizeitgluecklich3", 4),
+                              ("freizeitpo8", 3), ("gluecklich", 3)):
             _clip(folder / (name + ".mp4"), seconds)
     except subprocess.CalledProcessError:
         pytest.skip("this ffmpeg cannot write VP9")
@@ -126,73 +128,134 @@ async def test_in_a_browser_the_two_pictures_follow_the_marks_and_one_button_sto
     monkeypatch.setenv("LEYLA_VORLAUF", str(leads))
     monkeypatch.setenv("LEYLA_TEMPO", str(tmp_path / "tempo.json"))
     cut.write_text(json.dumps({"kurz/freizeitgluecklich": [0.5, 3.5], "kurz/freizeitgluecklich2": [0.2, 5.0]}))
+    leads.write_text(json.dumps({"kurz/freizeitgluecklich2": 0.4}))
     (tmp_path / "tempo.json").write_text(json.dumps([{"name": "kurz/freizeitgluecklich2", "rate": 2}]))
     server = await memory_web.start_http(memory.MemoryStore(str(tmp_path / "m.json")), None,
                                          host="127.0.0.1", port=0)
     port = server.sockets[0].getsockname()[1]
     errors = []
+    G1, G2, G3 = "freizeitgluecklich", "freizeitgluecklich2", "freizeitgluecklich3"
     try:
         async with playwright.async_playwright() as p:
             try:
                 browser = await p.chromium.launch(args=["--autoplay-policy=no-user-gesture-required"])
             except Exception:
                 pytest.skip("no browser here")
-            page = await browser.new_page(viewport={"width": 400, "height": 800})
+            page = await browser.new_page(viewport={"width": 1000, "height": 800})
             page.on("pageerror", lambda e: errors.append(str(e)))
-            await page.goto(f"http://127.0.0.1:{port}/naht?a=kurz/freizeitgluecklich&b=kurz/freizeitgluecklich2")
+            await page.goto(f"http://127.0.0.1:{port}/naht?a=kurz/{G1}&b=kurz/{G2}")
 
             async def state() -> dict:
-                return await page.evaluate(
-                    "()=>({a:A,b:B,ta:va.currentTime,tb:vb.currentTime,ea:Number(ea.value),bb:Number(bb.value),"
-                    "op:getComputedStyle(vb).opacity,blend:getComputedStyle(vb).mixBlendMode,"
-                    "pa:va.paused,pb:vb.paused,look:look.selectedOptions[0].textContent,"
-                    "names:[...sa.options].map(o=>o.value),busy:document.body.classList.contains('busy'),"
-                    "save:save.classList.contains('on')})")
+                rows = await page.evaluate(
+                    "()=>LAY.map(L=>({n:L.n,on:L.on,op:L.op,t:L.t,s:L.s,e:L.e,ld:L.ld,d:L.d,mode:L.mode,play:!!L.play,"
+                    "vt:L.v.currentTime,vop:getComputedStyle(L.v).opacity,blend:getComputedStyle(L.v).mixBlendMode,"
+                    "paused:L.v.paused,z:Number(getComputedStyle(L.v).zIndex)}))")
+                return {r["n"]: r for r in rows}
 
             async def settled() -> dict:
-                for _ in range(60):
+                for _ in range(80):
                     await asyncio.sleep(0.1)
-                    st = await state()
-                    if not st["busy"]:
-                        await asyncio.sleep(0.15)
-                        return await state()
+                    if not await page.evaluate("()=>document.body.classList.contains('busy')||LAY.some(L=>!L.d)"):
+                        break
+                await asyncio.sleep(0.2)
                 return await state()
+
+            def key(name: str, k: str) -> str:
+                return f".lay[data-n='{name}'] [data-k='{k}']"
             st = await settled()
-            assert st["look"] == "Kurzes Freizeitkleid" and (st["a"], st["b"]) == ("freizeitgluecklich", "freizeitgluecklich2")
-            assert st["names"][:2] == ["freizeitgluecklich", "freizeitgluecklich2"]  # the loops first
-            assert "gluecklich" not in st["names"]                                   # the work dress is another outfit
-            assert (st["ea"], st["bb"]) == (3.5, 0.2)                                # the stored marks
-            # 0.25 s into the hand over the old clip stands on its end mark, the new one has run 0.25 s at tempo 2
-            assert abs(st["ta"] - 3.5) < 0.05 and abs(st["tb"] - 0.7) < 0.05
-            assert st["pa"] and st["pb"] and st["op"] == "0.5" and not st["save"]
-            # earlier in the hand over the old clip has not reached its end yet
-            await page.evaluate("()=>{const t=document.getElementById('tau');t.value='0';t.oninput();}")
+            assert list(st) == [G1, G2, G3]                       # every loop is a layer, the work dress is another outfit
+            assert await page.evaluate("()=>look.selectedOptions[0].textContent") == "Kurzes Freizeitkleid"
+            # the hand over from the address: the old one on its last picture, the new one where the app has it then
+            assert st[G1]["on"] and st[G1]["vop"] == "1" and (st[G1]["s"], st[G1]["e"], st[G1]["t"]) == (0.5, 3.5, 3.5)
+            assert st[G2]["on"] and st[G2]["vop"] == "0.5" and (st[G2]["s"], st[G2]["e"], st[G2]["ld"]) == (0.2, 5.0, 0.4)
+            assert st[G2]["t"] == 1.0                             # 0.2 + 0.4 s of lead at tempo 2
+            assert abs(st[G1]["vt"] - 3.5) < 0.05 and abs(st[G2]["vt"] - 1.0) < 0.05 and st[G2]["z"] > st[G1]["z"]
+            assert not st[G3]["on"] and st[G3]["vop"] == "0" and (st[G3]["s"], st[G3]["e"]) == (0, st[G3]["d"])
+            assert all(r["paused"] for r in st.values())
+            # each layer is faded in and out and made see through on its own
+            await page.check(key(G3, "on"))
+            await page.evaluate("(k)=>{const e=document.querySelector(k);e.value='30';e.oninput();}", key(G3, "op"))
+            await page.evaluate("(k)=>{const e=document.querySelector(k);e.value='40';e.oninput();}", key(G1, "op"))
             st = await settled()
-            assert abs(st["ta"] - 3.25) < 0.05 and abs(st["tb"] - 0.2) < 0.05
-            await page.evaluate("()=>{const t=document.getElementById('tau');t.value='0.25';t.oninput();}")
-            # one picture back at the end, one picture on at the begin
-            await page.click("#am")
-            await page.click("#bp")
+            assert (st[G1]["vop"], st[G2]["vop"], st[G3]["vop"]) == ("0.4", "0.5", "0.3")
+            await page.uncheck(key(G3, "on"))
+            await page.evaluate("(k)=>{const e=document.querySelector(k);e.value='100';e.oninput();}", key(G1, "op"))
+            assert (await state())[G3]["vop"] == "0"
+            # the slider and its fine steps move what is chosen: here the end of loop 1, the picture follows
+            await page.click(key(G1, "me"))
+            await page.click(key(G1, "fm"))
             st = await settled()
-            assert (st["ea"], st["bb"]) == (3.458, 0.242) and st["save"]
-            assert abs(st["ta"] - 3.458) < 0.05 and abs(st["tb"] - 0.742) < 0.05
-            # a thousandth of a second on and back (Metin, 01:43)
-            await page.click("#ap3")
-            assert (await state())["ea"] == 3.459
-            await page.click("#am3")
-            await page.click("#bm3")
-            await page.click("#bp3")
+            assert (st[G1]["e"], st[G1]["t"]) == (3.458, 3.458) and abs(st[G1]["vt"] - 3.458) < 0.05
+            assert st[G2]["e"] == 5.0 and st[G2]["t"] == 1.0      # the other loop is not touched
+            await page.click(key(G1, "p3"))
+            assert (await state())[G1]["e"] == 3.459
+            await page.click(key(G1, "m3"))
+            assert await page.evaluate("()=>save.classList.contains('on')")
+            assert "noch nicht gemerkt" in await page.inner_text(key(G1, "lab"))
+            # the beginning of loop 2 and its lead
+            await page.click(key(G2, "ms"))
+            assert (await state())[G2]["t"] == 0.2                # choosing a mark shows its picture
+            await page.click(key(G2, "p1"))
+            await page.click(key(G2, "ml"))
+            await page.click(key(G2, "p1"))
+            await page.click(key(G2, "p1"))
             st = await settled()
-            assert (st["ea"], st["bb"]) == (3.458, 0.242)
-            # the difference picture and back to see through
+            assert (st[G2]["s"], st[G2]["ld"]) == (0.21, 0.42)
+            await page.click(key(G2, "l0"))
+            assert (await state())[G2]["ld"] == 0.25
+            await page.evaluate("(k)=>{const e=document.querySelector(k);e.value='0.6';e.oninput();}", key(G2, "pos"))
+            assert (await state())[G2]["ld"] == 0.6
+            # the time axis: one bar per loop over its full length, each shortened on its own
+            ax = await page.evaluate("()=>{const r=ax.getBoundingClientRect();return {x:r.left,y:r.top,pps:axPps(),h:r.height}}")
+            assert ax["h"] == 26 + 3 * 26 and ax["pps"] > 100
+
+            async def drag(row: int, t_from: float, t_to: float) -> None:
+                y = ax["y"] + await page.evaluate("(i)=>axY(i)", row) + 10
+                x0, x1 = [ax["x"] + await page.evaluate("(t)=>axX(t)", t) for t in (t_from, t_to)]
+                await page.mouse.move(x0, y)
+                await page.mouse.down()
+                await page.mouse.move((x0 + x1) / 2, y)
+                await page.mouse.move(x1, y)
+                await page.mouse.up()
+            await drag(0, 3.458, 2.958)                           # the end of loop 1 half a second shorter
+            await drag(2, 0, 1.0)                                 # the beginning of loop 3 one second shorter
+            st = await settled()
+            assert abs(st[G1]["e"] - 2.958) < 0.02 and st[G1]["s"] == 0.5
+            assert abs(st[G3]["s"] - 1.0) < 0.02 and st[G3]["e"] == st[G3]["d"] and st[G2]["s"] == 0.21
+            await drag(2, 2.5, 3.0)                               # inside the bar: the play head, the marks stay
+            st = await settled()
+            assert abs(st[G3]["t"] - 3.0) < 0.02 and abs(st[G3]["s"] - 1.0) < 0.02
+            await drag(2, st[G3]["s"], 9.0)                       # at least half a second always stays
+            st = await settled()
+            assert abs(st[G3]["s"] - (st[G3]["e"] - 0.5)) < 0.001
+            await drag(2, st[G3]["s"], 1.0)
+            await drag(0, 2.958, 3.458)
+            # one loop plays on its own from its beginning to its end mark, the others stand still
+            await page.click(key(G1, "gs"))
+            await settled()
+            await page.click(key(G1, "play"))
+            await asyncio.sleep(0.8)
+            st = await state()
+            assert st[G1]["play"] and not st[G1]["paused"] and 0.6 < st[G1]["t"] < 2.6 and st[G2]["paused"] and st[G3]["paused"]
+            await page.click(key(G1, "play"))
+            st = await settled()
+            assert not st[G1]["play"] and st[G1]["paused"] and abs(st[G1]["vt"] - st[G1]["t"]) < 0.05 and st[G1]["t"] > 0.6
+            await page.click(key(G1, "play"))                     # to its end mark, there it stops by itself
+            for _ in range(60):
+                await asyncio.sleep(0.1)
+                if not (await state())[G1]["play"]:
+                    break
+            st = await settled()
+            assert not st[G1]["play"] and abs(st[G1]["t"] - st[G1]["e"]) < 0.001 and abs(st[G1]["e"] - 3.458) < 0.02
+            # the hand over again with the new values, the difference picture, and once in real time
+            await page.click("#hv")
+            st = await settled()
+            assert st[G1]["t"] == st[G1]["e"] and abs(st[G2]["t"] - (0.21 + 0.6 * 2)) < 0.001 and not st[G3]["on"]
             await page.click("#diff")
             st = await state()
-            assert st["blend"] == "difference" and st["op"] == "1"
-            await page.click("#o0")
-            st = await state()
-            assert st["blend"] == "normal" and st["op"] == "0"
-            await page.click("#o50")
-            # the hand over in real time ends by itself and comes back to the stencil
+            assert st[G2]["blend"] == "difference" and st[G2]["vop"] == "1" and st[G1]["blend"] == "normal"
+            await page.click("#diff")
+            assert (await state())[G2]["blend"] == "normal"
             await page.click("#play")
             await asyncio.sleep(0.6)
             assert await page.evaluate("()=>PLAYING")
@@ -201,135 +264,69 @@ async def test_in_a_browser_the_two_pictures_follow_the_marks_and_one_button_sto
                 if not await page.evaluate("()=>PLAYING"):
                     break
             st = await settled()
-            assert not await page.evaluate("()=>PLAYING") and st["pa"] and st["pb"] and st["op"] == "0.5"
-            assert abs(st["ta"] - 3.458) < 0.05
-            # one button stores the end of the one and the begin of the other, their other marks stay
+            assert not await page.evaluate("()=>PLAYING") and all(r["paused"] for r in st.values())
+            assert (st[G1]["vop"], st[G2]["vop"]) == ("1", "0.5") and abs(st[G1]["vt"] - st[G1]["e"]) < 0.05
+            # another clip as a layer: the touch clips have their names
+            options = await page.evaluate("()=>[...add.options].map(o=>o.textContent)")
+            assert options[1] == "Po (freizeitpo8)"
+            await page.select_option("#add", "freizeitpo8")
+            st = await settled()
+            assert list(st)[3] == "freizeitpo8" and st["freizeitpo8"]["on"] and st["freizeitpo8"]["vop"] == "0.5"
+            assert await page.evaluate("()=>ax.getBoundingClientRect().height") == 26 + 4 * 26
+            # one button stores every mark and lead that changed, nothing else
+            e1, s3 = st[G1]["e"], st[G3]["s"]
             await page.click("#save")
-            await asyncio.sleep(0.4)
-            stored = json.loads(cut.read_text())
-            assert stored == {"kurz/freizeitgluecklich": [0.5, 3.458], "kurz/freizeitgluecklich2": [0.242, 5.0]}
+            await asyncio.sleep(0.6)
+            assert json.loads(cut.read_text()) == {"kurz/" + G1: [0.5, e1], "kurz/" + G2: [0.21, 5.0], "kurz/" + G3: [s3, 0]}
+            assert json.loads(leads.read_text()) == {"kurz/" + G2: 0.6}
+            assert not await page.evaluate("()=>save.classList.contains('on')")
+            # a change that is not stored can be taken back
+            await page.click(key(G3, "ms"))
+            await page.click(key(G3, "p1"))
+            assert await page.evaluate("()=>save.classList.contains('on')")
+            await page.click("#back")
             st = await state()
-            assert not st["save"]
-            # the lead: how long before the end of the old clip the new one comes in (Metin, 02:05)
-            assert await page.evaluate("()=>Number(ld.value)") == 0.25
-            await page.evaluate("()=>{ld.value='0.75';ld.oninput();}")
-            st = await settled()
-            assert abs(st["ta"] - (3.458 - 0.75 + 0.25)) < 0.05 and abs(st["tb"] - 0.742) < 0.05 and st["save"]
-            await page.click("#l0")
-            st = await settled()
-            assert await page.evaluate("()=>Number(ld.value)") == 0.25 and abs(st["ta"] - 3.458) < 0.05
-            # the time axis: the right edge of the upper bar is the end, the lower bar is the clip that comes in
-            box = await page.evaluate("()=>{const r=ax.getBoundingClientRect();return {x:r.left,y:r.top,pps:axPps(),xe:axX(eA()),xs:axX(axStart())}}")
-            assert box["pps"] > 40 and abs(box["xe"] - box["xs"] - 0.25 * box["pps"]) < 1.5
-
-            async def drag(x: float, y: float, dx: float) -> None:
-                await page.mouse.move(box["x"] + x, box["y"] + y)
-                await page.mouse.down()
-                await page.mouse.move(box["x"] + x + dx / 2, box["y"] + y)
-                await page.mouse.move(box["x"] + x + dx, box["y"] + y)
-                await page.mouse.up()
-            pps = box["pps"]
-            await drag(box["xe"], 30, -0.5 * pps)                      # the end half a second earlier
-            st = await settled()
-            assert abs(st["ea"] - 2.958) < 0.02 and await page.evaluate("()=>Number(ld.value)") == 0.25
-            await drag(box["xe"] - 0.5 * pps, 30, 0.5 * pps)           # and back
-            assert abs((await settled())["ea"] - 3.458) < 0.02
-            await drag(box["xs"] + 60, 65, -0.3 * pps)                 # the lower bar to the left: it comes in earlier
-            st = await settled()
-            assert abs(await page.evaluate("()=>Number(ld.value)") - 0.55) < 0.02 and abs(st["bb"] - 0.242) < 0.001
-            xs = await page.evaluate("()=>axX(axStart())")
-            await drag(xs, 65, 0.2 * pps)                              # its left edge to the right: 0.2 s of the old clip
-            st = await settled()                                       # are 0.4 s of pictures at tempo 2, which stay in place
-            assert abs(await page.evaluate("()=>Number(ld.value)") - 0.35) < 0.02 and abs(st["bb"] - 0.642) < 0.04
-            await drag(xs + 0.2 * pps + 60, 65, 5 * pps)               # it cannot come in after the end
-            assert await page.evaluate("()=>Number(ld.value)") == 0
-            await page.evaluate("()=>{ld.value='0.25';bb.value='0.242';ld.oninput();}")
-            await settled()
-            # both stencils can be made see through (Metin, 02:01)
-            await page.evaluate("()=>{opa.value='30';opa.oninput();}")
-            assert await page.evaluate("()=>getComputedStyle(va).opacity") == "0.3"
-            await page.click("#o50")  # the buttons bring the lower one back
-            assert await page.evaluate("()=>[getComputedStyle(va).opacity,getComputedStyle(vb).opacity]") == ["1", "0.5"]
-            # the sliders reach over the last and the first 5 seconds (these test clips are shorter)
-            assert await page.evaluate("()=>[Number(ea.min),Number(ea.max),Number(bb.min),Number(bb.max)]") == [0, 4, 0, 5]
-            # the end plays on its own, the beginning stands still; pausing leaves the end on that picture
-            before = await state()
-            await page.evaluate("()=>{ea.value='1.5';ea.oninput();}")
-            await settled()
-            await page.click("#pa")
-            await asyncio.sleep(1.0)
-            mid = await state()
-            assert not mid["pa"] and mid["pb"] and 1.6 < mid["ea"] < 3.2 and abs(mid["tb"] - before["tb"]) < 0.05
-            assert await page.evaluate("()=>pa.textContent") == "⏸ anhalten"
-            await page.click("#pa")
-            st = await settled()
-            assert st["pa"] and abs(st["ta"] - st["ea"]) < 0.05 and st["ea"] > mid["ea"] - 0.001
-            # the beginning plays on its own at its tempo 2 and stops at the end of its 5 seconds
-            await page.evaluate("()=>{bb.value='4.2';bb.oninput();}")
-            await settled()
-            await page.click("#pb")
-            await asyncio.sleep(0.25)
-            assert not (await state())["pb"]
-            for _ in range(40):
-                await asyncio.sleep(0.1)
-                if (await state())["pb"]:
-                    break
-            st = await settled()
-            assert st["pb"] and st["bb"] == 5 and await page.evaluate("()=>pb.textContent") == "▶ Anfang abspielen"
-            # from the end of its stretch it starts again at the front; a step on its slider stops it
-            await page.click("#pb")
+            assert st[G3]["s"] == s3 and not await page.evaluate("()=>save.classList.contains('on')")
+            # the beginning at zero and the end at the real end mean: no mark
+            await page.click(key(G3, "ms"))
+            await page.evaluate("(k)=>{const e=document.querySelector(k);e.value='0';e.oninput();}", key(G3, "pos"))
+            await page.click("#save")
             await asyncio.sleep(0.5)
-            assert (await state())["bb"] < 2.5
-            await page.click("#bm3")
-            st = await settled()
-            assert st["pb"]
-            await page.evaluate("()=>{ea.value='3.458';bb.value='0.242';ea.oninput();bb.oninput();}")
-            await settled()
-            # a third stencil on top (Metin, 01:45): a touch clip with its end, moved and stored the same way
-            third = await page.evaluate("()=>[...sc.options].map(o=>[o.value,o.textContent])")
-            assert third[0] == ["", "keine"] and third[1] == ["freizeitpo8", "Po (freizeitpo8)"]
-            assert await page.evaluate("()=>getComputedStyle(vc).opacity") == "0"
-            await page.select_option("#sc", "freizeitpo8")
-            await page.click("#cend")
-            st = await settled()
-            c = await page.evaluate("()=>({t:vc.currentTime,v:Number(cc.value),op:getComputedStyle(vc).opacity,p:vc.paused})")
-            assert abs(c["v"] - 3.0) < 0.05 and abs(c["t"] - c["v"]) < 0.05 and c["op"] == "0.5" and c["p"]
-            await page.click("#cm1")
-            await page.click("#cm1")
-            await page.click("#cm1")
-            await page.evaluate("()=>{ld.value='0.4';ld.oninput();}")
-            await page.click("#save")
-            await asyncio.sleep(0.4)
-            stored = json.loads(cut.read_text())
-            assert json.loads(leads.read_text()) == {"kurz/freizeitgluecklich2": 0.4}  # the lead goes with the same button
-            assert stored["kurz/freizeitpo8"][0] == 0 and abs(stored["kurz/freizeitpo8"][1] - (c["v"] - 0.03)) < 0.0011
-            assert stored["kurz/freizeitgluecklich"] == [0.5, 3.458]  # the others stay
-            await page.click("#cbeg")
-            st = await settled()
-            assert await page.evaluate("()=>Number(cc.value)") == 0
-            await page.click("#cp1")
-            await page.click("#save")
-            await asyncio.sleep(0.4)
-            assert json.loads(cut.read_text())["kurz/freizeitpo8"][0] == 0.01
-            await page.select_option("#sc", "")
-            assert await page.evaluate("()=>getComputedStyle(vc).opacity") == "0"
-            # the same clip on both sides: one entry with both marks
-            await page.select_option("#sb", "freizeitgluecklich")
-            st = await settled()
-            assert st["bb"] == 0.5
-            await page.click("#bp1")
-            await page.click("#save")
-            await asyncio.sleep(0.4)
-            assert json.loads(cut.read_text())["kurz/freizeitgluecklich"] == [0.51, 3.458]
-            # the end at the real end and the begin at zero mean: no mark
-            await page.evaluate("()=>{ea.value=ea.max;bb.value='0';ea.oninput();}")
-            await page.click("#save")
-            await asyncio.sleep(0.4)
-            assert "kurz/freizeitgluecklich" not in json.loads(cut.read_text())
+            assert "kurz/" + G3 not in json.loads(cut.read_text())
             await browser.close()
     finally:
         server.close()
     assert not errors, errors
+
+
+async def test_the_stage_reports_how_exactly_a_loop_handed_over(tmp_path):
+    """Numbers only: how late against the plan, how long to the first picture, the lead."""
+    app = open(memory_web.__file__, encoding="utf-8").read()
+    assert "handMeasure(tight&&cont,a,b,PRE);b.play()" in app and "requestVideoFrameCallback" in app
+    memory_web.HAND.clear()
+    server = await memory_web.start_http(memory.MemoryStore(str(tmp_path / "m.json")), None,
+                                         host="127.0.0.1", port=0)
+    port = server.sockets[0].getsockname()[1]
+
+    async def post(body: dict) -> str:
+        raw = json.dumps(body).encode()
+        reader, writer = await asyncio.open_connection("127.0.0.1", port)
+        writer.write(b"POST /api/handstats HTTP/1.1\r\nHost: x\r\nContent-Type: application/json\r\nContent-Length: "
+                     + str(len(raw)).encode() + b"\r\n\r\n" + raw)
+        await writer.drain()
+        out = (await reader.read()).decode()
+        writer.close()
+        return out
+    try:
+        for late, first in ((4, 30), (12, 45), (-3, 38), (60, 120), (8, 41)):
+            assert '"ok": true' in await post({"late": late, "first": first, "lead": 250, "name": "kurz/x"})
+        assert '"ok": false' in await post({"late": "x", "text": "nothing personal is kept"})
+        got = json.loads((await _get(port, "/api/handstats")).split("\r\n\r\n", 1)[1])
+    finally:
+        server.close()
+        memory_web.HAND.clear()
+    assert got["n"] == 5 and got["late"] == {"median": 8, "min": -3, "max": 60, "p90": 60}
+    assert got["first"]["median"] == 41 and set(got["letzte"][0]) == {"at", "late", "first", "lead"}
 
 
 async def test_in_a_browser_a_loop_comes_in_as_early_as_its_lead_says(tmp_path, monkeypatch):
@@ -375,3 +372,16 @@ async def test_in_a_browser_a_loop_comes_in_as_early_as_its_lead_says(tmp_path, 
     finally:
         server.close()
     assert abs(seen["freizeitgluecklich2"] - (4 - 1.2)) < 0.3, seen  # 1.2 s before the end of a 4 s clip
+
+
+def test_the_scripts_of_the_app_page_and_the_tester_are_sound_javascript(tmp_path):
+    """The stage of the app was changed for the lead and the measuring; a slip there would stop the whole app."""
+    node = shutil.which("node")
+    if not node:
+        pytest.skip("no node here")
+    for name in ("PAGE", "TEMPO_PAGE"):
+        path = tmp_path / (name + ".js")
+        path.write_text("\n;\n".join(re.findall(r"<script>(.*?)</script>", getattr(memory_web, name), re.S)),
+                        encoding="utf-8")
+        done = subprocess.run([node, "--check", str(path)], capture_output=True, text=True)
+        assert done.returncode == 0, name + ": " + done.stderr
