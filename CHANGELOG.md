@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.168.3 (25 Nov 2026)
+
+- `feat`: two mixers on the page "Naht" (Metin, 04:57): "der Reihe nach: 1, 2, 3" always plays the ticked loops in the order of the list, round and round; "gemischt" plays them in mixed rounds as before. Pressing the other button changes over. 735 tests, the browser test checks the order 1, 2, 3, 1, 2 and the change over.
+
 ## 2.168.2 (25 Nov 2026)
 
 - `fix`: loops come in rounds. Metin (04:44): the loop plays wrong, first 1, then 2, then 3, then 2 again, 3, 2, and loop 1 only much later. Until now the next loop was drawn by chance from all others, so with three loops two of them could alternate for a long time. Now every loop comes once, in random order, before any comes again, and a new round never begins with the loop that just ran (`roundPick`, the same function on the stage of the app, on "Outfit als Ganzes" in random mode and in the mixer of the page "Naht"). Measured over 1200 picks with three loops: before, a loop could stay away for any number of picks; now each comes exactly 400 times and at the latest after 5 picks. 735 tests.

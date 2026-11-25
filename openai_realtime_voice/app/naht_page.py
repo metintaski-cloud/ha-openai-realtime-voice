@@ -26,7 +26,8 @@ the blue end). Each bar is on its own.
 The mixer (2.168.0, Metin at 02:57 after the layers confused him: "ich brauch Anfang, Ende und dann einen
 Mischer, der im Random Lauf sich befindet, nahtlos"): `mix()` plays the ticked loops without end in random
 order (in rounds since 2.168.2: every loop once before one comes again, `roundPick`, the same function as
-in the app and in /ganzes) with every hand over as in the app; values changed while it runs count from the next hand over.
+in the app and in /ganzes) with every hand over as in the app; values changed while it runs count from the next hand over. Two start buttons since 2.168.3 (Metin, 04:57):
+`mix('seq')` always plays the ticked loops in the order of the list, `mix('rnd')` in mixed rounds.
 
 "Übergabe zeigen" lays two layers on each other the way the app does when a loop hands over
 (memory_web.stageShow with TIGHT): the new clip starts at its begin mark `lead` seconds of clip
@@ -93,8 +94,8 @@ input[type=range]{flex:1 1 120px;min-width:120px}
 <div class="bar"><span class="z">dazu</span><select id="add"></select></div>
 <div class="t">Jede Schleife ist eine eigene Ebene, die über den anderen liegt. Einzeln ein und ausblenden, einzeln durchsichtig, einzeln kürzen. Unten hat jede ihren eigenen Balken in voller Länge.</div></div>
 <div class="card"><h2>2. Mischer: zufällig und nahtlos, wie in der App</h2>
-<div class="bar"><button id="mix">▶ Mischer starten</button></div>
-<div class="t" id="minfo">Spielt alle Schleifen mit Haken "sichtbar" in zufälliger Reihenfolge, ohne Ende, jede Übergabe wie in der App.</div>
+<div class="bar"><button id="mixs">▶ der Reihe nach: 1, 2, 3</button><button id="mix">▶ gemischt</button></div>
+<div class="t" id="minfo"></div>
 <div class="t">Während er läuft, kannst du bei jeder Schleife Tempo, Anfang, Ende und Einsatz ändern. Es gilt ab der nächsten Übergabe. Der Haken "sichtbar" heißt hier: die Schleife macht mit.</div></div>
 <div class="card"><h2>3. Übergabe ansehen</h2>
 <div class="bar"><span class="z">von</span><select id="hf"></select></div>
@@ -116,9 +117,9 @@ input[type=range]{flex:1 1 120px;min-width:120px}
 const $=id=>document.getElementById(id);
 const OUT=[['Kurzes Arbeitskleid','kurz',''],['Kurzes Freizeitkleid','kurz','freizeit'],['Langes Arbeitskleid','schwarz',''],['Langes Freizeitkleid','schwarz','freizeit'],['Nachtkleid','nacht','']];
 const ZONES=[['Kopf',['gesicht']],['Brust',['brust']],['Bauch',['bauch']],['Po',['po','povorne']],['Mix',['mix']]];  /* the touch clips, as Metin names them (01:46: Kopf, Brust, Po, Bauch) */
-const MIXTXT='Spielt alle Schleifen mit Haken "sichtbar" in zufälliger Reihenfolge, ohne Ende, jede Übergabe wie in der App.';
+const MIXTXT='Zwei Mischer, beide ohne Ende und mit jeder Übergabe wie in der App: der eine spielt die Schleifen mit Haken immer der Reihe nach, der andere gemischt (jede einmal, dann neu gemischt).';
 const HAND_PRE=0.25,HAND_OFF=300,HAND_FADE=0.8,FRAME=1/24,MINLEN=0.5,LEAD_MAX=1.5;  /* as the loops of the app hand over (memory_web.stageShow, TIGHT) */
-let LOOK='',PRE='',CL=[],VER={},RATE={},KURVE={},SCHNITT={},LEAD={},LAY=[],PLAYING=false,MIX=false,TOK=0,STOK=0,PEND=0,AXD=null,ZTOP=1;
+let LOOK='',PRE='',CL=[],VER={},RATE={},KURVE={},SCHNITT={},LEAD={},LAY=[],PLAYING=false,MIX='',TOK=0,STOK=0,PEND=0,AXD=null,ZTOP=1;
 const base=n=>n.replace(/[0-9]+$/,'');
 const mine=n=>PRE?n.startsWith(PRE):!n.startsWith('freizeit');
 const pth=n=>LOOK+'/'+n;
@@ -154,7 +155,7 @@ function draw(){const diff=document.body.classList.contains('diff'),tp=top1();le
   q(L,'play').textContent=L.play?'⏸ anhalten':'▶ abspielen';const c=changed(L);ch=ch||c;
   q(L,'lab').innerHTML=!L.d?'wird geladen ...':'Bild <span class="n">'+L.t.toFixed(3)+'</span> &nbsp; Anfang <span class="n">'+L.s.toFixed(3)+'</span> &nbsp; Ende <span class="n">'+L.e.toFixed(3)+'</span> von '+L.d.toFixed(3)+' s &nbsp; Einsatz <span class="n">'+L.ld.toFixed(3)+'</span>'+(KURVE[pth(L.n)]?' &nbsp; (Tempo Kurve nicht eingerechnet)':'')+(c?' &nbsp; <span style="color:#fd8">noch nicht gemerkt</span>':'');}
  $('save').classList.toggle('on',ch);$('sinfo').textContent=ch?'Noch nicht gemerkt.':'So ist es gemerkt.';$('diff').classList.toggle('on',diff);
- $('play').textContent=PLAYING&&!MIX?'anhalten':'So spielt es die App';$('mix').textContent=MIX?'⏸ Mischer anhalten':'▶ Mischer starten';if(!MIX)$('minfo').textContent=MIXTXT;$('pall').textContent=LAY.some(L=>L.play)?'⏸ alle anhalten':'▶ alle sichtbaren abspielen';axDraw();}
+ $('play').textContent=PLAYING&&!MIX?'anhalten':'So spielt es die App';$('mix').textContent=MIX==='rnd'?'⏸ anhalten':'▶ gemischt';$('mixs').textContent=MIX==='seq'?'⏸ anhalten':'▶ der Reihe nach: 1, 2, 3';if(!MIX)$('minfo').textContent=MIXTXT;$('pall').textContent=LAY.some(L=>L.play)?'⏸ alle anhalten':'▶ alle sichtbaren abspielen';axDraw();}
 const HTML='<div class="bar"><label><input type="checkbox" data-k="on">sichtbar</label><span class="ttl" data-k="ttl"></span><button data-k="up" title="nach oben legen">nach oben</button></div>'
  +'<div class="bar"><span class="z">Durchsicht</span><input type="range" data-k="op" min="0" max="100" step="1" value="100"><span data-k="oplab" style="min-width:38px">100 %</span></div>'
  +'<div class="bar"><span class="z">Tempo</span><input type="range" data-k="rt" min="0.4" max="2" step="0.01" value="1"><span data-k="rtlab" style="min-width:38px">1.00</span></div>'
@@ -213,7 +214,7 @@ $('hv').onclick=()=>hand(lay($('hf').value),lay($('ht').value));
 $('diff').onclick=()=>{document.body.classList.toggle('diff');stop();show();};
 function soloStop(L){if(!L.play)return;L.play=0;L.v.pause();L.v.playbackRate=1;}
 const halt=()=>{if(!MIX)stop();};  /* the mixer goes on while values are changed, everything else stops */
-function stop(){if(!PLAYING)return;PLAYING=false;MIX=false;TOK++;for(const L of LAY){L.v.pause();L.v.playbackRate=1;}show();}
+function stop(){if(!PLAYING)return;PLAYING=false;MIX='';TOK++;for(const L of LAY){L.v.pause();L.v.playbackRate=1;}show();}
 const seeked=(v,t)=>new Promise(res=>{if(Math.abs(v.currentTime-t)<0.0004&&!v.seeking)return res();const f=()=>{v.removeEventListener('seeked',f);res();};v.addEventListener('seeked',f);try{v.currentTime=t;}catch(e){res();}});
 /* one layer plays on its own from its play head to its end mark, the others stand still; pausing leaves the play head on the picture that stands */
 async function solo(L){if(!L.d)return;if(L.play){L.t=r3(Math.min(L.e,L.v.currentTime));soloStop(L);show();return;}stop();const tok=++STOK;L.play=tok;L.on=true;L.mode='t';
@@ -254,9 +255,11 @@ function roundPick(R,v,cur){let b=(R.b||[]).filter(n=>v.includes(n));
  if(!b.length||(b.length===1&&b[0]===cur&&v.length>1)){b=v.slice();for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)),t=b[i];b[i]=b[j];b[j]=t;}}
  if(b.length>1&&b[0]===cur)b.push(b.shift());const n=b.shift();R.b=b;return n;}
 const RND={};
-async function mix(){if(PLAYING){stop();return;}const P=()=>LAY.filter(L=>L.on&&L.d);if(!P().length)return;LAY.forEach(soloStop);PLAYING=true;MIX=true;const tok=++TOK;
- document.body.classList.remove('diff');RND.b=[];let zc=10,cur=lay(roundPick(RND,P().map(L=>L.n),'')),nxt=null,prep=false,t1=performance.now(),prev=null,late=null;window.SEEN=[cur.n];window.LATE=[];
- const other=()=>{const v=P().map(L=>L.n);if(!v.length||(v.length===1&&v[0]===cur.n))return null;const n=roundPick(RND,v,cur.n);return n===cur.n?null:lay(n);};
+async function mix(mode){if(PLAYING){const was=MIX;stop();if(was===mode)return;}const P=()=>LAY.filter(L=>L.on&&L.d),seq=mode==='seq';if(!P().length)return;LAY.forEach(soloStop);PLAYING=true;MIX=mode;const tok=++TOK;
+ document.body.classList.remove('diff');RND.b=[];let zc=10,cur=seq?P()[0]:lay(roundPick(RND,P().map(L=>L.n),'')),nxt=null,prep=false,t1=performance.now(),prev=null,late=null;window.SEEN=[cur.n];window.LATE=[];
+ const other=()=>{const v=P().map(L=>L.n);if(!v.length||(v.length===1&&v[0]===cur.n))return null;
+  if(seq){const i=LAY.indexOf(cur);for(let k=1;k<=LAY.length;k++){const L=LAY[(i+k)%LAY.length];if(L!==cur&&L.on&&L.d)return L;}return null;}  /* the next one down the list, round and round */
+  const n=roundPick(RND,v,cur.n);return n===cur.n?null:lay(n);};
  draw();for(const L of LAY){L.v.pause();L.v.style.transition='none';L.v.style.mixBlendMode='normal';L.v.style.opacity=L===cur?'1':'0';}cur.v.style.zIndex=String(++zc);
  document.body.classList.add('busy');await seeked(cur.v,cur.s);document.body.classList.remove('busy');if(tok!==TOK)return;
  cur.v.playbackRate=cur.rt;cur.v.play().catch(()=>{});
@@ -270,7 +273,7 @@ async function mix(){if(PLAYING){stop();return;}const P=()=>LAY.filter(L=>L.on&&
   for(const L of [cur,prev])if(L&&!L.v.paused)L.t=r3(Math.min(L.e,L.v.currentTime));
   $('minfo').textContent='läuft: '+title(cur.n)+(nxt?'  ·  gleich: '+title(nxt.n):'')+(late!==null?'  ·  letzte Übergabe '+Math.round(late)+' ms nach dem Soll':'');
   draw();requestAnimationFrame(tick);};requestAnimationFrame(tick);}
-$('mix').onclick=mix;
+$('mix').onclick=()=>mix('rnd');$('mixs').onclick=()=>mix('seq');
 const post=async(url,body)=>{try{return await (await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();}catch(e){return null;}};
 /* store every changed tempo, begin mark, end mark and lead */
 $('save').onclick=async()=>{halt();let ok=true;

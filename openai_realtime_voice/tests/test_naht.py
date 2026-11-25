@@ -336,7 +336,7 @@ async def test_in_a_browser_every_loop_is_its_own_layer(tmp_path, monkeypatch):
             await page.check(key(G3, "on"))
             await page.click("#mix")
             await asyncio.sleep(0.5)
-            assert await page.evaluate("()=>PLAYING&&MIX") and await page.inner_text("#mix") == "⏸ Mischer anhalten"
+            assert await page.evaluate("()=>PLAYING&&MIX==='rnd'") and await page.inner_text("#mix") == "⏸ anhalten"
             moving, tempo_seen = [], False
             for step in range(170):
                 await asyncio.sleep(0.1)
@@ -361,7 +361,22 @@ async def test_in_a_browser_every_loop_is_its_own_layer(tmp_path, monkeypatch):
             await page.click("#mix")
             st = await settled()
             assert not await page.evaluate("()=>PLAYING||MIX") and all(r["paused"] for r in st.values())
-            assert await page.inner_text("#mix") == "▶ Mischer starten"
+            assert await page.inner_text("#mix") == "▶ gemischt"
+            # the second mixer (Metin, 04:57) always runs 1, 2, 3 and round again
+            await page.check(key(G3, "on"))
+            await page.click("#mixs")
+            for _ in range(160):
+                await asyncio.sleep(0.1)
+                if len(await page.evaluate("()=>window.SEEN||[]")) >= 5:
+                    break
+            assert await page.evaluate("()=>window.SEEN.slice(0,5)") == [G1, G2, G3, G1, G2]
+            assert await page.evaluate("()=>MIX") == "seq" and await page.inner_text("#mixs") == "⏸ anhalten"
+            await page.click("#mix")                              # the other button changes over to the mixed one
+            await asyncio.sleep(0.6)
+            assert await page.evaluate("()=>PLAYING&&MIX") == "rnd" and await page.inner_text("#mixs") == "▶ der Reihe nach: 1, 2, 3"
+            await page.click("#mix")
+            await settled()
+            assert not await page.evaluate("()=>PLAYING")
             await page.click(key(G2, "p1"))
             await page.click(key(G1, "rm"))
             await page.check(key(G3, "on"))
