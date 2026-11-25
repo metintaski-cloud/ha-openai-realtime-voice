@@ -435,7 +435,8 @@ function loopNext(cont,fast){BUSY=false;const all=vars('gluecklich'),sel=all.fil
  LAST=n;
  show(n,{cont:cont,fast:fast},()=>loopNext(true,false));}
 /* a touch clip starts at once, with its sound; a clip from behind first turns her (hinten), as in the app */
-function touch(zone,n){if(BUSY&&!SOLO)return;BUSY=true;const turn=zone==='Po'&&!/povorne|mix/.test(n)?vars('hinten'):[];
+function touch(zone,n){if(BUSY&&!SOLO)return;BUSY=true;if(vars('gluecklich').includes(CUR))LAST=CUR;  /* 2.172.2: on after the loop he really saw last; the next one may already have been chosen and loading, and was then skipped */
+ const turn=zone==='Po'&&!/povorne|mix/.test(n)?vars('hinten'):[];
  const back=()=>loopNext(true,false),play=c=>show(n,{cont:c,fast:!c,snd:true},back);
  if(turn.length)show(turn[Math.floor(Math.random()*turn.length)],{fast:true,snd:true},()=>play(true));else play(false);}
 /* while he sets begin and end, only this clip runs, from its begin to its end and again */

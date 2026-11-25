@@ -316,6 +316,8 @@ button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 #stage .fig{position:absolute;inset:0;transform-origin:50% 100%;animation:lsway 8s ease-in-out infinite}
 #stage img,#stage video{position:absolute;inset:0;height:100%;width:100%;object-fit:cover;object-position:50% 50%;display:block}
 #stage video{opacity:0;transition:opacity .8s}
+/* 2.172.2 (Metin on his PC monitor: the picture is far too big): on a screen that is wider than high the clip was stretched to the full width and showed only her middle. There the stage now has the shape of the clips (2:3), as high as the window and in the middle; everything in it (touch zones, fog, the cat) goes by the stage box and stays right. A phone held upright is not touched by this rule. */
+@media (min-aspect-ratio:1/1){#chat #stage{left:50%;right:auto;width:auto;aspect-ratio:1176/1764;transform:translateX(-50%)}}
 #stage .fog{position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;z-index:1}
 #stage .fog i{position:absolute;border-radius:50%;filter:blur(26px);opacity:.6}
 #stage .fl{left:-14%;top:10%;width:58%;height:52%;background:radial-gradient(closest-side,#22b8ffaa,#0e7fd466 45%,transparent 75%);animation:fogl 13s ease-in-out infinite alternate}
@@ -422,7 +424,10 @@ function drawMenu(){const m=document.getElementById('menu');m.innerHTML='';m.sty
  const items=menuSub==='outfit'?[['mback','Umziehen','']].concat(WEAR.map(([k,t])=>[k,t,STM&&STM.outfit===k?'trägt sie':''])):menuItems();
  for(const [k,t,n] of items){const b=document.createElement('button');b.className='mi';const i=document.createElement('i');i.textContent=SECICON[k]||'•';
   const sp=document.createElement('span');sp.textContent=t;const sm=document.createElement('small');sm.textContent=n===''?'':String(n);const ch=document.createElement('b');ch.textContent=k==='mback'?'':'›';
-  b.append(i,sp,sm,ch);b.onclick=()=>openSec(k);m.appendChild(b);}}
+  b.append(i,sp,sm,ch);b.onclick=()=>openSec(k);m.appendChild(b);}
+ if(CODE&&!menuSub){const d=document.createElement('div');d.className='mi';d.id='mvoice';const i=document.createElement('i');i.textContent='🔊';const sp=document.createElement('span');sp.textContent='Stimme';
+  const r=document.createElement('input');r.type='range';r.min=50;r.max=400;r.step=10;r.value=Math.round(VVOL*100);r.style.flex='2';const sm=document.createElement('small');sm.textContent=r.value+' %';
+  r.oninput=()=>{voiceVol(r.value/100);sm.textContent=r.value+' %';};d.onclick=e=>e.stopPropagation();d.append(i,sp,r,sm);m.appendChild(d);}}
 document.getElementById('micon').onclick=()=>{menuOpen=!menuOpen;snd[menuOpen?'on':'off']();drawMenu();};
 document.getElementById('cmenu').onclick=e=>{e.stopPropagation();document.getElementById('micon').onclick();};
 async function wear(k){snd.on();let st=null;try{st=await (await post('/api/outfit',{outfit:k})).json();}catch(e){}
@@ -527,8 +532,18 @@ async function chatSend(){const ta=document.getElementById('ctext'),msg=ta.value
  let j=null;const t0=performance.now();try{j=await (await post('/api/chat',{history,message:msg,rtt:CRTT,light:lightNow()})).json();}catch(e){}
  CRTT=Math.round(performance.now()-t0);chatAnswer(j);chatSave();chatDraw();snd.drop();}
 const AUDIO=new Map(),VSTREAM=new Set();let REC=null,RECT=null,DIK=null,DIKT=null,DIKQ=false;  /* DIK: dictation, DIKQ: music stays off until he sends */
-let VOUT=null;function voiceOut(){if(!VOUT){VCTX=VCTX||new (window.AudioContext||window.webkitAudioContext)();const g=VCTX.createGain(),l=VCTX.createDynamicsCompressor();
- g.gain.value=1.05;l.threshold.value=-1;l.knee.value=0;l.ratio.value=20;l.attack.value=.003;l.release.value=.1;g.connect(l);l.connect(VCTX.destination);VOUT=g;}return VOUT;}  /* 2.142.5: her voice 5 % louder (Metin), a limiter keeps it from clipping */
+let VOUT=null,LIVEG=null,VVOL=2;try{const x=parseFloat(localStorage.getItem('lvoice'));if(x>=.5&&x<=4)VVOL=x;}catch(e){}
+/* 2.172.2 (Metin, 25 Nov 2026: "Leyla spricht viel zu leise", on the PC and in the phone app): her voice is twice as loud by default, he sets it
+   himself with the slider "Stimme" in the menu (50 to 400 %, kept on the device), and live talk, which went out with no gain at all, takes the same way.
+   2.142.5 had made it 5 % louder with a limiter. The limiter alone lets short peaks through (measured: up to 1.7 dB above full scale at 400 %),
+   so a soft clip behind it rounds them off: nothing leaves above full scale. */
+function loudOut(ctx){const g=ctx.createGain(),l=ctx.createDynamicsCompressor(),h=ctx.createGain(),w=ctx.createWaveShaper(),c=new Float32Array(2049);
+ for(let i=0;i<2049;i++){const u=(i/1024-1)*2,a=Math.abs(u);c[i]=Math.sign(u)*(a<=.7?a:.7+.3*Math.tanh((a-.7)/.3));}
+ g.gain.value=VVOL;l.threshold.value=-1;l.knee.value=0;l.ratio.value=20;l.attack.value=.003;l.release.value=.1;h.gain.value=.5;w.curve=c;
+ g.connect(l);l.connect(h);h.connect(w);w.connect(ctx.destination);return g;}
+function voiceOut(){if(!VOUT){VCTX=VCTX||new (window.AudioContext||window.webkitAudioContext)();VOUT=loudOut(VCTX);}return VOUT;}
+function liveOut(ctx){if(!ctx._lo){ctx._lo=loudOut(ctx);LIVEG=ctx._lo;}return ctx._lo;}
+function voiceVol(v){VVOL=Math.max(.5,Math.min(4,v));try{localStorage.setItem('lvoice',String(VVOL));}catch(e){}if(VOUT)VOUT.gain.value=VVOL;if(LIVEG)LIVEG.gain.value=VVOL;}
 function playAudio(id){try{const a=new Audio(AUDIO.get(id));try{VCTX=VCTX||new (window.AudioContext||window.webkitAudioContext)();VCTX.resume();VCTX.createMediaElementSource(a).connect(voiceOut());}catch(e){}let v=false;const off=()=>{stageTalk(false);if(v){v=false;voiceOn(false);}};a.onplay=()=>{stageTalk(true);if(!v){v=true;voiceOn(true);}};a.onended=a.onpause=off;a.play().catch(off);}catch(e){}}
 let TALKING=false,DANCING=false;
 const DANCE_N=4;
@@ -948,7 +963,7 @@ async function liveStart(){if(LIVE)return;const box=document.getElementById('liv
    else if(m.type==='disconnect'||m.type==='error'){liveStop();}
    return;}
   const pcm=new Int16Array(e.data);if(!pcm.length)return;const buf=ctx.createBuffer(1,pcm.length,24000);const ch=buf.getChannelData(0);
-  for(let i=0;i<pcm.length;i++)ch[i]=pcm[i]/32768;const s=ctx.createBufferSource();s.buffer=buf;s.connect(ctx.destination);
+  for(let i=0;i<pcm.length;i++)ch[i]=pcm[i]/32768;const s=ctx.createBufferSource();s.buffer=buf;s.connect(liveOut(ctx));
   const at=Math.max(L.playT,ctx.currentTime+0.05);s.start(at);L.playT=at+buf.duration;L.srcs.push(s);s.onended=()=>{L.srcs=L.srcs.filter(x=>x!==s);if(!L.srcs.length&&L.ready)liveStat('Leyla hört zu');};
   liveStat('Leyla spricht',true);};
  ws.onclose=()=>{if(LIVE===L)liveStop();};ws.onerror=()=>{if(LIVE===L){liveStop();CHAT.push({role:'info',text:'Live Verbindung ging nicht.'});chatSave();chatDraw();}};}

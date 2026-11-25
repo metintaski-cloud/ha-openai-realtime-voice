@@ -160,3 +160,45 @@ async def test_a_touch_right_after_a_loop_change_never_blanks_the_picture(tmp_pa
     for delay, r in got.items():
         assert r["min"] > 0.85, (delay, r)          # the natural dip of a tight hand over is about 0.9
         assert r["touch"] == "shown", (delay, r)    # and her reaction still comes
+
+
+async def test_on_a_wide_screen_she_is_shown_whole_and_the_phone_stays_as_it_is(tmp_path, monkeypatch):
+    """2.172.2 (Metin, 25 Nov 2026, photo of his PC monitor: only her middle, far too big): on a screen wider than
+    high the stage has the shape of the clips and stands in the middle; upright it fills the screen as before.
+    The touch zones go by the stage box, so the chest is still the chest."""
+    import asyncio
+
+    from app import memory
+    playwright = pytest.importorskip("playwright.async_api")
+    monkeypatch.setattr(memory_web, "CLIPS_DIR", str(tmp_path / "clips"))
+    server = await memory_web.start_http(memory.MemoryStore(str(tmp_path / "m.json")), None,
+                                         host="127.0.0.1", port=0)
+    port = server.sockets[0].getsockname()[1]
+    got = {}
+    try:
+        async with playwright.async_playwright() as p:
+            try:
+                browser = await p.chromium.launch()
+            except Exception:
+                pytest.skip("no browser here")
+            for key, (w, h) in {"pc": (1920, 1080), "phone": (400, 820)}.items():
+                page = await browser.new_page(viewport={"width": w, "height": h})
+                await page.goto(f"http://127.0.0.1:{port}/")
+                await asyncio.sleep(0.6)
+                got[key] = await page.evaluate("""()=>{const sp=document.getElementById('splash');if(sp)sp.remove();
+                  document.getElementById('chat').style.display='block';document.body.classList.add('chatfull');
+                  const st=document.getElementById('stage');st.style.display='block';const r=st.getBoundingClientRect();
+                  const at=(fx,fy)=>zoneAt({clientX:r.left+fx*r.width,clientY:r.top+fy*r.height});
+                  return {x:Math.round(r.left),w:Math.round(r.width),h:Math.round(r.height),
+                          fit:getComputedStyle(st.querySelector('video')).objectFit,
+                          zones:[at(.5,.09),at(.5,.23),at(.5,.36),at(.5,.5),at(.05,.23)]};}""")
+                await page.close()
+            await browser.close()
+    finally:
+        server.close()
+    pc, phone = got["pc"], got["phone"]
+    assert (pc["w"], pc["h"], pc["x"]) == (720, 1080, 600), pc           # 2:3, full height, in the middle
+    assert (phone["w"], phone["h"], phone["x"]) == (400, 820, 0), phone  # as before
+    for g in (pc, phone):
+        assert g["fit"] == "cover" and g["zones"][:4] == ["gesicht", "brust", "bauch", "po"], g
+    assert pc["zones"][4] is None

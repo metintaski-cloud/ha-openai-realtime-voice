@@ -180,6 +180,7 @@ async def test_in_a_browser_loops_run_in_order_and_a_touch_cuts_in_and_hands_bac
             assert seen[turn + 1] == "freizeitpo8"
             assert seen[turn + 2] == order[(order.index(seen[turn - 1]) + 1) % 3]
             assert (await page.evaluate("()=>document.getElementById(SV?'v1':'v0').muted")) is True
+            tempo_first = await page.evaluate("()=>CUR")  # the loop that gets the tempo here
             await page.evaluate("()=>{const r=document.getElementById('rate');r.value='1.5';r.oninput();}")
             await page.click("#mk")
             await asyncio.sleep(0.4)
@@ -257,7 +258,11 @@ async def test_in_a_browser_loops_run_in_order_and_a_touch_cuts_in_and_hands_bac
             await asyncio.sleep(0.4)
             # the reset button names the clip that differs and puts everything back after a yes
             await asyncio.sleep(0.8)
-            assert "1 Clip ist seitdem anders: kurz/" + seen[-1] in await page.inner_text("#rinfo")
+            # (the tempo was stored twice in this test, for the loop that ran then and the one that runs now;
+            #  which loops those are depends on where the touch cut in, so both counts are right)
+            changed = sorted({"kurz/" + tempo_first, "kurz/" + seen[-1]})
+            want = ("1 Clip ist" if len(changed) == 1 else "2 Clips sind") + " seitdem anders: " + ", ".join(changed)
+            assert want in await page.inner_text("#rinfo")
             page.once("dialog", lambda dialog: asyncio.ensure_future(dialog.accept()))
             await page.click("#rst")
             await page.wait_for_function("()=>document.getElementById('rinfo').textContent.includes('Nichts ist')")
