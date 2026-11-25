@@ -25,7 +25,8 @@ the blue end). Each bar is on its own.
 
 The mixer (2.168.0, Metin at 02:57 after the layers confused him: "ich brauch Anfang, Ende und dann einen
 Mischer, der im Random Lauf sich befindet, nahtlos"): `mix()` plays the ticked loops without end in random
-order with every hand over as in the app; values changed while it runs count from the next hand over.
+order (in rounds since 2.168.2: every loop once before one comes again, `roundPick`, the same function as
+in the app and in /ganzes) with every hand over as in the app; values changed while it runs count from the next hand over.
 
 "Übergabe zeigen" lays two layers on each other the way the app does when a loop hands over
 (memory_web.stageShow with TIGHT): the new clip starts at its begin mark `lead` seconds of clip
@@ -248,9 +249,14 @@ $('play').onclick=play;
    does it for a loop. Tempo, begin, end and lead are read anew at every picture, so a change made while it runs counts
    from the next hand over. The hand over is started from the picture of the running clip, not from a timer; `late` says
    how many ms after the planned moment it began. */
+/* every loop once before one comes again (Metin, 25 Nov 2026, 04:44: 1, 2, 3, then 2, 3, 2 and loop 1 only much later is wrong): a round holds each loop once in random order, and a new round never begins with the loop that just ran */
+function roundPick(R,v,cur){let b=(R.b||[]).filter(n=>v.includes(n));
+ if(!b.length||(b.length===1&&b[0]===cur&&v.length>1)){b=v.slice();for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)),t=b[i];b[i]=b[j];b[j]=t;}}
+ if(b.length>1&&b[0]===cur)b.push(b.shift());const n=b.shift();R.b=b;return n;}
+const RND={};
 async function mix(){if(PLAYING){stop();return;}const P=()=>LAY.filter(L=>L.on&&L.d);if(!P().length)return;LAY.forEach(soloStop);PLAYING=true;MIX=true;const tok=++TOK;
- document.body.classList.remove('diff');let zc=10,cur=P()[Math.floor(Math.random()*P().length)],nxt=null,prep=false,t1=performance.now(),prev=null,late=null;window.SEEN=[cur.n];window.LATE=[];
- const other=()=>{const o=P().filter(L=>L!==cur);return o.length?o[Math.floor(Math.random()*o.length)]:null;};
+ document.body.classList.remove('diff');RND.b=[];let zc=10,cur=lay(roundPick(RND,P().map(L=>L.n),'')),nxt=null,prep=false,t1=performance.now(),prev=null,late=null;window.SEEN=[cur.n];window.LATE=[];
+ const other=()=>{const v=P().map(L=>L.n);if(!v.length||(v.length===1&&v[0]===cur.n))return null;const n=roundPick(RND,v,cur.n);return n===cur.n?null:lay(n);};
  draw();for(const L of LAY){L.v.pause();L.v.style.transition='none';L.v.style.mixBlendMode='normal';L.v.style.opacity=L===cur?'1':'0';}cur.v.style.zIndex=String(++zc);
  document.body.classList.add('busy');await seeked(cur.v,cur.s);document.body.classList.remove('busy');if(tok!==TOK)return;
  cur.v.playbackRate=cur.rt;cur.v.play().catch(()=>{});

@@ -271,7 +271,7 @@ async def test_in_a_browser_loops_run_in_order_and_a_touch_cuts_in_and_hands_bac
 
 def test_random_loops_never_repeat_the_clip_that_just_ran():
     js = script()
-    assert "const o=v.length>1?v.filter(x=>x!==LAST):v" in js  # as stageLoop of the app does
+    assert "else n=roundPick(RND,v,LAST);" in js              # in rounds, as stageLoop of the app does (2.168.2)
     assert "sel=all.filter(n=>!OFF[n])" in js                 # and only among the loops that take part
 
 

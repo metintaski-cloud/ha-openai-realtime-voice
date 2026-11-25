@@ -425,8 +425,13 @@ function show(name,opt,done){const vs=[$('v0'),$('v1')],a=vs[SV],b=vs[1-SV],tok=
  b.onloadedmetadata=()=>{b.playbackRate=rateAt(pth,0);const cs=cutStart(pth);if(cs)b.currentTime=cs;};
  b.src='/clips/'+pth+'.mp4?v='+(VER[LOOK]||0);b.playbackRate=rateAt(pth,0);b.load();}
 /* the loop: clip, clip, clip. In order, or like the app a random other one each time */
+/* every loop once before one comes again (Metin, 25 Nov 2026, 04:44: 1, 2, 3, then 2, 3, 2 and loop 1 only much later is wrong): a round holds each loop once in random order, and a new round never begins with the loop that just ran */
+function roundPick(R,v,cur){let b=(R.b||[]).filter(n=>v.includes(n));
+ if(!b.length||(b.length===1&&b[0]===cur&&v.length>1)){b=v.slice();for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)),t=b[i];b[i]=b[j];b[j]=t;}}
+ if(b.length>1&&b[0]===cur)b.push(b.shift());const n=b.shift();R.b=b;return n;}
+const RND={};
 function loopNext(cont,fast){BUSY=false;const all=vars('gluecklich'),sel=all.filter(n=>!OFF[n]),v=sel.length?sel:all;if(!v.length){$('name').textContent='Dieses Kleid hat noch keine Schleife.';return;}
- let n;if(SEQ){const i=v.indexOf(LAST);n=v[(i+1)%v.length];}else{const o=v.length>1?v.filter(x=>x!==LAST):v;n=o[Math.floor(Math.random()*o.length)];}
+ let n;if(SEQ){const i=v.indexOf(LAST);n=v[(i+1)%v.length];}else n=roundPick(RND,v,LAST);
  LAST=n;
  show(n,{cont:cont,fast:fast},()=>loopNext(true,false));}
 /* a touch clip starts at once, with its sound; a clip from behind first turns her (hinten), as in the app */

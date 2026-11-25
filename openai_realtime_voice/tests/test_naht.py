@@ -485,3 +485,36 @@ def test_the_scripts_of_the_app_page_and_the_tester_are_sound_javascript(tmp_pat
                         encoding="utf-8")
         done = subprocess.run([node, "--check", str(path)], capture_output=True, text=True)
         assert done.returncode == 0, name + ": " + done.stderr
+
+
+def test_loops_come_in_rounds_every_one_once_before_one_comes_again(tmp_path):
+    """Metin, 04:44: 1, 2, 3, then 2, 3, 2 and loop 1 only much later is wrong. The app, the page
+    /ganzes and the mixer use the same function."""
+    def fn(text: str) -> str:
+        return re.search(r"function roundPick\(R,v,cur\)\{.*?return n;\}", text, re.S).group(0)
+    app = open(memory_web.__file__, encoding="utf-8").read()
+    picks = fn(app)
+    assert fn(ganzes_page.PAGE) == picks and fn(naht_page.PAGE) == picks
+    assert "roundPick(LROUND[b]||(LROUND[b]={}),v,cf)" in app and "TIGHT=true;stageShow(o[" not in app
+    node = shutil.which("node")
+    if not node:
+        pytest.skip("no node here")
+    path = tmp_path / "round.js"
+    path.write_text(picks + """
+const out={};for(const n of [2,3,5]){const v=[...Array(n)].map((x,i)=>'s'+(i+1)),R={},seq=[];let cur='';
+ for(let i=0;i<n*400;i++){cur=roundPick(R,v,cur);seq.push(cur);}
+ const count={},last={};let gap=0,twice=0;seq.forEach((x,i)=>{count[x]=(count[x]||0)+1;if(i&&seq[i-1]===x)twice++;if(last[x]!==undefined)gap=Math.max(gap,i-last[x]);last[x]=i;});
+ out[n]={count:Object.values(count),gap,twice};}
+// a loop is taken out while a round runs, and one alone just repeats
+const R={},seq=[];let cur='';for(let i=0;i<30;i++){cur=roundPick(R,i<10?['a','b','c']:['a','b'],cur);seq.push(cur);}
+out.left=seq.slice(11).includes('c');out.one=[roundPick({},['x'],'x'),roundPick({},['x'],'')];
+console.log(JSON.stringify(out));
+""", encoding="utf-8")
+    done = subprocess.run([node, str(path)], capture_output=True, text=True)
+    assert done.returncode == 0, done.stderr
+    got = json.loads(done.stdout)
+    for n in (2, 3, 5):
+        assert got[str(n)]["count"] == [400] * n          # every loop exactly as often as the others
+        assert got[str(n)]["twice"] == 0                  # never the same loop twice in a row
+        assert got[str(n)]["gap"] <= 2 * n - 1            # at the latest it comes again at the end of the next round
+    assert got["left"] is False and got["one"] == ["x", "x"]

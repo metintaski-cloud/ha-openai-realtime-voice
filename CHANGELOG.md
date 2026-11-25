@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.168.2 (25 Nov 2026)
+
+- `fix`: loops come in rounds. Metin (04:44): the loop plays wrong, first 1, then 2, then 3, then 2 again, 3, 2, and loop 1 only much later. Until now the next loop was drawn by chance from all others, so with three loops two of them could alternate for a long time. Now every loop comes once, in random order, before any comes again, and a new round never begins with the loop that just ran (`roundPick`, the same function on the stage of the app, on "Outfit als Ganzes" in random mode and in the mixer of the page "Naht"). Measured over 1200 picks with three loops: before, a loop could stay away for any number of picks; now each comes exactly 400 times and at the latest after 5 picks. 735 tests.
+
 ## 2.168.1 (25 Nov 2026)
 
 - `fix`: on the page "Naht" the white line (the play head of a loop) can no longer leave the blue part of its bar. Metin (03:41, with a photo): after he had shortened a loop, he could still drag the white line into the grey part behind the blue end. It now stops exactly at the end mark and at the begin mark, whether dragged on the time axis, moved with the slider (which reaches from the beginning to the end) or with the step buttons. 734 tests, the browser test drags the line past both edges.
