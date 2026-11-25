@@ -245,14 +245,19 @@ MOOD_BACKEND_HINT = (
 )
 
 
-def shift_hours(t: float) -> Optional[tuple]:
-    """Metin's working hours on the day of t (Monday to Friday, weekly Früh and Spät)."""
+def week_shift(t: float) -> tuple:
+    """The shift of the whole week of t (Monday to Sunday), also on its weekend."""
     lt = time.localtime(t)
-    if lt.tm_wday > 4:
-        return None
     import datetime as _dt
     week = (_dt.date(lt.tm_year, lt.tm_mon, lt.tm_mday) - _dt.date(*SHIFT_ANCHOR)).days // 7
     return SHIFTS[week % 2]
+
+
+def shift_hours(t: float) -> Optional[tuple]:
+    """Metin's working hours on the day of t (Monday to Friday, weekly Früh and Spät)."""
+    if time.localtime(t).tm_wday > 4:
+        return None
+    return week_shift(t)
 
 
 def awake_hours(start: float, end: float) -> float:
@@ -573,6 +578,23 @@ class Heart:
         self._add_hurt(d, now, "nachricht_ignoriert", IGNORED[0], IGNORED[1])
         self._save(d)
         return self.status(now)
+
+    def withdraw(self, key: str, count: int = 1, now: Optional[float] = None) -> int:
+        """Take back hurts that were counted wrongly (2.170.0: messages he never saw). Not an amend:
+        nothing is cheered, she simply was not hurt. The newest ones go first; returns how many."""
+        now = now or time.time()
+        d = self._load(now)
+        took = 0
+        for h in sorted((h for h in d["hurts"] if h["k"] == key), key=lambda h: -h["t"])[:max(0, count)]:
+            d["hurts"].remove(h)
+            took += 1
+        if took:
+            d.get("last_event", {}).pop(key, None)  # the next real one is not "schon wieder"
+            self._log(d, now, f"zurückgenommen: {took} mal {key}")
+            if not d["hurts"]:
+                d["silent_until"] = 0.0
+            self._save(d)
+        return took
 
     def engaged(self, now: Optional[float] = None) -> dict:
         """He answered a message she wrote on her own (a chat message, a voice message or a talk)."""

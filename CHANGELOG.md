@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.170.0 (25 Nov 2026)
+
+- `feat`: ignored means seen. Metin (17:42): she writes in the morning while he sleeps, that is too sensitive. Until now a message of hers counted as ignored two waking hours after it was sent, whether he had seen it or not, and only 23 to 7 o'clock counted as night; on 25 Nov she wrote shortly after 8 and was hurt at 10:16 and 12:17 while he slept after a night of work. Now a message can only be ignored once the app has shown it to him, and the two hours run from that moment. A message he never saw does not hurt her; after 12 hours it is filed as missed.
+- `feat`: in a week with the late shift (14 to 22) she writes from 11 o'clock, not from 8, also on the weekend of that week.
+- `fix`: a minus of the last 24 hours that was given by the old rule is taken back once at the first minute after the update (`Heart.withdraw`), so the two hurts of 25 Nov go.
+- 741 tests (738 before): seen and not answered, never seen, the late week, taking back the old minus once and never a new one.
+
 ## 2.169.3 (25 Nov 2026)
 
 - `fix`: Leyla no longer stands still as a picture when she is hurt. Metin (13:09, with a screenshot): "ist eingefroren". She was hurt because a message of hers had stayed unanswered, and for a low mood the stage looked for sad or jealous clips only. The work dresses have none since they were remade in 4K, and the happy loop was allowed as a last resort only for the leisure and night outfits, so the stage showed nothing but her picture. The happy loop is now the last resort for every outfit; a sad clip still wins where there is one.

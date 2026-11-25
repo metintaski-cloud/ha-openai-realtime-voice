@@ -8,14 +8,17 @@ voice message plays there). She writes mostly Turkish with German words in betwe
 2026: more Turkish than German).
 
 Rules, all measured, nothing rolled by the language model:
-* Only while he has time: not at night (before 8, after 22), not in his shift and not an hour
-  before it (`heart.shift_hours`), not while he is talking to her or has just written.
+* Only while he has time: not at night (before 8, after 22; in a week with the late shift not
+  before 11, he sleeps longer then), not in his shift and not an hour before it
+  (`heart.shift_hours`), not while he is talking to her or has just written.
 * How many: 4 a day while she is fine, 2 when slightly hurt, 1 when really hurt, none when
   deeply hurt or silent. She writes the next one only when the last one is answered or judged.
-* He answers (a chat or voice message, or a talk at home): `Heart.engaged` gives a plus. He does
-  not answer within IGNORE_AFTER_H waking hours (night and shift do not count): `Heart.ignored`
-  gives a minus (1 point, at most MAX_PENALTIES_PER_DAY a day). So "not now" and silence cost
-  her mood, as with a real person, and a hurt Leyla writes less.
+* He answers (a chat or voice message, or a talk at home): `Heart.engaged` gives a plus. The app
+  has shown him the message (`seen`) and he does not answer within IGNORE_AFTER_H waking hours
+  after that (night and shift do not count): `Heart.ignored` gives a minus. A message he never
+  saw cannot be ignored: after OPEN_MAX_S it is only "verpasst" (2.170.0; before, the two hours
+  ran from sending, and she was hurt twice on 25 Nov 2026 while he slept). The minus is
+  1 point, at most MAX_PENALTIES_PER_DAY a day. So "not now" and silence cost her mood, as with a real person, and a hurt Leyla writes less.
 * The message text comes from the text model with her rules, her feeling and the last
   conversations; the voice version is spoken by GPT Live. The app only writes the data; what she
   says never names a reason for a hurt that is not logged (heart.LIMITS).
@@ -44,6 +47,7 @@ GAP_S = {"gut": 90 * 60, "leicht": 3 * 3600, "mittel": 5 * 3600, "schwer": 24 * 
 GAP_JITTER_S = 30 * 60
 FIRST_DELAY_S = (3 * 60, 30 * 60)   # after the window opens: wait a random time
 SEND_HOURS = (8.0, 22.0)            # she writes only inside these hours
+LATE_WEEK_FROM_H = 11.0             # in a week with the late shift he sleeps longer: not before this hour (2.170.0)
 BEFORE_SHIFT_H = 1.0                # not in the hour before his shift
 AFTER_SHIFT_H = 0.5                 # nor right after it (the way home)
 QUIET_AFTER_CONTACT_S = 40 * 60     # he just talked to her: no need to write now
@@ -137,7 +141,8 @@ def window_open(t: float) -> bool:
     hour after)."""
     lt = time.localtime(t)
     h = lt.tm_hour + lt.tm_min / 60
-    if not SEND_HOURS[0] <= h < SEND_HOURS[1]:
+    first = LATE_WEEK_FROM_H if heart_mod.week_shift(t)[0] >= 12 else SEND_HOURS[0]
+    if not first <= h < SEND_HOURS[1]:
         return False
     shift = heart_mod.shift_hours(t)
     if shift and shift[0] - BEFORE_SHIFT_H <= h < shift[1] + AFTER_SHIFT_H:
@@ -238,16 +243,38 @@ class Reach:
         for i in d["items"]:
             if i.get("state") != "open":
                 continue
-            quiet = heart_mod.awake_hours(i["t"], now)
-            if quiet < IGNORE_AFTER_H and now - i["t"] < OPEN_MAX_S:
+            if not i.get("seen"):
+                # 2.170.0 (Metin, 25 Nov 2026: she wrote in the morning while he slept and was hurt
+                # twice before he woke up): what the app never showed him cannot be ignored
+                if now - i["t"] >= OPEN_MAX_S:
+                    i["state"] = "verpasst"
+                    logger.info("Reach: never seen, no minus")
                 continue
-            i["state"] = "ignored"
+            since = i.get("seen_t") or i["t"]
+            quiet = heart_mod.awake_hours(since, now)
+            if quiet < IGNORE_AFTER_H and now - since < OPEN_MAX_S:
+                continue
+            i["state"], i["rule"] = "ignored", 2
             if d["penalties"] < MAX_PENALTIES_PER_DAY:
                 d["penalties"] += 1
                 self.heart.ignored(now)
                 logger.info("Reach: not answered, minus for her mood")
             else:
                 logger.info("Reach: not answered, no more minus today")
+
+    def _refund(self, d: dict, now: float) -> None:
+        """Once, after the change of 2.170.0: a minus of the last 24 hours that was given by the old
+        rule (two waking hours after sending, seen or not) is taken back."""
+        old = [i for i in d["items"] if i.get("state") == "ignored" and not i.get("rule")
+               and not i.get("refunded") and now - i["t"] < 86400]
+        if not old:
+            return
+        for i in old:
+            i["state"], i["refunded"] = "verpasst", True
+        took = self.heart.withdraw("nachricht_ignoriert", len(old), now)
+        if d.get("penalty_day") == _day(now):
+            d["penalties"] = max(0, d.get("penalties", 0) - took)
+        logger.info("Reach: %d old minus taken back", took)
 
     def _prune(self, d: dict, now: float) -> None:
         keep = []
@@ -289,6 +316,7 @@ class Reach:
         d = self._load()
         if d.get("day") != _day(now):
             d.update(day=_day(now), sent_today=0, next_at=0)
+        self._refund(d, now)
         self._judge(d, now)
         self._prune(d, now)
         item = None
@@ -366,12 +394,12 @@ class Reach:
                                    "role": role})
         self._save(d)
 
-    def seen(self, ids) -> int:
+    def seen(self, ids, now: Optional[float] = None) -> int:
         d = self._load()
         n = 0
         for i in d["items"]:
             if i["id"] in (ids or []) and not i.get("seen"):
-                i["seen"] = True
+                i["seen"], i["seen_t"] = True, round(now or time.time())  # the two hours count from here
                 n += 1
         if n:
             self._save(d)

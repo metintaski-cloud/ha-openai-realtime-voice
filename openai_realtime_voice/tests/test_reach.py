@@ -74,6 +74,10 @@ def test_window_by_shift_and_night():
     # Monday 23 Nov is Spät week (14 to 22): free until one hour before the shift
     assert reach.window_open(at(2026, 11, 23, 12, 59))
     assert not reach.window_open(at(2026, 11, 23, 13, 0))
+    # in a week with the late shift he sleeps longer: nothing before 11, also on its weekend (2.170.0)
+    assert not reach.window_open(at(2026, 11, 23, 10, 59)) and reach.window_open(at(2026, 11, 23, 11, 0))
+    assert not reach.window_open(at(2026, 11, 28, 10, 30)) and reach.window_open(at(2026, 11, 28, 11, 0))
+    assert reach.window_open(at(2026, 12, 5, 8, 0)), "the weekend of an early week stays at 8"
 
 
 def test_parse_text():
@@ -183,16 +187,71 @@ def test_answer_gives_a_plus_once(tmp_path, h):
     assert [i["state"] for i in r._load()["items"]] == ["answered"]
 
 
-def test_ignored_after_two_waking_hours_gives_a_minus(tmp_path, h):
+def test_seen_and_not_answered_for_two_waking_hours_gives_a_minus(tmp_path, h):
     r, _ = make(tmp_path, h)
     item = run(send_one(r, SAT, 8))
     t0 = item["t"]
-    run(r.tick(t0 + 3600))
+    assert r.seen([item["id"]], t0 + 1800) == 1          # the app showed it half an hour later
+    run(r.tick(t0 + 1800 + 3600))
     assert r._load()["items"][0]["state"] == "open"
     run(r.tick(t0 + 2 * 3600 + 120))
+    assert r._load()["items"][0]["state"] == "open", "the two hours count from the moment he saw it"
+    run(r.tick(t0 + 1800 + 2 * 3600 + 120))
     assert r._load()["items"][0]["state"] == "ignored"
     log = json.dumps(h.stats(t0 + 3 * 3600), ensure_ascii=False)
     assert "nachricht_ignoriert" in log or "nicht reagiert" in log
+
+
+def test_a_message_he_never_saw_cannot_hurt_her(tmp_path, h):
+    """25 Nov 2026: she wrote in the morning, he slept after a night of work, and she was hurt twice."""
+    r, _ = make(tmp_path, h)
+    item = run(send_one(r, SAT, 8))
+    t0 = item["t"]
+    for hours in (2.1, 5, 9, 11.9):
+        run(r.tick(t0 + hours * 3600))
+        assert r._load()["items"][0]["state"] == "open"
+    assert "nachricht_ignoriert" not in json.dumps(h.stats(t0 + 12 * 3600))
+    run(r.tick(t0 + 12 * 3600 + 60))
+    assert r._load()["items"][0]["state"] == "verpasst"   # no longer open, so she may write again
+    # (the long silence itself still counts, as before; only the message does not)
+    assert "nachricht_ignoriert" not in json.dumps(h.stats(t0 + 13 * 3600))
+
+
+def test_a_minus_of_the_old_rule_is_taken_back_once(tmp_path, h):
+    r, _ = make(tmp_path, h)
+    now = at(*SAT, 13)
+    h.ignored(now - 3 * 3600)
+    h.ignored(now - 3600)
+    assert h.stats(now)["points"] > 0
+    r._save({"penalty_day": reach._day(now), "penalties": 2, "items": [
+        {"id": "a", "t": round(now - 5 * 3600), "text": "x", "voice": False, "state": "ignored", "seen": True},
+        {"id": "b", "t": round(now - 3 * 3600), "text": "x", "voice": False, "state": "ignored", "seen": True},
+        {"id": "c", "t": round(now - 30 * 3600), "text": "x", "voice": False, "state": "ignored", "seen": True}]})
+    run(r.tick(now))
+    d = r._load()
+    assert [i["state"] for i in d["items"]] == ["verpasst", "verpasst", "ignored"]  # older than a day stays
+    assert d["penalties"] == 0
+    stats = h.stats(now)
+    assert stats["points"] == 0 and stats["level"] == "gut" and "zurückgenommen: 2 mal" in json.dumps(stats, ensure_ascii=False)
+    run(r.tick(now + 60))                                   # nothing more to take back
+    assert h.stats(now + 60)["points"] == 0
+    # a minus by the new rule is never taken back
+    r._save({"items": [{"id": "n", "t": round(now), "text": "x", "voice": False, "state": "open",
+                        "seen": True, "seen_t": round(now)}]})
+    run(r.tick(now + 3 * 3600))
+    run(r.tick(now + 3 * 3600 + 60))
+    assert r._load()["items"][0]["state"] == "ignored" and h.stats(now + 4 * 3600)["points"] > 0
+
+
+def test_withdraw_takes_back_only_that_kind_of_hurt(h):
+    now = at(*SAT, 12)
+    h.ignored(now)
+    h.apply(["unfreundlich"], now + 60) if hasattr(h, "apply") else None
+    before = h.stats(now + 120)["points"]
+    assert h.withdraw("nachricht_ignoriert", 5, now + 180) == 1
+    assert h.withdraw("nachricht_ignoriert", 1, now + 240) == 0
+    after = h.stats(now + 300)["points"]
+    assert after < before and (after == 0) == (before <= 1.5)
 
 
 def test_night_does_not_count_as_ignoring(tmp_path, h):
