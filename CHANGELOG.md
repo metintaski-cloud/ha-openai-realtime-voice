@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.168.1 (25 Nov 2026)
+
+- `fix`: on the page "Naht" the white line (the play head of a loop) can no longer leave the blue part of its bar. Metin (03:41, with a photo): after he had shortened a loop, he could still drag the white line into the grey part behind the blue end. It now stops exactly at the end mark and at the begin mark, whether dragged on the time axis, moved with the slider (which reaches from the beginning to the end) or with the step buttons. 734 tests, the browser test drags the line past both edges.
+
 ## 2.168.0 (25 Nov 2026)
 
 - `feat`: the mixer on the page "Naht". Metin (02:54, 02:57): the layers with their different tempos and equal times confused him; what he needs is beginning, end and then a mixer that runs at random, seamless. "Mischer starten" plays the loops that are ticked without end in random order, never the same one twice in a row, every hand over as on the stage of the app (the next clip comes in its lead before the end mark and fades in, the old one holds its last picture). While it runs, tempo, beginning, end and lead of every loop can be changed and count from the next hand over; the tick box of a loop decides whether it takes part. The hand over is started from the picture of the running clip, and the page shows after each one how many milliseconds after the planned moment it began. 734 tests; the browser test lets the mixer run for 17 seconds, changes values and takes a loop out while it runs.

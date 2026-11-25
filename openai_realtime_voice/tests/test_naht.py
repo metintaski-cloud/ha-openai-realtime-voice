@@ -225,6 +225,17 @@ async def test_in_a_browser_every_loop_is_its_own_layer(tmp_path, monkeypatch):
             await drag(2, 2.5, 3.0)                               # inside the bar: the play head, the marks stay
             st = await settled()
             assert abs(st[G3]["t"] - 3.0) < 0.02 and abs(st[G3]["s"] - 1.0) < 0.02
+            # the white line never leaves the blue part (Metin, 03:41): not past its end, not before its beginning
+            await drag(0, 2.0, 3.9)
+            st = await settled()
+            assert st[G1]["t"] == st[G1]["e"] and abs(st[G1]["e"] - 2.958) < 0.02 and abs(st[G1]["vt"] - st[G1]["e"]) < 0.05
+            await drag(0, 2.0, 0.05)
+            st = await settled()
+            assert (st[G1]["t"], st[G1]["s"]) == (0.5, 0.5)
+            assert await page.evaluate("(k)=>{const e=document.querySelector(k);return [Number(e.min),Number(e.max)]}",
+                                       key(G1, "pos")) == [0.5, st[G1]["e"]]
+            await page.evaluate("(k)=>{const e=document.querySelector(k);e.value='9';e.oninput();}", key(G1, "pos"))
+            assert (await state())[G1]["t"] == st[G1]["e"]
             await drag(2, st[G3]["s"], 9.0)                       # at least half a second always stays
             st = await settled()
             assert abs(st[G3]["s"] - (st[G3]["e"] - 0.5)) < 0.001

@@ -20,7 +20,8 @@ the picture at that mark. A layer can play on its own from its play head to its 
 
 The time axis at the bottom has one bar per layer over the full length of its clip: the bright
 part is what stays, its two edges are dragged to make it shorter or longer, a tap or drag inside
-moves the play head. Each bar is on its own.
+moves the play head, which never leaves the bright part (Metin, 03:41: the white line must not go past
+the blue end). Each bar is on its own.
 
 The mixer (2.168.0, Metin at 02:57 after the layers confused him: "ich brauch Anfang, Ende und dann einen
 Mischer, der im Random Lauf sich befindet, nahtlos"): `mix()` plays the ticked loops without end in random
@@ -135,10 +136,10 @@ const changed=L=>!!L.d&&(Math.abs(L.rt-rate(L.n))>0.004||Math.abs(L.s-savedS(L))
 const val=(L,k)=>k==='s'?L.s:k==='e'?L.e:k==='l'?L.ld:L.t;
 /* one value of one layer; moving a mark shows the picture at that mark */
 function setVal(L,k,x){if(!L.d)return;halt();if(!MIX)soloStop(L);
- if(k==='s'){L.s=r3(Math.max(0,Math.min(L.e-MINLEN,x)));if(!MIX)L.t=L.s;}
- else if(k==='e'){L.e=r3(Math.max(L.s+MINLEN,Math.min(L.d,x)));if(!MIX)L.t=L.e;}
+ if(k==='s'){L.s=r3(Math.max(0,Math.min(L.e-MINLEN,x)));L.t=MIX?Math.max(L.t,L.s):L.s;}
+ else if(k==='e'){L.e=r3(Math.max(L.s+MINLEN,Math.min(L.d,x)));L.t=MIX?Math.min(L.t,L.e):L.e;}
  else if(k==='l')L.ld=r3(Math.max(0,Math.min(LEAD_MAX,x)));
- else if(!MIX)L.t=r3(Math.max(0,Math.min(L.d,x)));show();}
+ else if(!MIX)L.t=r3(Math.max(L.s,Math.min(L.e,x)));show();}  /* the play head never leaves the part that stays (Metin, 03:41) */
 function busy(){document.body.classList.toggle('busy',LAY.some(L=>L.on&&!L.play&&(L.v.seeking||L.v.readyState<2)));}
 function seek(v,t){if(Math.abs(v.currentTime-t)>0.0004){try{v.currentTime=t;}catch(e){}}}
 function show(){draw();if(PLAYING)return;clearTimeout(PEND);PEND=setTimeout(()=>{if(PLAYING)return;for(const L of LAY)if(L.on&&L.d&&!L.play)seek(L.v,L.t);busy();},60);}
@@ -148,7 +149,7 @@ function draw(){const diff=document.body.classList.contains('diff'),tp=top1();le
    L.v.style.mixBlendMode=diff&&L.on&&L===tp&&LAY.filter(x=>x.on).length>1?'difference':'normal';}
   if(!L.el)continue;L.el.classList.toggle('off',!L.on);q(L,'on').checked=L.on;q(L,'op').value=String(L.op);q(L,'oplab').textContent=L.op+' %';q(L,'rt').value=String(L.rt);q(L,'rtlab').textContent=L.rt.toFixed(2);
   for(const k of ['t','s','e','l'])q(L,'m'+k).classList.toggle('on',L.mode===k);
-  const p=q(L,'pos');p.max=String(L.mode==='l'?LEAD_MAX:(L.d||10));p.value=String(val(L,L.mode));
+  const p=q(L,'pos');p.min=String(L.mode==='t'?L.s:0);p.max=String(L.mode==='l'?LEAD_MAX:L.mode==='t'?(L.e||10):(L.d||10));p.value=String(val(L,L.mode));
   q(L,'play').textContent=L.play?'⏸ anhalten':'▶ abspielen';const c=changed(L);ch=ch||c;
   q(L,'lab').innerHTML=!L.d?'wird geladen ...':'Bild <span class="n">'+L.t.toFixed(3)+'</span> &nbsp; Anfang <span class="n">'+L.s.toFixed(3)+'</span> &nbsp; Ende <span class="n">'+L.e.toFixed(3)+'</span> von '+L.d.toFixed(3)+' s &nbsp; Einsatz <span class="n">'+L.ld.toFixed(3)+'</span>'+(KURVE[pth(L.n)]?' &nbsp; (Tempo Kurve nicht eingerechnet)':'')+(c?' &nbsp; <span style="color:#fd8">noch nicht gemerkt</span>':'');}
  $('save').classList.toggle('on',ch);$('sinfo').textContent=ch?'Noch nicht gemerkt.':'So ist es gemerkt.';$('diff').classList.toggle('on',diff);
@@ -177,7 +178,7 @@ function card(L){const el=document.createElement('div');el.className='card lay';
  q(L,'l0').onclick=()=>setVal(L,'l',HAND_PRE);}
 function addLayer(n,on,op){let L=lay(n);if(L)return L;const v=document.createElement('video');v.playsInline=true;v.muted=true;v.preload='auto';
  const c=SCHNITT[pth(n)]||[0,0];L={n,v,on:!!on,op:op===undefined?100:op,t:0,s:c[0]>0?c[0]:0,e:0,ld:0,rt:rate(n),d:0,play:0,mode:'t',el:null,z:++ZTOP,then:null};L.ld=savedL(L);
- v.onloadedmetadata=()=>{L.d=v.duration||0;L.e=savedE(L);L.t=Math.min(L.t,L.d);if(L.then){const f=L.then;L.then=null;f();}setAx();show();};
+ v.onloadedmetadata=()=>{L.d=v.duration||0;L.e=savedE(L);L.t=Math.max(L.s,Math.min(L.t,L.e));if(L.then){const f=L.then;L.then=null;f();}setAx();show();};
  v.onseeked=busy;v.onseeking=busy;v.onloadeddata=busy;
  v.src='/clips/'+pth(n)+'.mp4?v='+(VER[LOOK]||0);$('st').appendChild(v);LAY.push(L);card(L);return L;}
 /* when its length is known: f() now or as soon as the clip has told it */
@@ -190,7 +191,7 @@ function fillSel(){const names=CL.filter(mine).sort(cmp),rest=names.filter(n=>!l
  for(const id of ['hf','ht','h3','h4','h5']){const s=$(id),old=s.value;s.innerHTML=id==='hf'||id==='ht'?'':'<option value="">nichts mehr</option>';LAY.forEach(L=>{const o=document.createElement('option');o.value=L.n;o.textContent=title(L.n)+(title(L.n)===L.n?'':' ('+L.n+')');s.appendChild(o);});if(lay(old))s.value=old;}}
 /* two layers on each other as the app shows them when the old clip has reached its last picture */
 function hand(a,b){if(!a||!b||a===b)return;stop();LAY.forEach(L=>{soloStop(L);L.on=false;});a.on=true;a.op=100;b.on=true;b.op=50;b.z=++ZTOP;a.mode='t';b.mode='t';
- ready(a,()=>ready(b,()=>{a.t=a.e;b.t=r3(Math.min(b.d,b.s+b.ld/a.rt*b.rt));show();}));show();}
+ ready(a,()=>ready(b,()=>{a.t=a.e;b.t=r3(Math.min(b.e,b.s+b.ld/a.rt*b.rt));show();}));show();}
 function pick(i,a,b){const o=OUT[i];stop();LAY.forEach(L=>{L.play=0;L.v.pause();L.v.removeAttribute('src');L.v.load();L.v.remove();});LAY=[];$('cards').innerHTML='';ZTOP=1;
  LOOK=o[1];PRE=o[2];CL=(window.J.outfits[LOOK]||{}).clips||[];try{localStorage.setItem('lnaht',String(i));}catch(e){}
  const names=CL.filter(mine).sort(cmp),loops=names.filter(isLoop);loops.forEach(n=>addLayer(n,false,100));
