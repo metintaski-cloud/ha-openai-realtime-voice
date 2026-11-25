@@ -264,6 +264,35 @@ async def test_in_a_browser_every_loop_is_its_own_layer(tmp_path, monkeypatch):
             st = await settled()
             assert all(r["paused"] and not r["play"] for r in st.values()) and abs(st[G2]["vt"] - st[G2]["t"]) < 0.05
             assert await page.inner_text("#pall") == "▶ alle sichtbaren abspielen"
+            # every layer has its own tempo under its see through slider (Metin, 02:39), also while it plays
+            assert await page.evaluate("()=>LAY.map(L=>L.rt)") == [1, 2, 1]
+            await page.evaluate("()=>save.click()")
+            await asyncio.sleep(0.5)
+            assert not await page.evaluate("()=>save.classList.contains('on')")
+            await page.click(key(G2, "r1"))
+            assert await page.evaluate("()=>save.classList.contains('on')") and await page.inner_text(key(G2, "rtlab")) == "1.00"
+            await page.click(key(G1, "rp"))
+            await page.click(key(G1, "rp"))
+            await page.click("#gall")
+            await settled()
+            await page.click("#pall")
+            await asyncio.sleep(0.5)
+            assert await page.evaluate("()=>LAY.map(L=>L.v.playbackRate)") == [1.02, 1, 1]
+            await page.evaluate("(k)=>{const e=document.querySelector(k);e.value='0.5';e.oninput();}", key(G1, "rt"))
+            assert await page.evaluate("()=>LAY[0].v.playbackRate") == 0.5
+            await page.click("#pall")
+            await settled()
+            await page.click(key(G1, "rm"))
+            await page.click("#save")
+            await asyncio.sleep(0.6)
+            stored = {i["name"]: i["rate"] for i in json.loads((tmp_path / "tempo.json").read_text())}
+            assert stored["kurz/" + G1] == 0.49 and stored["kurz/" + G2] == 1
+            assert memory_web.list_outfits()["kurz"]["r"] == {G1: 0.49}  # tempo 1 is no entry for the app
+            await page.click(key(G1, "r1"))
+            await page.evaluate("(k)=>{const e=document.querySelector(k);e.value='2';e.oninput();}", key(G2, "rt"))
+            await page.click("#save")
+            await asyncio.sleep(0.6)
+            assert memory_web.list_outfits()["kurz"]["r"] == {G2: 2}
             # the hand over again with the new values, the difference picture, and once in real time
             await page.click("#hv")
             st = await settled()

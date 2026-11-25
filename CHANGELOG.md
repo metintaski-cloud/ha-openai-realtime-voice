@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.167.2 (25 Nov 2026)
+
+- `feat`: a tempo slider for every layer on the page "Naht", right under its see through slider (Metin, 02:39; he saw that the loops play at different speeds: loop 1 of the short work dress has a stored tempo of 1.5, the others 1.0). Slider from 0.4 to 2 with "Tempo − 0,01", "Tempo + 0,01" and "Tempo auf 1"; it also changes while the layer plays, the hand over view and "So spielt es die App" use it, and "Alle Zeiten merken" stores it (the same value the tester and "Outfit als Ganzes" use, `POST /api/tempo`). 734 tests, the browser test changes the tempo while two loops play and stores it.
+
 ## 2.167.1 (25 Nov 2026)
 
 - `feat`: one play button for all layers on the page "Naht" (Metin, 02:29). "Alle sichtbaren abspielen" starts every visible layer in the same moment, each from its play head and in its own tempo, each stops at its own end mark; pressing again stops them all where they are. "Alle zum Anfang" puts every play head on its begin mark. 734 tests, the browser test checks that two loops start together and keep in step.
