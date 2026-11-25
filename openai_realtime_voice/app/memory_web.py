@@ -384,7 +384,9 @@ body.chatfull #menu{top:calc(56px + env(safe-area-inset-top,0px))}
 <div id="bar"><button id="del" disabled>Markierte löschen</button></div>
 <script>
 let CODE=null;
-function post(path,obj){if(CODE)obj.code=CODE;return fetch(path,{method:'POST',body:JSON.stringify(obj)});}
+/* DEV: this tab, so the server does not send a device its own chat lines back (2.173.0) */
+const DEV=(()=>{let d='';try{d=sessionStorage.getItem('ldev')||'';}catch(e){}if(!d){d=Math.random().toString(36).slice(2,12);try{sessionStorage.setItem('ldev',d);}catch(e){}}return d;})();
+function post(path,obj){if(CODE){obj.code=CODE;obj.dev=DEV;}return fetch(path,{method:'POST',body:JSON.stringify(obj)});}
 let view=null,sel=new Set(),last='',editing=false,dragging=false,justDragged=0,AC=null,soundOn=true;
 try{soundOn=localStorage.getItem('snd')!=='0'}catch(e){}
 function bus(){if(!AC){AC=new(window.AudioContext||window.webkitAudioContext)();const m=AC.createGain();m.gain.value=.9;
@@ -440,7 +442,7 @@ document.getElementById('cmenu').onclick=e=>{e.stopPropagation();document.getEle
 async function wear(k){snd.on();let st=null;try{st=await (await post('/api/outfit',{outfit:k})).json();}catch(e){}
  if(!st||!st.mood)return;moodShow(st);ZPEND=null;ZBUSY=0;stagePlay([],clipFor(st));}  /* the loop of the new outfit at once; moodShow alone only swaps the still (an outfit change normally waits for its scene) */
 function openSec(k){if(k==='outfit'){menuSub='outfit';drawMenu();return;}if(k==='mback'){menuSub='';drawMenu();return;}
- menuOpen=false;drawMenu();if(k==='naht'){location.href='/naht';return;}if(WEAR.some(w=>w[0]===k)){wear(k);return;}if(k==='rules'){openRules();return;}if(k==='diary'){openDiary();return;}
+ menuOpen=false;drawMenu();if(k==='naht'){window.open('/naht','_blank');return;}  /* 2.173.0 (Metin): in a window of its own, the app stays open beside it */if(WEAR.some(w=>w[0]===k)){wear(k);return;}if(k==='rules'){openRules();return;}if(k==='diary'){openDiary();return;}
  if(k==='look'){  /* 2.146.3 (Metin wants to look at the clips of the other dress): the next look, kept for today like the one picked at random */
   const i=LOOKS.indexOf(OUTFIT),nx=LOOKS[(i+1)%LOOKS.length];
   try{localStorage.setItem('loutfit',nx);localStorage.setItem('loutfitday',dressDay());localStorage.setItem('lseen',String(Date.now()));}catch(e){}
@@ -824,6 +826,17 @@ document.getElementById('crose').onclick=async()=>{const st=LASTST||{};
  const ta=document.getElementById('ctext');ta.value='🌹 Ich schenke dir eine Rose.';chatSend();};
 async function moodLoad(){try{moodShow(await (await post('/api/mood',{})).json());}catch(e){}}
 setInterval(()=>{if(CODE&&document.getElementById('chat').style.display==='block'){moodLoad();remindPending();reachPending();}},60000);
+/* 2.173.0 (Metin: "dass ich auf Handy schreibe und auf PC Monitor sehe", in step): what his other device sends and what she answers
+   appears here at once. One request stays open at the server until something comes; a hidden page waits and catches up when it is shown again. */
+let SYNCAT=-1,SYNCON=false;
+function syncShow(ev){if(ev.kind==='user'){CHAT.push({role:'user',text:String(ev.text||'')});chatSave();chatDraw(true);return;}
+ if(ev.kind==='new'){CHAT=[];CDROP=0;}else if(ev.kind==='leyla')chatAnswer(ev.j||{});else return;chatSave();chatDraw();}
+async function syncLoop(){if(SYNCON)return;SYNCON=true;const nap=ms=>new Promise(r=>setTimeout(r,ms));
+ for(;;){if(!CODE||document.hidden){await nap(1000);continue;}
+  let j=null;try{j=await (await post('/api/sync',{after:SYNCAT})).json();}catch(e){}
+  if(!j||j.error||typeof j.last!=='number'){await nap(3000);continue;}
+  (j.events||[]).forEach(e=>{try{syncShow(e);}catch(_){}});SYNCAT=j.last;}}
+setTimeout(syncLoop,300);
 function chatAnswer(j){if(j&&j.silent){CHAT.push({role:'info',text:'🤐 Leyla antwortet gerade nicht.'});if(j.mood)moodShow(j.mood);return null;}
  if(!j||j.error||!j.reply){CHAT.push({role:'leyla',text:'Hmm, gerade komme ich nicht durch. Versuch es gleich nochmal.'});return null;}
  const m={role:'leyla',text:j.reply};if(j.audio||j.voice_id){m.aid='a'+Date.now();if(j.audio)AUDIO.set(m.aid,'data:audio/wav;base64,'+j.audio);else VSTREAM.add(m.aid);}CHAT.push(m);
@@ -1528,6 +1541,54 @@ def hand_stats() -> dict:
     return out
 
 
+# 2.173.0 (Metin: write on the phone and see it on the PC monitor, in step): what one device sends in the chat
+# and what she answers goes to his other devices at once. A short list in memory only: never written to disk,
+# never logged, and only given out with the code word. Each device waits on /api/sync (a request that stays open
+# until something comes, 25 s at most), so the other screen follows within the time of one answer of the network.
+SYNC = collections.deque(maxlen=60)
+SYNC_SEQ = [0]
+SYNC_WAKE: set = set()
+SYNC_WAIT_S = 25.0
+SYNC_KEEP = ("reply", "lights", "scene", "mood", "silent", "error")  # no audio, no cards: those stay where he acts
+
+
+def sync_add(dev, kind: str, **data) -> None:
+    """One chat event for the other devices. `dev`: the device it came from, which does not get it back."""
+    SYNC_SEQ[0] += 1
+    SYNC.append({"id": SYNC_SEQ[0], "dev": str(dev or "")[:16], "kind": kind, **data})
+    for ev in list(SYNC_WAKE):
+        ev.set()
+
+
+def sync_reply(dev, out) -> None:
+    """Her answer for the other devices: the words, the scene and her mood."""
+    out = out if isinstance(out, dict) else {"error": True}
+    sync_add(dev, "leyla", j={k: out[k] for k in SYNC_KEEP if k in out})
+
+
+async def sync_wait(after, dev) -> dict:
+    """What came after event `after` from other devices; waits until something comes. A device that is new, or
+    whose number is from before a restart, only gets the current number: no old lines are played back."""
+    dev = str(dev or "")[:16]
+    if isinstance(after, bool) or not isinstance(after, int) or after < 0 or after > SYNC_SEQ[0]:
+        return {"events": [], "last": SYNC_SEQ[0]}
+
+    def news() -> list:
+        return [{k: v for k, v in e.items() if k != "dev"} for e in SYNC if e["id"] > after and e["dev"] != dev]
+    got = news()
+    if not got and after == SYNC_SEQ[0]:
+        ev = asyncio.Event()
+        SYNC_WAKE.add(ev)
+        try:
+            await asyncio.wait_for(ev.wait(), SYNC_WAIT_S)
+        except asyncio.TimeoutError:
+            pass
+        finally:
+            SYNC_WAKE.discard(ev)
+        got = news()
+    return {"events": got, "last": SYNC_SEQ[0]}
+
+
 NET = collections.deque(maxlen=400)    # 2.171.0: how fast clips arrive at the phones (numbers only)
 HAND = collections.deque(maxlen=300)   # 2.167.0: how exactly a loop handed over on the phone, in ms (numbers only)
 TIMING = collections.deque(maxlen=50)  # 2.141.6: chat times, server part against what the phone saw
@@ -1990,13 +2051,20 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
             out = None
             t0 = time.monotonic()
             if unlocked and chat:
+                if isinstance(d.get("message"), str) and d["message"].strip():
+                    sync_add(d.get("dev"), "user", text=d["message"].strip()[:4000])
                 try:
                     out = await chat(d.get("history"), d.get("message"))
                 except Exception as e:
                     logger.warning("Chat failed: %s", e)
+                sync_reply(d.get("dev"), out)
             _timing_add(int((time.monotonic() - t0) * 1000), d.get("rtt"), d.get("light"))
             await _respond(writer, "200 OK", "application/json",
                            json.dumps(out or {"error": True}, ensure_ascii=False))
+        elif method == "POST" and path == "/api/sync":
+            # the chat of his other device, in step (2.173.0); only with the code word
+            out = await sync_wait(d.get("after"), d.get("dev")) if unlocked else {"error": True}
+            await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
         elif method == "POST" and path == "/api/chat_touch":
             out = None
             if unlocked and touch:
@@ -2004,6 +2072,8 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                     out = await touch(d.get("history"), str(d.get("zone", "")))
                 except Exception as e:
                     logger.warning("Touch reaction failed: %s", e)
+                if isinstance(out, dict) and out.get("reply"):
+                    sync_reply(d.get("dev"), {k: v for k, v in out.items() if k != "scene"})
             await _respond(writer, "200 OK", "application/json",
                            json.dumps(out or {"error": True}, ensure_ascii=False))
         elif method == "POST" and path == "/api/hoeren":
@@ -2025,6 +2095,9 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                     out = await (voice(*args, stream=True) if d.get("stream") else voice(*args))
                 except Exception as e:
                     logger.warning("Voice message failed: %s", e)
+                if isinstance(out, dict) and out.get("heard"):
+                    sync_add(d.get("dev"), "user", text="🎤 " + str(out["heard"])[:4000])
+                    sync_reply(d.get("dev"), out)
             if isinstance(out, dict):
                 t = out.pop("t", {})
                 TIMING.append({"at": time.strftime("%H:%M:%S"), "kind": "mikro", **t,
@@ -2092,6 +2165,7 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                 try:
                     await chat_new()
                     ok = True
+                    sync_add(d.get("dev"), "new")
                 except Exception as e:
                     logger.warning("New chat: %s", e)
             await _respond(writer, "200 OK", "application/json", json.dumps({"ok": ok}))

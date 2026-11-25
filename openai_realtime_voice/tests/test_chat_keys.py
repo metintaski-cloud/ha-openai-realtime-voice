@@ -55,9 +55,14 @@ async def test_in_a_browser_enter_sends_on_a_pc_and_abc_stays(tmp_path):
             pc3 = await page.evaluate(STATE)
             # the menu leads to the page Naht (Metin: he wants to reach it from the PC), and that page leads back
             menu = await page.evaluate("()=>{menuOpen=true;drawMenu();return [...document.querySelectorAll('#menu .mi span')].map(x=>x.textContent);}")
-            await page.evaluate("()=>[...document.querySelectorAll('#menu .mi')].find(b=>b.textContent.includes('Naht')).click()")
-            await page.wait_for_url("**/naht")
-            back = await page.evaluate("()=>[...document.querySelectorAll('a')].map(a=>a.getAttribute('href'))")
+            # 2.173.0 (Metin): it opens in a window of its own, the app stays open beside it
+            async with page.expect_popup() as pop:
+                await page.evaluate("()=>[...document.querySelectorAll('#menu .mi')].find(b=>b.textContent.includes('Naht')).click()")
+            naht = await pop.value
+            await naht.wait_for_url("**/naht")
+            back = await naht.evaluate("()=>[...document.querySelectorAll('a')].map(a=>a.getAttribute('href'))")
+            stays = page.url
+            await naht.close()
             await page.close()
             # a phone: touch, no mouse
             ctx = await browser.new_context(viewport={"width": 400, "height": 820}, has_touch=True, is_mobile=True)
@@ -85,6 +90,7 @@ async def test_in_a_browser_enter_sends_on_a_pc_and_abc_stays(tmp_path):
     assert pc2["sent"] == ["Hallo Leyla\nzweite Zeile", "noch eine"] and pc2["abc"] and pc2["focus"], pc2
     assert pc3["readonly"] is True and pc3["abc"] is False, pc3
     assert "Naht: Schleifen einstellen" in menu and "/" in back, (menu, back)
+    assert stays.endswith("/") and "naht" not in stays, stays
     # 2.172.4: on the monitor the box he writes in is as long as his text, like her bubbles (58 % were 1114 px);
     # on the phone it stays 58 %
     assert box_phone == 232, box_phone

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.173.0 (26 Nov 2026)
+
+- `feat`: the chat is in step on his devices. Metin (00:12 to 00:14): "ist es möglich, dass ich auf Handy schreibe und auf PC Monitor sehe", "also synchron?", "1 Sekunde geht so, aber 2?". Until now every device kept its own chat. Now what one device sends and what she answers appears on the others at once: his line the moment the server has it, her answer the moment she has written it, with her scene and her mood, and "Neuer Chat" clears both. It works both ways and for typed lines, voice messages (his words as text and her answer as text) and her reaction to a touch.
+- How: each open app keeps one request waiting at the server (`POST /api/sync`), which is answered the moment something comes, so there is no polling delay. Measured with two browsers on one machine: his line is on the other screen after 0.1 s, her answer 0.1 s after she has it. The list of lines lives in memory only (60 entries), is never written to disk or to the log, and is given out only with the code word. A page in the background waits and catches up when it is shown again.
+- Her voice and the cards (E-Mail, "Soll ich mir das merken?") stay on the device he acts on: a voice from two devices in one room would echo, and a card should be answered once. Her own messages (the ones she writes by herself) are not passed on yet; the device that asks first shows them.
+- `fix`: "Naht" in the menu opens in a window of its own. Metin (00:19): the app page switched over to it, "beide sollen gleichzeitig offen sein und nicht das eine das andere schließen".
+- 756 tests (752 before): who gets what and never its own lines, waking at once, the code word, every way of the chat over HTTP, and two real browsers writing to each other.
+
 ## 2.172.4 (26 Nov 2026)
 
 - `fix`: on the PC the box he writes in is as long as his text. Metin (00:00, 00:01, 00:02): "können wir auf PC meinen Texteingabe Kasten, in dem ich schreibe, was kleiner machen", "noch besser immer so lang, wie ich es schreibe darin", "wie bei Leyla". It took 58 % of the width, which is 1114 px on a 1920 px monitor. On a screen wider than high it now behaves like her bubbles: empty it has the size of its hint (150 px), it grows with the line up to 440 px, then breaks the line and grows upwards, 110 px high at most, and is small again after sending. It stands at the lower left in the dark beside her. A browser that cannot size a field by its content gets a fixed 380 px. The phone keeps its 58 % (232 of 400 px, measured before and after).
