@@ -22,6 +22,10 @@ The time axis at the bottom has one bar per layer over the full length of its cl
 part is what stays, its two edges are dragged to make it shorter or longer, a tap or drag inside
 moves the play head. Each bar is on its own.
 
+The mixer (2.168.0, Metin at 02:57 after the layers confused him: "ich brauch Anfang, Ende und dann einen
+Mischer, der im Random Lauf sich befindet, nahtlos"): `mix()` plays the ticked loops without end in random
+order with every hand over as in the app; values changed while it runs count from the next hand over.
+
 "Übergabe zeigen" lays two layers on each other the way the app does when a loop hands over
 (memory_web.stageShow with TIGHT): the new clip starts at its begin mark `lead` seconds of clip
 time before the end mark of the old one and fades in for HAND_FADE seconds, the old clip runs on
@@ -86,7 +90,11 @@ input[type=range]{flex:1 1 120px;min-width:120px}
 <div class="bar"><select id="look"></select></div>
 <div class="bar"><span class="z">dazu</span><select id="add"></select></div>
 <div class="t">Jede Schleife ist eine eigene Ebene, die über den anderen liegt. Einzeln ein und ausblenden, einzeln durchsichtig, einzeln kürzen. Unten hat jede ihren eigenen Balken in voller Länge.</div></div>
-<div class="card"><h2>2. Übergabe ansehen</h2>
+<div class="card"><h2>2. Mischer: zufällig und nahtlos, wie in der App</h2>
+<div class="bar"><button id="mix">▶ Mischer starten</button></div>
+<div class="t" id="minfo">Spielt alle Schleifen mit Haken "sichtbar" in zufälliger Reihenfolge, ohne Ende, jede Übergabe wie in der App.</div>
+<div class="t">Während er läuft, kannst du bei jeder Schleife Tempo, Anfang, Ende und Einsatz ändern. Es gilt ab der nächsten Übergabe. Der Haken "sichtbar" heißt hier: die Schleife macht mit.</div></div>
+<div class="card"><h2>3. Übergabe ansehen</h2>
 <div class="bar"><span class="z">von</span><select id="hf"></select></div>
 <div class="bar"><span class="z">nach</span><select id="ht"></select></div>
 <div class="bar"><span class="z">dann</span><select id="h3"></select></div>
@@ -94,11 +102,11 @@ input[type=range]{flex:1 1 120px;min-width:120px}
 <div class="bar"><span class="z">dann</span><select id="h5"></select></div>
 <div class="bar"><button id="hv">Übergabe zeigen</button><button id="play">So spielt es die App</button><button id="diff">Unterschied</button></div>
 <div class="t">Übergabe zeigen legt das Ende der ersten und den Anfang der zweiten so übereinander wie in der App. So spielt es die App spielt die ganze Reihe hintereinander, bis zu fünf Schleifen, mit jeder Übergabe wie in der App. Unterschied: was schwarz ist, liegt genau aufeinander.</div></div>
-<div class="card"><h2>3. Merken</h2>
+<div class="card"><h2>4. Merken</h2>
 <div class="bar"><button id="save">Alle Zeiten merken</button><button id="back">zurück auf gemerkt</button></div>
 <div class="t" id="sinfo"></div>
 <div class="t">Jeder Clip hat ein Tempo, einen Anfang, ein Ende und einen Einsatz. Sie gelten bei jedem Wechsel.</div></div>
-<div class="card"><h2>4. Ebenen</h2>
+<div class="card"><h2>5. Ebenen</h2>
 <div class="bar"><button id="pall">▶ alle sichtbaren abspielen</button><button id="gall">alle zum Anfang</button></div>
 <div class="t">Alle sichtbaren Ebenen starten im selben Augenblick, jede ab ihrem Bild, und laufen bis zu ihrem Ende. Noch einmal drücken hält alle an.</div></div>
 <div id="cards"></div></div>
@@ -106,8 +114,9 @@ input[type=range]{flex:1 1 120px;min-width:120px}
 const $=id=>document.getElementById(id);
 const OUT=[['Kurzes Arbeitskleid','kurz',''],['Kurzes Freizeitkleid','kurz','freizeit'],['Langes Arbeitskleid','schwarz',''],['Langes Freizeitkleid','schwarz','freizeit'],['Nachtkleid','nacht','']];
 const ZONES=[['Kopf',['gesicht']],['Brust',['brust']],['Bauch',['bauch']],['Po',['po','povorne']],['Mix',['mix']]];  /* the touch clips, as Metin names them (01:46: Kopf, Brust, Po, Bauch) */
+const MIXTXT='Spielt alle Schleifen mit Haken "sichtbar" in zufälliger Reihenfolge, ohne Ende, jede Übergabe wie in der App.';
 const HAND_PRE=0.25,HAND_OFF=300,HAND_FADE=0.8,FRAME=1/24,MINLEN=0.5,LEAD_MAX=1.5;  /* as the loops of the app hand over (memory_web.stageShow, TIGHT) */
-let LOOK='',PRE='',CL=[],VER={},RATE={},KURVE={},SCHNITT={},LEAD={},LAY=[],PLAYING=false,TOK=0,STOK=0,PEND=0,AXD=null,ZTOP=1;
+let LOOK='',PRE='',CL=[],VER={},RATE={},KURVE={},SCHNITT={},LEAD={},LAY=[],PLAYING=false,MIX=false,TOK=0,STOK=0,PEND=0,AXD=null,ZTOP=1;
 const base=n=>n.replace(/[0-9]+$/,'');
 const mine=n=>PRE?n.startsWith(PRE):!n.startsWith('freizeit');
 const pth=n=>LOOK+'/'+n;
@@ -125,11 +134,11 @@ const savedL=L=>{const l=LEAD[pth(L.n)];return l===undefined?HAND_PRE:l;};
 const changed=L=>!!L.d&&(Math.abs(L.rt-rate(L.n))>0.004||Math.abs(L.s-savedS(L))>0.0004||Math.abs(L.e-savedE(L))>0.0004||Math.abs(L.ld-savedL(L))>0.0004);
 const val=(L,k)=>k==='s'?L.s:k==='e'?L.e:k==='l'?L.ld:L.t;
 /* one value of one layer; moving a mark shows the picture at that mark */
-function setVal(L,k,x){if(!L.d)return;stop();soloStop(L);
- if(k==='s'){L.s=r3(Math.max(0,Math.min(L.e-MINLEN,x)));L.t=L.s;}
- else if(k==='e'){L.e=r3(Math.max(L.s+MINLEN,Math.min(L.d,x)));L.t=L.e;}
+function setVal(L,k,x){if(!L.d)return;halt();if(!MIX)soloStop(L);
+ if(k==='s'){L.s=r3(Math.max(0,Math.min(L.e-MINLEN,x)));if(!MIX)L.t=L.s;}
+ else if(k==='e'){L.e=r3(Math.max(L.s+MINLEN,Math.min(L.d,x)));if(!MIX)L.t=L.e;}
  else if(k==='l')L.ld=r3(Math.max(0,Math.min(LEAD_MAX,x)));
- else L.t=r3(Math.max(0,Math.min(L.d,x)));show();}
+ else if(!MIX)L.t=r3(Math.max(0,Math.min(L.d,x)));show();}
 function busy(){document.body.classList.toggle('busy',LAY.some(L=>L.on&&!L.play&&(L.v.seeking||L.v.readyState<2)));}
 function seek(v,t){if(Math.abs(v.currentTime-t)>0.0004){try{v.currentTime=t;}catch(e){}}}
 function show(){draw();if(PLAYING)return;clearTimeout(PEND);PEND=setTimeout(()=>{if(PLAYING)return;for(const L of LAY)if(L.on&&L.d&&!L.play)seek(L.v,L.t);busy();},60);}
@@ -143,7 +152,7 @@ function draw(){const diff=document.body.classList.contains('diff'),tp=top1();le
   q(L,'play').textContent=L.play?'⏸ anhalten':'▶ abspielen';const c=changed(L);ch=ch||c;
   q(L,'lab').innerHTML=!L.d?'wird geladen ...':'Bild <span class="n">'+L.t.toFixed(3)+'</span> &nbsp; Anfang <span class="n">'+L.s.toFixed(3)+'</span> &nbsp; Ende <span class="n">'+L.e.toFixed(3)+'</span> von '+L.d.toFixed(3)+' s &nbsp; Einsatz <span class="n">'+L.ld.toFixed(3)+'</span>'+(KURVE[pth(L.n)]?' &nbsp; (Tempo Kurve nicht eingerechnet)':'')+(c?' &nbsp; <span style="color:#fd8">noch nicht gemerkt</span>':'');}
  $('save').classList.toggle('on',ch);$('sinfo').textContent=ch?'Noch nicht gemerkt.':'So ist es gemerkt.';$('diff').classList.toggle('on',diff);
- $('play').textContent=PLAYING?'anhalten':'So spielt es die App';$('pall').textContent=LAY.some(L=>L.play)?'⏸ alle anhalten':'▶ alle sichtbaren abspielen';axDraw();}
+ $('play').textContent=PLAYING&&!MIX?'anhalten':'So spielt es die App';$('mix').textContent=MIX?'⏸ Mischer anhalten':'▶ Mischer starten';if(!MIX)$('minfo').textContent=MIXTXT;$('pall').textContent=LAY.some(L=>L.play)?'⏸ alle anhalten':'▶ alle sichtbaren abspielen';axDraw();}
 const HTML='<div class="bar"><label><input type="checkbox" data-k="on">sichtbar</label><span class="ttl" data-k="ttl"></span><button data-k="up" title="nach oben legen">nach oben</button></div>'
  +'<div class="bar"><span class="z">Durchsicht</span><input type="range" data-k="op" min="0" max="100" step="1" value="100"><span data-k="oplab" style="min-width:38px">100 %</span></div>'
  +'<div class="bar"><span class="z">Tempo</span><input type="range" data-k="rt" min="0.4" max="2" step="0.01" value="1"><span data-k="rtlab" style="min-width:38px">1.00</span></div>'
@@ -155,11 +164,11 @@ const HTML='<div class="bar"><label><input type="checkbox" data-k="on">sichtbar<
  +'<div class="bar"><button data-k="play">▶ abspielen</button><button data-k="gs">zum Anfang</button><button data-k="ge">zum Ende</button><button data-k="l0">Einsatz normal</button></div>';
 function card(L){const el=document.createElement('div');el.className='card lay';el.dataset.n=L.n;el.innerHTML=HTML;L.el=el;$('cards').appendChild(el);
  q(L,'ttl').textContent=title(L.n)+(title(L.n)===L.n?'':' ('+L.n+')');
- q(L,'on').onchange=()=>{L.on=q(L,'on').checked;if(!L.on)soloStop(L);stop();show();};
- q(L,'op').oninput=()=>{L.op=Number(q(L,'op').value);if(L.op>0&&!L.on)L.on=true;stop();show();};
+ q(L,'on').onchange=()=>{L.on=q(L,'on').checked;if(!L.on&&!MIX)soloStop(L);halt();show();};
+ q(L,'op').oninput=()=>{L.op=Number(q(L,'op').value);if(L.op>0&&!L.on)L.on=true;halt();show();};
  const tempo=x=>{L.rt=Math.round(Math.max(0.4,Math.min(2,x))*100)/100;if(L.play||PLAYING)L.v.playbackRate=L.rt;draw();};  /* the tempo of this layer, also while it plays (Metin, 02:39) */
  q(L,'rt').oninput=()=>tempo(Number(q(L,'rt').value));q(L,'rm').onclick=()=>tempo(L.rt-0.01);q(L,'rp').onclick=()=>tempo(L.rt+0.01);q(L,'r1').onclick=()=>tempo(1);
- q(L,'up').onclick=()=>{L.z=++ZTOP;L.on=true;stop();show();};
+ q(L,'up').onclick=()=>{L.z=++ZTOP;L.on=true;halt();show();};
  for(const k of ['t','s','e','l'])q(L,'m'+k).onclick=()=>{L.mode=k;if(k==='s'||k==='e')setVal(L,k,val(L,k));else show();};
  q(L,'pos').oninput=()=>setVal(L,L.mode,Number(q(L,'pos').value));
  const st=d=>()=>setVal(L,L.mode,val(L,L.mode)+d);
@@ -201,7 +210,8 @@ $('tog').onclick=()=>document.body.classList.toggle('hide');
 $('hv').onclick=()=>hand(lay($('hf').value),lay($('ht').value));
 $('diff').onclick=()=>{document.body.classList.toggle('diff');stop();show();};
 function soloStop(L){if(!L.play)return;L.play=0;L.v.pause();L.v.playbackRate=1;}
-function stop(){if(!PLAYING)return;PLAYING=false;TOK++;for(const L of LAY){L.v.pause();L.v.playbackRate=1;}show();}
+const halt=()=>{if(!MIX)stop();};  /* the mixer goes on while values are changed, everything else stops */
+function stop(){if(!PLAYING)return;PLAYING=false;MIX=false;TOK++;for(const L of LAY){L.v.pause();L.v.playbackRate=1;}show();}
 const seeked=(v,t)=>new Promise(res=>{if(Math.abs(v.currentTime-t)<0.0004&&!v.seeking)return res();const f=()=>{v.removeEventListener('seeked',f);res();};v.addEventListener('seeked',f);try{v.currentTime=t;}catch(e){res();}});
 /* one layer plays on its own from its play head to its end mark, the others stand still; pausing leaves the play head on the picture that stands */
 async function solo(L){if(!L.d)return;if(L.play){L.t=r3(Math.min(L.e,L.v.currentTime));soloStop(L);show();return;}stop();const tok=++STOK;L.play=tok;L.on=true;L.mode='t';
@@ -232,9 +242,31 @@ async function play(){if(PLAYING){stop();return;}const seq=chain();if(seq.length
   else if(!b&&(a.v.currentTime>=a.e||a.v.ended)){a.v.pause();setTimeout(()=>{if(tok===TOK)stop();},500);return;}
   requestAnimationFrame(tick);};requestAnimationFrame(tick);}
 $('play').onclick=play;
+/* The mixer (Metin, 02:57: "ich brauch Anfang, Ende und dann einen Mischer, der im Random Lauf sich befindet, nahtlos"): the loops
+   that are ticked play without end in random order, never the same one twice in a row, every hand over the way stageShow
+   does it for a loop. Tempo, begin, end and lead are read anew at every picture, so a change made while it runs counts
+   from the next hand over. The hand over is started from the picture of the running clip, not from a timer; `late` says
+   how many ms after the planned moment it began. */
+async function mix(){if(PLAYING){stop();return;}const P=()=>LAY.filter(L=>L.on&&L.d);if(!P().length)return;LAY.forEach(soloStop);PLAYING=true;MIX=true;const tok=++TOK;
+ document.body.classList.remove('diff');let zc=10,cur=P()[Math.floor(Math.random()*P().length)],nxt=null,prep=false,t1=performance.now(),prev=null,late=null;window.SEEN=[cur.n];window.LATE=[];
+ const other=()=>{const o=P().filter(L=>L!==cur);return o.length?o[Math.floor(Math.random()*o.length)]:null;};
+ draw();for(const L of LAY){L.v.pause();L.v.style.transition='none';L.v.style.mixBlendMode='normal';L.v.style.opacity=L===cur?'1':'0';}cur.v.style.zIndex=String(++zc);
+ document.body.classList.add('busy');await seeked(cur.v,cur.s);document.body.classList.remove('busy');if(tok!==TOK)return;
+ cur.v.playbackRate=cur.rt;cur.v.play().catch(()=>{});
+ const tick=()=>{if(tok!==TOK)return;const now=performance.now(),a=cur;
+  if(prev&&prev.v.currentTime>=prev.e&&!prev.v.paused)prev.v.pause();
+  if(!prep&&now-t1>1300&&(a.v.currentTime>=a.e-3*a.rt||(a.e-a.s)/a.rt<4.6)){nxt=other();if(nxt){prep=true;nxt.v.pause();nxt.v.style.transition='none';nxt.v.style.opacity='0';try{nxt.v.currentTime=nxt.s;}catch(e){}}}
+  if(prep&&nxt&&a.v.currentTime>=a.e-nxt.ld){const b=nxt;late=(a.v.currentTime-(a.e-b.ld))*1000/a.rt;window.LATE.push(Math.round(late));
+   b.v.playbackRate=b.rt;b.v.style.zIndex=String(++zc);b.v.play().catch(()=>{});b.v.style.transition='opacity '+HAND_FADE+'s';b.v.style.opacity='1';window.SEEN.push(b.n);
+   setTimeout(()=>{if(tok===TOK){a.v.style.transition='opacity '+HAND_FADE+'s';a.v.style.opacity='0';}},HAND_OFF);prev=a;cur=b;nxt=null;prep=false;t1=now;}
+  else if(!nxt&&(a.v.currentTime>=a.e||a.v.ended)){try{a.v.currentTime=a.s;}catch(e){}a.v.play().catch(()=>{});}   /* only one loop takes part: it starts again */
+  for(const L of [cur,prev])if(L&&!L.v.paused)L.t=r3(Math.min(L.e,L.v.currentTime));
+  $('minfo').textContent='läuft: '+title(cur.n)+(nxt?'  ·  gleich: '+title(nxt.n):'')+(late!==null?'  ·  letzte Übergabe '+Math.round(late)+' ms nach dem Soll':'');
+  draw();requestAnimationFrame(tick);};requestAnimationFrame(tick);}
+$('mix').onclick=mix;
 const post=async(url,body)=>{try{return await (await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();}catch(e){return null;}};
 /* store every changed tempo, begin mark, end mark and lead */
-$('save').onclick=async()=>{stop();let ok=true;
+$('save').onclick=async()=>{halt();let ok=true;
  for(const L of LAY){if(!changed(L))continue;const p=pth(L.n),s=L.s<0.0005?0:r3(L.s),e=L.e>=L.d-0.02?0:r3(L.e),o=SCHNITT[p]||[0,0];
   if(s!==(o[0]||0)||e!==(o[1]||0)){const j=await post('/api/schnitt',{name:p,start:s,end:e});if(j&&j.ok){if(s||e)SCHNITT[p]=[s,e];else delete SCHNITT[p];L.s=savedS(L);L.e=savedE(L);}else ok=false;}
   if(Math.abs(L.rt-rate(L.n))>0.004){const j=await post('/api/tempo',{name:p,rate:L.rt});if(j&&j.ok){if(L.rt===1)delete RATE[p];else RATE[p]=L.rt;}else ok=false;}

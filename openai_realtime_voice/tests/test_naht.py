@@ -321,6 +321,40 @@ async def test_in_a_browser_every_loop_is_its_own_layer(tmp_path, monkeypatch):
             st = await settled()
             assert not await page.evaluate("()=>PLAYING") and all(r["paused"] for r in st.values())
             assert (st[G1]["vop"], st[G2]["vop"]) == ("1", "0.5") and abs(st[G1]["vt"] - st[G1]["e"]) < 0.05
+            # the mixer (Metin, 02:57): the ticked loops in random order without end, seamless, values change while it runs
+            await page.check(key(G3, "on"))
+            await page.click("#mix")
+            await asyncio.sleep(0.5)
+            assert await page.evaluate("()=>PLAYING&&MIX") and await page.inner_text("#mix") == "⏸ Mischer anhalten"
+            moving, tempo_seen = [], False
+            for step in range(170):
+                await asyncio.sleep(0.1)
+                st = await state()
+                moving.append(sum(1 for r in st.values() if not r["paused"]))
+                if step == 20:                                    # a change while it runs does not stop it
+                    await page.click(key(G1, "rp"))
+                    await page.click(key(G2, "me"))
+                    await page.click(key(G2, "m1"))
+                    assert await page.evaluate("()=>PLAYING&&MIX")
+                if step == 60:
+                    await page.uncheck(key(G3, "on"))             # loop 3 no longer takes part
+                    cut_at = len(await page.evaluate("()=>window.SEEN"))
+            seen, late = await page.evaluate("()=>[window.SEEN,window.LATE]")
+            assert await page.evaluate("()=>PLAYING&&MIX")       # it never ends by itself
+            assert len(seen) >= 5 and all(x != y for x, y in zip(seen, seen[1:])), seen  # never the same loop twice in a row
+            assert G3 not in seen[cut_at + 1:], (seen, cut_at)
+            assert max(moving) <= 2 and moving.count(0) < 12      # the old and the new clip at most, and no gap
+            assert all(-1 <= x <= 120 for x in late), late        # each hand over began at the picture it was planned for
+            assert "letzte Übergabe" in await page.inner_text("#minfo")
+            assert (await state())[G2]["e"] == 4.99 and await page.evaluate("()=>LAY[0].rt") == 1.01
+            await page.click("#mix")
+            st = await settled()
+            assert not await page.evaluate("()=>PLAYING||MIX") and all(r["paused"] for r in st.values())
+            assert await page.inner_text("#mix") == "▶ Mischer starten"
+            await page.click(key(G2, "p1"))
+            await page.click(key(G1, "rm"))
+            await page.check(key(G3, "on"))
+            await page.uncheck(key(G3, "on"))
             # another clip as a layer: the touch clips have their names
             options = await page.evaluate("()=>[...add.options].map(o=>o.textContent)")
             assert options[1] == "Po (freizeitpo8)"

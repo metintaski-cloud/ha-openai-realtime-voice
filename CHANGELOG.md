@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.168.0 (25 Nov 2026)
+
+- `feat`: the mixer on the page "Naht". Metin (02:54, 02:57): the layers with their different tempos and equal times confused him; what he needs is beginning, end and then a mixer that runs at random, seamless. "Mischer starten" plays the loops that are ticked without end in random order, never the same one twice in a row, every hand over as on the stage of the app (the next clip comes in its lead before the end mark and fades in, the old one holds its last picture). While it runs, tempo, beginning, end and lead of every loop can be changed and count from the next hand over; the tick box of a loop decides whether it takes part. The hand over is started from the picture of the running clip, and the page shows after each one how many milliseconds after the planned moment it began. 734 tests; the browser test lets the mixer run for 17 seconds, changes values and takes a loop out while it runs.
+
 ## 2.167.2 (25 Nov 2026)
 
 - `feat`: a tempo slider for every layer on the page "Naht", right under its see through slider (Metin, 02:39; he saw that the loops play at different speeds: loop 1 of the short work dress has a stored tempo of 1.5, the others 1.0). Slider from 0.4 to 2 with "Tempo − 0,01", "Tempo + 0,01" and "Tempo auf 1"; it also changes while the layer plays, the hand over view and "So spielt es die App" use it, and "Alle Zeiten merken" stores it (the same value the tester and "Outfit als Ganzes" use, `POST /api/tempo`). 734 tests, the browser test changes the tempo while two loops play and stores it.
