@@ -50,6 +50,7 @@ class FakeLive:
         self.connections = 0
         self.session_conns = []  # which connection (1, 2, ...) each session.start arrived on
         self.mute_first = False  # the first connection never answers session.start
+        self.delay = 0.0         # seconds before session.start is answered
 
     async def handler(self, ws):
         self.connections += 1
@@ -61,6 +62,7 @@ class FakeLive:
                 self.session_conns.append(mine)
                 if self.mute_first and mine == 1:
                     continue
+                await asyncio.sleep(self.delay)
                 await ws.send(json.dumps({"type": "session.started",
                                           "session": {"id": "s1", "model": "fake"}}))
                 if self.script:
@@ -220,6 +222,38 @@ async def test_goodbye_from_the_backend_function_hangs_up_after_the_farewell(env
     assert last["type"] == "disconnect" and last["reason"] == "user_requested_stop"
     outputs = [e for e in fake.received if e["type"] == "response.item.create"]
     assert outputs and outputs[0]["item"]["call_id"] == "c1"
+
+
+async def test_a_client_that_leaves_before_ready_is_no_session_error(env, caplog):
+    """2.182.5. Seen 26 Nov 2026, 20:14: a live talk from the app was ended there 2.4 s after it connected, while the
+    session was still being opened. The ready signal then met a closed socket, and that was logged as "Session error"
+    with a traceback and counted as session_error, as if something of ours had failed."""
+    import logging
+    async with FakeLive() as fake, Bridge() as b:
+        fake.delay = 0.6
+        counted, ended = [], []
+
+        async def failed(error=""):
+            counted.append(error)
+        b.bridge.health.openai_failed = failed
+        real_end = b.bridge._end_session
+
+        async def end(client_id, client_ws, state, end_reason, start_time):
+            ended.append(dict(end_reason))
+            return await real_end(client_id, client_ws, state, end_reason, start_time)
+        b.bridge._end_session = end
+        with caplog.at_level(logging.INFO):
+            async with b.connect() as client:
+                await asyncio.sleep(0.15)                      # she is still opening the session
+            for _ in range(40):
+                if ended:
+                    break
+                await asyncio.sleep(0.1)
+    assert ended and ended[0]["reason"] == "client_disconnected" and ended[0].get("early"), ended
+    assert not counted
+    texts = [r.getMessage() for r in caplog.records]
+    assert any("Client left before the session was ready" in t for t in texts)
+    assert not any(r.levelno >= logging.ERROR for r in caplog.records), [t for t in texts if "rror" in t]
 
 
 async def test_failed_connection_to_openai_is_counted_for_the_phone(env, monkeypatch):

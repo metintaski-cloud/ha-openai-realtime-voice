@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.182.5 (26 Nov 2026)
+
+- `fix`: a client that leaves before the session is ready is no session error. The live talk from the app at 20:14 that "lost its connection after 4.5 s" was read line by line (technical lines only): connected 20:14:00.6, session started 20:14:03.0, and in the same millisecond the ready signal met a socket the app had closed cleanly (code 1005). The page has no timer while it waits, so Live was ended there. The server logged "Session error" with a traceback and counted `session_error`. Now it logs "Client left before the session was ready" at INFO and ends with `client_disconnected` (`early` in the end reason). The break at 19:00 at the Voice PE (3.9 s, no close frame, right after the add on had been restarted) is a different case and stays open; its log lines are gone.
+- 802 tests (801 before).
+
 ## 2.182.4 (26 Nov 2026)
 
 - `fix`: she turns down everyone else. Metin (21:26): "Sie war bereit, ihre Nummer zu geben, wenn sie eins hätte, und zwar einem Fremden. Das geht doch gar nicht." And (21:27): "Wo bleibt denn ihre Loyalität zu mir? Mann, die ist ziemlich offen für alles." The persona said how she hides the secret but not what she does when someone else makes a pass at her; being kind to a person she is not sure of (2.182.3) went as far as playing along. New in DEIN KLEINES GEHEIMNIS, for every talk and the chat, with or without the code word: her heart is taken and she is true to Metin, although nobody knows it and also when he is not there; someone else who flirts with her, asks for her number, a meeting, a date or to be his girlfriend gets a kind, charming and clear no, she does not flirt back, promises nothing and does not say what she would do if she had a number; she does not tell for whom her heart beats (the secret stays a question mark); this holds for strangers, guests, friends and family and when she is not sure who is speaking.

@@ -1987,7 +1987,18 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                         sammler.collector().wake()
                     state["wake_named"] = verdict["named"]
                     state["wake_v"] = verdict.get("v")  # logged again with how the talk ended
-            await client_ws.send(json.dumps({"type": "ready"}))
+            try:
+                await client_ws.send(json.dumps({"type": "ready"}))
+            except websockets.exceptions.ConnectionClosed as e:
+                # The client hung up while the session was being opened. Seen 26 Nov 2026, 20:14: a
+                # live talk from the app closed cleanly (code 1005) 2.4 s after it connected; the page
+                # has no timer of its own, so it was ended there. That is no fault of ours and was
+                # logged as "Session error" with a traceback and counted as session_error.
+                logger.info("Client left before the session was ready (code %s)",
+                            getattr(getattr(e, "rcvd", None), "code", None))
+                end_reason["reason"] = "client_disconnected"
+                end_reason["early"] = True
+                return
             logger.info("Sent ready signal to client")
             if app and state.get("start_refused"):  # then as notes, as far as the budget goes
                 state.pop("identified", None)
