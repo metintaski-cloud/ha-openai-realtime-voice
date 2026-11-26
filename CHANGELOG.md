@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.174.2 (26 Nov 2026)
+
+- `fix`: only one of her voices at a time. Metin (05:12): "wenn ich 2 mal auf play drücke, dann kommen zwei Stimmen". Every press on a play button started one more player. Now a new voice stops the one that plays, and a second press on the voice that plays just stops it.
+- `feat`: a long press (0.65 s) on the play button saves her voice reply as `Leyla_Stimme_<time>.wav`, with a short line in the chat. Needed for a mouth clip in her real voice; the visible download arrow stays away (removed in 2.143.1 at his wish), Claude had sent him to look for it from an outdated note.
+- Still open: a voice reply that is still streaming is not stopped by a press on an older play button.
+- 762 tests (760 before).
+
 ## 2.174.1 (26 Nov 2026)
 
 - `fix`: a touch no longer cuts into the running clip. Metin after 2.174.0 (04:54 to 04:59): "wenn ich bei grünem Kreis drücke, dann muss das ohne Zucken sauber ablaufen, wenn zur falschen Zeit gedrückt, macht er nichts", "muss nahtlos sein", "am besten innerhalb dieses grünen Kreises: wenn dort richtig gedrückt wird, dann geht der Clip zu Ende und der neue fängt sauber an". In 2.174.0 the ring stayed green after the rest and a touch still came in with the quick 0.35 s crossfade wherever the loop was, which is the jerk he saw.
