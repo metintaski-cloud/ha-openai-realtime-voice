@@ -595,6 +595,51 @@ async def test_she_is_reminded_to_ask_who_is_there_and_once_more_when_no_name_co
     assert sent == []
 
 
+async def test_a_name_given_after_her_own_way_of_asking_counts(tmp_path, monkeypatch):
+    """26 Nov 2026, 23:03. She asked with the example sentence of her character, he said his name, and two turns later
+    the bridge made her ask again (Metin asked her why she asked a second time). Her question
+    was not in the list of ways to ask, so the short answer did not count. All sentences here are invented."""
+    from app import main as m, phrases
+    for asked in ("Ich bin neugierig, wer mir da Gesellschaft leistet.", "Darf ich wissen, wer da ist?",
+                  "Wie heißt du denn?", "Verrätst du mir deinen Namen?", "Sen kimsin?", "Mit wem spreche ich?"):
+        assert phrases.WHO_ASKED_RE.search(asked), asked
+    assert not phrases.WHO_ASKED_RE.search("Morgen wird es sonnig und warm.")
+    for said, name in (("ich heiße Selin", "Selin"), ("Ich bin der Deniz", "Deniz"), ("mein Name ist Selin", "Selin")):
+        assert phrases.NAME_SAID_RE.search(said).group(1) == name
+    assert phrases.near("mettin", "metin") and phrases.near("medin", "metin") and phrases.near("selin", "selin")
+    assert not phrases.near("martin", "metin") and not phrases.near("eli", "ela")
+    monkeypatch.setenv("MEMORY_PATH", str(tmp_path / "memory.json"))
+    bridge = m.LiveVoiceBridge()
+    bridge.memory.save_all({"family": ["Person: Selin | Zugehörigkeit: wohnt hier", "Person: Deniz | Zugehörigkeit: Gast"]})
+    handed, sent = [], []
+
+    async def hand(ws, state, name):
+        handed.append(name)
+        state.setdefault("identified", set()).add(name)
+
+    async def note(ws, prefix, content):
+        sent.append(content)
+    bridge._hand_over_personal, bridge._send_note = hand, note
+    for answer in ("Selin", "Sellin.", "ich heiße Selin"):
+        handed.clear()
+        state = {"dialog": [("user", "wie wird das Wetter"), ("bot", "Sonnig. Ich bin neugierig, wer mir da Gesellschaft leistet."),
+                            ("user", answer)]}
+        await bridge._maybe_identify(None, state)
+        assert handed == ["Selin"], (answer, handed)
+        state["dialog"] += [("bot", "Schön."), ("user", "und morgen"), ("bot", "Regen."), ("user", "aha")]
+        await bridge._maybe_ask_who(None, state)                    # known now: she is not made to ask again
+        assert sent == []
+    # two entries of the person after her question: still her question that counts
+    handed.clear()
+    state = {"dialog": [("bot", "Wer ist denn da?"), ("user", "äh"), ("user", "Deniz")]}
+    await bridge._maybe_identify(None, state)
+    assert handed == ["Deniz"]
+    # without her question a single word is no name
+    handed.clear()
+    await bridge._maybe_identify(None, {"dialog": [("bot", "Morgen wird es sonnig."), ("user", "Selin")]})
+    assert handed == []
+
+
 async def test_with_frisch_the_code_word_puts_a_fresh_session_in_place_and_the_talk_goes_on(env, monkeypatch):
     """2.155.0: no notes are appended after the code word; a second GPT Live session starts
     with her knowledge and the talk so far, and what it says reaches the client."""

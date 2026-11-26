@@ -404,9 +404,16 @@ class FanController:
     def on_power_state(self, state: str) -> None:
         """Callback for Home Assistant state_changed of the power sensor."""
         try:
-            self.on_power(float(state))
+            watts = float(state)
         except (TypeError, ValueError):
-            pass  # unavailable or unknown
+            # The meter is away (the wall switch takes its power too, or its WLAN): what
+            # happens meanwhile is not seen, so what was known does not count any more.
+            if self.light_on is not None or self.speed is not None:
+                logger.info("Fan meter is away (%s): what is on is no longer known", state)
+            self.light_on = self.speed = self._pending = None
+            self._recent.clear()
+            return
+        self.on_power(watts)
 
     def _dropped(self, before: float, after: float) -> None:
         """A quick drop: the light went off, or the fan stopped from speed 4 or more."""
@@ -451,7 +458,10 @@ class FanController:
         if light:
             self._follow_light(watts)
         if light is None:
-            cands = candidates(watts, self.light_w)
+            # the whole range of the light, not the last power known for it: that one may be
+            # the cold 18 W, and 13.8 W of warm light then "could only be the fan" (26 Nov
+            # 2026, 23:03: "der Ventilator läuft ungefähr auf Stufe 4 und das Licht ist aus")
+            cands = candidates(watts)
             if self.speed is not None:
                 cands = [c for c in cands if c[1] == self.speed] or cands
             lights = {c[0] for c in cands}
@@ -601,9 +611,19 @@ class FanController:
                 result = await self._send(button)
                 ok = await self._worked(action, args, before, expected)
                 tries += 1
-            if ok is False and action == "aus" and expected.get("licht") == "unklar":
-                # Stop changed nothing twice: the fan was not turning, it is the light
+            if ok is False and action == "aus" and (
+                    expected.get("licht") == "unklar"
+                    or (self.speed in (None, 0)  # not a speed she set herself in this run
+                        and LIGHT_MIN_W - 1.0 <= before <= LIGHT_MAX_W + 1.0)):
+                # Stop changed nothing three times: the fan was not turning, what draws the
+                # power is the light. Also when she believed the opposite: her knowledge can
+                # be wrong (26 Nov 2026), and then stop could only answer "did not work".
                 self.light_on, self.speed, ok = True, 0, True
+                if LIGHT_MIN_W - 1.0 <= before <= LIGHT_MAX_W + 1.0:
+                    self.light_w = before
+                out["note"] = ("Der Ventilator war schon aus: die Stopp Taste hat am Strommesser "
+                               "nichts geändert, an ist nur das Licht.")
+                self._save()
             if ok is False:
                 out["note"] = ("Taste mehrmals gesendet, aber der Strommesser zeigt keine "
                                "Änderung. Sag ehrlich, dass es nicht geklappt hat.")

@@ -39,12 +39,37 @@ PROMISE_NUDGE = (
 # GPT Live does not always ask who is talking, though the rules say so (14 Nov 2026).
 # When the person starts their second turn (or later) and nobody has said a name and Leyla
 # has not asked, the bridge reminds her once to ask in the coming answer.
+# 26 Nov 2026, 23:03: she asked with her own example sentence ("wer mir da Gesellschaft
+# leistet"), Metin answered with his name, and two turns later the bridge made her ask again
+# (he asked her why she asked a second time). The question was not in this list ("wer leistet"
+# needs the two words side by side), so his short answer did not count.
 WHO_ASKED_RE = re.compile(
-    r"kiminle|kimle konuş|kimler var|kim var|sen kimsin|siz kimsiniz|wer spricht|mit wem|"
-    r"wer (?:ist|bist|seid) (?:da|du|ihr)|wer leistet|wer von euch|wer ist denn", re.IGNORECASE)
-NAME_SAID_RE = re.compile(
-    r"\b(?:ich bin|hier ist|hier spricht|mein name ist|ben|benim adım|adım|ismim)\s+([A-ZÄÖÜÇĞİŞ]\w+)",
+    r"kiminle|kimle konuş|kimler var|kim var|sen kimsin|siz kimsiniz|kimsin|adın ne|ismin ne|"
+    r"wer spricht|wer redet|mit wem|wer (?:ist|bist|seid) (?:da|du|ihr|das)|"
+    r"wer (?:da|hier) (?:ist|spricht|redet)|wer leistet|gesellschaft leistet|wer von euch|"
+    r"wer ist denn|wie (?:heißt|heisst) du|wie du (?:heißt|heisst)|dein(?:en)? namen?\b",
     re.IGNORECASE)
+NAME_SAID_RE = re.compile(
+    r"\b(?:ich bin|ich heiße|ich heisse|hier ist|hier spricht|mein name ist|mein name lautet|"
+    r"man nennt mich|ben|benim adım|adım|ismim)\s+(?:der |die )?([A-ZÄÖÜÇĞİŞ]\w+)",
+    re.IGNORECASE)
+
+
+def near(a: str, b: str) -> bool:
+    """One letter apart (changed, missing or added): a name as the transcript may write it
+    ("Mettin", "Medin" for Metin). Only for words of four letters or more."""
+    if a == b:
+        return True
+    if min(len(a), len(b)) < 4 or abs(len(a) - len(b)) > 1:
+        return False
+    if len(a) > len(b):
+        a, b = b, a
+    i = 0
+    while i < len(a) and a[i] == b[i]:
+        i += 1
+    return a[i:] == b[i + 1:] if len(a) < len(b) else a[i + 1:] == b[i + 1:]
+
+
 # A wrong name (2.181.0). Metin, 26 Nov 2026: his niece spoke too quietly, Leyla understood another
 # name of the family, "und ist drauf geritten, obwohl wir es mehrfach gesagt haben". The bridge had
 # taken the misheard word as the answer to "who is there" and handed her that person's profile, so

@@ -332,6 +332,47 @@ async def test_stop_reports_failure_honestly(monkeypatch):
     assert f.speed == 1 and "nicht geklappt" in r["note"]
 
 
+async def test_stop_that_changes_nothing_shows_her_that_only_the_light_is_on(monkeypatch):
+    """26 Nov 2026, 23:03, after 2.182.6: her saved knowledge still said "light off" from the old reading of the
+    dimmed light, so with the light alone on (13.8 W) she said "der Ventilator läuft ungefähr auf Stufe 4 und das
+    Licht ist aus". The power the light had cold (18 W) must not rule the light out, and a stop button that changes
+    nothing on the meter means the fan was not turning."""
+    f = _Fan(light=True, speed=0)
+    ctl = _fan_ctl(monkeypatch, f, light_known=False)
+    type(f).watts = property(lambda self: (13.8 if self.light else 0.0) + fan.FAN_W[self.speed])
+    try:
+        ctl.light_on, ctl.speed, ctl.light_w = False, 0, 18.0          # what the file held
+        r = ctl.describe(13.8)
+        assert r["licht"] == "unklar" and "nur das Licht" in r["moeglich"] and "nur der Ventilator auf Stufe 4" in r["moeglich"]
+        ctl.light_on, ctl.speed = False, None                            # or the old belief itself: fan on, light off
+        assert ctl.describe(13.8)["ventilator"] == "an, ungefähr Stufe 4"
+        r = await ctl.run({"action": "aus", "speed": None, "hours": None})
+        assert f.sent == ["stop_1", "stop_2", "stop_3"] and "war schon aus" in r["note"], r
+        assert ctl.describe(13.8) == {"watt": 13.8, "licht": "an", "ventilator": "aus"} and ctl.light_w == 13.8
+        # a speed she set herself and a stop the fan ignores three times stays an honest failure
+        ctl.light_on, ctl.speed = False, 4
+        f.sent.clear()
+        f.ignore = {"stop_1", "stop_2", "stop_3"}
+        r = await ctl.run({"action": "aus", "speed": None, "hours": None})
+        assert "nicht geklappt" in r["note"]
+    finally:
+        type(f).watts = property(lambda self: (17.0 if self.light else 0.0) + fan.FAN_W[self.speed])
+
+
+def test_when_the_meter_was_away_nothing_is_taken_for_known():
+    """The wall switch takes the meter's power too (26 Nov 2026, 22:51:55: "unavailable", then 13.8 W)."""
+    import time
+    base = time.monotonic() - 1000
+    ctl = fan.FanController(None, power_sensor="s", token="")
+    for t, w in [(0, 0.0), (5, 9.0), (6, 18.4), (900, 14.3)]:
+        ctl.on_power(w, base + t)
+    assert ctl.describe(14.3)["licht"] == "an"
+    ctl.on_power_state("unavailable")
+    assert ctl.light_on is None and ctl.speed is None
+    ctl.on_power_state("13.8")
+    assert ctl.describe(13.8)["licht"] == "unklar"
+
+
 async def test_stop_with_fan_already_off(monkeypatch):
     f = _Fan(speed=0)
     ctl = _fan_ctl(monkeypatch, f)
