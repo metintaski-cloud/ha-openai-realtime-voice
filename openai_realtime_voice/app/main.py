@@ -36,7 +36,7 @@ import dotenv
 import websockets
 
 from app.audio_recorder import AudioRecorder
-from app import agenda, befehle, day, diary, falsewakes, gcontacts, textmodel, heart, ideas, inbox, mail, memory, memory_web, mood, nachdenken, planer, reach, recall, reminders, sammler, schwer, spott, tls, variety, voice_in, voice_stream, wakecheck
+from app import agenda, befehle, day, diary, falsewakes, gcontacts, textmodel, heart, ideas, inbox, mail, memory, memory_web, mood, nachdenken, planer, reach, recall, reminders, sammler, schwer, spott, tls, variety, voice_in, voice_stream, wakecheck, wer
 
 # Scene concept 2.0 (2.104.0): her feelings come from what really happens (app/heart.py); env
 # LEYLA_HEART=0 brings back the old dice of app/mood.py as a safety net.
@@ -1104,8 +1104,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             return
         said = " ".join(t for s, t in dialog if s == "user")
         told = " ".join(t for s, t in dialog if s != "user")
-        if names_said(said):
-            return
+        if names_said(said) or state.get("who_checking"):
+            return  # a name was said, or the text model is just reading who it is (app/wer.py)
         # a known name the person has said, but not as their own: she asks for that name instead
         # of asking openly once more (2.182.10)
         said_words = memory._words(said)
@@ -1148,6 +1148,57 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         state.setdefault("weak_id", set()).update(names)  # can be taken back (_maybe_name_wrong)
         for name in names:
             await self._hand_over_personal(live_ws, state, name)
+
+    async def _who_ask(self, prompt: str) -> Optional[str]:
+        return await textmodel.ask(prompt, self.openai_api_key, [self.memory_model],
+                                   os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL),
+                                   "Who check", timeout=wer.TIMEOUT_S, extra=wer.FAST)
+
+    def _who_check_wanted(self, state: dict) -> bool:
+        """The person's turn just ended and nobody is known yet: the text model shall read the
+        talk (app/wer.py). Not in the app (he is known there) and not after the code word."""
+        dialog = state.get("dialog", [])
+        return bool(getattr(self, "enable_memory", False) and getattr(self, "openai_api_key", "")
+                    and dialog and dialog[-1][0] == "user" and str(dialog[-1][1]).strip()
+                    and not state.get("identified") and not state.get("unlocked")
+                    and not state.get("from_app") and not state.get("closing")
+                    and state.get("who_checks", 0) < wer.MAX_CHECKS)
+
+    async def _who_check(self, live_ws, state: dict) -> None:
+        """Ask the text model who talks, on the talk as it stands now; when a turn ended while
+        it was asked, once more on the newer talk. As long as this runs, `_maybe_ask_who` sends
+        no reminder: the bridge shall not tell her to ask for a name it is about to learn."""
+        if state.get("who_checking"):
+            state["who_again_wanted"] = True
+            return
+        state["who_checking"] = True
+        try:
+            while True:
+                state["who_again_wanted"] = False
+                state["who_checks"] = state.get("who_checks", 0) + 1
+                profiles = self.memory.profile_words()
+                began = time.monotonic()
+                try:
+                    found = await wer.who(self._who_ask, [list(x) for x in state.get("dialog", [])], profiles)
+                except Exception as e:
+                    logger.warning("Who check failed: %s", type(e).__name__)
+                    found = None
+                took = time.monotonic() - began
+                if state.get("identified") or state.get("closing") or state.get("unlocked"):
+                    return  # the lists or the code word were faster
+                gone = state.get("not_them") or ()
+                names = [n for n in profiles if spott.key(n) == found and n not in gone] if found else []
+                logger.info("Who check %d: %s after %.1f s", state["who_checks"],
+                            "the person gave a known name" if names else "no known name given", took)
+                if names:
+                    state.setdefault("weak_id", set()).update(names)  # can be taken back
+                    for name in names:
+                        await self._hand_over_personal(live_ws, state, name)
+                    return
+                if not state.get("who_again_wanted") or state.get("who_checks", 0) >= wer.MAX_CHECKS:
+                    return
+        finally:
+            state["who_checking"] = False
 
     def _note_promise(self, live_ws, state: dict, delta: str) -> None:
         """Watch Leyla's words for a promised action; see PROMISE_NUDGE_AFTER_S."""
@@ -1730,9 +1781,12 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
     def _on_bot_text(self, state: dict, delta: str, live_ws=None) -> None:
         """A piece of what Leyla said: keep the dialog, notice her goodbye and a promise."""
         bare = self._bare_names(state) if live_ws is not None and delta.strip() else []
+        check = not bare and live_ws is not None and bool(delta.strip()) and self._who_check_wanted(state)
         self._add_dialog(state, "bot", delta)
         if bare:
             self._in_background(self._take_bare_names(live_ws, state, bare))
+        elif check:
+            self._in_background(self._who_check(live_ws, state))
         if live_ws is not None:
             self._note_promise(live_ws, state, delta)
             self._note_pet_words(live_ws, state)
