@@ -1,4 +1,9 @@
-"""Her talk clips come in and go out at a hand over, never in the middle of a clip (2.175.0).
+"""Her talk clips: there when her voice begins, and never a cut on the way back (2.175.0, 2.176.0).
+
+2.176.0 (Metin, 26 Nov 2026, 12:27: "das muss sofort kommen und nicht wenn es eine lange Geschichte wird"): while she
+listens (Live, a voice message being recorded) she already takes the talk pose, at a hand over; and when her voice
+begins while she is in no talk clip, her clip starts at once with a short soft blend. The text below is from 2.175.0:
+
 
 Until 2.174.3 `stageTalk` started the talk clip the moment her voice began (a cut into the running clip, also into a
 touch clip) and put the loop back the moment she fell silent. Metin wants every change on the stage seamless ("muss
@@ -20,11 +25,14 @@ from app import memory_web
 def test_the_talk_chain_is_in_the_page():
     page = open(memory_web.__file__, encoding="utf-8").read()
     talk = page.split("function stageTalk(on)")[1].split("function moodShow")[0]
-    assert "TALKOFF=setTimeout(()=>talkStage(false),TALK_HOLD_MS)" in talk   # a breath between sentences is not the end of her talking
-    assert "stageLoop(t)" not in talk and "stagePlay([]" not in talk          # no cut in, no cut out
-    assert "if(DANCING||Date.now()<ZBUSY||ZPEND)return;" in talk               # a touch clip, a scene, a dance run on
-    assert "CONT=live;" in talk                                               # her clip waits for the hand over
-    assert "if(TALKS&&!talkOn()&&!DANCING&&talkStep())return;" in page       # she joins at the next hand over
+    assert "stageLoop(t)" not in talk and "stagePlay([]" not in talk          # no cut back into the loop
+    assert "TALKOFF=setTimeout(()=>{TALKV=false;talkWant(false);},TALK_HOLD_MS)" in talk   # a breath is not the end of her talking
+    assert "if(CLIPS===null||!STM||DANCING||Date.now()<ZBUSY||ZPEND)return;" in talk   # a touch clip, a scene, a dance run on
+    assert "if(voice&&on&&k!=='rein'&&k!=='pose'&&k!=='loop'){" in talk          # her voice begins: at once
+    assert "CONT=live;" in talk                                               # everything else waits for the hand over
+    assert "LIVE=L;stageListen(true);" in page and "stageTalk(false);stageListen(false);" in page   # a live call
+    assert "snd.on();stageListen(true);" in page                              # a voice message being recorded
+    assert "if(TALKS&&!talkOn()&&!DANCING&&talkStep())return;" in page         # she joins at the next hand over
     assert "ZKISS=false;if(TALKS&&talkStep())return;stageLoop(clipFor(STM));};" in page   # also after a touch clip
     assert "const zBlocked=()=>!!ZPEND||Date.now()<ZBUSY||talkPose()||!zOpen();" in page    # no touch in the talk pose
     assert "DANCING||talkOn())))stagePlay(once,clipFor(st));}" in page         # a new mood waits for the chain's end
@@ -84,52 +92,71 @@ async def _run(tmp_path, monkeypatch, names, script):
     return r
 
 
-def _seamless(r):
-    """every change after the first clip happened at the end of the clip before it, and the picture never blanked"""
-    for step in r["log"][1:]:
+def _seamless(r, quick=()):
+    """every change after the first clip happened at the end of the clip before it (except the ones named in quick:
+    her voice began), and the picture never blanked"""
+    for i, step in enumerate(r["log"]):
+        if i == 0 or step["clip"] in quick and step["prevAt"] < step["prevLen"] - 0.7 and not step.get("used"):
+            continue
         assert step["prevAt"] >= step["prevLen"] - 0.7, (step, r)
     assert r["min"] > 0.85, r
 
 
-async def test_a_simple_talk_clip_comes_in_and_goes_out_at_a_hand_over(tmp_path, monkeypatch):
+MID = "await T.until(()=>zLeft()!==null&&zLeft()>2.6&&zLeft()<3.2,9000);"
+
+
+async def test_her_voice_begins_and_her_talk_clip_is_there_at_once(tmp_path, monkeypatch):
     r = await _run(tmp_path, monkeypatch, ("gluecklich4", "gluecklich5", "spricht", "spricht2", "brust"), """async()=>{
-      const out={};await T.until(()=>zLeft()!==null&&zLeft()>2.6&&zLeft()<3.2,9000);const loop0=T.cur();
-      stageTalk(true);await T.sleep(400);out.noCutIn=T.cur()===loop0;                      // her voice begins: the loop runs on
-      out.talkCame=await T.until(()=>/^spricht/.test(T.cur()),5000);const t1=T.cur();
-      out.second=await T.until(()=>/^spricht/.test(T.cur())&&T.cur()!==t1,7000);           // she still talks: the other talk clip
-      await T.until(()=>zLeft()!==null&&zLeft()>2.6&&zLeft()<3.2,9000);const t2=T.cur();
-      stageTalk(false);await T.sleep(400);out.noCutOut=T.cur()===t2;                       // she falls silent: the talk clip runs on
+      const out={};""" + MID + """const t0=performance.now();
+      stageTalk(true);out.talkCame=await T.until(()=>/^spricht/.test(T.cur()),1500);out.ms=Math.round(performance.now()-t0);const t1=T.cur();
+      out.second=await T.until(()=>/^spricht/.test(T.cur())&&T.cur()!==t1,7000);           // she still talks: the other talk clip, at the hand over
+      """ + MID + """const t2=T.cur();
+      stageTalk(false);await T.sleep(1900);out.noCutOut=T.cur()===t2;                      // she falls silent: the talk clip runs on
       out.loopBack=await T.until(()=>/^gluecklich/.test(T.cur()),5000);
-      await T.sleep(700);out.staysLoop=await T.until(()=>/^gluecklich/.test(T.cur())&&T.cur()!==(T.log[T.log.length-1]||{}).clip,1)||/^gluecklich/.test(T.cur());
-      // she says one short thing and is silent again before her talk clip came in: the loop simply goes on
-      await T.until(()=>zLeft()!==null&&zLeft()>2.9&&zLeft()<3.4,9000);const n0=T.log.length;stageTalk(true);await T.sleep(300);stageTalk(false);
-      await T.until(()=>T.log.length>n0,6000);out.shortTalkNoClip=/^gluecklich/.test(T.cur());
       await T.sleep(600);T.run=false;out.log=T.log;out.min=+T.min.toFixed(2);return out;}""")
-    assert r["noCutIn"] and r["talkCame"] and r["second"], r
-    assert r["noCutOut"] and r["loopBack"] and r["staysLoop"], r
-    assert r["shortTalkNoClip"], r
-    _seamless(r)
+    assert r["talkCame"] and r["ms"] < 1500 and r["second"], r
+    assert r["noCutOut"] and r["loopBack"], r
+    first = next(x for x in r["log"] if x["clip"].startswith("spricht"))
+    assert first["prevAt"] < first["prevLen"] - 0.7, r                                     # it did not wait for the end of the loop
+    for step in r["log"][r["log"].index(first) + 1:]:
+        assert step["prevAt"] >= step["prevLen"] - 0.7, (step, r)                          # everything after it is seamless
+    assert r["min"] > 0.85, r
 
 
-async def test_into_the_talk_pose_through_it_and_back(tmp_path, monkeypatch):
+async def test_while_she_listens_she_takes_the_talk_pose_and_stays_in_it(tmp_path, monkeypatch):
     r = await _run(tmp_path, monkeypatch, ("gluecklich4", "gluecklich5", "sprichtrein", "sprichtpose", "sprichtpose2",
                                            "sprichtraus", "brust"), """async()=>{
-      const out={},ring=document.getElementById('ztimer');await T.until(()=>zLeft()!==null&&zLeft()>2.6&&zLeft()<3.2,9000);
-      stageTalk(true);out.rein=await T.until(()=>T.cur()==='sprichtrein',5000);
+      const out={},ring=document.getElementById('ztimer');""" + MID + """const l0=T.cur();
+      LIVE={test:1};stageListen(true);await T.sleep(400);out.noCut=T.cur()===l0;           // he taps Live: no voice yet, so no cut
+      out.rein=await T.until(()=>T.cur()==='sprichtrein',5000);
       // in the talk pose the ring stays red and a tap does nothing, also in the window before the hand over
       await T.until(()=>zLeft()!==null&&zLeft()<1.5&&zLeft()>0.6,6000);out.redInPose=!ring.classList.contains('go')&&zBlocked();T.tap();await T.sleep(200);out.tapIgnored=Date.now()>=ZBUSY;
-      out.pose=await T.until(()=>/^sprichtpose/.test(T.cur()),5000);const p1=T.cur();
-      out.pose2=await T.until(()=>/^sprichtpose/.test(T.cur())&&T.cur()!==p1,7000);        // she still talks: another clip in the talk pose
-      await T.until(()=>zLeft()!==null&&zLeft()>2.6&&zLeft()<3.2,9000);stageTalk(false);   // silent: the way back comes at the hand over
+      const n0=T.log.length;stageTalk(true);await T.sleep(500);out.voiceChangesNothing=T.log.length===n0;   // she is in the pose already
+      out.pose=await T.until(()=>/^sprichtpose/.test(T.cur()),5000);const p1=T.cur();stageTalk(false);
+      out.pose2=await T.until(()=>/^sprichtpose/.test(T.cur())&&T.cur()!==p1,7000);        // silent, but the call goes on: she stays in the pose
+      """ + MID + """LIVE=null;stageListen(false);                                          // he hangs up: the way back comes at the hand over
       out.raus=await T.until(()=>T.cur()==='sprichtraus',5000);
       out.loop=await T.until(()=>/^gluecklich/.test(T.cur()),7000);
-      out.order=T.log.map(x=>x.clip.replace(/[0-9]+$/,''));
-      await T.sleep(300);T.run=false;out.log=T.log;out.min=+T.min.toFixed(2);return out;}""")
-    assert r["rein"] and r["redInPose"] and r["tapIgnored"], r
-    assert r["pose"] and r["pose2"] and r["raus"] and r["loop"], r
+      // a voice message that is thrown away before the way in came: the loop simply goes on
+      """ + MID + """const n1=T.log.length;stageListen(true);await T.sleep(300);stageListen(false);
+      await T.until(()=>T.log.length>n1,6000);out.thrownAway=/^gluecklich/.test(T.cur());
+      out.order=T.log.map(x=>x.clip.replace(/[0-9]+$/,''));await T.sleep(300);T.run=false;out.log=T.log;out.min=+T.min.toFixed(2);return out;}""")
+    assert r["noCut"] and r["rein"] and r["redInPose"] and r["tapIgnored"] and r["voiceChangesNothing"], r
+    assert r["pose"] and r["pose2"] and r["raus"] and r["loop"] and r["thrownAway"], r
     order = r["order"]
     i = order.index("sprichtrein")
     assert order[i:i + 5] == ["sprichtrein", "sprichtpose", "sprichtpose", "sprichtraus", "gluecklich"], r
+    _seamless(r)
+
+
+async def test_a_voice_message_she_listens_then_her_voice_takes_over(tmp_path, monkeypatch):
+    r = await _run(tmp_path, monkeypatch, ("gluecklich4", "gluecklich5", "sprichtrein", "sprichtpose", "sprichtraus"), """async()=>{
+      const out={};""" + MID + """stageListen(true);out.rein=await T.until(()=>T.cur()==='sprichtrein',5000);
+      await T.sleep(500);stageTalk(true);out.listenOver=LISTEN===false&&TALKS===true;      // her answer plays: the voice holds the pose now
+      out.pose=await T.until(()=>T.cur()==='sprichtpose',5000);await T.sleep(400);stageTalk(false);
+      out.raus=await T.until(()=>T.cur()==='sprichtraus',8000);out.loop=await T.until(()=>/^gluecklich/.test(T.cur()),7000);
+      await T.sleep(300);T.run=false;out.log=T.log;out.min=+T.min.toFixed(2);return out;}""")
+    assert r["rein"] and r["listenOver"] and r["pose"] and r["raus"] and r["loop"], r
     _seamless(r)
 
 
@@ -139,28 +166,29 @@ async def test_a_touch_clip_is_not_interrupted_and_she_joins_after_it(tmp_path, 
       out.touch=await T.until(()=>T.cur()==='brust',4000);await T.sleep(800);
       stageTalk(true);await T.sleep(1200);out.touchRunsOn=T.cur()==='brust';                // her answer to the touch begins: the touch clip stays
       out.talkAfter=await T.until(()=>T.cur()==='spricht',6000);                           // and her talk clip follows it
-      stageTalk(false);out.loop=await T.until(()=>/^gluecklich/.test(T.cur()),7000);
+      stageTalk(false);out.loop=await T.until(()=>/^gluecklich/.test(T.cur()),9000);
       await T.sleep(300);T.run=false;out.log=T.log;out.min=+T.min.toFixed(2);return out;}""")
     assert r["window"] and r["touch"] and r["touchRunsOn"] and r["talkAfter"] and r["loop"], r
     _seamless(r)
 
 
-async def test_a_short_word_brings_no_talk_pose_and_talking_again_on_the_way_back_leads_in_again(tmp_path, monkeypatch):
+async def test_one_short_answer_in_and_back_and_her_voice_on_the_way_back(tmp_path, monkeypatch):
     r = await _run(tmp_path, monkeypatch, ("gluecklich4", "gluecklich5", "sprichtrein", "sprichtpose", "sprichtraus"), """async()=>{
-      const out={};await T.until(()=>zLeft()!==null&&zLeft()>2.9&&zLeft()<3.4,9000);const n0=T.log.length;
-      stageTalk(true);await T.sleep(300);stageTalk(false);                                 // silent again before the way in came
-      await T.until(()=>T.log.length>n0,6000);out.noRein=/^gluecklich/.test(T.cur());
-      await T.until(()=>zLeft()!==null&&zLeft()>2.6&&zLeft()<3.2,9000);stageTalk(true);
-      out.rein=await T.until(()=>T.cur()==='sprichtrein',5000);await T.sleep(600);stageTalk(false);   // one sentence: in, and straight back
-      out.raus=await T.until(()=>T.cur()==='sprichtraus',7000);await T.sleep(600);stageTalk(true);    // she talks again on the way back
-      out.reinAgain=await T.until(()=>T.cur()==='sprichtrein',7000);await T.sleep(300);stageTalk(false);
-      out.rausAgain=await T.until(()=>T.cur()==='sprichtraus',7000);out.loop=await T.until(()=>/^gluecklich/.test(T.cur()),7000);
+      const out={};""" + MID + """stageTalk(true);out.rein=await T.until(()=>T.cur()==='sprichtrein',1500);   // at once
+      await T.sleep(300);stageTalk(false);                                                  // one short sentence
+      out.raus=await T.until(()=>T.cur()==='sprichtraus',8000);await T.sleep(700);
+      stageTalk(true);out.reinAgain=await T.until(()=>T.cur()==='sprichtrein',1500);        // she talks again on the way back: at once
+      await T.sleep(300);stageTalk(false);
+      out.rausAgain=await T.until(()=>T.cur()==='sprichtraus',8000);out.loop=await T.until(()=>/^gluecklich/.test(T.cur()),7000);
       out.order=T.log.map(x=>x.clip.replace(/[0-9]+$/,''));await T.sleep(300);T.run=false;out.log=T.log;out.min=+T.min.toFixed(2);return out;}""")
-    assert r["noRein"] and r["rein"] and r["raus"] and r["reinAgain"] and r["rausAgain"] and r["loop"], r
+    assert r["rein"] and r["raus"] and r["reinAgain"] and r["rausAgain"] and r["loop"], r
     order = r["order"]
     i = order.index("sprichtrein")
     assert order[i:i + 5] == ["sprichtrein", "sprichtraus", "sprichtrein", "sprichtraus", "gluecklich"], r
-    _seamless(r)
+    assert r["min"] > 0.85, r
+    for step in r["log"][1:]:
+        if step["clip"] != "sprichtrein":
+            assert step["prevAt"] >= step["prevLen"] - 0.7, (step, r)                      # only her voice starts a clip early
 
 
 async def test_her_voice_coming_in_pieces_still_brings_her_talk_clips(tmp_path, monkeypatch):
@@ -169,12 +197,13 @@ async def test_her_voice_coming_in_pieces_still_brings_her_talk_clips(tmp_path, 
     12:08, after a live talk of 35 s in the short work dress: "ist nichts")."""
     r = await _run(tmp_path, monkeypatch, ("gluecklich4", "gluecklich5", "sprichtrein", "sprichtpose", "sprichtpose2",
                                            "sprichtraus"), """async()=>{
-      const out={};await T.until(()=>zLeft()!==null&&zLeft()>2.6&&zLeft()<3.2,9000);
+      const out={};""" + MID + """
       let flap=true;(async()=>{while(flap){stageTalk(true);await T.sleep(90);stageTalk(false);await T.sleep(30);}})();
-      out.rein=await T.until(()=>T.cur()==='sprichtrein',6000);
+      out.rein=await T.until(()=>T.cur()==='sprichtrein',1500);
       out.pose=await T.until(()=>/^sprichtpose/.test(T.cur()),6000);
       flap=false;await T.sleep(200);stageTalk(false);
       out.raus=await T.until(()=>T.cur()==='sprichtraus',9000);out.loop=await T.until(()=>/^gluecklich/.test(T.cur()),7000);
       out.order=T.log.map(x=>x.clip.replace(/[0-9]+$/,''));await T.sleep(300);T.run=false;out.log=T.log;out.min=+T.min.toFixed(2);return out;}""")
     assert r["rein"] and r["pose"] and r["raus"] and r["loop"], r
-    _seamless(r)
+    assert r["order"].count("sprichtrein") == 1, r
+    assert r["min"] > 0.85, r

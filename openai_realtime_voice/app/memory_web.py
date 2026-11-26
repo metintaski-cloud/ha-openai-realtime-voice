@@ -617,29 +617,46 @@ const talkOn=()=>TALKTOK>0&&TALKTOK===STOK;
 const talkPose=()=>{if(zLeft()===null)return false;const k=talkKind(curPth());return k==='rein'||k==='pose';};
 function talkPick(n){const v=clipVars(n);if(v.length<2)return v[0]||'';const st=curPth().split('/').pop();return roundPick(LROUND[n]||(LROUND[n]={}),v,v.find(x=>x.split('/').pop()===st)||'');}
 /* the next clip of the talk chain, asked for at a hand over (the caller sets CONT); false when the chain has nothing to play */
-function talkStep(){if(!CLIPS||!STM)return false;const cur=curPth(),k=talkKind(cur),inpose=zLeft()!==null&&(k==='rein'||k==='pose');
+function talkStep(now){if(!CLIPS||!STM)return false;const cur=curPth(),k=talkKind(cur),inpose=zLeft()!==null&&(k==='rein'||k==='pose');
  const t=inpose?(/sprichttraurig/.test(cur)?'sprichttraurig':'spricht'):(STM.low&&(clipVars('sprichttraurig').length||clipVars('sprichttraurigrein').length)?'sprichttraurig':'spricht');
  const three=clipVars(t+'rein').length&&clipVars(t+'raus').length;let n='';
  if(inpose)n=TALKS&&clipVars(t+'pose').length?talkPick(t+'pose'):talkPick(t+'raus');
  else if(TALKS)n=three?talkPick(t+'rein'):talkPick(t);
  if(!n){TALKTOK=0;return false;}
  try{diag('talk '+n.split('/').pop());}catch(e){}  /* which clip of the chain was asked for, so a test on his phone can be read from outside (names of clips only) */
- TIGHT=true;stageShow(n,false,()=>{if(!talkStep())stageNext(clipFor(STM));});TALKTOK=STOK;return true;}
+ TIGHT=!now;stageShow(n,false,()=>{if(!talkStep())stageNext(clipFor(STM));});TALKTOK=STOK;return true;}
 /* 2.175.1: her voice does not come as one piece. In a live talk it arrives in small chunks, and she breathes between
    sentences, so the page hears "speaks, silent, speaks" many times. Every such change asked for another clip, the
    clip that waited was loaded anew each time and the chain lost its place (Metin's first test, 26 Nov 2026, 12:08:
    a live talk of 35 s in the short work dress, "ist nichts"; rebuilt in a test with her voice in pieces: the way in
    never came). TALKING stays the plain "her voice sounds now" (the music goes by it); the stage goes by TALKS, which
    only turns false when she has been silent for TALK_HOLD_MS. */
-let TALKS=false,TALKOFF=0;const TALK_HOLD_MS=1500;
+let TALKS=false,TALKV=false,LISTEN=false,TALKOFF=0,LISTENOFF=0;const TALK_HOLD_MS=1500,LISTEN_MAX_MS=120000;
+/* 2.176.0 (Metin's second test, 26 Nov 2026, 12:27: "ist nichts, das muss sofort kommen und nicht wenn es eine lange
+   Geschichte wird"; the page had asked for the way in three times, it came 5 s after her third answer began, the
+   first two answers were over before the running loop handed over). Two things since then:
+   - she takes the talk pose already while she listens: stageListen(true) when he taps Live (for the whole call) or
+     starts a voice message (until her answer plays). That change still waits for the hand over, there is no voice yet.
+   - when her voice begins and she is not in a talk clip, her clip starts at once with the short soft blend of a wished
+     scene (0.35 s) instead of waiting for the end of the loop. Going back stays seamless, at the hand over.
+   TALKS = the stage shall show her talking: her voice (held for TALK_HOLD_MS) or listening. */
 function stageTalk(on){on=!!on;if(on===TALKING||CLIPS===null||!STM)return;TALKING=on;clearTimeout(TALKOFF);
- if(on)talkStage(true);else TALKOFF=setTimeout(()=>talkStage(false),TALK_HOLD_MS);}
-function talkStage(on){if(on===TALKS)return;TALKS=on;try{diag('talk '+(on?'an':'aus'));}catch(e){}
- if(DANCING||Date.now()<ZBUSY||ZPEND)return;  /* a touch clip, a scene or a dance runs to its end; she joins at the hand over after it */
+ if(on){TALKV=true;if(LISTEN&&!LIVE){clearTimeout(LISTENOFF);LISTEN=false;}talkWant(true);}  /* her voice has taken over from the listening */
+ else TALKOFF=setTimeout(()=>{TALKV=false;talkWant(false);},TALK_HOLD_MS);}
+function stageListen(on){on=!!on;clearTimeout(LISTENOFF);if(on===LISTEN)return;LISTEN=on;
+ if(on&&!LIVE)LISTENOFF=setTimeout(()=>stageListen(false),LISTEN_MAX_MS);  /* a voice message that never got an answer must not leave her standing there */
+ talkWant(false);}
+function talkWant(voice){const on=TALKV||LISTEN,ch=on!==TALKS;TALKS=on;if(ch){try{diag('talk '+(on?'an':'aus'));}catch(e){}}
+ if(CLIPS===null||!STM||DANCING||Date.now()<ZBUSY||ZPEND)return;  /* a touch clip, a scene or a dance runs to its end; she joins at the hand over after it */
+ const k=zLeft()===null?'':talkKind(curPth());
+ if(voice&&on&&k!=='rein'&&k!=='pose'&&k!=='loop'){  /* her voice begins and she is in no talk clip: at once */
+  document.querySelectorAll('#stage video:not(.pet)').forEach(x=>{x.style.transition='opacity .35s';setTimeout(()=>{x.style.transition='';},1500);});
+  CONT=false;talkStep(true);CONT=false;return;}
+ if(!ch)return;
  const l=zLeft();if(l!==null&&l<ZWIN_MIN)return;  /* the next clip is already coming in; the hand over after it decides */
  const was=talkOn();if(!on&&!was)return;const live=l!==null;CONT=live;
  if(talkStep())return;
- if(was){CONT=live;stageLoop(clipFor(STM));}else CONT=false;}  /* she fell silent before her talk clip came in: the loop goes on instead */
+ if(was){CONT=live;stageLoop(clipFor(STM));}else CONT=false;}  /* she stopped listening before her talk clip came in: the loop goes on instead */
 function moodShow(st){if(!st||!st.mood)return;const c=document.getElementById('chat'),b=document.getElementById('mbadge');
  c.classList.toggle('low',!!st.low);c.classList.toggle('good',!st.low);document.getElementById('pulse').dataset.mood=st.low?'low':'good';b.style.display='flex';b.textContent=st.low?'🖤':'❤️';
  document.getElementById('mlabel').textContent=(st.low?'🖤 ':'❤️ ')+st.label;LASTST=st;const rb=document.getElementById('crose');if(rb)rb.classList.toggle('off',st.rose!=='ready');stageMood(st);}
@@ -934,7 +951,8 @@ async function voiceSend(blob,mime){const history=CHAT.filter(m=>m.role==='user'
  const u={role:'user',text:'🎤 ...'};CHAT.push(u);chatSave();chatDraw(true);snd.on();
  let j=null;const t0=performance.now();try{j=await (await post('/api/chat_voice',{history,audio:await blobB64(blob),mime,rtt:VRTT,light:lightNow(),stream:true})).json();}catch(e){}VRTT=Math.round(performance.now()-t0);
  if(j&&j.heard){u.text='🎤 '+j.heard;}else{u.text='🎤 (nicht verstanden)';}
- const aid=(j&&j.heard)?chatAnswer(j):null;chatSave();chatDraw();snd.drop();if(aid&&j.voice_id)playStream(j.voice_id,aid);else if(aid)playAudio(aid);}
+ const aid=(j&&j.heard)?chatAnswer(j):null;chatSave();chatDraw();snd.drop();if(aid&&j.voice_id)playStream(j.voice_id,aid);else if(aid)playAudio(aid);
+ setTimeout(()=>{if(!TALKV&&!LIVE)stageListen(false);},aid?6000:0);}  /* no voice came: she stops listening (her voice ends the listening by itself) */
 /* 2.142.0 (Metin on the go: a voice reply took 20 to 30 s, of which 15 to 24 s the server waited for the whole voice):
    the text comes at once and her voice plays while it is still being spoken, 24 kHz PCM from /api/voice/<id> through
    Web Audio; at the end the whole reply is kept as a WAV for the play button and the download */
@@ -960,8 +978,8 @@ document.getElementById('cmic').onclick=async()=>{const b=document.getElementByI
  let st;try{st=await navigator.mediaDevices.getUserMedia({audio:true});}catch(e){CHAT.push({role:'info',text:'Kein Zugriff aufs Mikrofon.'});chatSave();chatDraw();return;}
  const parts=[];REC=new MediaRecorder(st);REC.ondataavailable=e=>{if(e.data.size)parts.push(e.data);};
  REC.onstop=()=>{st.getTracks().forEach(t=>t.stop());clearTimeout(RECT);const mime=REC.mimeType||'audio/webm';REC=null;bgmTick();b.classList.remove('rec');b.innerHTML='&#127908;';
-  const blob=new Blob(parts,{type:mime});if(blob.size>2000)voiceSend(blob,mime);};
- REC.start();bgmTick();b.classList.add('rec');b.innerHTML='&#9632;';snd.on();RECT=setTimeout(()=>{if(REC)REC.stop();},60000);};
+  const blob=new Blob(parts,{type:mime});if(blob.size>2000)voiceSend(blob,mime);else stageListen(false);};
+ REC.start();bgmTick();b.classList.add('rec');b.innerHTML='&#9632;';snd.on();stageListen(true);  /* 2.176.0: she listens: the talk pose comes while he still speaks */RECT=setTimeout(()=>{if(REC)REC.stop();},60000);};
 /* Dictation instead of the keyboard (2.140.0, Metin: "wenn ich unten auf chat zum
    schreiben druecke die Tastatur nicht mehr erscheint aber dafuer mikro was Sprache zu
    text umwandelt was ich dann nur noch senden muss"). The field is readonly, so Android
@@ -1052,7 +1070,7 @@ async function mailPending(){remindPending();reachPending();let j=null;try{j=awa
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&CODE)mailPending();});
 let LIVE=null;
 function liveStat(t,sp){document.getElementById('lpill').textContent=t;document.getElementById('chat').classList.toggle('speak',!!sp);stageTalk(sp);}
-function liveStop(){const L=LIVE;LIVE=null;const c=document.getElementById('chat');c.classList.remove('oncall','speak');stageTalk(false);if(!L)return;
+function liveStop(){const L=LIVE;LIVE=null;const c=document.getElementById('chat');c.classList.remove('oncall','speak');stageTalk(false);stageListen(false);if(!L)return;
  try{L.ws.close();}catch(e){}try{L.proc.disconnect();L.src.disconnect();}catch(e){}try{L.st.getTracks().forEach(t=>t.stop());}catch(e){}try{L.ctx.close();}catch(e){}}
 async function liveStart(){if(LIVE)return;const box=document.getElementById('live');
  if(!navigator.mediaDevices){CHAT.push({role:'info',text:'Das Mikrofon ist auf dieser Seite nicht frei (Chrome Einstellung fehlt).'});chatSave();chatDraw();return;}
@@ -1060,7 +1078,7 @@ async function liveStart(){if(LIVE)return;const box=document.getElementById('liv
  document.getElementById('chat').classList.add('oncall');stageView();liveStat('Verbinde ...');
  const ctx=new (window.AudioContext||window.webkitAudioContext)();const ratio=ctx.sampleRate/24000;
  const ws=new WebSocket((location.protocol==='https:'?'wss://'+location.hostname+':8443':'ws://'+location.hostname+':8080')+'/app');  /* 2.145.0: over HTTPS live talk needs wss, served on 8443 */ws.binaryType='arraybuffer';
- const L={ws,ctx,st,ready:false,playT:0,srcs:[],last:0};LIVE=L;
+ const L={ws,ctx,st,ready:false,playT:0,srcs:[],last:0};LIVE=L;stageListen(true);  /* 2.176.0: she takes the talk pose for the whole call */
  const src=ctx.createMediaStreamSource(st),proc=ctx.createScriptProcessor(2048,1,1);L.src=src;L.proc=proc;
  proc.onaudioprocess=e=>{if(!L.ready||ws.readyState!==1)return;const inp=e.inputBuffer.getChannelData(0);const n=Math.floor(inp.length/ratio);const out=new Int16Array(n);
   for(let i=0;i<n;i++){const a=Math.floor(i*ratio),b=Math.min(inp.length,Math.floor((i+1)*ratio));let sum=0;for(let k=a;k<b;k++)sum+=inp[k];const v=Math.max(-1,Math.min(1,sum/Math.max(1,b-a)));out[i]=v<0?v*32768:v*32767;}

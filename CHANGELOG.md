@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.176.0 (26 Nov 2026)
+
+- `feat`: her talk clip is there when her voice begins. Metin's second test (12:27, live talk in the short work dress): "Ist nichts, das muss sofort kommen und nicht wenn es eine lange Geschichte wird". What the page reported: it asked for the way into the talk pose three times; the first two answers were over before the running loop handed over, the third time the way in came 5 s after her voice began.
+- She takes the talk pose already while she listens: when he taps Live (for the whole call) and when he starts a voice message (until her answer has played; if no voice comes, she stops after 6 s, at the latest after 2 minutes). This change waits for the hand over of the running clip, there is no voice yet.
+- When her voice begins and she is in no talk clip, her clip starts at once with the short soft blend of a wished scene (0.35 s) instead of waiting for the end of the loop. Old against new in the test browser, voice begins in the middle of a loop: before the clip came at the end of the loop (2.6 to 3.2 s later with 4 s test clips, up to 10 s on his loops), now in under 1.5 s. The way back stays seamless, at the hand over.
+- In a live call she stays in the talk pose the whole time, so she takes no touch during a call (the ring stays red).
+- The price of "at once": one short sentence now brings the whole way in (10 s) and the way back (5 s).
+- 771 tests (770 before).
+
 ## 2.175.1 (26 Nov 2026)
 
 - `fix`: her talk clips also come when her voice arrives in pieces. Metin's first test of 2.175.0 (12:07, live talk of 35 s in the short work dress): "ist nichts". In a live talk her voice arrives in small chunks and she breathes between sentences, so the page heard "speaks, silent, speaks" many times, asked for another clip at every change and loaded the waiting clip anew each time. Rebuilt in a test with her voice in pieces (90 ms on, 30 ms off): before, the way into the talk pose never came and a talk pose clip came without it; now the whole chain runs (in, pose, back, loop).
