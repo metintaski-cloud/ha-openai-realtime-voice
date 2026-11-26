@@ -88,6 +88,8 @@ Metin um 06:44: "Sollen die Füße wirklich fest stehen?" Nein: für den Mund z�
 
 In Kling eingesetzt und von Claude um 06:48 gestartet (er hatte dem Einsetzen mit 4K, 10 s und 350 Credits zugestimmt): Kling 4.0, Keyframes, beide Bilder Favorit 4 (langes Freizeitkleid, Datei `file_00000000530481f4977d9.png`, an der Bildadresse geprüft), am Knopf "4K · 10s · Adaptive · 1" und 350 Credits abgelesen (die Länge stand nach dem Bild wieder auf 5 s und 175), Prompt vollständig (131 Wörter). Kling meldete "Creating, estimated wait 7 minutes". Ergebnis: steht aus.
 
+Beim Ergebnis prüfen (Metin, 06:49: "nickt klein ... mit klein hatten wir doch Probleme, oder?", 06:51: "halte es im Hinterkopf, falls es jetzt nicht klappen sollte, nehmen wir das mit in die Regel"): im Prompt steht "gives a small nod". Bisher war nur der Satz, der alles klein hält ("every movement is small"), ein Problem; "small" an einer einzelnen Geste lief in seinen Vorlagen gut ("two small playful steps", "a small step in place"). Wirkt sie in diesem Clip steif oder ist das Nicken nicht zu sehen, kommt als Regel dazu: auch an einer einzelnen Geste kein "small", sondern ein Beiwort der Art ("a gentle nod").
+
 **Sprech Clip 2, langes Arbeitskleid, Haarsträhne mit der freien Hand:** noch nicht geschrieben; die Hand bleibt seitlich am Haar und kommt nie vor den Mund (Flimmern an der Brille bei Hand am Gesicht beachten, Clips 181 und 226).
 
 ## Beobachtungen über Kling (Tatsachen, keine Schreibregeln)
