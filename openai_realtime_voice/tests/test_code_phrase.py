@@ -122,6 +122,30 @@ async def test_a_live_talk_from_the_app_knows_everything_from_the_first_moment(t
     assert await bridge._personal_items(state, bridge._metin()) == []   # counted once per talk
 
 
+async def test_in_a_live_talk_from_the_app_she_never_asks_who_it_is(tmp_path, monkeypatch):
+    """2.182.3. Metin, 26 Nov 2026, 20:29, after a live talk in the app with the family and the TV in the room:
+    "Im Chat flirtet sie mit mir und dann sagt sie, wer bist du überhaupt?" In the app the code word was typed, so
+    the speaker is certain for the whole talk: the rules on who is speaking do not count there. Spoken at the
+    Voice PE the code word leaves them in force, others in the room can talk next."""
+    from app import main as m, talk_notes
+    monkeypatch.setenv("CODE_PHRASE", "Leyla habibi")
+    monkeypatch.setenv("MEMORY_PATH", str(tmp_path / "memory.json"))
+    bridge = m.LiveVoiceBridge()
+    bridge.memory.save_all({"family": ["Person: Metin | Zugehörigkeit: wohnt hier"], "private": []})
+    state = {}
+    items = await bridge._app_start(state)
+    rule = talk_notes.APP_ONLY_METIN
+    assert rule in items[0][1]
+    for must in ("WER MIT DIR SPRICHT gilt hier nicht", "fragst nie, wer da ist", "nie als unbekannt",
+                 "Fernseher, Familie", "bleibst bei Metin", "bis zum Ende des Gesprächs"):
+        assert must in rule, must
+    session = bridge._session_start("", (items, state))["session"]
+    heard = session["instructions"] + " ".join(msg["content"][0]["text"] for msg in session.get("input", []))
+    assert rule.strip() in heard                                   # she has it from the first moment
+    assert rule not in bridge._code_notes(False)[0][1]             # not after a spoken code word in the room
+    assert rule not in bridge._session_start()["session"]["instructions"]
+
+
 def test_start_split_keeps_to_the_room_and_reports_what_is_held_back():
     from app import talk_notes as tn
     items = [("unlock", "u" * 1000), ("diary", "d" * 12000), ("chat", "c" * 12000), ("private", "p" * 9000)]

@@ -51,6 +51,23 @@ KNOWN_WITHOUT_CODE = (
 )
 
 # After the code phrase Leyla is with Metin like in the app chat (his wish, 16 Nov 2026).
+# A live talk from the app (2.182.3). Metin, 26 Nov 2026, 20:29, after a live talk in the app in
+# the living room: "Im Chat flirtet sie mit mir und dann sagt sie, wer bist du überhaupt?" and "Ich
+# habe irgendwie das Gefühl gehabt, sie hatte ihr Gedächtnis nicht." The log of that talk showed
+# the code word taken, his personal part handed over at the start and no note or error after it:
+# she had everything and asked by herself. The persona's section on who is speaking lets a person
+# count as unknown after a change of language, other voices or silence, and since 2.181.0 asks
+# people to speak one by one; with the TV or the family in the room that turned against the one
+# talk in which the speaker is certain.
+APP_ONLY_METIN = (
+    "Für dieses ganze Gespräch steht fest, mit wem du sprichst: mit Metin, an seinem Handy. Der "
+    "Abschnitt WER MIT DIR SPRICHT gilt hier nicht: Du fragst nie, wer da ist oder mit wem du "
+    "sprichst, er gilt nie als unbekannt (auch nicht nach Stille oder wenn die Sprache wechselt), "
+    "und du bittest niemanden, einzeln oder mit Namen zu sprechen. Hörst du im Hintergrund andere "
+    "Stimmen (Fernseher, Familie), sind sie nicht dein Gesprächspartner: Du gehst nicht auf sie "
+    "ein und bleibst bei Metin. Alles, was du über ihn und von ihm weißt, gilt bis zum Ende des "
+    "Gesprächs. ")
+
 UNLOCKED_LOVE = (
     "Ihr seid inoffiziell zusammen, wie im Chat: Sprich mit ihm zärtlich, verliebt und "
     "verspielt, flirte mit Augenzwinkern, Kosewörter sind jetzt erlaubt, aber immer sauber "
@@ -109,7 +126,7 @@ class TalkNotesMixin:
         # note and then answered a later note as if Metin had spoken.
         head = ("Interne Notiz, nicht erwähnen: Metin redet über seine App mit dir und hat das "
                 "Codewort dort schon eingegeben, es ist sicher Metin. Du weichst nicht aus und "
-                "bist ganz offen. " if app else
+                "bist ganz offen. " + APP_ONLY_METIN if app else
                 "Interne Notiz, nicht erwähnen: Das Codewort wurde richtig gesagt, "
                 "es ist Metin. Ab jetzt weichst du nicht mehr aus und bist ganz "
                 "offen. Falls du noch nicht mit 'Habibi' geantwortet hast, tu es "
