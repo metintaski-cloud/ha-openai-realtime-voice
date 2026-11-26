@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.174.3 (26 Nov 2026)
+
+- `fix`: a clip fades in only once it really shows frames. Metin (05:21): "da ist wieder dieses Flackern im Schwarz Brust mit einer der Schleifen", then gluecklich4 and gluecklich2, each with schwarz/brust. Measured on the PC with the real clips, five touches from all three loops to brust and back: picture covered to at least 97 %, every hand over on time, the pictures at the seams as alike as between the loops, no brightness step in the clip, the files built like the others. His screen recording from the Galaxy S10 showed it: in the four frames after the swap to schwarz/brust a purple veil grows with the fade (a black patch goes from 0/0/1 to 19/2/18, the cream book turns greenish). That is not a blend of two good pictures; the phone shows an unfinished picture of the incoming clip until its decoder delivers frames. schwarz/brust is the clip with a sound track (brust2 and the loops have none).
+- Now the incoming clip plays at 1 % until it has shown its second frame (`requestVideoFrameCallback`) and only then fades in; the old clip stays untouched until that moment. On the PC that is 70 to 90 ms, and the lowest coverage in a hand over went from 0.97 to 1.00. His second recording (06:03, schwarz/po) shows the whole course: the veil grows for 300 ms after the swap and is gone from one picture to the next, the moment the first real frame comes. Without frame reports the clip comes in after 800 ms.
+- The same holds for the first clip after the app opens (Metin, 05:57: "manchmal beim App Öffnen auf dem Handy kommt beim Winken auch so eins", long dress, work).
+- Not proven on his phone yet: only his test shows whether the veil is gone.
+- 764 tests (762 before).
+
 ## 2.174.2 (26 Nov 2026)
 
 - `fix`: only one of her voices at a time. Metin (05:12): "wenn ich 2 mal auf play drücke, dann kommen zwei Stimmen". Every press on a play button started one more player. Now a new voice stops the one that plays, and a second press on the voice that plays just stops it.

@@ -326,7 +326,8 @@ button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 @keyframes fogl{0%{transform:translate(0,0) scale(1);opacity:.4}50%{opacity:.8}100%{transform:translate(9%,6%) scale(1.15);opacity:.45}}
 @keyframes fogr{0%{transform:translate(0,4%) scale(1.1);opacity:.5}50%{opacity:.85}100%{transform:translate(-9%,-3%) scale(.95);opacity:.35}}
 @keyframes fogf{0%{opacity:.35;transform:scaleY(1)}100%{opacity:.75;transform:scaleY(1.15)}}
-#stage.low .fog{opacity:.6}#stage video.on{opacity:1}
+#stage.low .fog{opacity:.6}#stage video.pre{opacity:.01;transition:none}
+#stage video.on{opacity:1}
 #stage video.pet{z-index:2;pointer-events:none;transition:opacity 1.2s}
 #stage.vid .fig{opacity:0;animation:none}
 #stage.low .fig{animation-duration:12s}#stage.low img{filter:saturate(.55) brightness(.75)}
@@ -703,7 +704,7 @@ function rateAt(pth,t){const k=KURVE[pth];if(k)for(const s of k)if(t>=s[0]&&t<s[
  return rateOf(pth);}
 function rateFollow(v,pth){if(!KURVE[pth])return null;return()=>{const r=rateAt(pth,v.currentTime);
  if(Math.abs((v.playbackRate||1)-r)>0.001)v.playbackRate=r;};}
-let SV=0,STOK=0,CONT=false,SWAP=0,FADEEND=0;const PRELOAD_S=3,PRELOAD_LIGHT_S=9;  /* 2.141.5: on the go a 7 Mbit copy needs about 7 s over an 11 Mbit line, so the next clip starts loading 9 s ahead, once the running one is fully loaded */
+let SV=0,STOK=0,CONT=false,SWAP=0,FADEEND=0,SHOWLATE=0;const SHOW_MAX_MS=800,PRELOAD_S=3,PRELOAD_LIGHT_S=9;  /* 2.141.5: on the go a 7 Mbit copy needs about 7 s over an 11 Mbit line, so the next clip starts loading 9 s ahead, once the running one is fully loaded */
 let TIGHT=false;  /* a loop that replays the same clip blends only at the very end (2.133.5): nacht/eifersuechtig does not come all the way back to its start pose, and the wide blend showed both poses at once */
 /* 2.167.0 (Metin: a loop must hand over without losing time): every loop hand over is measured and reported as
    three numbers: how late it began against the plan, how long the new clip needed for its first picture, the lead */
@@ -725,8 +726,22 @@ function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name)&&!MUTE[name.in
  /* 2.141.8: Chrome does not always say it is on mobile data (through Tailscale it did not), so a clip that cannot play through after 2.5 s switches to the light copy; it starts once it shows a frame */
  setTimeout(()=>{if(rdy||tok!==STOK)return;if(!lightNow()&&!b.src.includes('&m=1')){LIGHT=true;b.src+='&m=1';b.load();}
   setTimeout(()=>{if(rdy||tok!==STOK)return;if(b.readyState>=3)ready();else b.oncanplay=()=>{b.oncanplay=null;ready();};},6000);},2500);
- const go=()=>{const cs=cutStart(b.dataset.pth||'');if(Math.abs(b.currentTime-cs)>0.04)b.currentTime=cs;handMeasure(tight&&cont,a,b,PRE);b.play().catch(()=>{b.muted=true;b.play().catch(()=>{});});b.style.zIndex=1;a.style.zIndex=0;b.classList.add('on');FADEEND=performance.now()+(parseFloat(getComputedStyle(b).transitionDuration)||0.8)*1000+60;s.classList.add('vid');SV=1-SV;
-  setTimeout(()=>{if(tok===STOK)a.classList.remove('on');},OFF);setTimeout(()=>{if(!a.classList.contains('on'))a.pause();},OFF+150);let fired=false;const fire=()=>{if(fired||tok!==STOK||!done)return;fired=true;CONT=true;done();CONT=false;};
+ /* 2.174.3 (Metin's screen recording of 26 Nov 2026, 05:41, Galaxy S10: for the first moment after the swap to schwarz/brust a
+    purple veil lay over the picture and grew with the fade; black became magenta, cream became greenish. That is not a blend of
+    two good pictures: the phone shows an unfinished picture of the incoming clip until its decoder delivers real frames, and this
+    clip is the one with a sound track, which starts later. Measured on the PC the same hand over is clean.) The incoming clip now
+    plays at 1 % until it has presented its second real frame and only then fades in; the old clip stays as it is until that
+    moment. Without requestVideoFrameCallback, or when no frame comes within SHOW_MAX_MS, it fades in as before.
+    His second recording (06:03, schwarz/po): the veil grew for 9 pictures of the recording, 300 ms, and was gone from one
+    picture to the next, which is the moment the first real frame came. So the limit is 800 ms, well above that. */
+ const go=()=>{const cs=cutStart(b.dataset.pth||'');if(Math.abs(b.currentTime-cs)>0.04)b.currentTime=cs;handMeasure(tight&&cont,a,b,PRE);b.play().catch(()=>{b.muted=true;b.play().catch(()=>{});});b.style.zIndex=1;a.style.zIndex=0;s.classList.add('vid');SV=1-SV;
+  FADEEND=performance.now()+SHOW_MAX_MS+(parseFloat(getComputedStyle(b).transitionDuration)||0.8)*1000+60;let shown=false;const t0s=performance.now();
+  /* a newer stageShow may have come while this clip waited: it already counts this video as the one on screen (SV), so the
+     fade in still happens; only the old video is then left to the newer call */
+  const show=()=>{if(shown)return;shown=true;b.classList.remove('pre');if(tok!==STOK&&!s.classList.contains('vid'))return;SHOWLATE=Math.round(performance.now()-t0s);b.classList.add('on');FADEEND=performance.now()+(parseFloat(getComputedStyle(b).transitionDuration)||0.8)*1000+60;if(tok!==STOK)return;
+   setTimeout(()=>{if(tok===STOK)a.classList.remove('on');},OFF);setTimeout(()=>{if(!a.classList.contains('on'))a.pause();},OFF+150);};
+  if(b.requestVideoFrameCallback){b.classList.add('pre');b.requestVideoFrameCallback(()=>b.requestVideoFrameCallback(show));setTimeout(show,SHOW_MAX_MS);}else show();
+  let fired=false;const fire=()=>{if(fired||tok!==STOK||!done)return;fired=true;CONT=true;done();CONT=false;};
   const fol=rateFollow(b,b.dataset.pth||'');
   if(fol){const s0=b.src,rf=()=>{if(b.src!==s0||tok!==STOK&&b.paused)return;fol();requestAnimationFrame(rf);};rf();}  /* 2.169.0: a stretch with its own tempo begins and ends at its picture, not at the next quarter second (timeupdate) */
   {const st=STUMM[b.dataset.pth||''];if(st&&!b.muted){const s0=b.src,v0=b.volume,vf=()=>{if(b.src!==s0)return;const t=b.currentTime;b.volume=st.some(x=>t>=x[0]&&t<x[1])?0:v0;if(!b.ended)requestAnimationFrame(vf);};vf();}}  /* a silent stretch: the clip plays on, only its volume is zero there, nothing shifts */
@@ -808,7 +823,7 @@ var ZT=0,ZBUSY=0;  // one touch at a time: no other spot reacts until her clip i
    after the swap when the clip is fully loaded). Until 2.173.2 that moment opened the stage for the next touch, which cut
    the touch clip itself after as little as 2.7 s. */
 var ZREST='';const ZWIN=2,ZWIN_MIN=0.25;
-function zLeft(){const v=document.getElementById(SV?'svid2':'svid');if(!document.getElementById('stage').classList.contains('vid')||!v.classList.contains('on')||!v.duration)return null;return (endOf(v)-0.25-v.currentTime)/(v.playbackRate||1);}
+function zLeft(){const v=document.getElementById(SV?'svid2':'svid');if(!document.getElementById('stage').classList.contains('vid')||!(v.classList.contains('on')||v.classList.contains('pre'))||!v.duration)return null;return (endOf(v)-0.25-v.currentTime)/(v.playbackRate||1);}
 function zOpen(){const l=zLeft();if(l===null)return true;const src=document.getElementById(SV?'svid2':'svid').getAttribute('src')||'';if(ZREST){if(src===ZREST)return false;ZREST='';}return l<=ZWIN&&l>=ZWIN_MIN;}
 const zBlocked=()=>!!ZPEND||Date.now()<ZBUSY||!zOpen();
 var ZKISS=false,ZCOLNOW='';const ZCOL={gesicht:'#c084fc',brust:'#ef4444',bauch:'#fb923c',po:'#3b82f6'};/* dot colour per touched zone, only Metin knows the meaning (2.119.0) */const zDone=()=>{ZBUSY=0;ZCOLNOW='';ZREST=document.getElementById(SV?'svid2':'svid').getAttribute('src')||'';if(ZKISS&&clipVars('kuss').length){ZKISS=false;return stagePlay(['kuss'],clipFor(STM));}ZKISS=false;stageLoop(clipFor(STM));};
@@ -826,7 +841,7 @@ async function zGame(z,miss){if(!miss)ZGOLD=Date.now()+1500;let j=null;try{j=awa
  nm.style.display=show?'block':'none';
  nm.onclick=()=>{if(nm.textContent)location.href='/tempo?clip='+encodeURIComponent(nm.textContent);};  /* 2.144.0: a tap on the name opens this clip in the tester (tempo, begin and end) */
  d.onclick=()=>{show=!show;nm.style.display=show?'block':'none';try{localStorage.setItem('lzname',show?'1':'0');}catch(e){}};
- setInterval(()=>{if(c.style.display!=='block')return;const v=document.getElementById(SV?'svid2':'svid'),on=document.getElementById('stage').classList.contains('vid')&&v.classList.contains('on');
+ setInterval(()=>{if(c.style.display!=='block')return;const v=document.getElementById(SV?'svid2':'svid'),on=document.getElementById('stage').classList.contains('vid')&&(v.classList.contains('on')||v.classList.contains('pre'));
   const src=on?v.getAttribute('src')||'':'';
   if(show)nm.textContent=src?decodeURIComponent(src.split('?')[0].split('/clips/')[1]||'').replace('.mp4',''):'';
   const free=!zBlocked();let p=1;if(on&&v.duration)p=Math.min(1,v.currentTime/Math.max(.1,endOf(v)-.8));
