@@ -141,6 +141,8 @@ In Kling eingesetzt und um 07:36 einmal gestartet: Kling 4.0, Keyframes, nur das
 - Brille: Grün im Einstieg 44 von 241 Bildern (1,8 s), in der Haltung 88 von 241 (3,7 s, auch ohne Blick nach oben), im Rückweg keines. **Die Zeile gegen Spiegelung wirkt nicht; sie kommt aus den nächsten Prompts wieder heraus.**
 - Metins Urteil zu den drei Clips: steht aus.
 
+**Metins Urteil zum Dreiteiler im kurzen Arbeitskleid (26.11.2026, 17:18, in der App im Live Gespräch angesehen):** "Ist okay, gefällt mir. Ich kann mich nicht beklagen." Die drei Clips bleiben (rein 3741, pose 3808, raus 3802); der gemessene unruhige Rückweg stört ihn nicht. Damit ist das Muster für die anderen Kleider bestätigt.
+
 Damit ist für das kurze Arbeitskleid der ganze Dreiteiler in Kling: Sprech Clip 4 (rein), Sprech Clip 5 (in der Haltung), Rückweg (raus). Plätze in der App nach dem Download: `kurz/sprichtrein`, `kurz/sprichtpose`, `kurz/sprichtraus`, alle ohne Ton, ab Version 2.175.0. Guthaben danach laut Kling 831. Für das lange Arbeitskleid fehlt weiter das Bild der Sprechhaltung in Kling (Clip 3643 ist dort gelöscht): `Desktop\7_lang_arbeit_sprechhaltung.png` hochladen, dann Rückweg und Sprech Clip 3 (zusammen 525 Credits).
 
 ## Beobachtungen über Kling (Tatsachen, keine Schreibregeln)
