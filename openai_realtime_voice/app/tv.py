@@ -2,10 +2,16 @@
 Living room TV control for the voice assistant.
 
 The TV is an Android TV paired with Home Assistant (Android TV Remote integration):
-power and volume go over WLAN through its remote entity. The channels come from a
-satellite receiver without network, so channel numbers are sent as infrared codes
-through the Broadlink RM4 Pro (app/rf.py). The receiver digits were learned as
-rx_null .. rx_neun and its power button as rx_power.
+power and volume go over WLAN through its remote entity.
+
+Channels, since 2.182.0 (Metin, 26 Nov 2026: "Mein Receiver ist kaputt, deswegen nutze ich
+jetzt Waipu.tv"): a TV app on the Android TV itself. `tv_app` is the address that starts it
+(`waipu://tv`, live TV of waipu.tv); the channel number is then typed with the digit keys of
+the TV remote, over WLAN like the volume. There is no address for a single channel on Android
+TV, so the numbers are the places in the app's own channel order (set in the waipu app on the
+phone). With `tv_app` empty the old way is used: the channels come from a satellite receiver
+without network, and the numbers are sent as infrared codes through the Broadlink RM4 Pro
+(app/rf.py; receiver digits rx_null .. rx_neun, power button rx_power).
 
 Channel names are configured as "name=number" pairs, e.g. "atv Avrupa=1; A Haber=2".
 """
@@ -20,7 +26,11 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_CHANNELS = "atv Avrupa=1; A Haber=2; Euro D=6"
+DEFAULT_CHANNELS = "atv=2; Euro D=3; A Haber=12"  # his waipu.tv places (Metin, 26 Nov 2026)
+DEFAULT_TV_APP = "waipu://tv"
+APP_START_WAIT_S = 8.0   # how long the app may take to come to the front
+APP_READY_S = 2.5        # after it is in front: until its player takes keys
+DIGIT_DELAY_S = 0.4      # between the digits of a channel number
 DEFAULT_TV_REMOTE = "remote.android_tv"
 DEFAULT_TV_PLAYER = "media_player.android_tv_2"
 # While Leyla listens, the TV is turned down to DUCK_FACTOR of its volume, at most
@@ -85,12 +95,12 @@ def build_tool(channels: dict[str, int]) -> dict:
         "type": "function",
         "name": "fernseher_steuern",
         "description": (
-            "Control the living room TV (Turkish: televizyon) and its satellite receiver. "
-            "an or aus: TV power. kanal: switch the receiver to a channel by name or number; "
+            "Control the living room TV (Turkish: televizyon). "
+            "an or aus: TV power. kanal: switch to a channel by name or number; "
             f"known channels: {names}. lauter, leiser: TV volume by some steps. stumm: mute or "
             "unmute the TV sound. lautstaerke: set the volume to an exact value 0 to 100. "
             "status: read whether the TV is on and the current volume. receiver: press the "
-            "power button of the receiver."
+            "power button of the old satellite receiver (only when asked for it)."
         ),
         "parameters": {
             "type": "object",
@@ -139,8 +149,9 @@ TV_BACKEND_HINT = (
 class TvController:
     def __init__(self, remote, channels: dict[str, int], tv_remote: str = DEFAULT_TV_REMOTE,
                  api_url: Optional[str] = None, token: Optional[str] = None,
-                 tv_player: str = DEFAULT_TV_PLAYER) -> None:
+                 tv_player: str = DEFAULT_TV_PLAYER, tv_app: str = "") -> None:
         self.rf = remote
+        self.tv_app = (tv_app or "").strip()  # '' = channels through the infrared receiver
         self.tv_player = tv_player
         self.channels = channels
         self.tv_remote = tv_remote
@@ -329,6 +340,39 @@ class TvController:
             data.update(num_repeats=repeats, delay_secs=step_delay)
         await self._service("remote", "send_command", data)
 
+    async def _activity(self) -> str:
+        """The app in front on the TV (its package name), '' when unknown."""
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                resp = await client.get(f"{self.api_url}/states/{self.tv_remote}",
+                                        headers={"Authorization": f"Bearer {self.token}"})
+            if resp.status_code != 200:
+                return ""
+            return str((resp.json().get("attributes") or {}).get("current_activity") or "")
+        except Exception:
+            return ""
+
+    async def _app_channel(self, number: int) -> bool:
+        """Channel `number` in the TV app: bring the app to the front when it is not there
+        (that also switches the TV on), then type the digits. True when the app had to be
+        started."""
+        word = self.tv_app.split(":")[0].lower()  # 'waipu' is part of the package name
+        started = word not in (await self._activity()).lower()
+        if started:
+            await self._service("remote", "turn_on",
+                                {"entity_id": self.tv_remote, "activity": self.tv_app})
+            waited = 0.0
+            while waited < APP_START_WAIT_S and word not in (await self._activity()).lower():
+                await asyncio.sleep(0.5)
+                waited += 0.5
+            await asyncio.sleep(APP_READY_S)
+        digits = list(str(number))
+        data = {"entity_id": self.tv_remote, "command": digits if len(digits) > 1 else digits[0]}
+        if len(digits) > 1:
+            data["delay_secs"] = DIGIT_DELAY_S
+        await self._service("remote", "send_command", data)
+        return started
+
     async def _channel(self, number: int) -> None:
         if not self.rf.available:
             raise RuntimeError("Der Infrarot Sender ist nicht eingerichtet.")
@@ -402,6 +446,10 @@ class TvController:
                 if not found:
                     return {"error": f"Diesen Sender kenne ich nicht. Bekannt: {self.names}."}
                 name, number = found
+                if self.tv_app:
+                    started = await self._app_channel(number)
+                    return {"done": f"{name} (Programm {number})"
+                                    + (", die Fernseh App wurde dafür gestartet" if started else "")}
                 await self._channel(number)
                 return {"done": f"{name} (Programm {number})"}
             return {"error": f"Unbekannte Aktion: {action}"}
@@ -416,4 +464,10 @@ def from_env(remote) -> TvController:
     tv_remote = (os.environ.get("TV_REMOTE") or "").strip()
     if not tv_remote or tv_remote.lower() == "null":
         tv_remote = DEFAULT_TV_REMOTE
-    return TvController(remote, parse_channels(os.environ.get("TV_CHANNELS")), tv_remote)
+    tv_app = (os.environ.get("TV_APP") or "").strip()
+    if tv_app.lower() in ("", "null"):  # option not set: the TV app
+        tv_app = DEFAULT_TV_APP
+    elif tv_app.lower() in ("aus", "receiver"):  # the old way through the infrared receiver
+        tv_app = ""
+    return TvController(remote, parse_channels(os.environ.get("TV_CHANNELS")), tv_remote,
+                        tv_app=tv_app)

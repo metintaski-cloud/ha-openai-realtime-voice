@@ -9,8 +9,12 @@ from tests.test_rf import FakeDevice  # noqa: E402
 from tests.test_lights import _HA, _server  # noqa: E402
 
 
+OLD = "atv Avrupa=1; A Haber=2; Euro D=6"   # the places on the satellite receiver
+
+
 def test_channels():
-    ch = tv.parse_channels(None)
+    assert tv.parse_channels(None) == {"atv": 2, "Euro D": 3, "A Haber": 12}   # his waipu.tv places
+    ch = tv.parse_channels(OLD)
     assert ch == {"atv Avrupa": 1, "A Haber": 2, "Euro D": 6}
     assert tv.find_channel(ch, "a haber") == ("A Haber", 2)
     assert tv.find_channel(ch, "ATV") == ("atv Avrupa", 1)
@@ -29,7 +33,7 @@ async def test_controller(tmp_path, monkeypatch):
     remote = rf.RfRemote("h", 433.87, str(tmp_path / "c.json"), device_factory=lambda h: dev)
     for name in ("rx_eins", "rx_zwei", "rx_sechs", "rx_power", "tv_power"):
         remote.save_code(name, name.encode())
-    ctl = tv.TvController(remote, tv.parse_channels(None), api_url="http://127.0.0.1:19995/api",
+    ctl = tv.TvController(remote, tv.parse_channels(OLD), api_url="http://127.0.0.1:19995/api",
                           token="tok")
     try:
         r = await ctl.run({"action": "kanal", "channel": "A Haber", "steps": None})
@@ -153,3 +157,50 @@ async def test_no_duck_when_tv_is_off(tmp_path, monkeypatch):
         assert _HA.calls == []
     finally:
         server.shutdown()
+
+
+async def test_channels_through_the_tv_app(tmp_path, monkeypatch):
+    """2.182.0 (Metin, 26 Nov 2026: the receiver is broken, he watches with waipu.tv): the app is brought to the
+    front with its address and the channel number is typed with the digit keys of the TV, nothing goes out by
+    infrared."""
+    import asyncio as _a
+    _orig = _a.sleep
+    monkeypatch.setattr(tv.asyncio, "sleep", lambda s: _orig(0))
+    _HA.calls.clear()
+    _HA.states["remote.android_tv"] = {"entity_id": "remote.android_tv", "state": "on",
+                                       "attributes": {"current_activity": "com.google.android.tvlauncher"}}
+    server = _server(19996)
+    dev = FakeDevice("h")
+    remote = rf.RfRemote("h", 433.87, str(tmp_path / "c.json"), device_factory=lambda h: dev)
+    ctl = tv.TvController(remote, tv.parse_channels(None), api_url="http://127.0.0.1:19996/api", token="tok",
+                          tv_app="waipu://tv")
+    try:
+        r = await ctl.run({"action": "kanal", "channel": "A Haber", "steps": None, "volume_percent": None})
+        assert r["done"].startswith("A Haber (Programm 12)") and "gestartet" in r["done"], r
+        calls = [(c[1], c[2]) for c in _HA.calls]
+        assert calls[0] == ("turn_on", {"entity_id": "remote.android_tv", "activity": "waipu://tv"})
+        assert calls[-1] == ("send_command", {"entity_id": "remote.android_tv", "command": ["1", "2"],
+                                               "delay_secs": tv.DIGIT_DELAY_S})
+        # the app is in front now: only the digit, no new start
+        _HA.calls.clear()
+        _HA.states["remote.android_tv"]["attributes"]["current_activity"] = "de.exaring.waipu"
+        r = await ctl.run({"action": "kanal", "channel": "atv", "steps": None, "volume_percent": None})
+        assert r["done"] == "atv (Programm 2)", r
+        assert [(c[1], c[2]) for c in _HA.calls] == [("send_command", {"entity_id": "remote.android_tv", "command": "2"})]
+        r = await ctl.run({"action": "kanal", "channel": "Kanal 7", "steps": None, "volume_percent": None})
+        assert "kenne ich nicht" in r["error"] and dev.sent == []                # nothing by infrared at all
+    finally:
+        server.shutdown()
+        _HA.states.pop("remote.android_tv", None)
+
+
+def test_the_tv_app_is_the_default_and_the_receiver_can_be_chosen(monkeypatch):
+    monkeypatch.delenv("TV_APP", raising=False)
+    assert tv.from_env(None).tv_app == "waipu://tv"
+    monkeypatch.setenv("TV_APP", "null")          # the add on option is not set
+    assert tv.from_env(None).tv_app == "waipu://tv"
+    monkeypatch.setenv("TV_APP", "receiver")
+    assert tv.from_env(None).tv_app == ""
+    tool = tv.build_tool(tv.parse_channels(None))
+    assert "atv (2)" in tool["description"] and "A Haber (12)" in tool["description"]
+    assert sorted(tool["parameters"]["required"]) == sorted(tool["parameters"]["properties"])

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.182.0 (26 Nov 2026)
+
+- `feat`: TV channels through waipu.tv instead of the satellite receiver. Metin (18:47): "Mein Receiver ist kaputt, deswegen nutze ich jetzt Waipu.tv und möchte die Leyla darauf trainieren ... dass sie die Kanäle aufmachen kann, die meine Mutter sich wünscht"; her favourites and their places in his waipu.tv (18:55): atv 2, Euro D 3, A Haber 12 (Kanal 7 left out). For a channel Leyla now brings the TV app to the front when it is not there (`remote.turn_on` with the address `waipu://tv`, which also switches the TV on) and types the number with the digit keys of the TV over WLAN (`remote.send_command`); nothing goes out by infrared. Whether the app is in front is read from `current_activity` of the remote entity (seen on his TV: `de.exaring.waipu`). New option `tv_app` (default `waipu://tv`; `receiver` brings the old infrared way back), new default for `tv_channels`.
+- NOT YET PROVEN on his TV: that the waipu.tv app takes digit keys as a channel number. The research of 26 Nov 2026 found no address for a single channel on Android TV and one Home Assistant project that switches by number and calls it experimental. Test before telling the family.
+- 795 tests (793 before).
+
 ## 2.181.1 (26 Nov 2026)
 
 - `fix`: she no longer says at once that she and Metin stand together. Metin tested 2.181.0 (18:18): "sie schießt ziemlich schnell direkt, dass Metin und ich zusammenhalten." The rule let her say it with any counter. Now only at the third level (real mockery, or going on after her counter) and at most once in a talk; at the first two levels she counters alone and does not name him.

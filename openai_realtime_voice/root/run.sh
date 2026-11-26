@@ -26,6 +26,7 @@ RF_HOST=$(bashio::config 'rf_host')
 RF_FREQUENCY=$(bashio::config 'rf_frequency')
 TV_CHANNELS=$(bashio::config 'tv_channels')
 TV_REMOTE=$(bashio::config 'tv_remote')
+TV_APP=$(bashio::config 'tv_app')
 TV_DUCK=$(bashio::config 'tv_duck')
 LAMP_SHOW=$(bashio::config 'lamp_show')
 LAMP_SHOW_LIGHTS=$(bashio::config 'lamp_show_lights')
@@ -71,6 +72,7 @@ export RF_HOST
 export RF_FREQUENCY
 export TV_CHANNELS
 export TV_REMOTE
+export TV_APP
 export TV_DUCK
 export LAMP_SHOW LAMP_SHOW_LIGHTS
 export STROMPREIS_CT
