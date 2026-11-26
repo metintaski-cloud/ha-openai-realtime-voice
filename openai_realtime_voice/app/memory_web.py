@@ -599,9 +599,37 @@ function stageDance(name){const v=clipVars(name);if(!CLIPS||!STM||!v.length)retu
  if(STM&&STM.outfit==='nacht'&&name==='tanz'&&clipVars('tanzhf').length){const c=danceChain();if(c.length){q.length=0;q.push(...c);}}
  else if(name==='tanz'&&(!STM||!STM.outfit||STM.outfit==='arbeit')&&DNEXTW[OUTFIT]){const c=workChain();if(c.length){q.length=0;q.push(...c);}}
  DANCING=true;const next=()=>{const n=q.shift();if(n)stageShow(n,false,next,true);else{DANCING=false;stageLoop(clipFor(STM));}};next();}
+/* Talk clips (2.175.0). Until now her talk clip cut into the running clip the moment her voice began, also into a touch clip,
+   and the loop cut back in the moment she fell silent. Metin wants every change seamless ("muss nahtlos sein"), so a talk clip
+   now comes in where the running clip hands over, like a loop, and the loop comes back where the talk clip hands over.
+   Two kinds of talk clips, by name (freizeit and night as for every clip, sprichttraurig the same way):
+   - spricht: begins and ends in her base pose; one after the other while she talks.
+   - sprichtrein, sprichtpose, sprichtraus (Metin, 26 Nov 2026: "sie endet immer mit Arm auf Hüfte ... möchte diese monotonen
+     Endungen vermeiden"): rein leads from the base pose into a talk pose, pose begins and ends in that talk pose, raus leads
+     back. Used when a look has rein and raus; while she stands in the talk pose she takes no touch (a touch clip begins in the
+     base pose).
+   The chain is alive as long as no other clip was asked for since its last step (TALKTOK===STOK): a touch, a scene, a new
+   mood or outfit simply take the stage, and she joins again at the next hand over if she still talks. */
+let TALKTOK=0;
+const curPth=()=>document.getElementById(SV?'svid2':'svid').dataset.pth||'';
+const talkKind=p=>{const m=/(?:^|[/])(?:freizeit)?spricht(?:traurig)?(rein|pose|raus)?[0-9]*$/.exec(p||'');return m?(m[1]||'loop'):'';};
+const talkOn=()=>TALKTOK>0&&TALKTOK===STOK;
+const talkPose=()=>{if(zLeft()===null)return false;const k=talkKind(curPth());return k==='rein'||k==='pose';};
+function talkPick(n){const v=clipVars(n);if(v.length<2)return v[0]||'';const st=curPth().split('/').pop();return roundPick(LROUND[n]||(LROUND[n]={}),v,v.find(x=>x.split('/').pop()===st)||'');}
+/* the next clip of the talk chain, asked for at a hand over (the caller sets CONT); false when the chain has nothing to play */
+function talkStep(){if(!CLIPS||!STM)return false;const cur=curPth(),k=talkKind(cur),inpose=zLeft()!==null&&(k==='rein'||k==='pose');
+ const t=inpose?(/sprichttraurig/.test(cur)?'sprichttraurig':'spricht'):(STM.low&&(clipVars('sprichttraurig').length||clipVars('sprichttraurigrein').length)?'sprichttraurig':'spricht');
+ const three=clipVars(t+'rein').length&&clipVars(t+'raus').length;let n='';
+ if(inpose)n=TALKING&&clipVars(t+'pose').length?talkPick(t+'pose'):talkPick(t+'raus');
+ else if(TALKING)n=three?talkPick(t+'rein'):talkPick(t);
+ if(!n){TALKTOK=0;return false;}
+ TIGHT=true;stageShow(n,false,()=>{if(!talkStep())stageNext(clipFor(STM));});TALKTOK=STOK;return true;}
 function stageTalk(on){on=!!on;if(on===TALKING||CLIPS===null||!STM)return;TALKING=on;
- const t=STM.low&&clipVars('sprichttraurig').length?'sprichttraurig':'spricht';
- if(!clipVars(t).length||DANCING)return;if(on)stageLoop(t);else stagePlay([],clipFor(STM));}
+ if(DANCING||Date.now()<ZBUSY||ZPEND)return;  /* a touch clip, a scene or a dance runs to its end; she joins at the hand over after it */
+ const l=zLeft();if(l!==null&&l<ZWIN_MIN)return;  /* the next clip is already coming in; the hand over after it decides */
+ const was=talkOn();if(!on&&!was)return;const live=l!==null;CONT=live;
+ if(talkStep())return;
+ if(was){CONT=live;stageLoop(clipFor(STM));}else CONT=false;}  /* she fell silent before her talk clip came in: the loop goes on instead */
 function moodShow(st){if(!st||!st.mood)return;const c=document.getElementById('chat'),b=document.getElementById('mbadge');
  c.classList.toggle('low',!!st.low);c.classList.toggle('good',!st.low);document.getElementById('pulse').dataset.mood=st.low?'low':'good';b.style.display='flex';b.textContent=st.low?'🖤':'❤️';
  document.getElementById('mlabel').textContent=(st.low?'🖤 ':'❤️ ')+st.label;LASTST=st;const rb=document.getElementById('crose');if(rb)rb.classList.toggle('off',st.rose!=='ready');stageMood(st);}
@@ -766,13 +794,13 @@ function stageLoop(b){if(ZPEND){const f=ZPEND;ZPEND=null;return f();}ZBUSY=0;DAN
  const cf=v.find(n=>n.split('/').pop()===cur)||'';TIGHT=true;stageShow(roundPick(LROUND[b]||(LROUND[b]={}),v,cf),false,nx);}
 const SPECIAL=[],SPECIAL_P=0;  // since 2.111.2 no dance by herself, only when Metin asks (Metin)
 const KNIET_P=0.12,EXTRA_P=0.25;const SND_RE=/(^|[/])(kuss|rose|komm|liebe|freizeitmokka|(freizeit)?(gesicht|brust|bauch|po|mix|hinten))/;  /* 2.130.2 laugh on belly and chest, 2.131.0 cat surprise, 2.131.1 sound on every touch clip in every outfit, never on loops or dances (Metin; the older touch clips carry no audio track) */
-function stageNext(b){if(ZPEND){const f=ZPEND;ZPEND=null;return f();}const sp=STM&&!STM.low?SPECIAL.filter(n=>clipVars(n).length):[];if(sp.length&&Math.random()<SPECIAL_P)stagePlay([sp[Math.floor(Math.random()*sp.length)]],b);
+function stageNext(b){if(ZPEND){const f=ZPEND;ZPEND=null;return f();}if(TALKING&&!talkOn()&&!DANCING&&talkStep())return;/* she talks: her talk clip comes in at this hand over (2.175.0) */const sp=STM&&!STM.low?SPECIAL.filter(n=>clipVars(n).length):[];if(sp.length&&Math.random()<SPECIAL_P)stagePlay([sp[Math.floor(Math.random()*sp.length)]],b);
  else if(STM&&!STM.low&&clipVars('gluecklichextra').length&&Math.random()<EXTRA_P){TIGHT=true;stagePlay(['gluecklichextra'],b);}  /* 2.169.2: the extra comes in like a loop (tight, with its lead), so what is set on the page /naht holds for it too */
  else if(STM&&STM.low&&STM.level==='schwer'&&clipVars('setzen').length&&Math.random()<KNIET_P)stagePlay(['setzen'],b);else stageLoop(b);}
 var SLAST={};function stagePlay(once,loop){DANCING=false;const q=once.map(n=>{let v=clipVars(n);if(v.length>1&&SLAST[n])v=v.filter(x=>x!==SLAST[n]);const c=v.length?v[Math.floor(Math.random()*v.length)]:null;if(c)SLAST[n]=c;return c;}).filter(Boolean);/* never the same variant twice in a row (2.116.4) */const next=()=>{const n=q.shift();if(n)stageShow(n,false,next,true);else stageLoop(loop);};next();}
 function stageMood(st){if(CLIPS===null)return;document.getElementById('stage').classList.toggle('low',!!st.low);let once=[];const o=STM;
  if(!o)once=['begruessung'];if(o){if(o.low&&!st.low)once=['uebergang','kuss'];else if(st.low&&o.low&&(st.cheer||0)>(o.cheer||0))once=['trost'];}
- const changed=!o||once.length||o.mood!==st.mood||o.level!==st.level;/* an outfit change waits for its change scene or the next hand over (2.116.0) */STM=st;if(!o||o.outfit!==st.outfit){const im=document.querySelector('#stage .fig img'),nb=st.outfit==='nacht'&&NIGHTBODY?'/clips/nacht/body.jpg?v='+(CVER.nacht||0):LOOKBODY;if(nb&&!im.src.endsWith(nb))im.src=nb;}if(changed&&(!o||!(Date.now()<ZBUSY||ZPEND||DANCING)))stagePlay(once,clipFor(st));}
+ const changed=!o||once.length||o.mood!==st.mood||o.level!==st.level;/* an outfit change waits for its change scene or the next hand over (2.116.0) */STM=st;if(!o||o.outfit!==st.outfit){const im=document.querySelector('#stage .fig img'),nb=st.outfit==='nacht'&&NIGHTBODY?'/clips/nacht/body.jpg?v='+(CVER.nacht||0):LOOKBODY;if(nb&&!im.src.endsWith(nb))im.src=nb;}if(changed&&(!o||!(Date.now()<ZBUSY||ZPEND||DANCING||talkOn())))stagePlay(once,clipFor(st));}
 clipsLoad();
 function stageHello(){if(CLIPS&&STM&&!DANCING)stagePlay(['begruessung'],clipFor(STM));}  // hallo on every open (2.113.1, Metin)
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&document.getElementById('chat').style.display==='block')stageHello();});
@@ -825,8 +853,8 @@ var ZT=0,ZBUSY=0;  // one touch at a time: no other spot reacts until her clip i
 var ZREST='';const ZWIN=2,ZWIN_MIN=0.25;
 function zLeft(){const v=document.getElementById(SV?'svid2':'svid');if(!document.getElementById('stage').classList.contains('vid')||!(v.classList.contains('on')||v.classList.contains('pre'))||!v.duration)return null;return (endOf(v)-0.25-v.currentTime)/(v.playbackRate||1);}
 function zOpen(){const l=zLeft();if(l===null)return true;const src=document.getElementById(SV?'svid2':'svid').getAttribute('src')||'';if(ZREST){if(src===ZREST)return false;ZREST='';}return l<=ZWIN&&l>=ZWIN_MIN;}
-const zBlocked=()=>!!ZPEND||Date.now()<ZBUSY||!zOpen();
-var ZKISS=false,ZCOLNOW='';const ZCOL={gesicht:'#c084fc',brust:'#ef4444',bauch:'#fb923c',po:'#3b82f6'};/* dot colour per touched zone, only Metin knows the meaning (2.119.0) */const zDone=()=>{ZBUSY=0;ZCOLNOW='';ZREST=document.getElementById(SV?'svid2':'svid').getAttribute('src')||'';if(ZKISS&&clipVars('kuss').length){ZKISS=false;return stagePlay(['kuss'],clipFor(STM));}ZKISS=false;stageLoop(clipFor(STM));};
+const zBlocked=()=>!!ZPEND||Date.now()<ZBUSY||talkPose()||!zOpen();
+var ZKISS=false,ZCOLNOW='';const ZCOL={gesicht:'#c084fc',brust:'#ef4444',bauch:'#fb923c',po:'#3b82f6'};/* dot colour per touched zone, only Metin knows the meaning (2.119.0) */const zDone=()=>{ZBUSY=0;ZCOLNOW='';ZREST=document.getElementById(SV?'svid2':'svid').getAttribute('src')||'';if(ZKISS&&clipVars('kuss').length){ZKISS=false;return stagePlay(['kuss'],clipFor(STM));}ZKISS=false;if(TALKING&&talkStep())return;stageLoop(clipFor(STM));};
 var ZPEND=null,ZT_GREEN=()=>false,ZGOLD=0;
 const ZNAME={gesicht:'Gesicht',brust:'Brust',bauch:'Bauch',po:'Po'};
 async function zGame(z,miss){if(!miss)ZGOLD=Date.now()+1500;let j=null;try{j=await (await post('/api/game',{zone:z,miss:!!miss})).json();}catch(e){}if(!j||!j.ok)return;

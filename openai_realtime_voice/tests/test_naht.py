@@ -35,7 +35,7 @@ def test_it_shows_the_hand_over_of_a_loop_as_the_app_does_it():
     # the lead of the clip that comes in replaces the 0.25 s, only for a loop hand over
     assert "PRE=tight&&LEAD[lp]!==undefined?LEAD[lp]:PRE0;" in app and "LEAD[k+'/'+c]=outs[k].l[c]" in app
     assert naht_page.HAND_PRE == memory_web.LEAD_DEFAULT
-    assert app.count("TIGHT=true;") == 3 and "function stageLoop" in app
+    assert app.count("TIGHT=true;") == 4 and "function stageLoop" in app   # loops (2), the extra, and a talk clip (2.175.0)
     # the extra clip of the happy loop comes in like a loop too, and the page /naht lists it as one more loop
     assert "{TIGHT=true;stagePlay(['gluecklichextra'],b);}" in app
     assert "base(n)===PRE+'gluecklich'||base(n)===PRE+'gluecklichextra'" in js

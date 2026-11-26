@@ -19,7 +19,7 @@ from app import memory_web
 
 def test_the_window_is_in_the_page_and_a_touch_outside_it_is_not_kept():
     page = open(memory_web.__file__, encoding="utf-8").read()
-    assert "const zBlocked=()=>!!ZPEND||Date.now()<ZBUSY||!zOpen();" in page
+    assert "const zBlocked=()=>!!ZPEND||Date.now()<ZBUSY||talkPose()||!zOpen();" in page  # 2.175.0: nor in her talk pose
     assert "Date.now()-ZT<700||zBlocked())return;" in page            # the stage takes no touch while blocked
     assert "return l<=ZWIN&&l>=ZWIN_MIN;}" in page                    # open only shortly before a hand over
     assert "if(src===ZREST)return false;" in page                     # and never on the touch clip itself
