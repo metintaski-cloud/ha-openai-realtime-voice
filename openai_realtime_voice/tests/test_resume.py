@@ -11,7 +11,16 @@ import time
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 os.environ.setdefault("OPENAI_API_KEY", "test")
 
+import pytest  # noqa: E402
+
 from app import main as m, phrases  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _always_hallo(monkeypatch):
+    """In the morning and in the evening the greeting is drawn from a larger pool ("Guten Abend"); these tests ask
+    for "Hallo" (they failed by chance on 26 Nov 2026 at 19:31 and had passed at 16:00)."""
+    monkeypatch.setattr(m, "pick_greeting", lambda words, hour: words[0])
 
 
 class _StartWs:

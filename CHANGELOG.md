@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.182.2 (26 Nov 2026)
+
+- `fix`: Leyla no longer says a channel is on when the TV app never came to the front. Metin (19:20): "Sie macht zwar Fernseher an und sagt zum Beispiel, dieser Kanal ist jetzt da, aber dabei ist es nicht da. Da steht immer noch, bitte Kanäle suchen"; and how he wants it (19:19): "Ich möchte ins Home-Button und dann das App öffnen und dann das Kanal." In the log of 19:18 the start by package name did nothing for 11 s, the TV kept reporting its own tuner app (the dark screen "Bitte Kanäle suchen"), and 2.182.1 typed the digit into that app and answered "done". Measured on his TV from 19:21 to 19:29: the package name `de.exaring.waipu` did nothing in 5 of 5 tries, the address `waipu://tv` had the app in front in 8 of 8 (0.6 to 1.9 s; from the tuner app, after Home, from the home screen, after the TV was switched off and on). At 19:08 it had been the other way round, so neither start is trusted alone. New (`tv._bring_app`): Home key, start (address, package name, address in turn, `APP_LINKS`), wait up to 4 s each until the TV reports the app in front; only then the digits. If it never comes, nothing is typed and the tool returns an error she has to say. A TV that is off is switched on first.
+- About 6 s for a channel when the app has to be opened (Home 1.3 s, start 1.9 s, 2.5 s until the player takes keys); 3.8 s in 2.182.1 when its start worked. With the app in front it is one key press as before.
+- `test`: the resume tests asked for "Hallo" but the greeting is drawn from a larger pool in the morning and evening; they failed by chance at 19:31. They now fix the greeting word.
+- 799 tests (796 before); the four browser test files were not run again, the page is unchanged.
+
 ## 2.182.1 (26 Nov 2026)
 
 - `fix`: the TV app is started by its package name. First test of 2.182.0 on Metin's TV (19:03 to 19:07): she switched three times and started the app anew every time, about 11 s each; he saw it as a crash ("Sie dreht durch und dann fängt sie wieder von vorne an"). Measured with him at the TV (19:08 to 19:11): the address `waipu://tv` from the Home Assistant forum does not bring waipu.tv to the front on his TV (the activity stayed on the TV's own tuner app for 12 s), the package name `de.exaring.waipu` does (in front after 1.3 s). The digit keys work as hoped: 3 gave Euro D, 1 and 2 0.4 s apart gave A Haber (his eyes). Default of `tv_app` is now the package name; an address is still taken.

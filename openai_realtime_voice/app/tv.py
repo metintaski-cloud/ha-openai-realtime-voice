@@ -5,12 +5,14 @@ The TV is an Android TV paired with Home Assistant (Android TV Remote integratio
 power and volume go over WLAN through its remote entity.
 
 Channels, since 2.182.0 (Metin, 26 Nov 2026: "Mein Receiver ist kaputt, deswegen nutze ich
-jetzt Waipu.tv"): a TV app on the Android TV itself. `tv_app` is what starts it (the package
-name `de.exaring.waipu`; an address like `waipu://tv` is taken too, but did not work on his
-TV); the channel number is then typed with the digit keys of the TV remote, over WLAN like
-the volume. There is no address for a single channel on Android
-TV, so the numbers are the places in the app's own channel order (set in the waipu app on the
-phone). With `tv_app` empty the old way is used: the channels come from a satellite receiver
+jetzt Waipu.tv"): a TV app on the Android TV itself. `tv_app` names it (the package name
+`de.exaring.waipu`, as the TV reports the app in front). For a channel the app is brought to the
+front the way Metin asked for (2.182.2: "Ich möchte ins Home-Button und dann das App öffnen und
+dann das Kanal"): Home key, start, and only when the TV reports the app in front the channel
+number is typed with the digit keys of the TV remote, over WLAN like the volume. When the app
+does not come, the answer is an error, never "done". There is no address for a single
+channel on Android TV, so the numbers are the places in the app's own channel order (set in
+the waipu app on the phone). With `tv_app` empty the old way is used: the channels come from a satellite receiver
 without network, and the numbers are sent as infrared codes through the Broadlink RM4 Pro
 (app/rf.py; receiver digits rx_null .. rx_neun, power button rx_power).
 
@@ -28,12 +30,19 @@ import httpx
 logger = logging.getLogger(__name__)
 
 DEFAULT_CHANNELS = "atv=2; Euro D=3; A Haber=12"  # his waipu.tv places (Metin, 26 Nov 2026)
-# Measured on Metin's TV on 26 Nov 2026, 19:08 to 19:11: the address "waipu://tv" from the Home
-# Assistant forum does NOT bring the app to the front there (current_activity stayed on the
-# TV's own tuner app for 12 s), the package name does (in front after 1.3 s). Digit keys are
-# taken by the app as a channel number, also two digits 0.4 s apart (3 -> Euro D, 1 2 -> A Haber).
+# What starts an app (`remote.turn_on` with `activity`), measured on Metin's TV on 26 Nov 2026:
+# neither way works always. 19:08 to 19:11 the address "waipu://tv" did nothing for 12 s and
+# the package name had the app in front after 1.3 s; from 19:18 on the package name did
+# nothing (5 of 5 tries, 5 to 11 s each, also right after Home) and the address had it in front
+# every time (8 of 8, 0.6 to 1.9 s; from the tuner app, from the home screen, and after the TV
+# was switched off and on). Leyla had typed the digit anyway and said the channel was on while
+# the TV still showed "Bitte Kanäle suchen" of its tuner app. So both ways are tried in turn
+# and the digits are typed only once the TV reports the app in front.
 DEFAULT_TV_APP = "de.exaring.waipu"
-APP_START_WAIT_S = 8.0   # how long the app may take to come to the front
+APP_LINKS = {"de.exaring.waipu": "waipu://tv"}  # package name -> address that starts the app
+APP_TRIES = 3            # starts in turn: address, package name, address
+HOME_WAIT_S = 3.0        # Home key until the home screen is in front (measured 0.4 to 2.0 s)
+APP_START_WAIT_S = 4.0   # one start until the app is in front (measured 0.6 to 1.9 s)
 APP_READY_S = 2.5        # after it is in front: until its player takes keys
 DIGIT_DELAY_S = 0.4      # between the digits of a channel number
 DEFAULT_TV_REMOTE = "remote.android_tv"
@@ -357,28 +366,57 @@ class TvController:
         except Exception:
             return ""
 
-    async def _app_channel(self, number: int) -> bool:
-        """Channel `number` in the TV app: bring the app to the front when it is not there
-        (that also switches the TV on), then type the digits. True when the app had to be
-        started."""
-        # in front when the package name is the activity; for an address ("waipu://tv") when
-        # its first word is part of the package name
-        word = (self.tv_app.split(":")[0] if "://" in self.tv_app else self.tv_app).lower()
-        started = word not in (await self._activity()).lower()
-        if started:
+    def _app_starts(self) -> tuple[str, list[str]]:
+        """(word, starts): the app is in front when `word` is part of the TV's current
+        activity; `starts` are the values that may bring it there, the best first."""
+        app = self.tv_app
+        package = next((p for p, link in APP_LINKS.items() if app in (p, link)), "")
+        if package:
+            return package, [APP_LINKS[package], package]
+        # an app without an entry: an address ("xy://tv") counts as in front when its first
+        # word is part of the package name
+        return (app.split(":")[0] if "://" in app else app).lower(), [app]
+
+    async def _wait_activity(self, test, limit_s: float) -> bool:
+        waited = 0.0
+        while True:
+            if test((await self._activity()).lower()):
+                return True
+            if waited >= limit_s:
+                return False
+            await asyncio.sleep(0.5)
+            waited += 0.5
+
+    async def _bring_app(self) -> tuple[bool, bool]:
+        """Bring the TV app to the front: Home key, start, check, up to APP_TRIES times with
+        the ways to start it in turn. Returns (in front, had to be started)."""
+        word, starts = self._app_starts()
+        if word in (await self._activity()).lower():
+            return True, False
+        if await self._state() in ("off", "standby", "unavailable"):
+            await self._power(True)  # "unknown" is left alone: the infrared button is a toggle
+        for n in range(APP_TRIES):
+            before = (await self._activity()).lower()
+            if "launcher" not in before:
+                await self._tv_key("HOME")
+                await self._wait_activity(lambda a: a != before, HOME_WAIT_S)
+            start = starts[n % len(starts)]
             await self._service("remote", "turn_on",
-                                {"entity_id": self.tv_remote, "activity": self.tv_app})
-            waited = 0.0
-            while waited < APP_START_WAIT_S and word not in (await self._activity()).lower():
-                await asyncio.sleep(0.5)
-                waited += 0.5
-            await asyncio.sleep(APP_READY_S)
+                                {"entity_id": self.tv_remote, "activity": start})
+            if await self._wait_activity(lambda a: word in a, APP_START_WAIT_S):
+                logger.info("TV app in front after try %d (%s)", n + 1, start)
+                await asyncio.sleep(APP_READY_S)
+                return True, True
+            logger.warning("TV app did not come to the front with %s (try %d of %d)",
+                           start, n + 1, APP_TRIES)
+        return False, True
+
+    async def _digits(self, number: int) -> None:
         digits = list(str(number))
         data = {"entity_id": self.tv_remote, "command": digits if len(digits) > 1 else digits[0]}
         if len(digits) > 1:
             data["delay_secs"] = DIGIT_DELAY_S
         await self._service("remote", "send_command", data)
-        return started
 
     async def _channel(self, number: int) -> None:
         if not self.rf.available:
@@ -454,9 +492,14 @@ class TvController:
                     return {"error": f"Diesen Sender kenne ich nicht. Bekannt: {self.names}."}
                 name, number = found
                 if self.tv_app:
-                    started = await self._app_channel(number)
+                    front, started = await self._bring_app()
+                    if not front:
+                        # never type digits into another app and call it done
+                        return {"error": "Die Fernseh App ließ sich nicht öffnen, der Sender "
+                                         "ist nicht eingeschaltet."}
+                    await self._digits(number)
                     return {"done": f"{name} (Programm {number})"
-                                    + (", die Fernseh App wurde dafür gestartet" if started else "")}
+                                    + (", die Fernseh App wurde dafür geöffnet" if started else "")}
                 await self._channel(number)
                 return {"done": f"{name} (Programm {number})"}
             return {"error": f"Unbekannte Aktion: {action}"}
