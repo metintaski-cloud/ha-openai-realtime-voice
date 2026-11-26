@@ -48,7 +48,10 @@ def test_her_rules_for_a_talk_at_home():
     assert "Schimpfwörter und Drohungen brauchst du nie" in home
     # 16:47: "nicht albern oder kindlich ... ihr ist bewusst, dass da jemand nicht höflich ist", "Leyla und Metin halten zusammen"
     assert "nie albern oder kindlich" in home and "Jemand ist unhöflich zu dir" in home and "erwachsen, ruhig und souverän" in home
-    assert "Du und Metin haltet zusammen" in home and "Mehr über euch beide verrätst du dabei nicht" in home
+    assert "Du und Metin haltet zusammen" in home and "Mehr über euch beide verrätst du nie" in home
+    # 26 Nov, 18:18: she said it far too quickly; only at the third level now, once, never in the first counters
+    assert "Erst auf Stufe drei, und höchstens einmal im Gespräch" in home and "konterst du allein und nennst ihn" in home
+    assert home.index("Stufe drei, jemand macht") < home.index("Du und Metin haltet zusammen")
     assert "bis die Person sich" in home and "Einen Namen rätst du nie" in home
     assert "Werd dabei nie selbst beleidigend" in home                       # a counter is wit, never an insult
     chat = persona.build([])                                                 # the written chat hangs up on nobody

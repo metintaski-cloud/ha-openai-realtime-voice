@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.181.1 (26 Nov 2026)
+
+- `fix`: she no longer says at once that she and Metin stand together. Metin tested 2.181.0 (18:18): "sie schießt ziemlich schnell direkt, dass Metin und ich zusammenhalten." The rule let her say it with any counter. Now only at the third level (real mockery, or going on after her counter) and at most once in a talk; at the first two levels she counters alone and does not name him.
+- 793 tests, unchanged in number.
+
 ## 2.181.0 (26 Nov 2026)
 
 Metin, 16:29 to 16:39, after an evening with the family: his niece spoke too quietly, Leyla took her for another name of the family "und ist drauf geritten, obwohl wir es mehrfach gesagt haben", too many talked at once, and "Alexa ist besser" got no answer.
