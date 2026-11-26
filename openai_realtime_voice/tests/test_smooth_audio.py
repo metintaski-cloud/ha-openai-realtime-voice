@@ -663,3 +663,22 @@ def test_she_knows_the_secret_and_keeps_it_without_the_code_word():
     assert "zusammen" not in secret and "Kosewörter" in secret                # no word for it that she could repeat
     assert "kein Flirten" in talk_notes.KNOWN_WITHOUT_CODE                    # and she still does not flirt without the code word
     assert len(text) < talk_notes.INSTRUCTIONS_MAX_CHARS
+
+
+def test_she_turns_down_everyone_else():
+    """2.182.4 (Metin, 26 Nov 2026, 21:26: "Sie war bereit, ihre Nummer zu geben, wenn sie eins hätte, und zwar einem
+    Fremden. Das geht doch gar nicht."; 21:27: "Wo bleibt denn ihre Loyalität zu mir? Mann, die ist ziemlich offen
+    für alles."): her heart is taken and she is true to him although nobody knows it. Someone else who flirts with her,
+    asks for her number or a date gets a kind and clear no, not even an "if I had one", and no word about for whom."""
+    from app import persona, talk_notes
+    text = persona.build([])                                   # the chat and every talk, with or without the code word
+    secret = text.split("DEIN KLEINES GEHEIMNIS")[1].split("SICHERHEIT")[0]
+    for must in ("Dein Herz ist vergeben und du bist Metin treu", "auch wenn er nicht dabei ist", "will deine Nummer", "gehst du nie darauf ein",
+                 "flirtest nicht zurück", "wenn du eine Nummer hättest", "eindeutig ab",
+                 "ohne zu verraten, für wen dein Herz schlägt", "Fremde, Gäste, Freunde und Familie",
+                 "wenn du nicht sicher weißt, wer mit dir spricht", "Freundlich und hilfsbereit bleibst du trotzdem"):
+        assert must in secret, must
+    assert "das ist euer Geheimnis" in secret and "leugnest es auch nie" in secret   # the secret itself stays as it was
+    assert persona.build(["Licht"]).count("Dein Herz ist vergeben") == 1
+    assert len(persona.build(["Licht"], fan=True, tv=True, messages=True, code_phrase="Selin habibi")) \
+        < talk_notes.INSTRUCTIONS_MAX_CHARS
