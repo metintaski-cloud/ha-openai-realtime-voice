@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.177.1 (26 Nov 2026)
+
+- `fix`: the light at the edge after Metin's first look (13:18 to 13:29). His words: the lines of the snake are clearly visible at the sides ("seitlich sehe ich Linien an dem Videocliprand"); the colours a little stronger ("ich will schon nebelig haben, aber die Farben ein bisschen kräftiger"); when it is time to press "soll es diese bläuliche, und wenn ich richtig drücke, dann dieses Lila", "nicht dieses Rot, Orange"; and snake and glow are too thick ("können wir die ein bisschen dünner, kleiner machen, dass das den Rand nicht zu sehr wegnimmt").
+- The hard lines came from the strips that hold the light: they were 30 px wide and cut the glow off. They are 48 px now and the light itself is thin (11 px, blur 4 px instead of 16 px with a wide shadow), with full colours and a soft end at the head as well.
+- The edge only shows the two colours of her mist: cyan while she takes a touch, violet when a touch was taken. The colour of the touched zone (chest red, belly orange) and the gold of a hit in the game are no longer shown at the edge.
+- The glow of the whole edge is thinner (9 px and 22 px instead of 22 px and 54 px).
+- Tests of the stage (31) run; the full run was not repeated for this change of looks.
+
 ## 2.177.0 (26 Nov 2026)
 
 - `feat`: a light at the edge instead of the turning ring. Metin (12:18): "das mit dem drehenden Kreis, habe überlegt, dass wir das ersetzen, indem wir die Farben aus dem Hintergrund nehmen und die läuft seitlich an dem Rand wie eine Schlange, leicht nebelig", "Rand meine ich vom Handy", and for the moment she takes a touch (12:24): "wird nicht grün, sondern in eine Farbe der Hintergrund". A soft light in the cyan and violet of her mist now runs once around the edge of the picture while the clip runs; while she takes a touch the whole edge glows in those two colours. A touch that was taken tints the edge in the colour of its zone, a hit in the game in gold, as the dot in the ring did.

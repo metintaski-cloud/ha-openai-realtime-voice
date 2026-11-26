@@ -221,10 +221,12 @@ async def test_a_light_runs_around_the_edge_instead_of_the_ring(tmp_path, monkey
       await T.until(()=>zLeft()!==null&&zLeft()>2.6,9000);const a=pos();await T.sleep(500);out.moves=pos()!==a;
       out.blockedDark=zBlocked()&&glow.style.opacity==='0';
       await T.until(()=>!zBlocked()&&zLeft()!==null,9000);await T.sleep(250);out.openGlows=ring.classList.contains('go')&&glow.style.opacity==='1';
-      const sh=getComputedStyle(glow).boxShadow;out.notGreen=!/34, 197, 94/.test(sh)&&/34, 211, 238/.test(sh)&&/168, 85, 247/.test(sh);   // cyan and violet of her mist
+      const sh=getComputedStyle(glow).boxShadow;out.notGreen=!/34, 197, 94/.test(sh)&&/34, 211, 238/.test(sh);   // the cyan of her mist
+      T.tap();await T.until(()=>Date.now()<ZBUSY||!!ZPEND,1500);ZGOLD=Date.now()+1500;ZCOLNOW='#ef4444';await T.sleep(300);
+      const sh2=getComputedStyle(glow).boxShadow;out.takenViolet=/168, 85, 247/.test(sh2)&&!/239, 68, 68/.test(sh2)&&!/250, 204, 21/.test(sh2)&&glow.style.opacity==='0.85';   // no zone red, no gold
       // one lap per clip: the four pieces take turns, never more than two are on their edge at once
       const seen=new Set();let most=0;for(let i=0;i<70;i++){const on=us.map(u=>!/^translate3d\\(0px, 0px, 0px\\)$/.test(u.style.transform));most=Math.max(most,on.filter(Boolean).length);on.forEach((x,k)=>{if(x)seen.add(k);});await T.sleep(100);}
       out.allFour=seen.size===4;out.most=most;T.run=false;out.log=T.log;out.min=+T.min.toFixed(2);return out;}""")
     assert r["inStage"] and r["ringHidden"] and r["noPointer"] and r["moves"], r
-    assert r["blockedDark"] and r["openGlows"] and r["notGreen"], r
+    assert r["blockedDark"] and r["openGlows"] and r["notGreen"] and r["takenViolet"], r
     assert r["allFour"] and r["most"] <= 2, r
