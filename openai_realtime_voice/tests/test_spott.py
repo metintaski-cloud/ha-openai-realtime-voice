@@ -46,6 +46,8 @@ def test_her_rules_for_a_talk_at_home():
     assert "nie von selbst als Metins" in home and "bis jemand klar sagt, wer er ist" in home
     assert home.index("Stufe drei") < home.index("legst du auf: Du beendest") and "wegen Spott auflegst" in home
     assert "Schimpfwörter und Drohungen brauchst du nie" in home
+    # 18:23: "macht sie immer nur den einen Vergleich ... oder kommen da auch mal andere coole Moves von ihr?"
+    assert "nie zweimal auf dieselbe Art" in home and "Du hast viele Züge" in home and "kein Lieblingsvergleich" in home
     # 16:47: "nicht albern oder kindlich ... ihr ist bewusst, dass da jemand nicht höflich ist", "Leyla und Metin halten zusammen"
     assert "nie albern oder kindlich" in home and "Jemand ist unhöflich zu dir" in home and "erwachsen, ruhig und souverän" in home
     assert "Du und Metin haltet zusammen" in home and "Mehr über euch beide verrätst du nie" in home

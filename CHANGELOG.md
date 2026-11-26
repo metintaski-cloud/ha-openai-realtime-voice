@@ -3,6 +3,7 @@
 ## 2.181.1 (26 Nov 2026)
 
 - `fix`: she no longer says at once that she and Metin stand together. Metin tested 2.181.0 (18:18): "sie schießt ziemlich schnell direkt, dass Metin und ich zusammenhalten." The rule let her say it with any counter. Now only at the third level (real mockery, or going on after her counter) and at most once in a talk; at the first two levels she counters alone and does not name him.
+- Her counters vary (Metin, 18:23: "Macht sie immer nur den einen Vergleich mit Alexa oder kommen da auch mal andere coole Moves von ihr?"): every counter is made up anew and never the same kind twice; the rule names her moves (dry irony, a calm question back, agreeing too much, a compliment with a sting, a fact that turns the line around, one fitting word), no fixed line, no favourite comparison.
 - 793 tests, unchanged in number.
 
 ## 2.181.0 (26 Nov 2026)
