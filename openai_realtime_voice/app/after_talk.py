@@ -79,8 +79,8 @@ class AfterTalkMixin:
 
     def _schedule_grudges(self, state: dict) -> None:
         """After a talk (2.181.0, app/spott.py): did someone she holds a grudge against
-        apologise, and, when she hung up herself without the bridge learning why, did
-        someone who gave a name make fun of her?"""
+        apologise, and, when she hung up herself or said that she would (her third level),
+        did someone whose name was given make fun of her?"""
         dialog = [d for d in state.get("dialog", []) if str(d[1]).strip()]
         names = self._talk_names(state)
         said = " ".join(str(t) for s, t in dialog if s == "user")
@@ -88,8 +88,10 @@ class AfterTalkMixin:
         if sorry and spott.APOLOGY_RE.search(said):
             self._in_background(self._grudge_apology(dialog, sorry))
         others = [n for n in names.values() if spott.key(n) != "metin"]
-        if (state.get("ended_by_her") and not state.get("mocked") and others
-                and not contains_goodbye(said) and not END_TALK_RE.search(said)):
+        hung_up = (state.get("ended_by_her") and not contains_goodbye(said)
+                   and not END_TALK_RE.search(said))
+        warned = any(s == "bot" and spott.HANGUP_SAID_RE.search(str(t)) for s, t in dialog)
+        if (hung_up or warned) and others and not state.get("mocked_who"):
             self._in_background(self._grudge_check(dialog, others))
 
     def _grudge_models(self) -> tuple:

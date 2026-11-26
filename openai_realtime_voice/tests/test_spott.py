@@ -40,7 +40,11 @@ def test_her_rules_for_a_talk_at_home():
     # 16:44: levels, "bis hin zu sehr ernst und richtig schlagfertig, so dass die Person sich fragt, wer ist doof"
     assert all(x in home for x in ("drei Stufen", "Stufe eins", "Stufe zwei", "Stufe drei"))
     assert "sehr ernst und richtig schlagfertig" in home and "wer hier eigentlich der Dumme ist" in home
-    assert home.index("Stufe drei") < home.index("Direkt danach legst du auf") and "wegen Spott auflegst" in home
+    # 16:49: "eleganter": after the sharp sentence she asks whether she can still help, else she hangs up
+    assert "ob du noch bei etwas helfen kannst" in home and "Ansonsten lege ich" in home
+    # 16:49: the one who answers may be the one who mocked her; she must not take the answer for Metin's
+    assert "nie von selbst als Metins" in home and "bis jemand klar sagt, wer er ist" in home
+    assert home.index("Stufe drei") < home.index("legst du auf: Du beendest") and "wegen Spott auflegst" in home
     assert "Schimpfwörter und Drohungen brauchst du nie" in home
     # 16:47: "nicht albern oder kindlich ... ihr ist bewusst, dass da jemand nicht höflich ist", "Leyla und Metin halten zusammen"
     assert "nie albern oder kindlich" in home and "Jemand ist unhöflich zu dir" in home and "erwachsen, ruhig und souverän" in home
@@ -140,12 +144,19 @@ async def test_a_hang_up_without_a_reason_is_looked_at_once_more(monkeypatch):
     talk = [["user", "Ich bin Selin. Du kannst ja gar nichts."], ["bot", "Mehr als du denkst."]]
     bridge._schedule_grudges({"dialog": talk})                                # she did not hang up
     bridge._schedule_grudges({"dialog": talk + [["user", "Tschüss."]], "ended_by_her": True})   # a goodbye
-    bridge._schedule_grudges({"dialog": talk, "ended_by_her": True, "mocked": True})            # already known why
+    bridge._schedule_grudges({"dialog": talk, "ended_by_her": True, "mocked": True, "mocked_who": "Selin"})   # known
     await asyncio.sleep(0.05)
     assert asked == []
     bridge._schedule_grudges({"dialog": talk, "ended_by_her": True})
     await asyncio.sleep(0.05)
     assert asked == [["Selin"]] and bridge.grudges.has("Selin")
+    # she warned that she would hang up, a real request came and the talk went on: looked at as well
+    bridge.grudges.forgive("Selin")
+    warned = talk + [["bot", "Kann ich sonst noch helfen? Ansonsten lege ich jetzt auf."], ["user", "Mach das Licht an."],
+                     ["bot", "Ist an."], ["user", "Tschüss."]]
+    bridge._schedule_grudges({"dialog": warned})
+    await asyncio.sleep(0.05)
+    assert len(asked) == 2 and bridge.grudges.has("Selin")
 
 
 def test_a_name_the_people_give():

@@ -43,6 +43,11 @@ APOLOGY_RE = re.compile(
     r"entschuldig|tut mir (?:\w+ ){0,2}leid|verzeih|\bsorry\b|war nicht (?:so |böse )?gemeint|"
     r"özür|kusura bakma|affet|\bpardon\b", re.IGNORECASE)
 
+# Her own words at the third level ("sonst lege ich auf"): a sign to look at the talk afterwards,
+# also when she did not hang up because a real request came
+HANGUP_SAID_RE = re.compile(r"leg(?:e)? ich (?:jetzt |dann )?auf|auflegen|aufgelegt|kapat(?:ıyorum|ırım|acağım)",
+                            re.IGNORECASE)
+
 NOTE = (
     "Interne Notiz, nicht vorlesen: {name} hat sich {when} über dich lustig gemacht und sich noch "
     "nicht entschuldigt. Das hast du nicht vergessen. Zu {name} bist du deshalb ein wenig kühl: "
@@ -55,7 +60,7 @@ NOTE = (
     "herzlich; danach ist es vergessen."
 )
 
-MOCK_PROMPT = """Unten steht ein Gespräch, das die Sprachassistentin Leyla gerade im Wohnzimmer geführt hat. Leyla hat aufgelegt.
+MOCK_PROMPT = """Unten steht ein Gespräch, das die Sprachassistentin Leyla gerade im Wohnzimmer geführt hat.
 
 Hat sich darin jemand über Leyla lustig gemacht (sie verspottet, nachgeäfft, ausgelacht oder als dumm hingestellt)? Freundliches Necken, über das beide lachen, zählt nicht.
 
