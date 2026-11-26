@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.177.3 (26 Nov 2026)
+
+- `fix`: no green at the edge. Metin (13:45): "Wenn ich drücke, kommt die richtige Farbe und dann kommt zwischendurch mal grün. Das braucht es nicht sein. Dieses Grün komplett wegnehmen." Found in the code, not seen on his phone: when the glow went out after a taken touch, its colour jumped back from violet to the cyan of "press now" while it was still fading, a turquoise flash of a third of a second. The colour now only changes while the glow is on or comes on.
+- The "press now" colour and the head of the snake are the blue of her mist (#38a8ff) instead of cyan, which has much green in it.
+- The ring's own green (stroke and shadow, invisible since 2.177.0) is removed from the page.
+- Not proven on his phone: whether this was the green he saw, only his next look shows.
+
 ## 2.177.2 (26 Nov 2026)
 
 - `fix`: the light at the edge rests at the bottom, not at the top left. Metin (13:40): "Wenn die Schlange sich bewegt, bleibt die meist immer links oben in der Ecke ein bisschen länger stehen wie sonst. Kann die unten an der Textsprachbox stehen bleiben statt links oben?" The lap ended at the top left corner, and for the last 0.8 s of a clip (the hand over) the light stood there. A lap now begins and ends at the bottom edge above the text field, 30 % from the left.

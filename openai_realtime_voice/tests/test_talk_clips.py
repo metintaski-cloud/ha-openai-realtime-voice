@@ -221,9 +221,10 @@ async def test_a_light_runs_around_the_edge_instead_of_the_ring(tmp_path, monkey
       await T.until(()=>zLeft()!==null&&zLeft()>2.6,9000);const a=pos();await T.sleep(500);out.moves=pos()!==a;
       out.blockedDark=zBlocked()&&glow.style.opacity==='0';
       await T.until(()=>!zBlocked()&&zLeft()!==null,9000);await T.sleep(250);out.openGlows=ring.classList.contains('go')&&glow.style.opacity==='1';
-      const sh=getComputedStyle(glow).boxShadow;out.notGreen=!/34, 197, 94/.test(sh)&&/34, 211, 238/.test(sh);   // the cyan of her mist
+      const sh=getComputedStyle(glow).boxShadow;out.notGreen=!/34, 197, 94/.test(sh)&&!/34, 211, 238/.test(sh)&&/56, 168, 255/.test(sh);   // the blue of her mist, no green, no cyan
       T.tap();await T.until(()=>Date.now()<ZBUSY||!!ZPEND,1500);ZGOLD=Date.now()+1500;ZCOLNOW='#ef4444';await T.sleep(300);
       const sh2=getComputedStyle(glow).boxShadow;out.takenViolet=/168, 85, 247/.test(sh2)&&!/239, 68, 68/.test(sh2)&&!/250, 204, 21/.test(sh2)&&glow.style.opacity==='0.85';   // no zone red, no gold
+      ZBUSY=0;ZPEND=null;ZREST=T.vs[SV].getAttribute('src');await T.sleep(180);const sh3=getComputedStyle(glow).boxShadow;out.fadesInItsColour=glow.style.opacity==='0'&&/168, 85, 247/.test(sh3)&&!/56, 168, 255/.test(sh3);   // going out, it stays violet
       // one lap per clip: the four pieces take turns, never more than two are on their edge at once
       const seen=new Set();let most=0;for(let i=0;i<70;i++){const on=us.map(u=>!/^translate3d\\(0px, 0px, 0px\\)$/.test(u.style.transform));most=Math.max(most,on.filter(Boolean).length);on.forEach((x,k)=>{if(x)seen.add(k);});await T.sleep(100);}
       out.allFour=seen.size===4;out.most=most;
@@ -232,5 +233,5 @@ async def test_a_light_runs_around_the_edge_instead_of_the_ring(tmp_path, monkey
       const m=/translate3d\\((-?[0-9.]+)px/.exec(us[2].style.transform),W=e.clientWidth;out.restX=m?Math.round(-parseFloat(m[1])/W*100):null;
       out.restBottom=out.restX!==null&&out.restX>=68&&out.restX<=72&&/^translate3d\\(0px, 0px, 0px\\)$/.test(us[0].style.transform);T.run=false;out.log=T.log;out.min=+T.min.toFixed(2);return out;}""")
     assert r["inStage"] and r["ringHidden"] and r["noPointer"] and r["moves"], r
-    assert r["blockedDark"] and r["openGlows"] and r["notGreen"] and r["takenViolet"], r
+    assert r["blockedDark"] and r["openGlows"] and r["notGreen"] and r["takenViolet"] and r["fadesInItsColour"], r
     assert r["allFour"] and r["most"] <= 2 and r["restBottom"], r
