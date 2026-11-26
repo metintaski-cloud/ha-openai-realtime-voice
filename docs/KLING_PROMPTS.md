@@ -163,6 +163,12 @@ In Kling eingesetzt und um 17:31 einmal gestartet (Metin um 17:29: "Ok" zu Einse
 
 In Kling eingesetzt und um 17:36 einmal gestartet (Metin um 17:35: "Okay, leg los" zu 350 Credits): Startbild Favorit 4 (`file_00000000530481f4977d9.png`), Endbild Favorit 2 (`7_nacht.png`), beide am Dateinamen geprüft, "4K · 10s · Adaptive · 1", Knopf 350, Prompt vollständig (139 Wörter). Kling meldete "Task submitted", geschätzt 8 Minuten. Um 17:37 war einer der beiden Clips von 17:31 und 17:33 fertig, der andere bei 30 s Rest. Platz in der App: `schwarz/bettvonfreizeit`.
 
+**Ergebnisse vom 26.11.2026, 17:39 (Metin hat zwei Clips heruntergeladen; Kling zählt schon den 27.11. im Dateinamen):**
+
+- Wechsel ins Nachtkleid, kurzes Freizeitkleid: `kling_20261127_VIDEO_0_3s__Shy__114_0.mp4`, 2352 x 3524, 241 Bilder, 10,04 s, mit Ton. Im Kontaktbogen (1,5 Bilder je Sekunde): sie steht, wendet sich, geht nach rechts aus dem Bild, die Bühne ist etwa 1,5 s leer, sie kommt von rechts im Nachtkleid zurück und steht am Ende ruhig von vorn. Original in Leyla Kling Originale (md5 geprüft), ohne Ton eingebaut als `kurz/bettvonfreizeit.mp4` (19,6 MB). In `/clips.json` gelistet, für den Namen ist kein altes Tempo, kein Schnitt und kein Vorlauf gespeichert.
+- Sprech Clip 6, Einstieg kurzes Freizeitkleid: `kling_20261127_VIDEO_0_3s__Happ_134_0.mp4`, gleiche Maße. Im Kontaktbogen: sie fasst ihren Oberarm, kreuzt die Beine, senkt den Blick, schaut wieder hoch und steht am Ende mit geneigtem Kopf, Hand am Arm, Lippen geschlossen; der Nebel wird in der Mitte heller (wie bei den Clips von heute Morgen). Original gesichert, ohne Ton eingebaut als `kurz/freizeitsprichtrein.mp4` (24,3 MB); die App nutzt ihn erst, wenn auch `kurz/freizeitsprichtraus` da ist.
+- Nähte noch nicht gemessen (der Messlauf wurde unterbrochen). Lehre: beim Kopieren in den Medien Ordner wurde der zweite Befehl mitten im Schreiben abgebrochen, die Datei war kaputt (moov fehlt) und lag so einige Sekunden im Ordner der App; sofort neu geschrieben und geprüft. Künftig erst in einen Namen schreiben, den die App nicht kennt (z. B. `_neu.tmp`), prüfen, dann umbenennen.
+
 ## Beobachtungen über Kling (Tatsachen, keine Schreibregeln)
 
 - Wird eine Geste in Gelenkbewegungen zerlegt oder abgezählt wiederholt, führt Kling sie wie eine Liste aus: Flattern, Klappen im Handgelenk oder eine einzige Zeitlupe (Clips 169, 181, 226).
