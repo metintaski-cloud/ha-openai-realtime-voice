@@ -55,6 +55,13 @@ LIGHT_W = 16.0                    # typical fan light
 # to 9.8 W within 4 s, dimmed at the fan's own remote). With 13 W as the least, Leyla told Metin
 # "Ventilator auf Stufe 3 und die Lampe aus" while the lamp was on and the fan off (22:23:
 # "Das ist real. Die hat ziemlich Kopf kaputt").
+# The three colours of the light (changed by flipping the wall switch off and on) were measured
+# with Metin the same evening, each after five quiet minutes: warm 14.5 W, mittel 13.6 W,
+# kalt 13.8 W. The meter only reports steps of about 1 W, so they are the same to it. Right
+# after any switching the light starts at 17 to 18 W and falls for about three minutes. So
+# the colours do not explain the 9.8 W of 21:08 to 22:33; that state came without the wall
+# switch (which cuts the meter's own power: the sensor is "unavailable" for a moment) and is
+# not understood yet.
 LIGHT_MIN_W, LIGHT_MAX_W = 9.0, 19.5
 LIGHT_DRIFT_W = 1.1               # the warm light steps up and down by 1.0 W; a fan adds 5 W or more
 FAN_W = {0: 0.0, 1: 5.2, 2: 6.6, 3: 10.7, 4: 14.8, 5: 19.1, 6: 28.5}
