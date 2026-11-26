@@ -21,17 +21,20 @@ END_CONVERSATION_TOOL = {
     "name": "end_conversation",
     "description": (
         "End the conversation. Call this when the user says goodbye, farewell, stop, "
-        "or clearly wants to finish."
+        "or clearly wants to finish. Also call it, with reason mocked, when Leyla hangs up "
+        "because someone made fun of her: who is the first name that was given for that "
+        "person in this conversation, or null when none was given. Never guess a name."
     ),
     "parameters": {
         "type": "object",
         "properties": {
             "reason": {
                 "type": "string",
-                "enum": ["user_requested_stop", "conversation_ended"],
-            }
+                "enum": ["user_requested_stop", "conversation_ended", "mocked"],
+            },
+            "who": {"type": ["string", "null"]},
         },
-        "required": ["reason"],
+        "required": ["reason", "who"],
         "additionalProperties": False,
     },
 }

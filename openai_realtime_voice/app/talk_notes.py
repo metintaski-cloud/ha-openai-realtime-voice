@@ -25,7 +25,7 @@ import logging
 import time
 import uuid
 
-from app import day, memory, notes
+from app import day, memory, notes, spott
 
 logger = logging.getLogger(__name__)
 
@@ -230,6 +230,10 @@ class TalkNotesMixin:
             # her heart for him stays out until the code word (KNOWN_WITHOUT_CODE says why)
             items.append(("mood", KNOWN_WITHOUT_CODE))
         items += self._known_note(name)
+        grudge = "" if metin else self.grudges.note(name)
+        if grudge and spott.key(name) not in state.setdefault("grudge_noted", set()):
+            state["grudge_noted"].add(spott.key(name))  # made fun of her, no apology yet (2.181.0)
+            items.append(("spott", grudge))
         if first:
             if metin and unlocked:  # a question from the chat he left open comes back; the chat
                 asked = self.ideas.voice_note()  # is theirs alone, so only after the code word

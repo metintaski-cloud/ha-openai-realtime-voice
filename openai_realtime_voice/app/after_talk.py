@@ -8,7 +8,8 @@ import asyncio
 import logging
 import os
 
-from app import memory, report
+from app import memory, report, spott
+from app.phrases import END_TALK_RE, contains_goodbye
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +76,37 @@ class AfterTalkMixin:
         dialog = [d for d in state.get("dialog", []) if d[1].strip()]
         if self.messages.available and report.needs_report(dialog):
             self._in_background(self._send_rude_report(dialog))
+
+    def _schedule_grudges(self, state: dict) -> None:
+        """After a talk (2.181.0, app/spott.py): did someone she holds a grudge against
+        apologise, and, when she hung up herself without the bridge learning why, did
+        someone who gave a name make fun of her?"""
+        dialog = [d for d in state.get("dialog", []) if str(d[1]).strip()]
+        names = self._talk_names(state)
+        said = " ".join(str(t) for s, t in dialog if s == "user")
+        sorry = [n for n in names.values() if self.grudges.has(n) and n != state.get("mocked_who")]
+        if sorry and spott.APOLOGY_RE.search(said):
+            self._in_background(self._grudge_apology(dialog, sorry))
+        others = [n for n in names.values() if spott.key(n) != "metin"]
+        if (state.get("ended_by_her") and not state.get("mocked") and others
+                and not contains_goodbye(said) and not END_TALK_RE.search(said)):
+            self._in_background(self._grudge_check(dialog, others))
+
+    def _grudge_models(self) -> tuple:
+        return (self.openai_api_key, [self.backend_model, self.memory_model],
+                os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL))
+
+    async def _grudge_apology(self, dialog: list, names: list) -> None:
+        key, models, url = self._grudge_models()
+        for name in names:
+            if await spott.apologised(key, models, dialog, name, url=url) and self.grudges.forgive(name):
+                logger.info("%s apologised to her: forgiven", name)
+
+    async def _grudge_check(self, dialog: list, names: list) -> None:
+        key, models, url = self._grudge_models()
+        name = await spott.who_mocked(key, models, dialog, names, url=url)
+        if name and self.grudges.add(name):
+            logger.info("She hung up after being made fun of: remembered for %s", name)
 
     async def _send_rude_report(self, dialog: list) -> None:
         text = await report.write_report(

@@ -45,6 +45,48 @@ WHO_ASKED_RE = re.compile(
 NAME_SAID_RE = re.compile(
     r"\b(?:ich bin|hier ist|hier spricht|mein name ist|ben|benim adım|adım|ismim)\s+([A-ZÄÖÜÇĞİŞ]\w+)",
     re.IGNORECASE)
+# A wrong name (2.181.0). Metin, 26 Nov 2026: his niece spoke too quietly, Leyla understood another
+# name of the family, "und ist drauf geritten, obwohl wir es mehrfach gesagt haben". The bridge had
+# taken the misheard word as the answer to "who is there" and handed her that person's profile, so
+# no correction got through. Two signs take such a name back (main._maybe_name_wrong): the name is
+# denied ("nicht X", "X değil"), or the people name someone else ("das ist Y", "nein, Y" said twice).
+NAME_NO_RE = re.compile(r"\b(?:nein|nee|nö|nicht|kein|keine|falsch|hayır|hayir|yok|değil|degil|yanlış|yanlis)\b",
+                        re.IGNORECASE)
+_NAME = r"([A-ZÄÖÜÇĞİŞ][a-zäöüßçğıöşü]{2,})"
+NAME_GIVEN_RE = re.compile(  # a naming sentence: once is enough
+    r"\b(?i:sie hei(?:ß|ss)t|er hei(?:ß|ss)t|ich hei(?:ß|ss)e|ich bin|hier ist|mein name ist|"
+    r"ben|adı|adım|ismi|ismim)\s+(?i:doch |ja |die |der )?" + _NAME)
+# German writes every noun with a capital ("Das ist Quatsch", "Nein, Danke"): after these words a
+# capital word only counts as a name when the people say it at least twice
+NAME_AFTER_NO_RE = re.compile(
+    r"\b(?i:nein|nee|hayır|hayir|falsch|yanlış|das ist|sie ist|er ist|bu)\b[\s,.!]+"
+    r"(?i:doch |ja |die |der )?" + _NAME)
+NOT_A_NAME = {"leyla", "leila", "danke", "bitte", "licht", "lampe", "nein", "doch", "aber", "nicht",
+              "hallo", "tamam", "evet", "anne", "mama", "baba", "papa", "abla", "abi", "teyze", "amca",
+              "dayı", "hala", "oma", "opa", "das", "die", "der", "sie", "ich", "wir", "eine", "ein"}
+NAME_WRONG = (
+    "Interne Notiz, nicht vorlesen: Du hast dich im Namen geirrt. Wer gerade mit dir spricht, ist "
+    "nicht {old}.{new} Hast du die Person {old} genannt oder so behandelt, entschuldige dich kurz "
+    "und herzlich. Benutze für sie den Namen {old} nicht mehr und nichts, was du über {old} weißt. "
+    "Verstehst du einen Namen nicht sicher, bitte darum, ihn noch einmal laut und deutlich zu "
+    "sagen, und nimm genau den Namen, den man dir sagt, auch wenn er einem bekannten ähnelt."
+)
+
+
+def name_given(text: str, not_these=()) -> str:
+    """A name the people gave in `text` for someone who talks: in a naming sentence ("sie heißt",
+    "ich bin"), or said at least twice and once right after a no or "das ist". '' when none."""
+    skip = NOT_A_NAME | {str(w).casefold() for w in not_these}
+    for m in reversed(list(NAME_GIVEN_RE.finditer(text))):
+        if m.group(1).casefold() not in skip:
+            return m.group(1)
+    for m in reversed(list(NAME_AFTER_NO_RE.finditer(text))):
+        word = m.group(1)
+        if word.casefold() not in skip and len(re.findall(r"\b%s\b" % re.escape(word), text)) >= 2:
+            return word
+    return ""
+
+
 # Someone asks what they told her before (16 Nov 2026: "nerem ağrıyor" from a speaker she did not
 # know yet; she answered from an old entry and failed). Before an answer she must know who it is.
 RECALL_RE = re.compile(

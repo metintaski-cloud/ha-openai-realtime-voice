@@ -1,6 +1,6 @@
 import pytest
 
-from app import planer, ticker
+from app import planer, spott, ticker
 
 
 @pytest.fixture(autouse=True)
@@ -10,6 +10,7 @@ def _ticker_in_tmp(tmp_path, monkeypatch):
     voice unlock started to read and save Leyla's mood)."""
     monkeypatch.setattr(ticker, "PATH", str(tmp_path / "ticker.json"))
     monkeypatch.setattr(planer, "PATH", str(tmp_path / "planer.json"))  # plans never in /data
+    monkeypatch.setattr(spott, "PATH", str(tmp_path / "spott.json"))  # who made fun of her: never in /data
     monkeypatch.setenv("LEYLA_MOOD_PATH", str(tmp_path / "mood.json"))
     monkeypatch.setenv("LEYLA_STAND", str(tmp_path / "tempo_stand.json"))  # reset point of the clip values
     for key in ("TEMPO", "KURVE", "SCHNITT", "TON", "VORLAUF"):  # a reset writes all of them: never into /data

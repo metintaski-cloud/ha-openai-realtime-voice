@@ -36,7 +36,7 @@ import dotenv
 import websockets
 
 from app.audio_recorder import AudioRecorder
-from app import agenda, befehle, day, diary, falsewakes, gcontacts, textmodel, heart, ideas, inbox, mail, memory, memory_web, mood, nachdenken, planer, reach, recall, reminders, sammler, schwer, tls, variety, voice_in, voice_stream, wakecheck
+from app import agenda, befehle, day, diary, falsewakes, gcontacts, textmodel, heart, ideas, inbox, mail, memory, memory_web, mood, nachdenken, planer, reach, recall, reminders, sammler, schwer, spott, tls, variety, voice_in, voice_stream, wakecheck
 
 # Scene concept 2.0 (2.104.0): her feelings come from what really happens (app/heart.py); env
 # LEYLA_HEART=0 brings back the old dice of app/mood.py as a safety net.
@@ -46,7 +46,7 @@ from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, pcm_leve
 from app.live_link import END_CONVERSATION_TOOL
 from app import talk_notes
 from app.talk_notes import KNOWN_WITHOUT_CODE, UNLOCKED_LOVE, TalkNotesMixin  # noqa: F401
-from app.phrases import (RESUME_OPEN, RESUME_PRIVATE, END_TALK_RE, RECALL_NUDGE, RECALL_RE, NAME_NUDGE, NAME_NUDGE_AFTER_S, NAME_NUDGE_COOLDOWN_S, NAME_RE, PROMISE_NUDGE, PROMISE_NUDGE_AFTER_S, PROMISE_RE, NAME_SAID_RE, WHO_AGAIN_TURNS, WHO_ASKED_RE, WHO_NUDGE, WHO_NUDGE_AGAIN, COUPLE_NUDGE, COUPLE_WORD_RE, PET_NUDGE, PET_WORD_RE, addressed_by_name, contains_goodbye, greeting_instruction, parse_greeting_words, pick_greeting)
+from app.phrases import (NAME_NO_RE, NAME_WRONG, name_given, RESUME_OPEN, RESUME_PRIVATE, END_TALK_RE, RECALL_NUDGE, RECALL_RE, NAME_NUDGE, NAME_NUDGE_AFTER_S, NAME_NUDGE_COOLDOWN_S, NAME_RE, PROMISE_NUDGE, PROMISE_NUDGE_AFTER_S, PROMISE_RE, NAME_SAID_RE, WHO_AGAIN_TURNS, WHO_ASKED_RE, WHO_NUDGE, WHO_NUDGE_AGAIN, COUPLE_NUDGE, COUPLE_WORD_RE, PET_NUDGE, PET_WORD_RE, addressed_by_name, contains_goodbye, greeting_instruction, parse_greeting_words, pick_greeting)
 from app import (reach_link, chat, lamp_show, metrics, output_link, session_end, tool_link, after_talk, announce_voice, live_link, night, cleanup, costs, fan, health, lights, messages, persona, purifier, rf, technik, todo_sync,
                  tv, vacuum)
 
@@ -103,7 +103,9 @@ DEFAULT_BACKEND_INSTRUCTIONS = (
     "You are the backend of a voice assistant. Keep results short and easy to say aloud. "
     "Use web search for anything that needs current information. "
     "When the user says goodbye, thanks you and leaves, or wants to stop, call the "
-    "end_conversation function."
+    "end_conversation function. When the assistant hangs up because someone made fun of her, "
+    "call end_conversation with reason mocked and who = the first name that was given for "
+    "that person in this conversation, or null."
 )
 
 class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.AfterTalkMixin,
@@ -235,6 +237,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self._followup: Optional[dict] = None
         self._started_as_followup = False
         self._last_talk: Optional[dict] = None  # the talk that just ended, in memory only (_keep_for_resume)
+        self.grudges = spott.Grudges()  # who made fun of her and has not apologised (2.181.0)
         self._resumed: Optional[dict] = None    # the talk the session being started goes on from
         self._live_sessions: dict = {}
         self._night_opts = night.NightOptions()
@@ -953,9 +956,81 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         asked = len(dialog) > 1 and WHO_ASKED_RE.search(dialog[-2][1])
         turn_words = set(memory._words(turn))
         if asked and 0 < len(turn_words) <= 8:
-            names += [n for n, w in words.items() if turn_words & w]
+            heard = [n for n, w in words.items() if turn_words & w]
+            # one word after her question is a weak sign: a quiet voice was once heard as
+            # another name of the family (26 Nov 2026); such a name can be taken back
+            state.setdefault("weak_id", set()).update(n for n in heard if n not in names)
+            names += heard
+        await self._maybe_name_wrong(live_ws, state, words)
         for name in dict.fromkeys(names):
-            await self._hand_over_personal(live_ws, state, name)
+            if name not in state.get("not_them", ()):
+                await self._hand_over_personal(live_ws, state, name)
+        await self._maybe_grudge_note(live_ws, state)
+
+    def _talk_names(self, state: dict) -> dict:
+        """The first names the people gave in this talk for who is talking: {key: name}."""
+        names = spott.said_names(state.get("dialog", []), state.get("identified") or ())
+        for name in state.get("named", ()):
+            names.setdefault(spott.key(name), name)
+        return names
+
+    async def _maybe_name_wrong(self, live_ws, state: dict, words: dict) -> None:
+        """She took the wrong person for the speaker and the people correct it (2.181.0): the
+        name is denied ("nicht X", "X değil"), or, for a name that only rests on one word
+        after her question, they name someone else. The person is taken back for this talk
+        and she is told once, so she stops using the name and what she knows about them."""
+        known = state.get("identified") or set()
+        if not known:
+            return
+        turn = state["dialog"][-1][1]
+        turn_words = set(memory._words(turn))
+        said = " ".join(t for s, t in state["dialog"] if s == "user")
+        own = {w for n in known for w in words.get(n, set(memory._words(n)))}
+        other = name_given(said, not_these=own)
+        if other and set(memory._words(other)) & {w for ws in words.values() for w in ws}:
+            other = ""  # someone with a profile: _maybe_identify handles that person
+        for name in list(known):
+            mine = words.get(name, set(memory._words(name)))
+            denied = bool(NAME_NO_RE.search(turn)) and bool(turn_words & mine)
+            if not denied and not (other and name in state.get("weak_id", ())):
+                continue
+            known.discard(name)
+            state.setdefault("not_them", set()).add(name)
+            state.get("weak_id", set()).discard(name)
+            if name.split()[0] == "Metin" and not state.get("unlocked"):
+                state["metin_known"] = False
+            if other:
+                state.setdefault("named", [])
+                if other not in state["named"]:
+                    state["named"].append(other)
+            logger.info("Wrong name taken back: the speaker is not %s%s", name.split()[0],
+                        ", another name was given" if other else "")
+            await self._send_note(live_ws, "name", NAME_WRONG.format(
+                old=name.split()[0], new=(" Die Person heißt %s." % other) if other else ""))
+
+    def _note_mocked(self, state: dict, who) -> None:
+        """She hangs up because someone made fun of her (2.181.0). The name is kept only when
+        that person said it in this talk; the model's word alone is not enough, and Metin is
+        never kept (app/spott.py)."""
+        state["mocked"] = True
+        name = self._talk_names(state).get(spott.key(who or ""))
+        if name and self.grudges.add(name):
+            state["mocked_who"] = name
+            logger.info("She was made fun of and hangs up: remembered for %s", name)
+        else:
+            logger.info("She was made fun of and hangs up: no name she could keep")
+
+    async def _maybe_grudge_note(self, live_ws, state: dict) -> None:
+        """Someone who made fun of her and has not apologised says who they are: she is told,
+        once per talk and person. People with a profile get it with their personal part
+        (talk_notes._personal_items); this is for every other name."""
+        noted = state.setdefault("grudge_noted", set())
+        for k, name in self._talk_names(state).items():
+            if k in noted or not self.grudges.has(name):
+                continue
+            noted.add(k)
+            logger.info("Speaker %s made fun of her before: she is told", name)
+            await self._send_note(live_ws, "spott", self.grudges.note(name))
 
     def _maybe_mood_lamp(self, state: dict) -> None:
         """Metin is known without the code word: the rear lamps show her mood only once it is
@@ -1478,6 +1553,13 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 return
             if name == "end_conversation":
                 state["closing"] = True
+                state["ended_by_her"] = True
+                try:
+                    args = json.loads(item.get("arguments") or "{}")
+                except Exception:
+                    args = {}
+                if isinstance(args, dict) and args.get("reason") == "mocked":
+                    self._note_mocked(state, args.get("who"))
                 await self._send_function_output(live_ws, call_id, {"status": "ok"})
             elif name in self._tools:
                 spec = self._tools[name]
@@ -1797,6 +1879,10 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             self._schedule_rude_report(state)
         except Exception as e:
             logger.warning("Could not start the rudeness report: %s", e)
+        try:
+            self._schedule_grudges(state)
+        except Exception as e:
+            logger.warning("Could not check who made fun of her: %s", e)
         logger.info("Session ended: %s (duration: %.1fs, reason: %s)",
                     client_id, duration, reason)
         metrics.record("session_end", duration_s=duration, reason=reason,
