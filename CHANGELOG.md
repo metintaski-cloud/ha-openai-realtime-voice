@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.182.6 (26 Nov 2026)
+
+- `fix`: a dimmed fan light is no longer taken for the fan. Metin (22:23): she said "Ventilator auf Stufe 3 und die Lampe aus. Dabei ist die Lampe an und die Ventilatorstufe 3 aus. Das ist real. Die hat ziemlich Kopf kaputt." The meter in the canopy (ten days of history read): the light draws 18.4 W cold and 13.3 to 14.3 W warm, and on 26 Nov at 21:08 it went from 13.3 W to 9.8 W within 4 s, for the first time, with the fan off (dimmed at the fan's own remote). `fan.py` took everything under 11 W as "too little for the light", switched its own knowledge to "light off" and read the 9.8 W as fan speed 3 (10.7 W). Now: the light may draw 9 to 19.5 W (`LIGHT_MIN_W`); while the fan is known to be off the power of the light is followed (`_follow_light`: every fall, and rises of up to 1.1 W as the warm light wanders; a fan adds 5 W or more), which also ends a second fault: the power of the cold light was kept for good, so a fan started later was read two speeds too slow; when everything was off and something comes on that she did not switch herself and the watts fit both the light and the fan, she says that she cannot tell instead of choosing; the possible states name one thing alone before light and fan together.
+- After the update her saved knowledge still says "light off" (written by the fault at 22:19), so she will say she cannot tell until something is switched once; "Ventilator aus" is enough (the stop button changes nothing on the meter, so it is the light).
+- 805 tests (802 before).
+
 ## 2.182.5 (26 Nov 2026)
 
 - `fix`: a client that leaves before the session is ready is no session error. The live talk from the app at 20:14 that "lost its connection after 4.5 s" was read line by line (technical lines only): connected 20:14:00.6, session started 20:14:03.0, and in the same millisecond the ready signal met a socket the app had closed cleanly (code 1005). The page has no timer while it waits, so Live was ended there. The server logged "Session error" with a traceback and counted `session_error`. Now it logs "Client left before the session was ready" at INFO and ends with `client_disconnected` (`early` in the end reason). The break at 19:00 at the Voice PE (3.9 s, no close frame, right after the add on had been restarted) is a different case and stays open; its log lines are gone.

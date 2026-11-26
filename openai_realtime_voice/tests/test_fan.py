@@ -117,7 +117,10 @@ def test_watts_alone():
     ctl = fan.FanController(None, power_sensor="s", token="")
     assert ctl.describe(0.0) == {"watt": 0.0, "licht": "aus", "ventilator": "aus"}
     ctl.light_on = ctl.speed = None
-    assert ctl.describe(10.6)["ventilator"] == "an, ungefähr Stufe 3"  # only the fan fits
+    r = ctl.describe(10.6)  # the dimmed light alone or fan speed 3 alone (26 Nov 2026: the light also draws 9.8 W)
+    assert r["licht"] == "unklar" and "nur das Licht" in r["moeglich"] and "nur der Ventilator auf Stufe 3" in r["moeglich"]
+    ctl.light_on = ctl.speed = None
+    assert ctl.describe(6.4)["ventilator"] == "an, ungefähr Stufe 2"   # only the fan fits
     ctl.light_on = ctl.speed = None
     r = ctl.describe(42.0)  # only light plus a fast fan fits
     assert r["licht"] == "an" and r["ventilator"].startswith("an")
@@ -175,6 +178,55 @@ def test_fan_stop_versus_light_off():
         ctl.on_power(w, base + t)
     ctl.on_power(14.8, base + 71)   # quick drop of 18 W: what is left looks like the fan
     assert ctl.describe(14.8) == {"watt": 14.8, "licht": "aus", "ventilator": "an, ungefähr Stufe 4"}
+
+
+def test_a_dimmed_light_is_not_taken_for_the_fan():
+    """26 Nov 2026, 22:23, Metin: she said "Ventilator auf Stufe 3 und die Lampe aus. Dabei ist die Lampe an und die
+    Ventilatorstufe 3 aus. Das ist real." The meter: 13.3 W for hours, then 9.8 W within 4 s at 21:08 (the light was
+    dimmed), fan off the whole time. 9.8 W was "too little for the light" and looked like fan speed 3."""
+    import time
+    base = time.monotonic() - 1000
+    ctl = fan.FanController(None, power_sensor="s", token="")
+    for t, w in [(0, 0.0), (5, 9.0), (6, 18.4), (600, 16.4), (900, 14.3), (1500, 13.3), (1800, 14.3), (2400, 13.3)]:
+        ctl.on_power(w, base + t)                       # switched on cold, warms up, wanders by 1 W
+    assert ctl.describe(13.3) == {"watt": 13.3, "licht": "an", "ventilator": "aus"} and ctl.light_w == 13.3
+    for t, w in [(5000, 11.6), (5004, 9.8)]:            # dimmed at the wall remote
+        ctl.on_power(w, base + t)
+    assert ctl.describe(9.8) == {"watt": 9.8, "licht": "an", "ventilator": "aus"} and ctl.light_w == 9.8
+    # the fan is started at the wall remote: its kick, then speed 1, later speed 3; the light keeps its 9.8 W
+    for t, w in [(6000, 21.9), (6001, 15.0)]:
+        ctl.on_power(w, base + t)
+    assert ctl.describe(15.0) == {"watt": 15.0, "licht": "an", "ventilator": "an, ungefähr Stufe 1"}
+    for t, w in [(6100, 16.9), (6102, 18.8), (6104, 20.5)]:
+        ctl.on_power(w, base + t)
+    assert ctl.describe(20.5) == {"watt": 20.5, "licht": "an", "ventilator": "an, ungefähr Stufe 3"} and ctl.light_w == 9.8
+
+
+def test_the_power_of_the_warm_light_is_what_a_later_fan_is_measured_against():
+    import time
+    base = time.monotonic() - 1000
+    ctl = fan.FanController(None, power_sensor="s", token="")
+    for t, w in [(0, 0.0), (5, 9.0), (6, 18.4), (900, 14.3), (1500, 13.3)]:
+        ctl.on_power(w, base + t)
+    ctl.speed = 3                                        # she switched the fan on herself
+    for t, w in [(2000, 15.2), (2002, 18.0), (2004, 21.3), (2006, 24.0)]:
+        ctl.on_power(w, base + t)
+    assert ctl.describe(24.0)["ventilator"] == "an, ungefähr Stufe 3"   # with the cold 18.4 W it read speed 1
+
+
+def test_what_came_on_at_the_wall_remote_is_not_guessed():
+    """Everything was off, then 9.8 W: the dimmed light or the fan on speed 3. She says so instead of choosing."""
+    import time
+    base = time.monotonic() - 1000
+    ctl = fan.FanController(None, power_sensor="s", token="")
+    for t, w in [(0, 13.3), (10, 0.0), (500, 6.0), (501, 9.8)]:
+        ctl.on_power(w, base + t)
+    r = ctl.describe(9.8)
+    assert r["licht"] == "unklar" and "nur das Licht" in r["moeglich"] and "nur der Ventilator auf Stufe 3" in r["moeglich"]
+    ctl2 = fan.FanController(None, power_sensor="s", token="")
+    for t, w in [(0, 0.0), (500, 3.0), (501, 5.2)]:
+        ctl2.on_power(w, base + t)
+    assert ctl2.describe(5.2) == {"watt": 5.2, "licht": "aus", "ventilator": "an, ungefähr Stufe 1"}   # only the fan fits
 
 
 def test_state_survives_restart(tmp_path):

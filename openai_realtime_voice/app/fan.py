@@ -50,7 +50,13 @@ DEFAULT_ENERGY_SENSOR = "sensor.ventilator_energie"
 # add-on option strompreis_ct sets the family's own tariff.
 DEFAULT_PRICE_CT = 38.0
 LIGHT_W = 16.0                    # typical fan light
-LIGHT_MIN_W, LIGHT_MAX_W = 13.0, 19.5
+# The light does not have one power. Ten days of the meter up to 26 Nov 2026: 18.4 W cold,
+# 13.3 to 14.3 W once it is warm, and since 26 Nov 2026, 21:08 also 9.8 W (it went from 13.3 W
+# to 9.8 W within 4 s, dimmed at the fan's own remote). With 13 W as the least, Leyla told Metin
+# "Ventilator auf Stufe 3 und die Lampe aus" while the lamp was on and the fan off (22:23:
+# "Das ist real. Die hat ziemlich Kopf kaputt").
+LIGHT_MIN_W, LIGHT_MAX_W = 9.0, 19.5
+LIGHT_DRIFT_W = 1.1               # the warm light steps up and down by 1.0 W; a fan adds 5 W or more
 FAN_W = {0: 0.0, 1: 5.2, 2: 6.6, 3: 10.7, 4: 14.8, 5: 19.1, 6: 28.5}
 OFF_W = 2.0         # below this everything is off
 STEP_W = 6.0        # a change this big after pressing licht is the light
@@ -358,8 +364,24 @@ class FanController:
             elif high - watts >= JUMP_W:
                 self._dropped(high, watts)
                 self._recent.clear()
+        self._follow_light(watts)
         self._recent.append((now, watts))
         self._save()
+
+    def _follow_light(self, watts: float) -> None:
+        """With the fan known to be off, all the meter shows is the light, so its power is
+        followed: it falls while the light warms up and when it is dimmed. A fan that starts
+        only ever adds power, so a fall always counts and a rise only as far as the warm light
+        wanders by itself. Before, the power of the cold light (18 W) was kept for good and a
+        fan started later was read two speeds too slow."""
+        if self.light_on is not True or self.speed != 0 or self._pending:
+            return
+        if not LIGHT_MIN_W - 1.0 <= watts <= LIGHT_MAX_W + 1.0:
+            return
+        if self.light_w is None or watts <= self.light_w + LIGHT_DRIFT_W:
+            if self.light_w is not None and abs(watts - self.light_w) >= 2.0:
+                logger.info("Fan light now draws %.1f W (was %.1f W)", watts, self.light_w)
+            self.light_w = watts
 
     def _settle(self, now: float) -> None:
         if not self._pending or now - self._pending[0] < SPIKE_S:
@@ -414,6 +436,13 @@ class FanController:
         light = self.light_on
         if light and watts < LIGHT_MIN_W - 2.0:
             light = self.light_on = False  # too little power for the light
+        if light is False and self.speed == 0:
+            # Everything was off and now something draws power that the controller did not
+            # switch itself (her own buttons set the light or the speed): the wall remote. A
+            # light that comes on dimmed makes no jump the meter could tell from the fan.
+            light = self.light_on = self.speed = None
+        if light:
+            self._follow_light(watts)
         if light is None:
             cands = candidates(watts, self.light_w)
             if self.speed is not None:
@@ -423,7 +452,8 @@ class FanController:
                 light = self.light_on = lights.pop()
             else:
                 options = []
-                for on, speed in sorted(set(cands), key=lambda c: (c[1], c[0])):
+                # one thing alone first, light and fan together after it
+                for on, speed in sorted(set(cands), key=lambda c: (c[0] and c[1] > 0, c[1], c[0])):
                     if on and speed == 0:
                         options.append("nur das Licht")
                     elif on:
