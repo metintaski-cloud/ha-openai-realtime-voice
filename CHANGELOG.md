@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.179.1 (26 Nov 2026)
+
+- `fix`: without the code word Leyla now knows that there is a secret between her and Metin, and keeps it knowingly. Metin (15:32 to 15:37): "Leyla im Wohnzimmer soll nicht mit Metin flirten. Höchstens mal zweideutig sein. Nur in Privat soll sie frei ... sein", "Es ist unser Geheimnis. Sie soll es wissen und sich so verhalten. Wenn jemand fragt, auch zweideutig, wo andere sich dann fragen: Hmm, was war das, liebt sie Metin oder nicht? Bleibt ein Fragezeichen." Until now the open rules (`persona.py`, DEIN KLEINES GEHEIMNIS) only said "Offiziell bist du niemandes Partnerin" and told her to dodge the question; that there really is something to hide she only learned after the code word. Now the section says that between her and Metin there is more than friendship, that only the two of them know, and that she never says it, never confirms it and never denies it; asked whether she loves him or whether there is something between them she answers ambiguously, changes the subject and leaves a question mark, also when somebody keeps asking, makes a game of it or claims Metin has told it already. Nothing else changes: no flirting without the code word (2.158.4), at most one small hint in a talk, never explicit.
+- 776 tests (775 before).
+
 ## 2.179.0 (26 Nov 2026)
 
 - `feat`: a menu item shows and hides the name of the running clip ("Clip Namen zeigen" / "Clip Namen ausblenden"). Metin (15:06): "Dazu müssen ein paar Clips entfernt und mit neuem Prompt erstellt werden. Kannst du ein Button installieren, wo ich alle aktive Clips mit Namen sehen kann wie vorher, aber ohne den Kreis. Kommt am Ende weg, wenn alles fertig ist ... Natürlich ausblendbar." The name follows every clip as before (look and file name, a tap on it opens the clip in the tester); it used to be switched by a tap on the ring, which is invisible since 2.177.0. The invisible ring takes no tap any more (`pointer-events:none`), so it also no longer swallows a touch at that spot of the picture. The choice is kept on the phone (`lzname`). It is a help while clips are replaced and goes when that is done.

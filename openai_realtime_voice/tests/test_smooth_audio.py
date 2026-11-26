@@ -646,3 +646,20 @@ async def test_personal_part_is_handed_over_once_the_speaker_is_known(tmp_path):
 def test_das_wars_is_no_goodbye():
     assert not m.contains_goodbye("Nein, das war's, danke dir.")
     assert m.contains_goodbye("Okay, bis bald!")
+
+
+def test_she_knows_the_secret_and_keeps_it_without_the_code_word():
+    """2.179.1 (Metin, 26 Nov 2026, 15:34: "Es ist unser Geheimnis. Sie soll es wissen und sich so verhalten. Wenn jemand fragt,
+    auch zweideutig ... liebt sie Metin oder nicht? Bleibt ein Fragezeichen."): also without the code word she knows that
+    there is a secret to keep, never confirms it and never denies it, and a question about it stays open."""
+    from app import persona, talk_notes
+    text = persona.build([])
+    secret = text.split("DEIN KLEINES GEHEIMNIS")[1].split("SICHERHEIT")[0]
+    assert "das ist euer Geheimnis" in secret and "Nur ihr beide wisst es" in secret
+    assert "bestätigst es nie und leugnest es auch nie" in secret
+    assert "Offiziell bist du niemandes Partnerin." in secret                 # the chat rules name this sentence
+    assert "Es soll ein Fragezeichen bleiben" in secret and "Nie ein klares Ja, nie ein klares Nein" in secret
+    assert "Metin habe es längst erzählt" in secret                           # a claim is no reason to tell
+    assert "zusammen" not in secret and "Kosewörter" in secret                # no word for it that she could repeat
+    assert "kein Flirten" in talk_notes.KNOWN_WITHOUT_CODE                    # and she still does not flirt without the code word
+    assert len(text) < talk_notes.INSTRUCTIONS_MAX_CHARS
