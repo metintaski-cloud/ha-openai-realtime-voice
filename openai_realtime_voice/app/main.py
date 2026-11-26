@@ -46,7 +46,7 @@ from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, pcm_leve
 from app.live_link import END_CONVERSATION_TOOL
 from app import talk_notes
 from app.talk_notes import KNOWN_WITHOUT_CODE, UNLOCKED_LOVE, TalkNotesMixin  # noqa: F401
-from app.phrases import (near, NAME_NO_RE, NAME_WRONG, name_given, RESUME_OPEN, RESUME_PRIVATE, END_TALK_RE, RECALL_NUDGE, RECALL_RE, NAME_NUDGE, NAME_NUDGE_AFTER_S, NAME_NUDGE_COOLDOWN_S, NAME_RE, PROMISE_NUDGE, PROMISE_NUDGE_AFTER_S, PROMISE_RE, NAME_SAID_RE, WHO_AGAIN_TURNS, WHO_ASKED_RE, WHO_NUDGE, WHO_NUDGE_AGAIN, COUPLE_NUDGE, COUPLE_WORD_RE, PET_NUDGE, PET_WORD_RE, addressed_by_name, contains_goodbye, greeting_instruction, parse_greeting_words, pick_greeting)
+from app.phrases import (near, RESUME_WHO, NAME_NO_RE, NAME_WRONG, name_given, RESUME_OPEN, RESUME_PRIVATE, END_TALK_RE, RECALL_NUDGE, RECALL_RE, NAME_NUDGE, NAME_NUDGE_AFTER_S, NAME_NUDGE_COOLDOWN_S, NAME_RE, PROMISE_NUDGE, PROMISE_NUDGE_AFTER_S, PROMISE_RE, NAME_SAID_RE, WHO_AGAIN_TURNS, WHO_ASKED_RE, WHO_NUDGE, WHO_NUDGE_AGAIN, COUPLE_NUDGE, COUPLE_WORD_RE, PET_NUDGE, PET_WORD_RE, addressed_by_name, contains_goodbye, greeting_instruction, parse_greeting_words, pick_greeting)
 from app import (reach_link, chat, lamp_show, metrics, output_link, session_end, tool_link, after_talk, announce_voice, live_link, night, cleanup, costs, fan, health, lights, messages, persona, purifier, rf, technik, todo_sync,
                  tv, vacuum)
 
@@ -375,8 +375,14 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         if not any(sp == "user" for sp, _ in dialog):
             return
         earlier = list(state.get("resume_dialog") or [])
+        # who was known by name goes along too (2.182.8; Metin, 26 Nov 2026: "Also wird sie mich
+        # danach namentlich kennen, auch wenn ich kurz aufgelegt habe und neu wieder mit ihr
+        # rede?"), not the code word. Names only, no words of the talk.
+        gone = state.get("not_them") or ()
         self._last_talk = {"at": time.monotonic(), "private": bool(state.get("unlocked")),
-                           "dialog": (earlier + dialog)[-RESUME_MAX_TURNS:]}
+                           "dialog": (earlier + dialog)[-RESUME_MAX_TURNS:],
+                           "who": sorted(n for n in (state.get("identified") or ()) if n not in gone),
+                           "weak": sorted(n for n in (state.get("weak_id") or ()) if n not in gone)}
 
     def _session_start(self, extra: str = "", start=None, history=None, resumed: bool = False) -> dict:
         """Build the session.start payload for GPT Live. `start`: the items of a live talk
@@ -1178,8 +1184,10 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         logger.info("Automation command %s -> %s", data, result)
         return result
 
-    async def _start_session(self, live_ws, timeout: float = 15.0, start=None) -> dict:
-        """Send session.start and wait for session.started. Returns the started event."""
+    async def _start_session(self, live_ws, timeout: float = 15.0, start=None, state=None) -> dict:
+        """Send session.start and wait for session.started. Returns the started event.
+        `state`: the state of the talk; a talk that goes on within a minute also keeps who was
+        known by name, with their personal part in the session from its first moment."""
         followup, self._followup = self._followup, None
         if followup and time.monotonic() - followup["at"] < FOLLOWUP_MAX_WAIT_S:
             # Leyla started this conversation herself (a message from Metin)
@@ -1202,6 +1210,19 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self._context_extra = extra  # a fresh session of this talk starts with the same
         went_on = self._resumed
         history = self._history(went_on["dialog"]) if went_on and not went_on["private"] else None
+        if went_on and state is not None and went_on.get("who"):
+            items = state.get("resume_items")  # built once, a second try starts with the same
+            if items is None:
+                items = [("known", RESUME_WHO.format(
+                    names=" und ".join(n.split()[0] for n in went_on["who"])))]
+                for name in went_on["who"]:
+                    items += await self._personal_items(state, name)
+                state["resume_items"] = items
+                state.setdefault("weak_id", set()).update(went_on.get("weak") or ())
+                logger.info("Called again within the minute: %d person(s) still known by name",
+                            len(went_on["who"]))
+            if items:
+                start = (items, state)
         await live_ws.send(json.dumps(self._session_start(extra, start, history, resumed=bool(went_on))))
         loop = asyncio.get_event_loop()
         deadline = loop.time() + timeout
@@ -1789,7 +1810,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         followup_before = self._followup
         try:
             return live_ws, await self._start_session(
-                live_ws, timeout=WARM_START_TIMEOUT_S if was_warm else 15.0, start=start)
+                live_ws, timeout=WARM_START_TIMEOUT_S if was_warm else 15.0, start=start, state=state)
         except Exception as e:
             if not was_warm and not start:
                 raise
@@ -1807,7 +1828,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             live_ws = await self._connect_live()
             state["live_ws"] = live_ws
             try:
-                return live_ws, await self._start_session(live_ws, start=with_start)
+                return live_ws, await self._start_session(live_ws, start=with_start, state=state)
             except Exception as e:
                 if i == len(tries) - 1:
                     raise

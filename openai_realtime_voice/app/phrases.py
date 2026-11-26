@@ -238,6 +238,11 @@ RESUME_OPEN = (_RESUME_HEAD +
     "Das Gespräch von eben steht oben: Du weißt noch, worum es ging, und machst dort weiter, "
     "wenn die Person darauf zurückkommt. Wiederhole nichts davon und fass nichts zusammen. "
     + _RESUME_TAIL)
+# who was known by name in the talk before goes along (2.182.8)
+RESUME_WHO = (
+    "Interne Notiz, nicht vorlesen und nicht erwähnen: Du sprichst weiter mit {names}, wie eben vor "
+    "dem Auflegen. Frag nicht noch einmal, wer da ist. Erst nach einem Zeichen, dass jemand anderes "
+    "spricht, gilt wieder, was in WER MIT DIR SPRICHT steht.")
 RESUME_PRIVATE = (_RESUME_HEAD +
     "Worum es eben ging, erwähnst du mit keinem Wort und spielst auch nicht darauf an: Das "
     "Codewort gilt für dieses Gespräch noch nicht, und inzwischen kann jemand ins Zimmer gekommen "

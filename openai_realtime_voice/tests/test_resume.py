@@ -45,9 +45,9 @@ TALK = [["bot", "Hallo, was kann ich für dich tun?"], ["user", "Wie wird das We
         ["bot", "Morgen bleibt es trocken."], ["user", "Danke, tschüss."], ["bot", "Bis später."]]
 
 
-async def _start(bridge, start=None):
+async def _start(bridge, start=None, state=None):
     live = _StartWs()
-    await bridge._start_session(live, start=start)
+    await bridge._start_session(live, start=start, state=state)
     first = live.sent[0]["session"]
     spoken = [x["content"] for x in live.sent if x["type"] == "session.commentary.append"]
     return first.get("input", []), spoken
@@ -136,3 +136,48 @@ def test_nothing_of_the_talk_goes_into_the_log_or_a_file():
     src = inspect.getsource(m.LiveVoiceBridge._keep_for_resume)
     assert "logger" not in src and "open(" not in src and "json.dump" not in src
     assert m.RESUME_WITHIN_S == 60.0
+
+
+async def test_called_again_within_a_minute_she_still_knows_who_it_is(tmp_path, monkeypatch):
+    """2.182.8. Metin, 26 Nov 2026, 23:14: "Also wird sie mich danach namentlich kennen, auch wenn ich kurz aufgelegt
+    habe und neu wieder mit ihr rede?" The talk went on since 2.180.0, but who was known did not: the bridge would
+    have made her ask again. Now the names go along (never the code word), and the personal part of that person is in
+    the new session from its first moment. All names and sentences here are invented."""
+    monkeypatch.setenv("MEMORY_PATH", str(tmp_path / "memory.json"))
+    bridge = _bridge()
+    bridge.memory.save_all({"family": ["Person: Selin | Zugehörigkeit: wohnt hier | Hobby: Gartenarbeit",
+                                       "Person: Deniz | Zugehörigkeit: Gast"]})
+    bridge._keep_for_resume({"dialog": TALK, "identified": {"Selin", "Deniz"}, "not_them": {"Deniz"},
+                             "weak_id": {"Selin"}}, "goodbye")
+    assert bridge._last_talk["who"] == ["Selin"] and bridge._last_talk["weak"] == ["Selin"]   # a taken back name stays out
+    state = {}
+    live = _StartWs()
+    await bridge._start_session(live, state=state)
+    session = live.sent[0]["session"]
+    assert state["identified"] == {"Selin"} and state["weak_id"] == {"Selin"}
+    told = phrases.RESUME_WHO.format(names="Selin")
+    assert told in session["instructions"] and "Frag nicht noch einmal, wer da ist" in told
+    assert phrases.RESUME_OPEN in [x["content"][0]["text"] for x in session["input"]]        # and she goes on, no hello
+    sent = []
+
+    async def note(ws, prefix, content):
+        sent.append(content)
+    bridge._send_note = note
+    state["dialog"] = [("user", "und übermorgen"), ("bot", "Sonnig."), ("user", "aha"), ("bot", "Ja."), ("user", "gut")]
+    await bridge._maybe_ask_who(None, state)
+    assert sent == []                                                  # she is not made to ask who is there
+    # a second try of the same start carries the same knowledge
+    live2 = _StartWs()
+    await bridge._start_session(live2, state=state)
+    assert told in live2.sent[0]["session"]["instructions"]
+    # after the minute nothing goes along
+    bridge._last_talk["at"] = time.monotonic() - 61
+    fresh, live3 = {}, _StartWs()
+    await bridge._start_session(live3, state=fresh)
+    assert "identified" not in fresh and "Du sprichst weiter mit" not in live3.sent[0]["session"]["instructions"]
+    # nothing kept from a talk in the app, and the code word never goes along
+    bridge._keep_for_resume({"dialog": TALK, "identified": {"Selin"}, "unlocked": True}, "goodbye")
+    assert bridge._last_talk["private"] is True
+    st = {}
+    await bridge._start_session(_StartWs(), state=st)
+    assert not st.get("unlocked") and st["identified"] == {"Selin"}

@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.182.8 (26 Nov 2026)
+
+- `feat`: called again within a minute she still knows who it is. Metin (23:14): "Also wird sie mich danach namentlich kennen, auch wenn ich kurz aufgelegt habe und neu wieder mit ihr rede?" Since 2.180.0 the talk goes on after a short hang up, but who was known by name did not go along, so the bridge would have reminded her to ask again. Now the names from the talk before are kept with it (`_keep_for_resume`: `who`, without names that were taken back; `weak` for names that rest on one word), and the session that goes on starts with them: a note that she goes on talking with that person and shall not ask again (`phrases.RESUME_WHO`), and the personal part of the person as if they had just said their name. The code word never goes along; after more than a minute everything starts new as before.
+- 809 tests (808 before).
+
 ## 2.182.7 (26 Nov 2026)
 
 - `fix`: a name given after her own way of asking counts. Metin (23:06) reported a talk at the Voice PE in which she asked who he was, he said his name, and she asked again. In the log (technical lines): 23:02:49 "No name yet and Leyla did not ask", 23:03:32 "Still no name 2 turns after she asked", and no "Speaker known" in between. She had asked with the example sentence of her character ("wer mir da Gesellschaft leistet"), which the list of ways to ask (`WHO_ASKED_RE`) did not hold, so his short answer was not taken as a name. The list now holds that sentence and more ("wer da ist", "wie heißt du", "deinen Namen", "kimsin"); "ich heiße X" and "ich bin der X" count as a name (`NAME_SAID_RE`); the question looked at is her last turn, also when two entries of the person follow it; and a name the transcript wrote one letter off still finds the profile (`phrases.near`, only in the answer to her question).
