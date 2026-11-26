@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.174.0 (26 Nov 2026)
+
+- `feat`: she rests after a touch. Metin (04:28, on the phone app): "ich kann viele Berührungen hintereinander machen und das wirkt dann sehr unruhig ... kann man nicht einen Mischer dazwischen machen ... den Moment, wo der Kreis auf grün kommt, als jetzt tippen? dann muss dieser Clip zu Ende gehen, damit dieser Clip nicht abgebrochen wird". After a touch clip the loop that follows now runs through once before she takes the next touch. The ring is red for as long as she takes none and green when she does; a touch during red does nothing and is not kept for later (the kept touch of 2.114.7 was dropped on 21 Nov because it did not feel in step). A touch at green starts at once, as before.
+- `fix`, found while building it: the touch clip itself was not protected to its end. The stage reports a clip as done when it starts loading the next one, 3 s before the end, or after 2.5 s when the clip is already fully loaded, and that moment opened the stage for the next touch. Measured with a 7 s touch clip and a tap every 150 ms: before, the next touch was taken after 2.7 s and cut the touch clip at second 2.7 of 7; now after 12.6 s, when the touch clip (7 s) and one loop (6 s) are through.
+- The touch game: a hit is a touch in the 1.5 s after the ring turned green (the ring glows then). A later touch is just a touch; hits are no longer lost for a late touch, because green now means she takes it.
+- The ring always shows how far the running clip is; its colour says whether she takes a touch.
+- 760 tests (758 before).
+
 ## 2.173.2 (26 Nov 2026)
 
 - `feat`: in the clip tester the reference on the left runs in step with the clip on the right. Metin (00:43): "da soll zusätzlich Referenz Clip links genau synchron laufen mit Clip rechts im Clip Tester", "dass alle Clips synchron laufen". Until now the reference looped on its own, so the two were at different places and a tempo could not be compared by eye. Now both wait at their first picture and start in the same moment, and every time the clip on the right starts over, the reference starts over with it. The reference plays as the app plays it (its begin, its end, its tempo and its stretches; before it ran the whole file at one tempo); if it is through first, it holds its last picture and waits. Measured in a test browser over a start and a restart: the two are never more than 0.12 s apart, most pictures the same.
