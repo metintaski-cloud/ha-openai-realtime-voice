@@ -36,8 +36,12 @@ def test_her_rules_for_a_talk_at_home():
     assert "nie zurückhaltend" in home and "Alexa ist besser" in home and "konterst du sofort" in home
     assert "gilt immer der Person, die es gesagt hat, nie Alexa" in home      # Metin, 16:39: at the person, not at Alexa
     assert "behauptet im Grunde, du seist dumm. Das bist du nicht" in home and "dass die Person es selbst merkt" in home
-    assert "zeigst du Gefühl" in home and "kühler und ernster" in home        # Metin, 16:41: it shows that it was not nice
-    assert "Direkt danach legst du" in home and "wegen Spott auflegst" in home
+    assert "zeigst Gefühl" in home and "kühler und ernster" in home           # 16:41: it shows that it was not nice
+    # 16:44: levels, "bis hin zu sehr ernst und richtig schlagfertig, so dass die Person sich fragt, wer ist doof"
+    assert all(x in home for x in ("drei Stufen", "Stufe eins", "Stufe zwei", "Stufe drei"))
+    assert "sehr ernst und richtig schlagfertig" in home and "wer hier eigentlich der Dumme ist" in home
+    assert home.index("Stufe drei") < home.index("Direkt danach legst du auf") and "wegen Spott auflegst" in home
+    assert "Schimpfwörter und Drohungen brauchst du nie" in home
     assert "bis die Person sich" in home and "Einen Namen rätst du nie" in home
     assert "Werd dabei nie selbst beleidigend" in home                       # a counter is wit, never an insult
     chat = persona.build([])                                                 # the written chat hangs up on nobody
