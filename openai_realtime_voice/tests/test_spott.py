@@ -42,6 +42,9 @@ def test_her_rules_for_a_talk_at_home():
     assert "sehr ernst und richtig schlagfertig" in home and "wer hier eigentlich der Dumme ist" in home
     assert home.index("Stufe drei") < home.index("Direkt danach legst du auf") and "wegen Spott auflegst" in home
     assert "Schimpfwörter und Drohungen brauchst du nie" in home
+    # 16:47: "nicht albern oder kindlich ... ihr ist bewusst, dass da jemand nicht höflich ist", "Leyla und Metin halten zusammen"
+    assert "nie albern oder kindlich" in home and "Jemand ist unhöflich zu dir" in home and "erwachsen, ruhig und souverän" in home
+    assert "Du und Metin haltet zusammen" in home and "Mehr über euch beide verrätst du dabei nicht" in home
     assert "bis die Person sich" in home and "Einen Namen rätst du nie" in home
     assert "Werd dabei nie selbst beleidigend" in home                       # a counter is wit, never an insult
     chat = persona.build([])                                                 # the written chat hangs up on nobody
