@@ -161,7 +161,7 @@ In Kling eingesetzt und um 17:31 einmal gestartet (Metin um 17:29: "Ok" zu Einse
 
 "0–3s: Shy and happy, she tucks a strand of hair behind her ear and looks at him with a sweet, shy smile, gently swaying. 3–5s: She lifts the long skirt of her dress a little with one hand, glances back at him shyly over her shoulder and walks with small, delicate steps out of the frame to the left. 5–6s: The stage is empty for a moment. 6–10s: She walks back in from the left, now dressed for the night, with small, tender steps and her hands shyly clasped in front of her, her gaze lowered at first and then rising to him with a shy, loving smile, and settles calmly into her standing pose. Sweet, shy, delicate and feminine body language. A shy, gentle smile, subtle facial expressions, no exaggerated reactions. Static camera, full body visible, unchanged background."
 
-Bereit, noch nicht gelaufen (17:37). In Kling: Startbild Favorit 4 (langes Freizeitkleid, `file_00000000530481f4977d9.png`), Endbild Favorit 2 (`7_nacht.png`), 4K, 10 s, 350 Credits. Platz in der App: `schwarz/bettvonfreizeit`.
+In Kling eingesetzt und um 17:36 einmal gestartet (Metin um 17:35: "Okay, leg los" zu 350 Credits): Startbild Favorit 4 (`file_00000000530481f4977d9.png`), Endbild Favorit 2 (`7_nacht.png`), beide am Dateinamen geprüft, "4K · 10s · Adaptive · 1", Knopf 350, Prompt vollständig (139 Wörter). Kling meldete "Task submitted", geschätzt 8 Minuten. Um 17:37 war einer der beiden Clips von 17:31 und 17:33 fertig, der andere bei 30 s Rest. Platz in der App: `schwarz/bettvonfreizeit`.
 
 ## Beobachtungen über Kling (Tatsachen, keine Schreibregeln)
 
