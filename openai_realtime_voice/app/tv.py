@@ -5,9 +5,10 @@ The TV is an Android TV paired with Home Assistant (Android TV Remote integratio
 power and volume go over WLAN through its remote entity.
 
 Channels, since 2.182.0 (Metin, 26 Nov 2026: "Mein Receiver ist kaputt, deswegen nutze ich
-jetzt Waipu.tv"): a TV app on the Android TV itself. `tv_app` is the address that starts it
-(`waipu://tv`, live TV of waipu.tv); the channel number is then typed with the digit keys of
-the TV remote, over WLAN like the volume. There is no address for a single channel on Android
+jetzt Waipu.tv"): a TV app on the Android TV itself. `tv_app` is what starts it (the package
+name `de.exaring.waipu`; an address like `waipu://tv` is taken too, but did not work on his
+TV); the channel number is then typed with the digit keys of the TV remote, over WLAN like
+the volume. There is no address for a single channel on Android
 TV, so the numbers are the places in the app's own channel order (set in the waipu app on the
 phone). With `tv_app` empty the old way is used: the channels come from a satellite receiver
 without network, and the numbers are sent as infrared codes through the Broadlink RM4 Pro
@@ -27,7 +28,11 @@ import httpx
 logger = logging.getLogger(__name__)
 
 DEFAULT_CHANNELS = "atv=2; Euro D=3; A Haber=12"  # his waipu.tv places (Metin, 26 Nov 2026)
-DEFAULT_TV_APP = "waipu://tv"
+# Measured on Metin's TV on 26 Nov 2026, 19:08 to 19:11: the address "waipu://tv" from the Home
+# Assistant forum does NOT bring the app to the front there (current_activity stayed on the
+# TV's own tuner app for 12 s), the package name does (in front after 1.3 s). Digit keys are
+# taken by the app as a channel number, also two digits 0.4 s apart (3 -> Euro D, 1 2 -> A Haber).
+DEFAULT_TV_APP = "de.exaring.waipu"
 APP_START_WAIT_S = 8.0   # how long the app may take to come to the front
 APP_READY_S = 2.5        # after it is in front: until its player takes keys
 DIGIT_DELAY_S = 0.4      # between the digits of a channel number
@@ -356,7 +361,9 @@ class TvController:
         """Channel `number` in the TV app: bring the app to the front when it is not there
         (that also switches the TV on), then type the digits. True when the app had to be
         started."""
-        word = self.tv_app.split(":")[0].lower()  # 'waipu' is part of the package name
+        # in front when the package name is the activity; for an address ("waipu://tv") when
+        # its first word is part of the package name
+        word = (self.tv_app.split(":")[0] if "://" in self.tv_app else self.tv_app).lower()
         started = word not in (await self._activity()).lower()
         if started:
             await self._service("remote", "turn_on",

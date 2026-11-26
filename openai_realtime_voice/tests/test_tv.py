@@ -173,12 +173,12 @@ async def test_channels_through_the_tv_app(tmp_path, monkeypatch):
     dev = FakeDevice("h")
     remote = rf.RfRemote("h", 433.87, str(tmp_path / "c.json"), device_factory=lambda h: dev)
     ctl = tv.TvController(remote, tv.parse_channels(None), api_url="http://127.0.0.1:19996/api", token="tok",
-                          tv_app="waipu://tv")
+                          tv_app=tv.DEFAULT_TV_APP)
     try:
         r = await ctl.run({"action": "kanal", "channel": "A Haber", "steps": None, "volume_percent": None})
         assert r["done"].startswith("A Haber (Programm 12)") and "gestartet" in r["done"], r
         calls = [(c[1], c[2]) for c in _HA.calls]
-        assert calls[0] == ("turn_on", {"entity_id": "remote.android_tv", "activity": "waipu://tv"})
+        assert calls[0] == ("turn_on", {"entity_id": "remote.android_tv", "activity": "de.exaring.waipu"})
         assert calls[-1] == ("send_command", {"entity_id": "remote.android_tv", "command": ["1", "2"],
                                                "delay_secs": tv.DIGIT_DELAY_S})
         # the app is in front now: only the digit, no new start
@@ -196,11 +196,33 @@ async def test_channels_through_the_tv_app(tmp_path, monkeypatch):
 
 def test_the_tv_app_is_the_default_and_the_receiver_can_be_chosen(monkeypatch):
     monkeypatch.delenv("TV_APP", raising=False)
-    assert tv.from_env(None).tv_app == "waipu://tv"
+    assert tv.from_env(None).tv_app == "de.exaring.waipu"     # the package name: the address did not start it on his TV
     monkeypatch.setenv("TV_APP", "null")          # the add on option is not set
-    assert tv.from_env(None).tv_app == "waipu://tv"
+    assert tv.from_env(None).tv_app == "de.exaring.waipu"
     monkeypatch.setenv("TV_APP", "receiver")
     assert tv.from_env(None).tv_app == ""
     tool = tv.build_tool(tv.parse_channels(None))
     assert "atv (2)" in tool["description"] and "A Haber (12)" in tool["description"]
     assert sorted(tool["parameters"]["required"]) == sorted(tool["parameters"]["properties"])
+
+
+async def test_an_address_still_works_as_the_app(tmp_path, monkeypatch):
+    """Other TVs take an address like waipu://tv: the app counts as in front when the first word of the address is
+    part of the package name, so it is not started again for every channel (that was the fault of 2.182.0 on his TV,
+    where the address never brought the app to the front)."""
+    import asyncio as _a
+    _orig = _a.sleep
+    monkeypatch.setattr(tv.asyncio, "sleep", lambda s: _orig(0))
+    _HA.calls.clear()
+    _HA.states["remote.android_tv"] = {"entity_id": "remote.android_tv", "state": "on",
+                                       "attributes": {"current_activity": "de.exaring.waipu"}}
+    server = _server(19997)
+    remote = rf.RfRemote("h", 433.87, str(tmp_path / "c.json"), device_factory=lambda h: FakeDevice("h"))
+    ctl = tv.TvController(remote, tv.parse_channels(None), api_url="http://127.0.0.1:19997/api", token="tok",
+                          tv_app="waipu://tv")
+    try:
+        r = await ctl.run({"action": "kanal", "channel": "Euro D", "steps": None, "volume_percent": None})
+        assert r["done"] == "Euro D (Programm 3)" and [c[1] for c in _HA.calls] == ["send_command"], (r, _HA.calls)
+    finally:
+        server.shutdown()
+        _HA.states.pop("remote.android_tv", None)

@@ -1,5 +1,5 @@
 name: GPT Live Voice
-version: "2.182.0"
+version: "2.182.1"
 slug: openai_realtime_voice
 description: WebSocket bridge from Voice PE to OpenAI GPT Live (natural voice conversation with web search)
 url: https://github.com/metintaski-cloud/ha-openai-realtime-voice
@@ -36,7 +36,7 @@ options:
   rf_host: "192.168.2.77"
   rf_frequency: 433.87
   tv_channels: "atv=2; Euro D=3; A Haber=12"
-  tv_app: "waipu://tv"
+  tv_app: "de.exaring.waipu"
   tv_remote: "remote.android_tv"
   enable_recording: false
   record_false_wakes: true

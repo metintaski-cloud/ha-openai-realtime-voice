@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.182.1 (26 Nov 2026)
+
+- `fix`: the TV app is started by its package name. First test of 2.182.0 on Metin's TV (19:03 to 19:07): she switched three times and started the app anew every time, about 11 s each; he saw it as a crash ("Sie dreht durch und dann fängt sie wieder von vorne an"). Measured with him at the TV (19:08 to 19:11): the address `waipu://tv` from the Home Assistant forum does not bring waipu.tv to the front on his TV (the activity stayed on the TV's own tuner app for 12 s), the package name `de.exaring.waipu` does (in front after 1.3 s). The digit keys work as hoped: 3 gave Euro D, 1 and 2 0.4 s apart gave A Haber (his eyes). Default of `tv_app` is now the package name; an address is still taken.
+- Seen in the same log and not yet explained: the first talk after the restart at 19:00 lost its connection after 3.9 s (`session_error`, no close frame) and the device called again at once.
+- 796 tests (795 before).
+
 ## 2.182.0 (26 Nov 2026)
 
 - `feat`: TV channels through waipu.tv instead of the satellite receiver. Metin (18:47): "Mein Receiver ist kaputt, deswegen nutze ich jetzt Waipu.tv und möchte die Leyla darauf trainieren ... dass sie die Kanäle aufmachen kann, die meine Mutter sich wünscht"; her favourites and their places in his waipu.tv (18:55): atv 2, Euro D 3, A Haber 12 (Kanal 7 left out). For a channel Leyla now brings the TV app to the front when it is not there (`remote.turn_on` with the address `waipu://tv`, which also switches the TV on) and types the number with the digit keys of the TV over WLAN (`remote.send_command`); nothing goes out by infrared. Whether the app is in front is read from `current_activity` of the remote entity (seen on his TV: `de.exaring.waipu`). New option `tv_app` (default `waipu://tv`; `receiver` brings the old infrared way back), new default for `tv_channels`.
