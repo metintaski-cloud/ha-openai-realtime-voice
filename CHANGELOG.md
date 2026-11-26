@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.177.4 (26 Nov 2026)
+
+- `fix`: the light at the edge rests at the bottom left, under the text field. Metin (13:51, with a screen recording): "Soll links unter dem Textbox stehen". Since 2.177.2 its head stopped 30 % from the left, and the light, which is two thirds of the screen long, lay mostly to the right of the text field. Its head now stops at the bottom left corner, so the whole light lies under the text field.
+
 ## 2.177.3 (26 Nov 2026)
 
 - `fix`: no green at the edge. Metin (13:45): "Wenn ich drücke, kommt die richtige Farbe und dann kommt zwischendurch mal grün. Das braucht es nicht sein. Dieses Grün komplett wegnehmen." Found in the code, not seen on his phone: when the glow went out after a taken touch, its colour jumped back from violet to the cyan of "press now" while it was still fading, a turquoise flash of a third of a second. The colour now only changes while the glow is on or comes on.

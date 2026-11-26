@@ -228,10 +228,10 @@ async def test_a_light_runs_around_the_edge_instead_of_the_ring(tmp_path, monkey
       // one lap per clip: the four pieces take turns, never more than two are on their edge at once
       const seen=new Set();let most=0;for(let i=0;i<70;i++){const on=us.map(u=>!/^translate3d\\(0px, 0px, 0px\\)$/.test(u.style.transform));most=Math.max(most,on.filter(Boolean).length);on.forEach((x,k)=>{if(x)seen.add(k);});await T.sleep(100);}
       out.allFour=seen.size===4;out.most=most;
-      // a lap begins and ends at the bottom edge, where the text field is (2.177.2), not at the top left
+      // a lap begins and ends at the bottom left, under the text field (2.177.2, 2.177.4), not at the top left
       await T.until(()=>zLeft()!==null&&zLeft()<0.45&&zLeft()>0.1,9000);await T.sleep(150);                 // the last moment before the hand over: the lap is through
       const m=/translate3d\\((-?[0-9.]+)px/.exec(us[2].style.transform),W=e.clientWidth;out.restX=m?Math.round(-parseFloat(m[1])/W*100):null;
-      out.restBottom=out.restX!==null&&out.restX>=68&&out.restX<=72&&/^translate3d\\(0px, 0px, 0px\\)$/.test(us[0].style.transform);T.run=false;out.log=T.log;out.min=+T.min.toFixed(2);return out;}""")
+      out.restBottom=out.restX!==null&&out.restX>=95&&out.restX<=99&&/^translate3d\\(0px, 0px, 0px\\)$/.test(us[0].style.transform);T.run=false;out.log=T.log;out.min=+T.min.toFixed(2);return out;}""")
     assert r["inStage"] and r["ringHidden"] and r["noPointer"] and r["moves"], r
     assert r["blockedDark"] and r["openGlows"] and r["notGreen"] and r["takenViolet"] and r["fadesInItsColour"], r
     assert r["allFour"] and r["most"] <= 2 and r["restBottom"], r
