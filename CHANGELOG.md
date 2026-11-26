@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.174.1 (26 Nov 2026)
+
+- `fix`: a touch no longer cuts into the running clip. Metin after 2.174.0 (04:54 to 04:59): "wenn ich bei grünem Kreis drücke, dann muss das ohne Zucken sauber ablaufen, wenn zur falschen Zeit gedrückt, macht er nichts", "muss nahtlos sein", "am besten innerhalb dieses grünen Kreises: wenn dort richtig gedrückt wird, dann geht der Clip zu Ende und der neue fängt sauber an". In 2.174.0 the ring stayed green after the rest and a touch still came in with the quick 0.35 s crossfade wherever the loop was, which is the jerk he saw.
+- Now the ring is green only in the window before a clip hands over (from 2 s to 0.25 s of real time before it). A touch in the window is taken, the running clip plays to its end and the touch clip comes in at that hand over, tight like a loop (0.25 s lead or the lead he set for this clip on `/naht`, normal fade). A touch outside the window does nothing and is not kept. The touch clip has no window of its own, so the loop after it runs through before the next touch.
+- Measured with 6 s loops, a 7 s touch clip and a tap every 150 ms: the first tap taken was the one at second 3.8 of the loop (2 s before the hand over), her clip came in when the loop stood at 5.76 of 6.00 s, 1.9 to 2.0 s after the tap; of 45 taps during the touch clip none was taken and it was on screen for 6.76 s. In 2.173.2 the next touch was taken 2.7 s into the touch clip and cut it.
+- The touch game: every touch she takes is in the green window, so every touch on a new zone is a hit; hits are not lost any more.
+- `tools/stage_sweep.py` taps at points inside the window now. The page "Outfit als Ganzes" still starts a touch clip at once when its button is pressed; it has no ring.
+- 760 tests.
+
 ## 2.174.0 (26 Nov 2026)
 
 - `feat`: she rests after a touch. Metin (04:28, on the phone app): "ich kann viele Berührungen hintereinander machen und das wirkt dann sehr unruhig ... kann man nicht einen Mischer dazwischen machen ... den Moment, wo der Kreis auf grün kommt, als jetzt tippen? dann muss dieser Clip zu Ende gehen, damit dieser Clip nicht abgebrochen wird". After a touch clip the loop that follows now runs through once before she takes the next touch. The ring is red for as long as she takes none and green when she does; a touch during red does nothing and is not kept for later (the kept touch of 2.114.7 was dropped on 21 Nov because it did not feel in step). A touch at green starts at once, as before.

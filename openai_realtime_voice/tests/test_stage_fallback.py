@@ -151,7 +151,9 @@ async def test_a_touch_right_after_a_loop_change_never_blanks_the_picture(tmp_pa
                   const samp=()=>{if(!run)return;let gap=1;for(const v of vs){gap*=1-parseFloat(getComputedStyle(v).opacity)*(v.readyState>=2?1:0);
                     if(v.classList.contains('on')&&(v.getAttribute('src')||'').includes('/brust.mp4'))touch='shown';}
                    min=Math.min(min,1-gap);requestAnimationFrame(samp);};samp();
-                  st.onpointerdown(new PointerEvent('pointerdown',{clientX:R.left+(R.width-w)/2+0.5*w,clientY:R.top+(R.height-h)/2+0.23*h,button:0}));
+                  /* since 2.174.1 a touch is only taken in the green window before a hand over, so the moment right after a
+                     swap is reached by a wished scene only: the clip is shown directly, as stageScene does */
+                  stageShow('brust',false,()=>stageLoop(clipFor(STM)),true);
                   await new Promise(r=>setTimeout(r,2600));run=false;return {min,touch};}""", delay)
                 await page.close()
             await browser.close()

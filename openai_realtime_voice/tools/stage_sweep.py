@@ -22,9 +22,10 @@ def enc(path, hue, dur=4):
     subprocess.run(["ffmpeg","-v","error","-y","-f","lavfi","-i",f"testsrc2=size=480x720:rate=24:duration={dur}","-vf",f"hue=h={hue}","-c:v","libx264","-preset","veryfast","-b:v","800k","-g","24","-pix_fmt","yuv420p","-movflags","+faststart",path],check=True)
 JS = """async([delay,zy])=>{
   const vs=[document.getElementById('svid'),document.getElementById('svid2')];
-  // wait until she is back in a loop and free
-  await new Promise(r=>{const t=()=>{const v=vs[SV];if(Date.now()>=ZBUSY&&Date.now()>=ZREST&&!ZPEND&&/gluecklich/.test(v.getAttribute('src')||'')&&v.classList.contains('on'))r();else setTimeout(t,50);};t();});
-  const sv0=SV;await new Promise(r=>{const t=()=>{if(SV!==sv0)r();else requestAnimationFrame(t);};t();});
+  // since 2.174.1 she takes a touch only in the green window before a hand over: wait until a loop is not in it,
+  // then until the window opens, then `delay` ms into the window
+  await new Promise(r=>{const t=()=>{const v=vs[SV];if(Date.now()>=ZBUSY&&!ZPEND&&zBlocked()&&/gluecklich/.test(v.getAttribute('src')||'')&&v.classList.contains('on'))r();else setTimeout(t,50);};t();});
+  await new Promise(r=>{const t=()=>{if(!zBlocked())r();else requestAnimationFrame(t);};t();});
   await new Promise(r=>setTimeout(r,delay));
   const st=document.getElementById('stage'),R=st.getBoundingClientRect(),ar=1176/1764;let w=R.width,h=w/ar;if(h<R.height){h=R.height;w=h*ar;}
   let min=1,at=0,run=true,pop=0,shown=0,prev=null;const t0=performance.now();
@@ -46,7 +47,7 @@ async def main():
     memory_web.CLIPS_DIR = tmp + "/clips"; memory_web.MOBIL=None
     s = await memory_web.start_http(memory.MemoryStore(tmp + "/m.json"), None, host="127.0.0.1", port=0)
     port = s.sockets[0].getsockname()[1]; errs=[]
-    offsets=[0,30,100,200,300,450,600,800,860,950,1200,1800,2400,3000,3300,3500,3650,3740,3800]
+    offsets=[0,30,100,200,300,450,600,800,1000,1200,1400,1550,1650,1700]  # ms into the green window (1.75 s long at tempo 1)
     async with async_playwright() as p:
         b = await p.chromium.launch(args=["--autoplay-policy=no-user-gesture-required"])
         for label,mbit in (("schnelle Leitung",0),("langsame Leitung (1 Mbit/s)",1.0)):
