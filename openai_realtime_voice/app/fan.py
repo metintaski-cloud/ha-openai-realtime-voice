@@ -432,6 +432,8 @@ class FanController:
             self.speed = nearest_speed(after)
         else:
             self.light_on = self.speed = None
+        if self.light_on is False and self.speed is None and after >= OFF_W:
+            self.speed = nearest_speed(after)  # the light is off for sure: the rest is the fan
         logger.info("Fan power dropped %.1f W -> %.1f W: light %s, speed %s",
                     before, after, self.light_on, self.speed)
 
@@ -455,6 +457,12 @@ class FanController:
             # switch itself (her own buttons set the light or the speed): the wall remote. A
             # light that comes on dimmed makes no jump the meter could tell from the fan.
             light = self.light_on = self.speed = None
+        if light is False and self.speed is None and (True, 0) in candidates(watts):
+            # "Light off" with a fan whose speed she does not know, while the watts would
+            # also fit the light alone: that is a guess of an earlier reading, not knowledge
+            # (26 Nov 2026, 23:27: restored from the file as "light off, speed unknown", she
+            # said "Stufe 4, Licht aus" with only the light on). Worked out anew below.
+            light = self.light_on = None
         if light:
             self._follow_light(watts)
         if light is None:
@@ -467,6 +475,8 @@ class FanController:
             lights = {c[0] for c in cands}
             if len(lights) == 1:
                 light = self.light_on = lights.pop()
+                if len(cands) == 1:
+                    self.speed = cands[0][1]  # the only state that fits: the speed is known too
             else:
                 options = []
                 # one thing alone first, light and fan together after it
@@ -522,6 +532,8 @@ class FanController:
                 self.light_w = min(max(delta, LIGHT_MIN_W), LIGHT_MAX_W)
             if after < OFF_W:
                 self.speed = 0
+            elif not self.light_on:
+                self.speed = nearest_speed(after)  # the light is off for sure: the rest is the fan
         self._recent.clear()
         self._last_w = after
         self._save()

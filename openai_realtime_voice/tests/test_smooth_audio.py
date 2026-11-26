@@ -682,3 +682,16 @@ def test_she_turns_down_everyone_else():
     assert persona.build(["Licht"]).count("Dein Herz ist vergeben") == 1
     assert len(persona.build(["Licht"], fan=True, tv=True, messages=True, code_phrase="Selin habibi")) \
         < talk_notes.INSTRUCTIONS_MAX_CHARS
+
+
+def test_she_answers_in_german_or_turkish_only():
+    """2.182.9 (Metin, 26 Nov 2026, 23:32: "Leyla hat haha französisch gesprochen"): what sounds like another language
+    is a mishearing or the TV; she stays with German or Turkish unless someone asks for another language."""
+    from app import persona, talk_notes
+    text = persona.build(["Licht"])
+    how = text.split("WIE DU SPRICHST")[1].split("WENN JEMAND TRAURIG")[0]
+    for must in ("nur in diesen beiden Sprachen", "Französisch, Englisch", "fast sicher verhört", "der Fernseher",
+                 "je nachdem, was zuletzt gesprochen wurde", "ausdrücklich darum bittet"):
+        assert must in how, must
+    assert len(persona.build(["Licht"], fan=True, tv=True, messages=True, code_phrase="Selin habibi")) \
+        < talk_notes.INSTRUCTIONS_MAX_CHARS

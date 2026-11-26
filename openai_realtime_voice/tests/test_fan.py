@@ -344,8 +344,9 @@ async def test_stop_that_changes_nothing_shows_her_that_only_the_light_is_on(mon
         ctl.light_on, ctl.speed, ctl.light_w = False, 0, 18.0          # what the file held
         r = ctl.describe(13.8)
         assert r["licht"] == "unklar" and "nur das Licht" in r["moeglich"] and "nur der Ventilator auf Stufe 4" in r["moeglich"]
-        ctl.light_on, ctl.speed = False, None                            # or the old belief itself: fan on, light off
-        assert ctl.describe(13.8)["ventilator"] == "an, ungefähr Stufe 4"
+        ctl.light_on, ctl.speed = False, None                            # or the old belief: light off, fan unknown
+        assert ctl.describe(13.8)["ventilator"] == "unklar"               # a guess, not knowledge (2.182.9)
+        ctl.light_on, ctl.speed = False, None
         r = await ctl.run({"action": "aus", "speed": None, "hours": None})
         assert f.sent == ["stop_1", "stop_2", "stop_3"] and "war schon aus" in r["note"], r
         assert ctl.describe(13.8) == {"watt": 13.8, "licht": "an", "ventilator": "aus"} and ctl.light_w == 13.8
@@ -357,6 +358,23 @@ async def test_stop_that_changes_nothing_shows_her_that_only_the_light_is_on(mon
         assert "nicht geklappt" in r["note"]
     finally:
         type(f).watts = property(lambda self: (17.0 if self.light else 0.0) + fan.FAN_W[self.speed])
+
+
+def test_light_off_with_an_unknown_fan_is_only_a_guess_when_the_watts_fit_the_light(tmp_path):
+    """26 Nov 2026, 23:27, after 2.182.8: the file held "light off, speed unknown" from an earlier wrong reading, and
+    with only the light on (13.8 W) she said again "der Ventilator läuft so um die 4, das Licht ist aus"."""
+    import json
+    path = str(tmp_path / "fan_state.json")
+    with open(path, "w") as f:
+        json.dump({"light_on": False, "speed": None, "light_w": 18.0, "watts": 13.8}, f)
+    ctl = fan.FanController(None, power_sensor="s", token="", state_path=path)
+    r = ctl.describe(13.8)
+    assert r["licht"] == "unklar" and r["moeglich"][:2] == ["nur das Licht", "nur der Ventilator auf Stufe 4"]
+    # when only the fan fits, light and speed are both known afterwards, and a later speed is believed
+    ctl2 = fan.FanController(None, power_sensor="s", token="")
+    ctl2.light_on = ctl2.speed = None
+    assert ctl2.describe(5.2) == {"watt": 5.2, "licht": "aus", "ventilator": "an, ungefähr Stufe 1"} and ctl2.speed == 1
+    assert ctl2.describe(14.8) == {"watt": 14.8, "licht": "aus", "ventilator": "an, ungefähr Stufe 4"}
 
 
 def test_when_the_meter_was_away_nothing_is_taken_for_known():

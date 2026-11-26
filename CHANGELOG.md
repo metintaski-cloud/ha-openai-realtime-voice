@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.182.9 (26 Nov 2026)
+
+- `fix`: a guessed "light off" is not repeated as a fact. After 2.182.8 she said once more "der Ventilator läuft so um die 4, das Licht ist aus" with only the light on (23:27; log: "Fan state restored: light False, speed None"). That pair in the file came from an earlier wrong reading, and nothing questioned it. Now "light off" with a fan speed she does not know counts as a guess whenever the watts would also fit the light alone, and the state is worked out anew (here: "unklar", the light alone or fan speed 4). Where she knows the light is off (she switched it herself and the meter confirmed it, or the meter showed the drop), the fan speed is set from the watts at once, so that knowledge stays knowledge. Metin (23:32): "Sag mal, reparierst du oder machst du kaputt?" The reading was fixed in 2.182.6 and 2.182.7, but her stored belief should have been dealt with in the same step instead of asking him to say sentences to her.
+- What cleared it that night was the night automation at 23:29: its stop button changed nothing on the meter three times, so she learned that only the light was on (2.182.7), then it switched the light off.
+- `fix`: she answers in German or Turkish only. Metin (23:32): "Leyla hat haha französisch gesprochen". The cause is not known (the words are not read); the rule until now was "the language one speaks to you, mostly Turkish or German", which lets a misheard sentence or the TV pull her into another language. New in WIE DU SPRICHST: only these two languages; what sounds like another one is a mishearing or the TV; another language only when someone asks for it.
+- 811 tests (809 before).
+
 ## 2.182.8 (26 Nov 2026)
 
 - `feat`: called again within a minute she still knows who it is. Metin (23:14): "Also wird sie mich danach namentlich kennen, auch wenn ich kurz aufgelegt habe und neu wieder mit ihr rede?" Since 2.180.0 the talk goes on after a short hang up, but who was known by name did not go along, so the bridge would have reminded her to ask again. Now the names from the talk before are kept with it (`_keep_for_resume`: `who`, without names that were taken back; `weak` for names that rest on one word), and the session that goes on starts with them: a note that she goes on talking with that person and shall not ask again (`phrases.RESUME_WHO`), and the personal part of the person as if they had just said their name. The code word never goes along; after more than a minute everything starts new as before.
