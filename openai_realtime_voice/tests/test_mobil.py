@@ -321,7 +321,7 @@ console.log(JSON.stringify(out));
     path.write_text("""
 let NOW=1e12;const STORE={lslow:String(NOW-29*60000)};const out={};
 const localStorage={getItem:k=>k in STORE?STORE[k]:null,setItem:(k,v)=>{STORE[k]=String(v);},removeItem:k=>{delete STORE[k];}};
-Date.now=()=>NOW;function lightNow(){return true;}var NETAT=0;
+Date.now=()=>NOW;function lightNow(){return true;}var NETAT=0,BVAR={};
 const boot=()=>{""" + block + """return {tierNow,slowJudge};};
 let a=boot();out.after_29_min=a.tierNow();a.slowJudge(20000);out.back_at_home_at_once=a.tierNow();
 STORE.lslow=String(NOW-31*60000);out.after_31_min=boot().tierNow();
