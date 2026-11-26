@@ -157,7 +157,13 @@ async def test_called_again_within_a_minute_she_still_knows_who_it_is(tmp_path, 
     assert state["identified"] == {"Selin"} and state["weak_id"] == {"Selin"}
     told = phrases.RESUME_WHO.format(names="Selin")
     assert told in session["instructions"] and "Frag nicht noch einmal, wer da ist" in told
-    assert phrases.RESUME_OPEN in [x["content"][0]["text"] for x in session["input"]]        # and she goes on, no hello
+    # and she goes on, no hello. What she speaks from says who it is too (2.182.10): until then its end told her that
+    # it can be someone else and to use no name, and she asked again (Metin, 26 Nov 2026, 23:47: "sie kann sich
+    # innerhalb dieser 1 Minute meinen Namen nicht merken. Sie weiß nicht mehr, mit wem sie gesprochen hat")
+    spoken = [x["content"][0]["text"] for x in session["input"]]
+    assert phrases.RESUME_OPEN_KNOWN.format(names="Selin") in spoken and phrases.RESUME_OPEN not in spoken
+    assert "Sprich niemanden mit Namen an" not in spoken[-1] and "Du weißt, wer da ist, fragst nicht danach" in spoken[-1]
+    assert "Einzige Ausnahme: Man ruft dich gleich nach dem Auflegen wieder" in session["instructions"]
     sent = []
 
     async def note(ws, prefix, content):
@@ -181,3 +187,10 @@ async def test_called_again_within_a_minute_she_still_knows_who_it_is(tmp_path, 
     st = {}
     await bridge._start_session(_StartWs(), state=st)
     assert not st.get("unlocked") and st["identified"] == {"Selin"}
+    # two entries with the same first name: she is told the name once (the log of 23:45 showed two)
+    bridge.memory.save_all({"family": ["Person: Selin | Zugehörigkeit: wohnt hier", "Person: Selin Beispiel | Zugehörigkeit: Gast"]})
+    bridge._keep_for_resume({"dialog": TALK, "identified": {"Selin", "Selin Beispiel"}}, "goodbye")
+    live4 = _StartWs()
+    await bridge._start_session(live4, state={})
+    start = live4.sent[0]["session"]
+    assert phrases.RESUME_WHO.format(names="Selin") in start["instructions"] and "Selin und Selin" not in json.dumps(start, ensure_ascii=False)

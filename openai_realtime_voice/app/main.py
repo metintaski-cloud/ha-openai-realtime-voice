@@ -46,7 +46,7 @@ from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, pcm_leve
 from app.live_link import END_CONVERSATION_TOOL
 from app import talk_notes
 from app.talk_notes import KNOWN_WITHOUT_CODE, UNLOCKED_LOVE, TalkNotesMixin  # noqa: F401
-from app.phrases import (near, RESUME_WHO, NAME_NO_RE, NAME_WRONG, name_given, RESUME_OPEN, RESUME_PRIVATE, END_TALK_RE, RECALL_NUDGE, RECALL_RE, NAME_NUDGE, NAME_NUDGE_AFTER_S, NAME_NUDGE_COOLDOWN_S, NAME_RE, PROMISE_NUDGE, PROMISE_NUDGE_AFTER_S, PROMISE_RE, NAME_SAID_RE, WHO_AGAIN_TURNS, WHO_ASKED_RE, WHO_NUDGE, WHO_NUDGE_AGAIN, COUPLE_NUDGE, COUPLE_WORD_RE, PET_NUDGE, PET_WORD_RE, addressed_by_name, contains_goodbye, greeting_instruction, parse_greeting_words, pick_greeting)
+from app.phrases import (near, names_said, bare_name, asked_if, YES_WORDS, NO_WORDS, WHO_NUDGE_NAMED, RESUME_OPEN_KNOWN, RESUME_PRIVATE_KNOWN, RESUME_WHO, NAME_NO_RE, NAME_WRONG, name_given, RESUME_OPEN, RESUME_PRIVATE, END_TALK_RE, RECALL_NUDGE, RECALL_RE, NAME_NUDGE, NAME_NUDGE_AFTER_S, NAME_NUDGE_COOLDOWN_S, NAME_RE, PROMISE_NUDGE, PROMISE_NUDGE_AFTER_S, PROMISE_RE, NAME_SAID_RE, WHO_AGAIN_TURNS, WHO_ASKED_RE, WHO_NUDGE, WHO_NUDGE_AGAIN, COUPLE_NUDGE, COUPLE_WORD_RE, PET_NUDGE, PET_WORD_RE, addressed_by_name, contains_goodbye, greeting_instruction, parse_greeting_words, pick_greeting)
 from app import (reach_link, chat, lamp_show, metrics, output_link, session_end, tool_link, after_talk, announce_voice, live_link, night, cleanup, costs, fan, health, lights, messages, persona, purifier, rf, technik, todo_sync,
                  tv, vacuum)
 
@@ -955,8 +955,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         words = self.memory.profile_words()
         names = []
         said = " ".join(t for s, t in dialog if s == "user")
-        for m in NAME_SAID_RE.finditer(said):
-            hit = set(memory._words(m.group(1)))
+        for word in names_said(said):
+            hit = set(memory._words(word))
             names += [n for n, w in words.items() if hit & set(memory._words(n))]
         turn = dialog[-1][1]
         # her last turn before this one (not simply the entry before: two entries of the
@@ -972,6 +972,11 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             # another name of the family (26 Nov 2026); such a name can be taken back
             state.setdefault("weak_id", set()).update(n for n in heard if n not in names)
             names += heard
+        # she asked whether she talks to a certain person and the answer is a yes (2.182.10)
+        if before and 0 < len(turn_words) <= 6 and turn_words & YES_WORDS and not turn_words & NO_WORDS:
+            meant = [n for n in words if asked_if(before, n.split()[0])]
+            state.setdefault("weak_id", set()).update(n for n in meant if n not in names)
+            names += meant
         await self._maybe_name_wrong(live_ws, state, words)
         for name in dict.fromkeys(names):
             if name not in state.get("not_them", ()):
@@ -1099,20 +1104,50 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             return
         said = " ".join(t for s, t in dialog if s == "user")
         told = " ".join(t for s, t in dialog if s != "user")
-        if NAME_SAID_RE.search(said):
+        if names_said(said):
             return
+        # a known name the person has said, but not as their own: she asks for that name instead
+        # of asking openly once more (2.182.10)
+        said_words = memory._words(said)
+        profiles = self.memory.profile_words() if getattr(self, "memory", None) else {}
+        heard = next((n.split()[0] for n in profiles if any(
+            near(a, b) for a in said_words for b in memory._words(n.split()[0]))), "")
         if not state.get("who_nudged") and not WHO_ASKED_RE.search(told):
             state["who_nudged"] = True
             state["who_asked_turn"] = turns
-            logger.info("No name yet and Leyla did not ask, reminding her to ask who is there")
-            await self._send_note(live_ws, "who", WHO_NUDGE)
+            logger.info("No name yet and Leyla did not ask, reminding her to ask %s",
+                        "whether it is the person whose name was said" if heard else "who is there")
+            await self._send_note(live_ws, "who", WHO_NUDGE_NAMED.format(name=heard) if heard else WHO_NUDGE)
             return
         asked_at = state.setdefault("who_asked_turn", turns)  # she asked by herself: count from here
         if state.get("who_again") or turns - asked_at < WHO_AGAIN_TURNS:
             return
         state["who_again"] = True
-        logger.info("Still no name %d turns after she asked, reminding her to ask again", turns - asked_at)
-        await self._send_note(live_ws, "who", WHO_NUDGE_AGAIN)
+        logger.info("Still no name %d turns after she asked, reminding her to ask %s", turns - asked_at,
+                    "whether it is the person whose name was said" if heard else "again")
+        await self._send_note(live_ws, "who", WHO_NUDGE_NAMED.format(name=heard) if heard else WHO_NUDGE_AGAIN)
+
+    def _bare_names(self, state: dict) -> list:
+        """The turn of the person that just ended was nothing but a known name ("Selin", "Selin
+        hier"): the people it can be. Looked at when the turn is over (her answer begins), because
+        the words come in pieces and "Selin" may go on as "Selin ist nicht da". Only as long as
+        nobody is known; a name alone counts after she asked or was reminded to in this talk."""
+        dialog = state.get("dialog", [])
+        if (not getattr(self, "enable_memory", False) or not dialog or dialog[-1][0] != "user"
+                or state.get("identified")
+                or state.get("named") or state.get("closing")):
+            return []
+        asked = bool(state.get("who_nudged")) or any(
+            WHO_ASKED_RE.search(t) for s, t in dialog if s != "user")
+        turn = memory._words(dialog[-1][1])
+        gone = state.get("not_them") or ()
+        return [n for n in self.memory.profile_words()
+                if n not in gone and bare_name(turn, set(memory._words(n)), asked)]
+
+    async def _take_bare_names(self, live_ws, state: dict, names: list) -> None:
+        state.setdefault("weak_id", set()).update(names)  # can be taken back (_maybe_name_wrong)
+        for name in names:
+            await self._hand_over_personal(live_ws, state, name)
 
     def _note_promise(self, live_ws, state: dict, delta: str) -> None:
         """Watch Leyla's words for a promised action; see PROMISE_NUDGE_AFTER_S."""
@@ -1199,8 +1234,13 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             self._started_as_followup = False
             # Called again within a minute after a talk (2.180.0): no greeting, she goes on
             self._resumed = None if start else self._resume_now()
-            self.greeting = (self._resumed and (RESUME_PRIVATE if self._resumed["private"] else RESUME_OPEN)
-                             or self._choose_greeting())
+            went = self._resumed
+            # one first name once: two entries can carry the same first name
+            who = " und ".join(dict.fromkeys(n.split()[0] for n in went.get("who") or ())) \
+                if went and state is not None else ""
+            self.greeting = (went and (
+                ((RESUME_PRIVATE_KNOWN if went["private"] else RESUME_OPEN_KNOWN).format(names=who)) if who
+                else (RESUME_PRIVATE if went["private"] else RESUME_OPEN)) or self._choose_greeting())
         extra = ""
         if self.enable_context:
             try:
@@ -1214,7 +1254,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             items = state.get("resume_items")  # built once, a second try starts with the same
             if items is None:
                 items = [("known", RESUME_WHO.format(
-                    names=" und ".join(n.split()[0] for n in went_on["who"])))]
+                    names=" und ".join(dict.fromkeys(n.split()[0] for n in went_on["who"]))))]
                 for name in went_on["who"]:
                     items += await self._personal_items(state, name)
                 state["resume_items"] = items
@@ -1689,7 +1729,10 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
 
     def _on_bot_text(self, state: dict, delta: str, live_ws=None) -> None:
         """A piece of what Leyla said: keep the dialog, notice her goodbye and a promise."""
+        bare = self._bare_names(state) if live_ws is not None and delta.strip() else []
         self._add_dialog(state, "bot", delta)
+        if bare:
+            self._in_background(self._take_bare_names(live_ws, state, bare))
         if live_ws is not None:
             self._note_promise(live_ws, state, delta)
             self._note_pet_words(live_ws, state)

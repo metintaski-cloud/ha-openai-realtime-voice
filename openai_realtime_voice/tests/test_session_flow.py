@@ -640,6 +640,68 @@ async def test_a_name_given_after_her_own_way_of_asking_counts(tmp_path, monkeyp
     assert handed == []
 
 
+async def test_a_name_said_in_his_own_way_counts_and_she_does_not_ask_openly_again(tmp_path, monkeypatch):
+    """2.182.10. Metin, 26 Nov 2026, 23:45: "Ich nenne ihr meinen Namen, aber sie fragt immer wieder, wie ich heiße,
+    als würde sie richtig sicher gehen wollen." The log of that talk, read as counts and yes or no only: his name was
+    in his first words, in a long sentence with a small word between "ich bin" and the name, and once alone, three
+    bot turns after her question; none counted, and the bridge reminded her twice to ask. He was known after 90 s
+    instead of 30. All names and sentences here are invented."""
+    from app import main as m, phrases
+    for said, name in (("ich bin doch der Selin", "Selin"), ("Ich bin es, Deniz", "Deniz"), ("ich bin's, Selin", "Selin"),
+                       ("Selin heiße ich", "Selin"), ("das habe ich gesagt, weil ich Selin bin", "Selin")):
+        assert phrases.names_said(said) == [name], said
+    assert phrases.names_said("wo bin ich") == [] and phrases.names_said("ich bin noch bei Selin") == ["bei"]
+    monkeypatch.setenv("MEMORY_PATH", str(tmp_path / "memory.json"))
+    bridge = m.LiveVoiceBridge()
+    bridge.memory.save_all({"family": ["Person: Selin | Zugehörigkeit: wohnt hier", "Person: Deniz | Zugehörigkeit: Gast"]})
+    handed, sent = [], []
+
+    async def hand(ws, state, name):
+        handed.append(name)
+        state.setdefault("identified", set()).add(name)
+
+    async def note(ws, prefix, content):
+        sent.append(content)
+    bridge._hand_over_personal, bridge._send_note = hand, note
+    # a long sentence with the name
+    state = {"dialog": [("bot", "Hallo!"), ("user", "das habe ich dir doch eben gesagt, ich bin doch der Selin, hörst du")]}
+    await bridge._maybe_identify(None, state)
+    assert handed == ["Selin"]
+    # the name alone, some chopped turns after her question: taken when his turn is over
+    handed.clear()
+    state = {"dialog": [["bot", "Wer ist denn da?"], ["user", "warte mal"], ["bot", "Gern."], ["user", "so"],
+                        ["bot", "Ja"], ["user", "also"], ["bot", "Hm"], ["user", " Sellin."]]}
+    assert bridge._bare_names(state) == ["Selin"]
+    bridge._on_bot_text(state, "Schön", live_ws=object())
+    await asyncio.sleep(0)
+    await asyncio.sleep(0)
+    assert handed == ["Selin"] and state["weak_id"] == {"Selin"}        # can be taken back if it was someone else
+    assert bridge._bare_names(state) == []                              # her turn runs: nothing is looked at twice
+    # without her question the name alone can be someone calling that person; with "hier" it is an introduction
+    assert bridge._bare_names({"dialog": [["bot", "Hallo!"], ["user", "Selin"]]}) == []
+    assert bridge._bare_names({"dialog": [["bot", "Hallo!"], ["user", "Selin hier"]]}) == ["Selin"]
+    for other in ("Hallo Selin", "ist Selin da", "Selin kommt gleich", "ruf Selin an"):
+        assert bridge._bare_names({"dialog": [["bot", "Wer ist denn da?"], ["user", other]]}) == [], other
+    assert bridge._bare_names({"dialog": [["bot", "Wer ist denn da?"], ["user", "Selin"]], "identified": {"Deniz"}}) == []
+    # a known name in his words that did not count: she asks for that name, not openly who is there
+    state = {"dialog": [["user", "Selin am Apparat"], ["bot", "Schön."]]}
+    await bridge._maybe_ask_who(None, state)
+    assert sent == [phrases.WHO_NUDGE_NAMED.format(name="Selin")] and "nicht offen, wer da ist" in sent[0]
+    # and a yes to that question is the name
+    for told, answer, who in (("Gern. Spreche ich gerade mit Selin?", "Ja genau", ["Selin"]),
+                              ("Selin, sen misin?", "evet", ["Selin"]),
+                              ("Spreche ich mit Selin?", "nein", []),
+                              ("Soll ich Selin anrufen?", "ja", []),
+                              ("Bist du sicher, dass ich Selin anrufen soll?", "ja", [])):
+        handed.clear()
+        await bridge._maybe_identify(None, {"dialog": [["user", "Selin am Apparat"], ["bot", told], ["user", answer]]})
+        assert handed == who, (told, answer)
+    sent.clear()
+    state = {"dialog": [["user", "wie wird das Wetter"], ["bot", "Sonnig."]]}
+    await bridge._maybe_ask_who(None, state)
+    assert sent == [phrases.WHO_NUDGE]                                  # no name heard: as before
+
+
 async def test_with_frisch_the_code_word_puts_a_fresh_session_in_place_and_the_talk_goes_on(env, monkeypatch):
     """2.155.0: no notes are appended after the code word; a second GPT Live session starts
     with her knowledge and the talk so far, and what it says reaches the client."""

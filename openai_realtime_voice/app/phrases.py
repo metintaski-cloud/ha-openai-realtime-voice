@@ -49,10 +49,59 @@ WHO_ASKED_RE = re.compile(
     r"wer (?:da|hier) (?:ist|spricht|redet)|wer leistet|gesellschaft leistet|wer von euch|"
     r"wer ist denn|wie (?:heißt|heisst) du|wie du (?:heißt|heisst)|dein(?:en)? namen?\b",
     re.IGNORECASE)
+# 26 Nov 2026, 23:43: he said who he is in a long sentence with a small word between "ich bin" and
+# the name, and it did not count (the log, read as yes and no only). Small words may stand between.
+_NAME_GAP = (r"(?:(?:der|die|doch|ja|es|wieder|noch|immer|nämlich|halt|dein|deine|euer|eure|schon)"
+             r"[\s,]+)*")
 NAME_SAID_RE = re.compile(
-    r"\b(?:ich bin|ich heiße|ich heisse|hier ist|hier spricht|mein name ist|mein name lautet|"
-    r"man nennt mich|ben|benim adım|adım|ismim)\s+(?:der |die )?([A-ZÄÖÜÇĞİŞ]\w+)",
-    re.IGNORECASE)
+    r"\b(?:ich bin's|ich bins|ich bin|ich heiße|ich heisse|hier ist|hier spricht|mein name ist|"
+    r"mein name lautet|man nennt mich|ben|benim adım|adım|ismim)[\s,]+" + _NAME_GAP +
+    r"([A-ZÄÖÜÇĞİŞ]\w+)", re.IGNORECASE)
+# the name first: "Selin heiße ich", "weil ich Selin bin"
+NAME_SAID_BACK_RE = re.compile(
+    r"\b([A-ZÄÖÜÇĞİŞ]\w+)[\s,]+(?:heiße ich|heisse ich|ist mein name|benim adım)\b|"
+    r"\bich[\s,]+([A-ZÄÖÜÇĞİŞ]\w+)[\s,]+(?:heiße|heisse|bin)\b", re.IGNORECASE)
+
+
+def names_said(text: str) -> list:
+    """The words people gave as their own name in `text`, in any of the ways above."""
+    found = [m.group(1) for m in NAME_SAID_RE.finditer(text)]
+    found += [m.group(1) or m.group(2) for m in NAME_SAID_BACK_RE.finditer(text)]
+    return found
+
+
+# A turn that is nothing but a name: these words may stand beside it. No hello ("Hallo Selin"
+# greets someone else) and no "ist" or "da" ("ist Selin da" asks for someone else).
+_BESIDE_NAME = frozenset("hier ich bin bins s es doch ja der die wieder nochmal burada ben benim adim adm "
+                         "ismim mein name heisse heie also na evet genau leyla".split())
+_SELF_WORDS = frozenset("hier ich bin bins ben benim burada adim adm ismim name heisse heie".split())
+
+
+def bare_name(turn_words: list, name_words: set, asked: bool) -> bool:
+    """The whole turn of a person is a name and at most small words of introducing oneself
+    ("Selin", "Selin hier", "ich bin's, Selin"). Without her question before, one such small
+    word must be there: a name alone can also be someone calling that person."""
+    if not 0 < len(turn_words) <= 6:
+        return False
+    is_name = [any(near(w, n) for n in name_words) for w in turn_words]
+    rest = [w for w, hit in zip(turn_words, is_name) if not hit]
+    if not any(is_name) or any(w not in _BESIDE_NAME for w in rest):
+        return False
+    return asked or any(w in _SELF_WORDS for w in rest)
+
+
+# She asked whether she talks to a certain person ("Spreche ich mit Selin?", "Selin, sen misin?")
+# and the answer is a yes. The words as memory._words writes them (no ß, no dotless i).
+YES_WORDS = frozenset("ja jo jap genau richtig stimmt klar naturlich evet tabii tabi aynen dogru".split())
+NO_WORDS = frozenset("nein ne noe hayir hayr yok degil nicht kein keine".split())
+
+
+def asked_if(told: str, first_name: str) -> bool:
+    name = re.escape(first_name)
+    return bool(re.search(
+        r"(?:bist du|sind sie|spreche ich|sprech ich|rede ich|ist da|ist das)\b[^.?!]{0,14}\b%s\b[^.?!]{0,25}\?|"
+        r"\b%s\b[^.?!]{0,25}(?:bist du|sind sie|m[iı]s[iı]n(?:[iı]z)?|mi konuşuyorum)[^.?!]{0,15}\?"
+        % (name, name), told, re.IGNORECASE))
 
 
 def near(a: str, b: str) -> bool:
@@ -130,6 +179,16 @@ WHO_NUDGE = (
     "nicht gefragt. Ist das, was die Person gerade sagt, kein kurzer Befehl, dann beantworte "
     "es und frag danach in derselben Antwort nebenbei und mit Charme, wer da ist, in ihrer "
     "Sprache. Sonst frag bei der nächsten passenden Antwort."
+)
+
+# The person has said a known name, but not in a way that shows it is their own (26 Nov 2026,
+# 23:42: his first words held his name, the bridge did not count it and made her ask openly who
+# is there, twice; Metin: "als würde sie richtig sicher gehen wollen"). Then she asks for that name.
+WHO_NUDGE_NAMED = (
+    "Interne Notiz, nicht vorlesen: Die Person hat den Namen {name} genannt, du weißt aber noch "
+    "nicht sicher, ob sie selbst {name} ist. Frag deshalb nicht offen, wer da ist, und bitte nicht "
+    "noch einmal um den Namen: Beantworte, was sie sagt, und frag danach in derselben Antwort "
+    "kurz und herzlich, ob du mit {name} sprichst, in ihrer Sprache."
 )
 
 # She asked who is there and the person went on without a name: after WHO_AGAIN_TURNS more turns
@@ -238,16 +297,37 @@ RESUME_OPEN = (_RESUME_HEAD +
     "Das Gespräch von eben steht oben: Du weißt noch, worum es ging, und machst dort weiter, "
     "wenn die Person darauf zurückkommt. Wiederhole nichts davon und fass nichts zusammen. "
     + _RESUME_TAIL)
-# who was known by name in the talk before goes along (2.182.8)
+# who was known by name in the talk before goes along (2.182.8). Since 2.182.10 the instruction
+# she speaks from says it too: until then its end told her "es kann auch jemand anderes sein,
+# sprich niemanden mit Namen an", and her character says a new "Hallo Leyla" makes the person
+# unknown, so she asked again in both talks of 23:45 and 23:46 (Metin, 26 Nov 2026: "sie kann
+# sich innerhalb dieser 1 Minute meinen Namen nicht merken").
 RESUME_WHO = (
     "Interne Notiz, nicht vorlesen und nicht erwähnen: Du sprichst weiter mit {names}, wie eben vor "
-    "dem Auflegen. Frag nicht noch einmal, wer da ist. Erst nach einem Zeichen, dass jemand anderes "
-    "spricht, gilt wieder, was in WER MIT DIR SPRICHT steht.")
+    "dem Auflegen. Dass man dich neu gerufen hat, ändert daran nichts: Frag nicht noch einmal, wer "
+    "da ist. Erst nach einem Zeichen, dass jemand anderes spricht, gilt wieder, was in WER MIT DIR "
+    "SPRICHT steht.")
+_RESUME_TAIL_KNOWN = (
+    "Dann hör zu. Du sprichst weiter mit {names}, wie eben vor dem Auflegen. Dass man dich neu "
+    "gerufen hat, ändert daran nichts: Du weißt, wer da ist, fragst nicht danach und sagst den "
+    "Namen, wenn es passt oder wenn man dich fragt, ob du noch weißt, mit wem du sprichst. Erst "
+    "nach einem Zeichen, dass jemand anderes spricht, gilt wieder, was in WER MIT DIR SPRICHT "
+    "steht. Redet danach niemand mit dir und ist nur Fernsehen oder ein Gespräch zwischen anderen "
+    "zu hören, sag nichts und beende das Gespräch still.")
+RESUME_OPEN_KNOWN = (_RESUME_HEAD +
+    "Das Gespräch von eben steht oben: Du weißt noch, worum es ging, und machst dort weiter, "
+    "wenn die Person darauf zurückkommt. Wiederhole nichts davon und fass nichts zusammen. "
+    + _RESUME_TAIL_KNOWN)
 RESUME_PRIVATE = (_RESUME_HEAD +
     "Worum es eben ging, erwähnst du mit keinem Wort und spielst auch nicht darauf an: Das "
     "Codewort gilt für dieses Gespräch noch nicht, und inzwischen kann jemand ins Zimmer gekommen "
     "sein. Du bist normal herzlich wie zu jedem in der Familie, bis du das Codewort wieder hörst. "
     + _RESUME_TAIL)
+RESUME_PRIVATE_KNOWN = (_RESUME_HEAD +
+    "Worum es eben ging, erwähnst du mit keinem Wort und spielst auch nicht darauf an: Das "
+    "Codewort gilt für dieses Gespräch noch nicht, und inzwischen kann jemand ins Zimmer gekommen "
+    "sein. Du bist normal herzlich wie zu jedem in der Familie, bis du das Codewort wieder hörst. "
+    + _RESUME_TAIL_KNOWN)
 
 
 def greeting_instruction(word: str) -> str:
