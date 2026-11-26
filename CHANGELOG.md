@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.175.1 (26 Nov 2026)
+
+- `fix`: her talk clips also come when her voice arrives in pieces. Metin's first test of 2.175.0 (12:07, live talk of 35 s in the short work dress): "ist nichts". In a live talk her voice arrives in small chunks and she breathes between sentences, so the page heard "speaks, silent, speaks" many times, asked for another clip at every change and loaded the waiting clip anew each time. Rebuilt in a test with her voice in pieces (90 ms on, 30 ms off): before, the way into the talk pose never came and a talk pose clip came without it; now the whole chain runs (in, pose, back, loop).
+- The stage now counts her as talking until she has been silent for 1.5 s (`TALK_HOLD_MS`); the music still goes by the plain "her voice sounds now".
+- The page reports to `/api/diag` when the stage takes her as talking or silent and which clip of the talk chain it asked for (clip names only), so a test on his phone can be read from outside.
+- Not proven on his phone yet: that the pieces were the cause there is concluded from the test, only his next live talk shows it.
+- 770 tests (769 before).
+
 ## 2.175.0 (26 Nov 2026)
 
 - `feat`: her talk clips come in and go out at a hand over. Until now the talk clip cut into the running clip the moment her voice began (also into a touch clip, for example when she answered a touch aloud), and the loop cut back in the moment she fell silent. Metin wants every change on the stage seamless ("muss nahtlos sein"). Now the talk clip comes in where the running clip hands over, like a loop, and the loop comes back where the talk clip hands over. A touch clip, a scene and a dance run to their end; she joins at the hand over after them if she still talks. If she is silent again before her talk clip came in, the loop simply goes on.

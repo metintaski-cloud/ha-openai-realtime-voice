@@ -20,11 +20,12 @@ from app import memory_web
 def test_the_talk_chain_is_in_the_page():
     page = open(memory_web.__file__, encoding="utf-8").read()
     talk = page.split("function stageTalk(on)")[1].split("function moodShow")[0]
+    assert "TALKOFF=setTimeout(()=>talkStage(false),TALK_HOLD_MS)" in talk   # a breath between sentences is not the end of her talking
     assert "stageLoop(t)" not in talk and "stagePlay([]" not in talk          # no cut in, no cut out
     assert "if(DANCING||Date.now()<ZBUSY||ZPEND)return;" in talk               # a touch clip, a scene, a dance run on
     assert "CONT=live;" in talk                                               # her clip waits for the hand over
-    assert "if(TALKING&&!talkOn()&&!DANCING&&talkStep())return;" in page       # she joins at the next hand over
-    assert "ZKISS=false;if(TALKING&&talkStep())return;stageLoop(clipFor(STM));};" in page   # also after a touch clip
+    assert "if(TALKS&&!talkOn()&&!DANCING&&talkStep())return;" in page       # she joins at the next hand over
+    assert "ZKISS=false;if(TALKS&&talkStep())return;stageLoop(clipFor(STM));};" in page   # also after a touch clip
     assert "const zBlocked=()=>!!ZPEND||Date.now()<ZBUSY||talkPose()||!zOpen();" in page    # no touch in the talk pose
     assert "DANCING||talkOn())))stagePlay(once,clipFor(st));}" in page         # a new mood waits for the chain's end
 
@@ -159,4 +160,21 @@ async def test_a_short_word_brings_no_talk_pose_and_talking_again_on_the_way_bac
     order = r["order"]
     i = order.index("sprichtrein")
     assert order[i:i + 5] == ["sprichtrein", "sprichtraus", "sprichtrein", "sprichtraus", "gluecklich"], r
+    _seamless(r)
+
+
+async def test_her_voice_coming_in_pieces_still_brings_her_talk_clips(tmp_path, monkeypatch):
+    """In a live talk her voice arrives in small pieces and she breathes between sentences: the page hears
+    'speaks, silent, speaks' many times a second. That must not keep her talk clips away (Metin, 26 Nov 2026,
+    12:08, after a live talk of 35 s in the short work dress: "ist nichts")."""
+    r = await _run(tmp_path, monkeypatch, ("gluecklich4", "gluecklich5", "sprichtrein", "sprichtpose", "sprichtpose2",
+                                           "sprichtraus"), """async()=>{
+      const out={};await T.until(()=>zLeft()!==null&&zLeft()>2.6&&zLeft()<3.2,9000);
+      let flap=true;(async()=>{while(flap){stageTalk(true);await T.sleep(90);stageTalk(false);await T.sleep(30);}})();
+      out.rein=await T.until(()=>T.cur()==='sprichtrein',6000);
+      out.pose=await T.until(()=>/^sprichtpose/.test(T.cur()),6000);
+      flap=false;await T.sleep(200);stageTalk(false);
+      out.raus=await T.until(()=>T.cur()==='sprichtraus',9000);out.loop=await T.until(()=>/^gluecklich/.test(T.cur()),7000);
+      out.order=T.log.map(x=>x.clip.replace(/[0-9]+$/,''));await T.sleep(300);T.run=false;out.log=T.log;out.min=+T.min.toFixed(2);return out;}""")
+    assert r["rein"] and r["pose"] and r["raus"] and r["loop"], r
     _seamless(r)

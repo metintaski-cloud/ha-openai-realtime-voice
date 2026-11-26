@@ -620,11 +620,21 @@ function talkPick(n){const v=clipVars(n);if(v.length<2)return v[0]||'';const st=
 function talkStep(){if(!CLIPS||!STM)return false;const cur=curPth(),k=talkKind(cur),inpose=zLeft()!==null&&(k==='rein'||k==='pose');
  const t=inpose?(/sprichttraurig/.test(cur)?'sprichttraurig':'spricht'):(STM.low&&(clipVars('sprichttraurig').length||clipVars('sprichttraurigrein').length)?'sprichttraurig':'spricht');
  const three=clipVars(t+'rein').length&&clipVars(t+'raus').length;let n='';
- if(inpose)n=TALKING&&clipVars(t+'pose').length?talkPick(t+'pose'):talkPick(t+'raus');
- else if(TALKING)n=three?talkPick(t+'rein'):talkPick(t);
+ if(inpose)n=TALKS&&clipVars(t+'pose').length?talkPick(t+'pose'):talkPick(t+'raus');
+ else if(TALKS)n=three?talkPick(t+'rein'):talkPick(t);
  if(!n){TALKTOK=0;return false;}
+ try{diag('talk '+n.split('/').pop());}catch(e){}  /* which clip of the chain was asked for, so a test on his phone can be read from outside (names of clips only) */
  TIGHT=true;stageShow(n,false,()=>{if(!talkStep())stageNext(clipFor(STM));});TALKTOK=STOK;return true;}
-function stageTalk(on){on=!!on;if(on===TALKING||CLIPS===null||!STM)return;TALKING=on;
+/* 2.175.1: her voice does not come as one piece. In a live talk it arrives in small chunks, and she breathes between
+   sentences, so the page hears "speaks, silent, speaks" many times. Every such change asked for another clip, the
+   clip that waited was loaded anew each time and the chain lost its place (Metin's first test, 26 Nov 2026, 12:08:
+   a live talk of 35 s in the short work dress, "ist nichts"; rebuilt in a test with her voice in pieces: the way in
+   never came). TALKING stays the plain "her voice sounds now" (the music goes by it); the stage goes by TALKS, which
+   only turns false when she has been silent for TALK_HOLD_MS. */
+let TALKS=false,TALKOFF=0;const TALK_HOLD_MS=1500;
+function stageTalk(on){on=!!on;if(on===TALKING||CLIPS===null||!STM)return;TALKING=on;clearTimeout(TALKOFF);
+ if(on)talkStage(true);else TALKOFF=setTimeout(()=>talkStage(false),TALK_HOLD_MS);}
+function talkStage(on){if(on===TALKS)return;TALKS=on;try{diag('talk '+(on?'an':'aus'));}catch(e){}
  if(DANCING||Date.now()<ZBUSY||ZPEND)return;  /* a touch clip, a scene or a dance runs to its end; she joins at the hand over after it */
  const l=zLeft();if(l!==null&&l<ZWIN_MIN)return;  /* the next clip is already coming in; the hand over after it decides */
  const was=talkOn();if(!on&&!was)return;const live=l!==null;CONT=live;
@@ -794,7 +804,7 @@ function stageLoop(b){if(ZPEND){const f=ZPEND;ZPEND=null;return f();}ZBUSY=0;DAN
  const cf=v.find(n=>n.split('/').pop()===cur)||'';TIGHT=true;stageShow(roundPick(LROUND[b]||(LROUND[b]={}),v,cf),false,nx);}
 const SPECIAL=[],SPECIAL_P=0;  // since 2.111.2 no dance by herself, only when Metin asks (Metin)
 const KNIET_P=0.12,EXTRA_P=0.25;const SND_RE=/(^|[/])(kuss|rose|komm|liebe|freizeitmokka|(freizeit)?(gesicht|brust|bauch|po|mix|hinten))/;  /* 2.130.2 laugh on belly and chest, 2.131.0 cat surprise, 2.131.1 sound on every touch clip in every outfit, never on loops or dances (Metin; the older touch clips carry no audio track) */
-function stageNext(b){if(ZPEND){const f=ZPEND;ZPEND=null;return f();}if(TALKING&&!talkOn()&&!DANCING&&talkStep())return;/* she talks: her talk clip comes in at this hand over (2.175.0) */const sp=STM&&!STM.low?SPECIAL.filter(n=>clipVars(n).length):[];if(sp.length&&Math.random()<SPECIAL_P)stagePlay([sp[Math.floor(Math.random()*sp.length)]],b);
+function stageNext(b){if(ZPEND){const f=ZPEND;ZPEND=null;return f();}if(TALKS&&!talkOn()&&!DANCING&&talkStep())return;/* she talks: her talk clip comes in at this hand over (2.175.0) */const sp=STM&&!STM.low?SPECIAL.filter(n=>clipVars(n).length):[];if(sp.length&&Math.random()<SPECIAL_P)stagePlay([sp[Math.floor(Math.random()*sp.length)]],b);
  else if(STM&&!STM.low&&clipVars('gluecklichextra').length&&Math.random()<EXTRA_P){TIGHT=true;stagePlay(['gluecklichextra'],b);}  /* 2.169.2: the extra comes in like a loop (tight, with its lead), so what is set on the page /naht holds for it too */
  else if(STM&&STM.low&&STM.level==='schwer'&&clipVars('setzen').length&&Math.random()<KNIET_P)stagePlay(['setzen'],b);else stageLoop(b);}
 var SLAST={};function stagePlay(once,loop){DANCING=false;const q=once.map(n=>{let v=clipVars(n);if(v.length>1&&SLAST[n])v=v.filter(x=>x!==SLAST[n]);const c=v.length?v[Math.floor(Math.random()*v.length)]:null;if(c)SLAST[n]=c;return c;}).filter(Boolean);/* never the same variant twice in a row (2.116.4) */const next=()=>{const n=q.shift();if(n)stageShow(n,false,next,true);else stageLoop(loop);};next();}
@@ -854,7 +864,7 @@ var ZREST='';const ZWIN=2,ZWIN_MIN=0.25;
 function zLeft(){const v=document.getElementById(SV?'svid2':'svid');if(!document.getElementById('stage').classList.contains('vid')||!(v.classList.contains('on')||v.classList.contains('pre'))||!v.duration)return null;return (endOf(v)-0.25-v.currentTime)/(v.playbackRate||1);}
 function zOpen(){const l=zLeft();if(l===null)return true;const src=document.getElementById(SV?'svid2':'svid').getAttribute('src')||'';if(ZREST){if(src===ZREST)return false;ZREST='';}return l<=ZWIN&&l>=ZWIN_MIN;}
 const zBlocked=()=>!!ZPEND||Date.now()<ZBUSY||talkPose()||!zOpen();
-var ZKISS=false,ZCOLNOW='';const ZCOL={gesicht:'#c084fc',brust:'#ef4444',bauch:'#fb923c',po:'#3b82f6'};/* dot colour per touched zone, only Metin knows the meaning (2.119.0) */const zDone=()=>{ZBUSY=0;ZCOLNOW='';ZREST=document.getElementById(SV?'svid2':'svid').getAttribute('src')||'';if(ZKISS&&clipVars('kuss').length){ZKISS=false;return stagePlay(['kuss'],clipFor(STM));}ZKISS=false;if(TALKING&&talkStep())return;stageLoop(clipFor(STM));};
+var ZKISS=false,ZCOLNOW='';const ZCOL={gesicht:'#c084fc',brust:'#ef4444',bauch:'#fb923c',po:'#3b82f6'};/* dot colour per touched zone, only Metin knows the meaning (2.119.0) */const zDone=()=>{ZBUSY=0;ZCOLNOW='';ZREST=document.getElementById(SV?'svid2':'svid').getAttribute('src')||'';if(ZKISS&&clipVars('kuss').length){ZKISS=false;return stagePlay(['kuss'],clipFor(STM));}ZKISS=false;if(TALKS&&talkStep())return;stageLoop(clipFor(STM));};
 var ZPEND=null,ZT_GREEN=()=>false,ZGOLD=0;
 const ZNAME={gesicht:'Gesicht',brust:'Brust',bauch:'Bauch',po:'Po'};
 async function zGame(z,miss){if(!miss)ZGOLD=Date.now()+1500;let j=null;try{j=await (await post('/api/game',{zone:z,miss:!!miss})).json();}catch(e){}if(!j||!j.ok)return;
