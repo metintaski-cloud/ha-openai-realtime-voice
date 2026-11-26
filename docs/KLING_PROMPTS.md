@@ -86,6 +86,8 @@ Metins Szene (06:40): "Sie muss eine andere Haltung einnehmen und sprechen, mal 
 
 Metin um 06:44: "Sollen die Füße wirklich fest stehen?" Nein: für den Mund zählt nur der ruhige Kopf. Deshalb statt "Both feet remain in place" die Zeile "She remains in the same spot", und unten in jedem Takt etwas anderes (auf den Fersen wippen, eine Ferse heben, Standbein wechseln). Sein "Ok" dazu um 06:44.
 
+In Kling eingesetzt und von Claude um 06:48 gestartet (er hatte dem Einsetzen mit 4K, 10 s und 350 Credits zugestimmt): Kling 4.0, Keyframes, beide Bilder Favorit 4 (langes Freizeitkleid, Datei `file_00000000530481f4977d9.png`, an der Bildadresse geprüft), am Knopf "4K · 10s · Adaptive · 1" und 350 Credits abgelesen (die Länge stand nach dem Bild wieder auf 5 s und 175), Prompt vollständig (131 Wörter). Kling meldete "Creating, estimated wait 7 minutes". Ergebnis: steht aus.
+
 **Sprech Clip 2, langes Arbeitskleid, Haarsträhne mit der freien Hand:** noch nicht geschrieben; die Hand bleibt seitlich am Haar und kommt nie vor den Mund (Flimmern an der Brille bei Hand am Gesicht beachten, Clips 181 und 226).
 
 ## Beobachtungen über Kling (Tatsachen, keine Schreibregeln)
