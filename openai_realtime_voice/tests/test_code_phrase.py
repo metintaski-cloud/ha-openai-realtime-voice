@@ -122,11 +122,12 @@ async def test_a_live_talk_from_the_app_knows_everything_from_the_first_moment(t
     assert await bridge._personal_items(state, bridge._metin()) == []   # counted once per talk
 
 
-async def test_in_a_live_talk_from_the_app_she_never_asks_who_it_is(tmp_path, monkeypatch):
+async def test_she_flirts_only_while_she_is_sure_it_is_him(tmp_path, monkeypatch):
     """2.182.3. Metin, 26 Nov 2026, 20:29, after a live talk in the app with the family and the TV in the room:
-    "Im Chat flirtet sie mit mir und dann sagt sie, wer bist du überhaupt?" In the app the code word was typed, so
-    the speaker is certain for the whole talk: the rules on who is speaking do not count there. Spoken at the
-    Voice PE the code word leaves them in force, others in the room can talk next."""
+    "Im Chat flirtet sie mit mir und dann sagt sie, wer bist du überhaupt?" His rule (20:40): "Doch, sie kann
+    fragen, wer da ist, aber nicht flirten und dann fragen. Sie soll lieb und nett sein. Und wenn sie weiß, dass
+    ich es bin, dann soll sie verliebt, flirten und alles haben." In the app she starts sure of him and voices in
+    the background change nothing; in both kinds of talk the order holds: unsure means kind without flirting."""
     from app import main as m, talk_notes
     monkeypatch.setenv("CODE_PHRASE", "Leyla habibi")
     monkeypatch.setenv("MEMORY_PATH", str(tmp_path / "memory.json"))
@@ -134,16 +135,20 @@ async def test_in_a_live_talk_from_the_app_she_never_asks_who_it_is(tmp_path, mo
     bridge.memory.save_all({"family": ["Person: Metin | Zugehörigkeit: wohnt hier"], "private": []})
     state = {}
     items = await bridge._app_start(state)
-    rule = talk_notes.APP_ONLY_METIN
-    assert rule in items[0][1]
-    for must in ("WER MIT DIR SPRICHT gilt hier nicht", "fragst nie, wer da ist", "nie als unbekannt",
-                 "Fernseher, Familie", "bleibst bei Metin", "bis zum Ende des Gesprächs"):
-        assert must in rule, must
+    app, order = talk_notes.APP_ONLY_METIN, talk_notes.FLIRT_ONLY_SURE
+    assert app in items[0][1] and order in items[0][1]
+    for must in ("sicheren Wissen, dass Metin", "Fernseher, Familie", "nicht zum Unbekannten"):
+        assert must in app, must
+    for must in ("darfst du fragen, wer da ist", "nie erst flirten und dann fragen", "lieb und nett, ohne Flirt",
+                 "Sobald klar ist, dass er es ist", "hast alles über ihn"):
+        assert must in order, must
+    assert "fragst nie" not in app + order                          # she may ask, that was his correction
     session = bridge._session_start("", (items, state))["session"]
     heard = session["instructions"] + " ".join(msg["content"][0]["text"] for msg in session.get("input", []))
-    assert rule.strip() in heard                                   # she has it from the first moment
-    assert rule not in bridge._code_notes(False)[0][1]             # not after a spoken code word in the room
-    assert rule not in bridge._session_start()["session"]["instructions"]
+    assert app.strip() in heard and order.strip() in heard         # she has both from the first moment
+    spoken = bridge._code_notes(False)[0][1]                        # the code word said at the Voice PE
+    assert order in spoken and app not in spoken
+    assert order not in bridge._session_start()["session"]["instructions"]
 
 
 def test_start_split_keeps_to_the_room_and_reports_what_is_held_back():
