@@ -155,6 +155,29 @@ def parse_greeting_words(raw: Optional[str]) -> list[str]:
     return [w.strip() for w in raw.split(",") if w.strip()]
 
 
+# Called again within a minute after a talk ended (2.180.0, Metin, 26 Nov 2026: "soll sie nicht neu
+# beginnen mit Hallo, sondern da, wo das letzte Gespräch beendet wurde. Quasi: ah, war noch was?").
+_RESUME_HEAD = (
+    "Man hat dich gerade wieder gerufen, weniger als eine Minute nachdem euer Gespräch zu Ende "
+    "war. Fang nicht neu an: kein Hallo, kein Grußwort, keine Begrüßung und keine Frage, wer da "
+    "ist. Knüpf sofort mit einem einzigen kurzen, lockeren Satz an, wie jemand, der sich noch "
+    "einmal umdreht, zum Beispiel „Ah, war noch was?“, „Ja? Noch etwas vergessen?“ oder „Efendim, "
+    "bir şey mi kaldı?“, jedes Mal etwas anders und in der Sprache von eben. ")
+_RESUME_TAIL = (
+    "Dann hör zu. Es kann auch jemand anderes sein als eben: Sprich niemanden mit Namen an, "
+    "bevor klar ist, wer da ist. Redet danach niemand mit dir und ist nur Fernsehen oder ein "
+    "Gespräch zwischen anderen zu hören, sag nichts und beende das Gespräch still.")
+RESUME_OPEN = (_RESUME_HEAD +
+    "Das Gespräch von eben steht oben: Du weißt noch, worum es ging, und machst dort weiter, "
+    "wenn die Person darauf zurückkommt. Wiederhole nichts davon und fass nichts zusammen. "
+    + _RESUME_TAIL)
+RESUME_PRIVATE = (_RESUME_HEAD +
+    "Worum es eben ging, erwähnst du mit keinem Wort und spielst auch nicht darauf an: Das "
+    "Codewort gilt für dieses Gespräch noch nicht, und inzwischen kann jemand ins Zimmer gekommen "
+    "sein. Du bist normal herzlich wie zu jedem in der Familie, bis du das Codewort wieder hörst. "
+    + _RESUME_TAIL)
+
+
 def greeting_instruction(word: str) -> str:
     return GREETING_TEMPLATE.format(word=word)
 

@@ -157,6 +157,8 @@ class TalkNotesMixin:
     def _unlock_effects(self, state: dict, app: bool) -> None:
         state["unlocked"] = True
         logger.info("Code phrase heard: memory unlocked for this conversation")
+        if state.get("resume_private"):  # the private talk of a minute ago is hers again (main._keep_for_resume)
+            state["resume_dialog"] = state.pop("resume_private")
         if hasattr(self.mood, "contact"):
             self.mood.contact()  # Metin talks to her: no silence
         self.reach.answered()  # a talk also answers a message she wrote on her own
@@ -349,7 +351,8 @@ class TalkNotesMixin:
             items, report = list(state.get("start_items", [])), {}
             turns = len(state.get("dialog", []))
             payload = self._session_start(state.get("context_extra", ""), (items, report),
-                                          history=self._history(state.get("dialog", [])))
+                                          history=self._history(
+                                              list(state.get("resume_dialog") or []) + state.get("dialog", [])))
             ws = None
             try:
                 ws, _ = await self._take_live()

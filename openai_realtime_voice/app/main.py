@@ -46,7 +46,7 @@ from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, pcm_leve
 from app.live_link import END_CONVERSATION_TOOL
 from app import talk_notes
 from app.talk_notes import KNOWN_WITHOUT_CODE, UNLOCKED_LOVE, TalkNotesMixin  # noqa: F401
-from app.phrases import (END_TALK_RE, RECALL_NUDGE, RECALL_RE, NAME_NUDGE, NAME_NUDGE_AFTER_S, NAME_NUDGE_COOLDOWN_S, NAME_RE, PROMISE_NUDGE, PROMISE_NUDGE_AFTER_S, PROMISE_RE, NAME_SAID_RE, WHO_AGAIN_TURNS, WHO_ASKED_RE, WHO_NUDGE, WHO_NUDGE_AGAIN, COUPLE_NUDGE, COUPLE_WORD_RE, PET_NUDGE, PET_WORD_RE, addressed_by_name, contains_goodbye, greeting_instruction, parse_greeting_words, pick_greeting)
+from app.phrases import (RESUME_OPEN, RESUME_PRIVATE, END_TALK_RE, RECALL_NUDGE, RECALL_RE, NAME_NUDGE, NAME_NUDGE_AFTER_S, NAME_NUDGE_COOLDOWN_S, NAME_RE, PROMISE_NUDGE, PROMISE_NUDGE_AFTER_S, PROMISE_RE, NAME_SAID_RE, WHO_AGAIN_TURNS, WHO_ASKED_RE, WHO_NUDGE, WHO_NUDGE_AGAIN, COUPLE_NUDGE, COUPLE_WORD_RE, PET_NUDGE, PET_WORD_RE, addressed_by_name, contains_goodbye, greeting_instruction, parse_greeting_words, pick_greeting)
 from app import (reach_link, chat, lamp_show, metrics, output_link, session_end, tool_link, after_talk, announce_voice, live_link, night, cleanup, costs, fan, health, lights, messages, persona, purifier, rf, technik, todo_sync,
                  tv, vacuum)
 
@@ -76,6 +76,8 @@ REPLY_GAP_S = 1.0
 WARM_START_TIMEOUT_S = 4.0  # a warm connection that does not answer is dropped quickly
 VOICE_RMS = 300  # a microphone chunk this loud counts as someone speaking (room noise is below 250)
 FOLLOWUP_MAX_WAIT_S = 15.0  # Leyla starts a conversation: the Voice PE connects within this
+RESUME_WITHIN_S = 60.0  # called again this soon after a talk ended: she goes on, no greeting (2.180.0)
+RESUME_MAX_TURNS = 24   # as many turns as a fresh session takes as its history (talk_notes.HISTORY_MAX_TURNS)
 FOLLOWUP_NO_SPEECH_S = 35.0  # she speaks first, then the family needs time to answer
 
 # 23:30 every day (Home Assistant automation, event leyla_command device "nacht"): Leyla
@@ -232,6 +234,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                                      "esphome.ha_voice_openai_0ae305_start_conversation")
         self._followup: Optional[dict] = None
         self._started_as_followup = False
+        self._last_talk: Optional[dict] = None  # the talk that just ended, in memory only (_keep_for_resume)
+        self._resumed: Optional[dict] = None    # the talk the session being started goes on from
         self._live_sessions: dict = {}
         self._night_opts = night.NightOptions()
         self._night: Optional[dict] = None  # the 23:00 question is open, collects answers
@@ -348,12 +352,37 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
              "deine eigene Laune Metin gegenüber festhalten (nur nach seinem Codewort)"),
         ]
 
-    def _session_start(self, extra: str = "", start=None, history=None) -> dict:
+    def _resume_now(self) -> Optional[dict]:
+        """The talk that ended less than RESUME_WITHIN_S ago, or None. Metin, 26 Nov 2026: called
+        again within a minute she shall not begin anew with a hello but go on where the last talk
+        ended, "quasi: ah, war noch was?". Only for the Voice PE; the app hands over its own chat."""
+        last = getattr(self, "_last_talk", None)
+        if not last or time.monotonic() - last["at"] > RESUME_WITHIN_S:
+            return None
+        return last
+
+    def _keep_for_resume(self, state: dict, reason: str) -> None:
+        """A talk at the Voice PE ended: keep its turns for RESUME_WITHIN_S, in memory only, never in a
+        file or the log. A talk in which nobody spoke changes nothing, so a false wake in between does
+        not wipe the talk before it. After the code word the turns are kept apart (`private`): the next
+        session does not get them, and no word about them, until the code word is heard again."""
+        if state.get("from_app") or reason == "no_speech":
+            return
+        dialog = [(sp, t) for sp, t in state.get("dialog", []) if str(t).strip()]
+        if not any(sp == "user" for sp, _ in dialog):
+            return
+        earlier = list(state.get("resume_dialog") or [])
+        self._last_talk = {"at": time.monotonic(), "private": bool(state.get("unlocked")),
+                           "dialog": (earlier + dialog)[-RESUME_MAX_TURNS:]}
+
+    def _session_start(self, extra: str = "", start=None, history=None, resumed: bool = False) -> dict:
         """Build the session.start payload for GPT Live. `start`: the items of a live talk
         from the app (talk_notes._app_start) and the state they are reported in; they go into
         the instructions and the startup input, so she knows them from the first moment.
         `history`: the talk so far as messages (a fresh session in a running talk,
-        talk_notes._go_fresh); it stands in place of the greeting."""
+        talk_notes._go_fresh); it stands in place of the greeting. `resumed`: this session goes on
+        from a talk that just ended (_resume_now): its turns, if any, and then the instruction to
+        go on, which stands where the greeting would."""
         tools: list[dict] = [END_CONVERSATION_TOOL]
         backend_instructions = self.backend_instructions
         devices: list[str] = []
@@ -409,7 +438,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                         "content": [{"type": "input_text", "text": t}]} for t in start_input]
         if history is not None:
             messages_in += history
-        elif self.greeting:
+        if self.greeting and (history is None or resumed):
             # Developer message so the greeting instruction is known from the start; the
             # commentary.append after session.started makes GPT Live actually speak first.
             messages_in.append({
@@ -1076,10 +1105,14 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             # Leyla started this conversation herself (a message from Metin)
             self.greeting = followup["prompt"]
             self._started_as_followup = True
+            self._resumed = None
             followup["taken"].set()
         else:
-            self.greeting = self._choose_greeting()
             self._started_as_followup = False
+            # Called again within a minute after a talk (2.180.0): no greeting, she goes on
+            self._resumed = None if start else self._resume_now()
+            self.greeting = (self._resumed and (RESUME_PRIVATE if self._resumed["private"] else RESUME_OPEN)
+                             or self._choose_greeting())
         extra = ""
         if self.enable_context:
             try:
@@ -1087,7 +1120,9 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             except Exception as e:
                 logger.info("Context not added: %s", e)
         self._context_extra = extra  # a fresh session of this talk starts with the same
-        await live_ws.send(json.dumps(self._session_start(extra, start)))
+        went_on = self._resumed
+        history = self._history(went_on["dialog"]) if went_on and not went_on["private"] else None
+        await live_ws.send(json.dumps(self._session_start(extra, start, history, resumed=bool(went_on))))
         loop = asyncio.get_event_loop()
         deadline = loop.time() + timeout
         while True:
@@ -1747,6 +1782,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         duration = time.monotonic() - start_time
         reason = end_reason.get("reason", "unknown")
         self._finish_recording(rec_path, reason, state)
+        self._keep_for_resume(state, reason)
         try:
             self._schedule_memory_update(state, reason)
         except Exception as e:
@@ -1765,6 +1801,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                     client_id, duration, reason)
         metrics.record("session_end", duration_s=duration, reason=reason,
                        followup=bool(state.get("followup")), app=bool(state.get("from_app")),
+                       **({"resumed": True} if state.get("resumed") else {}),
                        **({"wake": state["wake_v"]} if state.get("wake_v") else {}),
                        **metrics.mic_summary(state.get("mic_stats")))
 
@@ -1828,6 +1865,14 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             if self._started_as_followup:
                 state["no_speech_s"] = FOLLOWUP_NO_SPEECH_S  # time to listen and answer
                 state["followup"] = True
+            went_on = None if app else self._resumed
+            if went_on:  # this talk goes on from the one before (2.180.0); no content in the log
+                state["resumed"] = True
+                state["resume_private" if went_on["private"] else "resume_dialog"] = list(went_on["dialog"])
+                logger.info("Called again %.0f s after the last talk: she goes on without a greeting%s",
+                            time.monotonic() - went_on["at"],
+                            " (the last talk was private: nothing of it until the code word)"
+                            if went_on["private"] else "")
             self._live_sessions[client_id] = (live_ws, state)
             session = started.get("session") or {}
             logger.info(
