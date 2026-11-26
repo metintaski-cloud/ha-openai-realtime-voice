@@ -271,3 +271,23 @@ def test_a_live_talk_uses_the_sound_context_that_is_already_there():
     assert "const ctx=VCTX;try{ctx.resume();}catch(e){}" in live
     stop = page.split("function liveStop()")[1].split("async function liveStart")[0]
     assert "ctx.close()" not in stop and "vctxIdle();" in stop            # her voice messages need it afterwards
+
+
+async def test_the_menu_shows_and_hides_the_name_of_the_running_clip(tmp_path, monkeypatch):
+    """2.179.0 (Metin, 26 Nov 2026, 15:06: "ein Button ... wo ich alle aktive Clips mit Namen sehen kann wie vorher, aber ohne
+    den Kreis", "natürlich ausblendbar"): the menu switches the name of the running clip on and off; the name follows every
+    clip, and the invisible ring takes no tap any more."""
+    r = await _run(tmp_path, monkeypatch, ("gluecklich4", "gluecklich5"), """async()=>{
+      const out={},nm=document.getElementById('zname'),item=()=>(menuItems().find(x=>x[0]==='zname')||[])[1]||'';
+      const shown=()=>getComputedStyle(nm).display!=='none'?nm.textContent:'';
+      out.off=shown();out.item0=item();out.ringTap=getComputedStyle(document.getElementById('ztimer')).pointerEvents;
+      openSec('zname');await T.sleep(250);out.on=shown();out.cur=OUTFIT+'/'+T.cur();out.item1=item();out.kept=localStorage.getItem('lzname');
+      const first=T.cur();await T.until(()=>T.cur()!==first,9000);await T.sleep(250);out.next=shown();out.cur2=OUTFIT+'/'+T.cur();
+      openSec('zname');await T.sleep(250);out.off2=shown();out.item2=item();out.kept2=localStorage.getItem('lzname');
+      T.run=false;out.log=T.log;out.min=+T.min.toFixed(2);return out;}""")
+    assert r["off"] == "" and r["item0"] == "Clip Namen zeigen" and r["ringTap"] == "none", r
+    assert r["on"] == r["cur"] and r["on"].endswith(("gluecklich4", "gluecklich5")), r
+    assert r["item1"] == "Clip Namen ausblenden" and r["kept"] == "1", r
+    assert r["next"] == r["cur2"] and r["next"] != r["on"], r                 # the name follows the next clip
+    assert r["off2"] == "" and r["item2"] == "Clip Namen zeigen" and r["kept2"] == "0", r
+    _seamless(r)

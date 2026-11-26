@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.179.0 (26 Nov 2026)
+
+- `feat`: a menu item shows and hides the name of the running clip ("Clip Namen zeigen" / "Clip Namen ausblenden"). Metin (15:06): "Dazu müssen ein paar Clips entfernt und mit neuem Prompt erstellt werden. Kannst du ein Button installieren, wo ich alle aktive Clips mit Namen sehen kann wie vorher, aber ohne den Kreis. Kommt am Ende weg, wenn alles fertig ist ... Natürlich ausblendbar." The name follows every clip as before (look and file name, a tap on it opens the clip in the tester); it used to be switched by a tap on the ring, which is invisible since 2.177.0. The invisible ring takes no tap any more (`pointer-events:none`), so it also no longer swallows a touch at that spot of the picture. The choice is kept on the phone (`lzname`). It is a help while clips are replaced and goes when that is done.
+- 775 tests (774 before).
+
 ## 2.178.1 (26 Nov 2026)
 
 - `fix`: the light at the edge no longer stands before a clip change. Metin (14:21): "Warum bleibt die dort überhaupt stehen? Die Clips sollen ja nahtlos laufen. Und diese Schlange, die unten am Textbox steht, ist der Beweis, dass es nicht nahtlos ist." The clips did run on; the light was the thing that stopped: its lap was laid out like the old ring, full 0.8 s before the end of the clip, so it stood for the last half second. The lap now ends exactly where the next clip comes in and begins at the begin mark of the clip. Measured in the test browser over two clip changes: the longest time without a move is under 0.32 s (its timer ticks every 0.1 s), before about 0.6 s at every change.
