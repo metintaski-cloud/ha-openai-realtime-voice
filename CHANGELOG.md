@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.177.0 (26 Nov 2026)
+
+- `feat`: a light at the edge instead of the turning ring. Metin (12:18): "das mit dem drehenden Kreis, habe überlegt, dass wir das ersetzen, indem wir die Farben aus dem Hintergrund nehmen und die läuft seitlich an dem Rand wie eine Schlange, leicht nebelig", "Rand meine ich vom Handy", and for the moment she takes a touch (12:24): "wird nicht grün, sondern in eine Farbe der Hintergrund". A soft light in the cyan and violet of her mist now runs once around the edge of the picture while the clip runs; while she takes a touch the whole edge glows in those two colours. A touch that was taken tints the edge in the colour of its zone, a hit in the game in gold, as the dot in the ring did.
+- The ring is no longer visible. Its place still takes a tap: it shows or hides the name of the running clip as before.
+- Built from four small blurred pieces that only move by transform, so the phone repaints nothing for it (60 pictures a second in the test browser, as before).
+- `chore`: the start of a live talk is measured. His screen recording of 12:54 shows the picture standing still for 0.45 s right after the tap on Live, while "Verbinde ..." shows and the loop still runs (the clip changes in the same recording are clean). The page now reports the time of every step of the start and the longest gap between two pictures of the page and of the visible video to `/api/diag`, as numbers only. Nothing is fixed yet; this is to find the step that holds the picture.
+- 772 tests (771 before).
+
 ## 2.176.0 (26 Nov 2026)
 
 - `feat`: her talk clip is there when her voice begins. Metin's second test (12:27, live talk in the short work dress): "Ist nichts, das muss sofort kommen und nicht wenn es eine lange Geschichte wird". What the page reported: it asked for the way into the talk pose three times; the first two answers were over before the running loop handed over, the third time the way in came 5 s after her voice began.

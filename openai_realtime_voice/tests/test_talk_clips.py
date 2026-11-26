@@ -30,7 +30,7 @@ def test_the_talk_chain_is_in_the_page():
     assert "if(CLIPS===null||!STM||DANCING||Date.now()<ZBUSY||ZPEND)return;" in talk   # a touch clip, a scene, a dance run on
     assert "if(voice&&on&&k!=='rein'&&k!=='pose'&&k!=='loop'){" in talk          # her voice begins: at once
     assert "CONT=live;" in talk                                               # everything else waits for the hand over
-    assert "LIVE=L;stageListen(true);" in page and "stageTalk(false);stageListen(false);" in page   # a live call
+    assert "LIVE=L;mark('ws');stageListen(true);" in page and "stageTalk(false);stageListen(false);" in page   # a live call
     assert "snd.on();stageListen(true);" in page                              # a voice message being recorded
     assert "if(TALKS&&!talkOn()&&!DANCING&&talkStep())return;" in page         # she joins at the next hand over
     assert "ZKISS=false;if(TALKS&&talkStep())return;stageLoop(clipFor(STM));};" in page   # also after a touch clip
@@ -207,3 +207,24 @@ async def test_her_voice_coming_in_pieces_still_brings_her_talk_clips(tmp_path, 
     assert r["rein"] and r["pose"] and r["raus"] and r["loop"], r
     assert r["order"].count("sprichtrein") == 1, r
     assert r["min"] > 0.85, r
+
+
+async def test_a_light_runs_around_the_edge_instead_of_the_ring(tmp_path, monkeypatch):
+    """2.177.0 (Metin, 26 Nov 2026): the turning ring is replaced by a soft light in the colours of her mist that runs
+    around the edge of the picture while the clip runs; while she takes a touch the whole edge glows in those colours,
+    not in green."""
+    r = await _run(tmp_path, monkeypatch, ("gluecklich4", "gluecklich5", "brust"), """async()=>{
+      const out={},e=document.getElementById('zedge'),ring=document.getElementById('ztimer'),us=[...e.querySelectorAll('u')],glow=e.querySelector('i');
+      const pos=()=>us.map(u=>u.style.transform).join('|');
+      out.inStage=e.parentElement.id==='stage'&&us.length===4;out.ringHidden=getComputedStyle(ring.querySelector('svg')).opacity==='0';
+      out.noPointer=getComputedStyle(e).pointerEvents==='none';
+      await T.until(()=>zLeft()!==null&&zLeft()>2.6,9000);const a=pos();await T.sleep(500);out.moves=pos()!==a;
+      out.blockedDark=zBlocked()&&glow.style.opacity==='0';
+      await T.until(()=>!zBlocked()&&zLeft()!==null,9000);await T.sleep(250);out.openGlows=ring.classList.contains('go')&&glow.style.opacity==='1';
+      const sh=getComputedStyle(glow).boxShadow;out.notGreen=!/34, 197, 94/.test(sh)&&/34, 211, 238/.test(sh)&&/168, 85, 247/.test(sh);   // cyan and violet of her mist
+      // one lap per clip: the four pieces take turns, never more than two are on their edge at once
+      const seen=new Set();let most=0;for(let i=0;i<70;i++){const on=us.map(u=>!/^translate3d\\(0px, 0px, 0px\\)$/.test(u.style.transform));most=Math.max(most,on.filter(Boolean).length);on.forEach((x,k)=>{if(x)seen.add(k);});await T.sleep(100);}
+      out.allFour=seen.size===4;out.most=most;T.run=false;out.log=T.log;out.min=+T.min.toFixed(2);return out;}""")
+    assert r["inStage"] and r["ringHidden"] and r["noPointer"] and r["moves"], r
+    assert r["blockedDark"] and r["openGlows"] and r["notGreen"], r
+    assert r["allFour"] and r["most"] <= 2, r
