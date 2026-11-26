@@ -956,7 +956,11 @@ async function zGame(z,miss){if(!miss)ZGOLD=Date.now()+1500;let j=null;try{j=awa
  setInterval(()=>{if(c.style.display!=='block')return;const v=document.getElementById(SV?'svid2':'svid'),on=document.getElementById('stage').classList.contains('vid')&&(v.classList.contains('on')||v.classList.contains('pre'));
   const src=on?v.getAttribute('src')||'':'';
   if(show)nm.textContent=src?decodeURIComponent(src.split('?')[0].split('/clips/')[1]||'').replace('.mp4',''):'';
-  const free=!zBlocked();let p=1;if(on&&v.duration)p=Math.min(1,v.currentTime/Math.max(.1,endOf(v)-.8));
+  /* 2.178.1 (Metin, 14:21: "Warum bleibt die dort überhaupt stehen? Die Clips sollen ja nahtlos laufen."): the lap was laid out
+     like the old ring, full 0.8 s before the end of the clip, so the light stood for the last half second although the clip
+     ran on. The lap now ends exactly where the next clip comes in (0.25 s before the end mark) and begins at the begin mark,
+     so the light runs on without a stop from clip to clip. */
+  const free=!zBlocked();let p=1;if(on&&v.duration){const cs=cutStart(v.dataset.pth||'');p=Math.max(0,Math.min(1,(v.currentTime-cs)/Math.max(.1,endOf(v)-.25-cs)));}
   d.classList.toggle('go',free);d.classList.toggle('hit',!!ZPEND||Date.now()<ZBUSY);d.classList.toggle('gold',Date.now()<ZGOLD);dot.style.fill=Date.now()<ZGOLD?'':ZCOLNOW;fg.setAttribute('stroke-dashoffset',(75.4*(1-p)).toFixed(1));edge(on&&v.duration?p:0,free,!!ZPEND||Date.now()<ZBUSY,Date.now()<ZGOLD);},100);})();  // the touch is noted at once and plays when the running clip hands over, so the poses match (2.114.7, Metin)
 let TOUCHT=0;function touchAsk(z){if(!CODE||Date.now()-TOUCHT<TOUCH_GAP)return null;TOUCHT=Date.now();return post('/api/chat_touch',{zone:z,history:CHAT.filter(m=>m.role==='user'||m.role==='leyla').slice(-20).map(m=>({role:m.role,text:m.text}))}).then(r=>r.json()).catch(()=>null);}
 const TOUCH_GAP=25000;/* she answers a touch at most every 25 s, so touches do not push the real chat out of her thread */

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.178.1 (26 Nov 2026)
+
+- `fix`: the light at the edge no longer stands before a clip change. Metin (14:21): "Warum bleibt die dort überhaupt stehen? Die Clips sollen ja nahtlos laufen. Und diese Schlange, die unten am Textbox steht, ist der Beweis, dass es nicht nahtlos ist." The clips did run on; the light was the thing that stopped: its lap was laid out like the old ring, full 0.8 s before the end of the clip, so it stood for the last half second. The lap now ends exactly where the next clip comes in and begins at the begin mark of the clip. Measured in the test browser over two clip changes: the longest time without a move is under 0.32 s (its timer ticks every 0.1 s), before about 0.6 s at every change.
+
 ## 2.178.0 (26 Nov 2026)
 
 - `fix`: the picture no longer stands when a live talk starts. Measured on Metin's phone (five live starts, 14:00 to 14:04): making a new sound context right after the microphone opened took 13 to 26 ms four times and 290 ms once, and in that one the picture stood for 0.35 s (his screen recording of 12:54 showed 0.45 s at the same place). A call now uses the one sound context her voice messages use, made on the tap before the microphone is asked for; it is never closed again, only put to sleep 4 s after her voice ends. Old against new on his phone: to be read from the next live starts (`live ... ctx=`).

@@ -228,13 +228,18 @@ async def test_a_light_runs_around_the_edge_instead_of_the_ring(tmp_path, monkey
       // one lap per clip: the four pieces take turns, never more than two are on their edge at once
       const seen=new Set();let most=0;for(let i=0;i<70;i++){const on=us.map(u=>!/^translate3d\\(0px, 0px, 0px\\)$/.test(u.style.transform));most=Math.max(most,on.filter(Boolean).length);on.forEach((x,k)=>{if(x)seen.add(k);});await T.sleep(100);}
       out.allFour=seen.size===4;out.most=most;
-      // a lap begins and ends at the bottom left, under the text field (2.177.2, 2.177.4), not at the top left
-      await T.until(()=>zLeft()!==null&&zLeft()<0.45&&zLeft()>0.1,9000);await T.sleep(150);                 // the last moment before the hand over: the lap is through
+      // 2.178.1: the light never stands while a clip runs, also not before and at a clip change (it used to rest for the last
+      // half second). Sampled over two clip changes: the longest time without a move stays near the 100 ms of its timer.
+      await T.until(()=>zLeft()!==null&&zLeft()<1.2,9000);let lastP=pos(),lastT=performance.now(),still=0;const n0=T.log.length,t9=performance.now();
+      while(T.log.length<n0+2&&performance.now()-t9<12000){await T.sleep(40);const q=pos(),n=performance.now();if(q!==lastP){lastP=q;lastT=n;}else still=Math.max(still,n-lastT);}
+      out.still=Math.round(still);out.changes=T.log.length-n0;
+      // a lap begins and ends at the bottom left, under the text field (2.177.2, 2.177.4): right after a clip change the bottom piece is at the corner
       const m=/translate3d\\((-?[0-9.]+)px/.exec(us[2].style.transform),W=e.clientWidth;out.restX=m?Math.round(-parseFloat(m[1])/W*100):null;
-      out.restBottom=out.restX!==null&&out.restX>=95&&out.restX<=99&&/^translate3d\\(0px, 0px, 0px\\)$/.test(us[0].style.transform);T.run=false;out.log=T.log;out.min=+T.min.toFixed(2);return out;}""")
+      out.restBottom=out.restX!==null&&out.restX>=95&&out.restX<=135;T.run=false;out.log=T.log;out.min=+T.min.toFixed(2);return out;}""")
     assert r["inStage"] and r["ringHidden"] and r["noPointer"] and r["moves"], r
     assert r["blockedDark"] and r["openGlows"] and r["notGreen"] and r["takenViolet"] and r["fadesInItsColour"], r
     assert r["allFour"] and r["most"] <= 2 and r["restBottom"], r
+    assert r["changes"] == 2 and r["still"] < 320, r
 
 
 async def test_the_measuring_run_tries_its_variants_and_reports_numbers(tmp_path, monkeypatch):
