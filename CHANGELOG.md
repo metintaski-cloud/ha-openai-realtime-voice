@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.178.0 (26 Nov 2026)
+
+- `fix`: the picture no longer stands when a live talk starts. Measured on Metin's phone (five live starts, 14:00 to 14:04): making a new sound context right after the microphone opened took 13 to 26 ms four times and 290 ms once, and in that one the picture stood for 0.35 s (his screen recording of 12:54 showed 0.45 s at the same place). A call now uses the one sound context her voice messages use, made on the tap before the microphone is asked for; it is never closed again, only put to sleep 4 s after her voice ends. Old against new on his phone: to be read from the next live starts (`live ... ctx=`).
+- `feat`: a measuring run in the menu ("Messlauf (10 Minuten)"). Metin (14:04): "Es kommt ab und zu mal ein Hänger, auch nicht ständig ... so wie auch in allen Clips ... als würde mein Handy das nicht rechnen können", and (14:06) "Können wir das nicht sofort ermitteln und lösen". The numbers so far: about every tenth clip change needs 250 to 300 ms until the new clip shows its first picture (median 35 ms). The run plays the loops in seven parts of 85 s (normal, without the mist layers, without the light at the edge, without the chat bubbles, without music, with the small copies of the clips, normal again) and reports for each part how often and how long the picture stood inside a clip and at a clip change, the late pictures of the page, dropped video frames and the time to the first picture of a new clip, to `/api/diag`, numbers only. The screen is kept on during the run; a tap on the note at the top stops it.
+- Her sound context now sleeps while nothing of her sounds. Until now it stayed awake from her first voice until the app was closed, which keeps the sound output of the phone open.
+- 774 tests (772 before).
+
 ## 2.177.4 (26 Nov 2026)
 
 - `fix`: the light at the edge rests at the bottom left, under the text field. Metin (13:51, with a screen recording): "Soll links unter dem Textbox stehen". Since 2.177.2 its head stopped 30 % from the left, and the light, which is two thirds of the screen long, lay mostly to the right of the text field. Its head now stops at the bottom left corner, so the whole light lies under the text field.

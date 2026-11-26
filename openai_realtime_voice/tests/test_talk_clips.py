@@ -235,3 +235,34 @@ async def test_a_light_runs_around_the_edge_instead_of_the_ring(tmp_path, monkey
     assert r["inStage"] and r["ringHidden"] and r["noPointer"] and r["moves"], r
     assert r["blockedDark"] and r["openGlows"] and r["notGreen"] and r["takenViolet"] and r["fadesInItsColour"], r
     assert r["allFour"] and r["most"] <= 2 and r["restBottom"], r
+
+
+async def test_the_measuring_run_tries_its_variants_and_reports_numbers(tmp_path, monkeypatch):
+    """2.178.0 (Metin, 26 Nov 2026: now and then the picture hangs, "als würde mein Handy das nicht rechnen können"): the
+    measuring run plays the loops in seven variants and reports for each how often the picture stood, as numbers."""
+    memory_web.DIAG.clear()
+    r = await _run(tmp_path, monkeypatch, ("gluecklich4", "gluecklich5", "brust"), """async()=>{
+      const out={seen:[]};BENCH_SETTLE=0.2;BENCH_S=1.2;const cls=()=>['bnofog','bnoedge','bnochat'].filter(c=>document.body.classList.contains(c)).join(',');
+      const done=benchRun();out.menu=menuItems().some(x=>x[0]==='bench'&&/abbrechen/.test(x[1]));
+      const iv=setInterval(()=>{const k=cls()+'|'+(BVAR.nomus?'nomus':'')+(BVAR.small?'small':'');if(!out.seen.includes(k))out.seen.push(k);},50);
+      await done;clearInterval(iv);out.restored=cls()===''&&!BVAR.nomus&&!BVAR.small&&BENCH===null;out.pill=(document.getElementById('bpill')||{}).textContent||'';
+      await T.sleep(300);out.diag=await (await fetch('/api/diag')).json();T.run=false;out.log=T.log;out.min=+T.min.toFixed(2);return out;}""")
+    assert r["menu"] and r["restored"] and "fertig" in r["pill"], r
+    assert set(r["seen"]) >= {"|", "bnofog|", "bnoedge|", "bnochat|", "|nomus", "|small"}, r
+    lines = [d["ev"] for d in r["diag"] if d["ev"].startswith("bench ")]
+    assert lines[0].startswith("bench start akku=") and lines[-1].startswith("bench ende fertig akku="), lines
+    names = [x.split()[1] for x in lines[1:-1]]
+    assert names == ["normal", "ohne_nebel", "ohne_rand", "ohne_chat", "ohne_musik", "kleine_clips", "normal_2"], lines
+    import re
+    for x in lines[1:-1]:
+        assert re.fullmatch(r"bench \w+ s=\d+ hv=\d+/\d+ hs=\d+/\d+ raf=\d+/\d+ fps=\d+ drop=-?\d+/\d+ first=(-|\d+/\d+) n=\d+", x), x
+
+
+def test_a_live_talk_uses_the_sound_context_that_is_already_there():
+    page = open(memory_web.__file__, encoding="utf-8").read()
+    live = page.split("async function liveStart()")[1].split("ws.onclose")[0]
+    assert "new (window.AudioContext" not in live                        # making one after the microphone opened held the picture
+    assert live.index("voiceOut();mark('vctx');") < live.index("getUserMedia")   # made on the tap, before the microphone
+    assert "const ctx=VCTX;try{ctx.resume();}catch(e){}" in live
+    stop = page.split("function liveStop()")[1].split("async function liveStart")[0]
+    assert "ctx.close()" not in stop and "vctxIdle();" in stop            # her voice messages need it afterwards

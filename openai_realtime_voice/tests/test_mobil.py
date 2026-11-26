@@ -297,7 +297,7 @@ def test_the_page_takes_the_small_copy_only_while_her_picture_keeps_waiting(tmp_
     path.write_text("""
 let NOW=1e12,PHONEON=true,NETAT=0;const STORE={};const out={};
 const localStorage={getItem:k=>k in STORE?STORE[k]:null,setItem:(k,v)=>{STORE[k]=String(v);},removeItem:k=>{delete STORE[k];}};
-Date.now=()=>NOW;function lightNow(){return PHONEON;}
+Date.now=()=>NOW;function lightNow(){return PHONEON;}var BVAR={};  // the measuring run of 2.178.0 can ask for the small copies too
 """ + block + """
 out.start=tierNow();
 slowStall();NOW+=5000;slowStall();out.two=tierNow();
