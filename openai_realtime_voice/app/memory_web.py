@@ -900,7 +900,7 @@ async function zGame(z,miss){if(!miss)ZGOLD=Date.now()+1500;let j=null;try{j=awa
     so the phone does not repaint anything for it. */
  const ed=document.createElement('div');ed.id='zedge';ed.innerHTML='<i></i><b class="t"><u></u></b><b class="r"><u></u></b><b class="b"><u></u></b><b class="l"><u></u></b>';document.getElementById('stage').appendChild(ed);
  const eg=ed.querySelector('i'),eu=['t','r','b','l'].map(k=>ed.querySelector('.'+k+' u')),SNAKE=240,elast=[null,null,null,null];
- const edge=(p,free,hit,gold)=>{const W=ed.clientWidth,H=ed.clientHeight;if(!W||!H)return;const P=2*(W+H),s=p*P,st=[0,W,W+H,2*W+H],len=[W,H,W,H];
+ const edge=(p,free,hit,gold)=>{const W=ed.clientWidth,H=ed.clientHeight;if(!W||!H)return;const P=2*(W+H),s=(p*P+W+H+.7*W)%P,st=[0,W,W+H,2*W+H],len=[W,H,W,H];  /* 2.177.2 (Metin, 13:40: it rests a little at the top left, "kann die unten an der Textsprachbox stehen bleiben"): a lap begins and ends at the bottom edge above the text field, 30 % from the left */
   for(let i=0;i<4;i++){let x=s-st[i];if(x<0)x+=P;if(x>len[i]+SNAKE)x=0;  /* parked outside its edge */
    const tr=i===0?'translate3d('+x+'px,0,0)':i===1?'translate3d(0,'+x+'px,0)':i===2?'translate3d('+(-x)+'px,0,0)':'translate3d(0,'+(-x)+'px,0)';
    const jump=elast[i]===null||Math.abs(x-elast[i])>90;elast[i]=x;if(jump){eu[i].style.transition='none';eu[i].style.transform=tr;void eu[i].offsetWidth;eu[i].style.transition='';}else eu[i].style.transform=tr;}

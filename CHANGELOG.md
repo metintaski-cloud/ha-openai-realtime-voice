@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.177.2 (26 Nov 2026)
+
+- `fix`: the light at the edge rests at the bottom, not at the top left. Metin (13:40): "Wenn die Schlange sich bewegt, bleibt die meist immer links oben in der Ecke ein bisschen länger stehen wie sonst. Kann die unten an der Textsprachbox stehen bleiben statt links oben?" The lap ended at the top left corner, and for the last 0.8 s of a clip (the hand over) the light stood there. A lap now begins and ends at the bottom edge above the text field, 30 % from the left.
+- Tests of the stage (edge and touch) run.
+
 ## 2.177.1 (26 Nov 2026)
 
 - `fix`: the light at the edge after Metin's first look (13:18 to 13:29). His words: the lines of the snake are clearly visible at the sides ("seitlich sehe ich Linien an dem Videocliprand"); the colours a little stronger ("ich will schon nebelig haben, aber die Farben ein bisschen kräftiger"); when it is time to press "soll es diese bläuliche, und wenn ich richtig drücke, dann dieses Lila", "nicht dieses Rot, Orange"; and snake and glow are too thick ("können wir die ein bisschen dünner, kleiner machen, dass das den Rand nicht zu sehr wegnimmt").
