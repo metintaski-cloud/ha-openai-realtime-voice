@@ -77,15 +77,20 @@ _BESIDE_NAME = frozenset("hier ich bin bins s es doch ja der die wieder nochmal 
 _SELF_WORDS = frozenset("hier ich bin bins ben benim burada adim adm ismim name heisse heie".split())
 
 
-def bare_name(turn_words: list, name_words: set, asked: bool) -> bool:
+def bare_name(turn_words: list, name_words: list, asked: bool) -> bool:
     """The whole turn of a person is a name and at most small words of introducing oneself
-    ("Selin", "Selin hier", "ich bin's, Selin"). Without her question before, one such small
-    word must be there: a name alone can also be someone calling that person."""
+    ("Selin", "Selin hier", "ich bin's, Selin"). `name_words`: the words of the profile name,
+    the first name first; it must be in the turn (a second word of the name alone, a family
+    name or an addition, is no introduction). Without her question before, one small word of
+    introducing must be there: a name alone can also be someone calling that person."""
+    if not name_words:
+        return False
+    first = name_words[0]
     if not 0 < len(turn_words) <= 6:
         return False
     is_name = [any(near(w, n) for n in name_words) for w in turn_words]
     rest = [w for w, hit in zip(turn_words, is_name) if not hit]
-    if not any(is_name) or any(w not in _BESIDE_NAME for w in rest):
+    if not any(near(w, first) for w in turn_words) or any(w not in _BESIDE_NAME for w in rest):
         return False
     return asked or any(w in _SELF_WORDS for w in rest)
 
@@ -99,7 +104,7 @@ NO_WORDS = frozenset("nein ne noe hayir hayr yok degil nicht kein keine".split()
 def asked_if(told: str, first_name: str) -> bool:
     name = re.escape(first_name)
     return bool(re.search(
-        r"(?:bist du|sind sie|spreche ich|sprech ich|rede ich|ist da|ist das)\b[^.?!]{0,14}\b%s\b[^.?!]{0,25}\?|"
+        r"(?:bist du|du bist|sind sie|spreche ich|sprech ich|rede ich|ist da|ist das)\b[^.?!]{0,14}\b%s\b[^.?!]{0,25}\?|"
         r"\b%s\b[^.?!]{0,25}(?:bist du|sind sie|m[iı]s[iı]n(?:[iı]z)?|mi konuşuyorum)[^.?!]{0,15}\?"
         % (name, name), told, re.IGNORECASE))
 
@@ -179,6 +184,7 @@ WHO_NUDGE = (
     "nicht gefragt. Ist das, was die Person gerade sagt, kein kurzer Befehl, dann beantworte "
     "es und frag danach in derselben Antwort nebenbei und mit Charme, wer da ist, in ihrer "
     "Sprache. Sonst frag bei der nächsten passenden Antwort."
+    " Hat die Person dir in dem, was sie gerade sagt, schon selbst gesagt, wer sie ist, dann fragst du nicht, sondern sprichst sie mit ihrem Namen an."
 )
 
 # The person has said a known name, but not in a way that shows it is their own (26 Nov 2026,
@@ -189,6 +195,7 @@ WHO_NUDGE_NAMED = (
     "nicht sicher, ob sie selbst {name} ist. Frag deshalb nicht offen, wer da ist, und bitte nicht "
     "noch einmal um den Namen: Beantworte, was sie sagt, und frag danach in derselben Antwort "
     "kurz und herzlich, ob du mit {name} sprichst, in ihrer Sprache."
+    " Hat die Person dir in dem, was sie gerade sagt, schon selbst gesagt, wer sie ist, dann fragst du nicht, sondern sprichst sie mit ihrem Namen an."
 )
 
 # She asked who is there and the person went on without a name: after WHO_AGAIN_TURNS more turns
@@ -202,6 +209,7 @@ WHO_NUDGE_AGAIN = (
     "du möchtest jetzt wirklich wissen, mit wem du sprichst, damit du dich an sie oder ihn "
     "erinnern kannst. In ihrer Sprache, ein Satz, nicht beleidigt. Bei einem kurzen Befehl "
     "erst den Befehl erledigen und dann fragen."
+    " Hat die Person dir in dem, was sie gerade sagt, schon selbst gesagt, wer sie ist, dann fragst du nicht, sondern sprichst sie mit ihrem Namen an."
 )
 
 # Pet words someone says to Leyla: she must ask at once who says it (persona rule), which

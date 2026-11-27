@@ -607,6 +607,16 @@ class MemoryStore:
                 out[prof[0]] = _subject_words(f)
         return out
 
+    def profile_relations(self) -> dict:
+        """{name: how the person belongs to the family (field "Zugehörigkeit"), '' when not said}."""
+        data = self._read()
+        out = {}
+        for f in data[FAMILY] + data[FRIENDS]:
+            prof = parse_profile(f)
+            if prof:
+                out[prof[0]] = str(prof[1].get("Zugehörigkeit", "")).strip()
+        return out
+
     def personal_for(self, name: str) -> str:
         """The personal part about one person, handed over once it is sure they talk: the
         personal profile points, their current "Aktuell" entries and, for the mother, what

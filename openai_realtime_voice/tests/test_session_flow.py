@@ -667,6 +667,11 @@ async def test_a_name_said_in_his_own_way_counts_and_she_does_not_ask_openly_aga
     state = {"dialog": [("bot", "Hallo!"), ("user", "das habe ich dir doch eben gesagt, ich bin doch der Selin, hörst du")]}
     await bridge._maybe_identify(None, state)
     assert handed == ["Selin"]
+    # the name as the transcript may write it: counts, but can be taken back
+    handed.clear()
+    state = {"dialog": [("bot", "Hallo!"), ("user", "ich bin doch der Sellin")]}
+    await bridge._maybe_identify(None, state)
+    assert handed == ["Selin"] and state["weak_id"] == {"Selin"}
     # the name alone, some chopped turns after her question: taken when his turn is over
     handed.clear()
     state = {"dialog": [["bot", "Wer ist denn da?"], ["user", "warte mal"], ["bot", "Gern."], ["user", "so"],
@@ -687,6 +692,18 @@ async def test_a_name_said_in_his_own_way_counts_and_she_does_not_ask_openly_aga
     state = {"dialog": [["user", "Selin am Apparat"], ["bot", "Schön."]]}
     await bridge._maybe_ask_who(None, state)
     assert sent == [phrases.WHO_NUDGE_NAMED.format(name="Selin")] and "nicht offen, wer da ist" in sent[0]
+    # her own ears come first in every reminder (2.183.0): what she heard is not overruled by the bridge
+    for text in (phrases.WHO_NUDGE, phrases.WHO_NUDGE_AGAIN, phrases.WHO_NUDGE_NAMED):
+        assert "schon selbst gesagt, wer sie ist, dann fragst du nicht" in text
+    # a second word of a profile name alone is no introduction, the first name must be there
+    assert not phrases.bare_name(["ich", "bin", "der", "beispiel"], ["selin", "beispiel"], True)
+    assert phrases.bare_name(["selin", "beispiel", "hier"], ["selin", "beispiel"], False)
+    assert phrases.asked_if("Du bist Selin, oder?", "Selin")
+    # "weil ich müde bin" is no name given: the reminder still comes (the name first forms only count for known names)
+    sent.clear()
+    await bridge._maybe_ask_who(None, {"dialog": [["user", "mach leiser, weil ich müde bin"], ["bot", "Gern."]]})
+    assert sent == [phrases.WHO_NUDGE]
+    sent.clear()
     # and a yes to that question is the name
     for told, answer, who in (("Gern. Spreche ich gerade mit Selin?", "Ja genau", ["Selin"]),
                               ("Selin, sen misin?", "evet", ["Selin"]),

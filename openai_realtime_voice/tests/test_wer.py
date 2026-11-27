@@ -51,6 +51,9 @@ async def test_the_question_and_the_answer():
     dialog = [["bot", "Hallo!"], ["user", "Selin am Apparat, wie wird das Wetter"]]
     assert await wer.who(ask, dialog, ["Selin", "Selin Beispiel", "Deniz"]) == "selin"
     assert "Diese Personen kennt Leyla: Selin, Deniz" in asked[0]          # one first name once
+    # with how they belong to the family, so that "ich bin deine Mutter" can count like the name
+    assert await wer.who(ask, dialog, {"Selin": "wohnt hier, Mutter", "Selin Beispiel": "Gast", "Deniz": ""}) == "selin"
+    assert "Diese Personen kennt Leyla: Selin (wohnt hier, Mutter), Deniz" in asked.pop()
     assert "Nutzer: Selin am Apparat, wie wird das Wetter" in asked[0] and "sonst mit NIEMAND" in asked[0]
 
     async def other(prompt):
@@ -84,6 +87,7 @@ async def test_when_his_turn_is_over_the_model_reads_who_it_is(tmp_path, monkeyp
     assert sorted(handed) == ["Selin", "Selin Beispiel"] and state["weak_id"] == {"Selin", "Selin Beispiel"}
     assert state["who_checking"] is False and len(prompts) == 1
     assert "Who check 1: the person gave a known name after" in caplog.text
+    assert "(wohnt hier)" in prompts[0] and "(Gast)" in prompts[0]
     assert "Apparat" not in caplog.text and "Wetter" not in caplog.text    # no word of the talk in the log
     bridge._on_bot_text(state, " Noch etwas?", live_ws=object())           # known now: not asked again
     await _settle(bridge)
@@ -98,6 +102,12 @@ async def test_no_name_given_she_is_reminded_as_before_and_the_model_is_asked_ag
     assert handed == [] and state["who_checks"] == 1
     await bridge._maybe_ask_who(None, state)
     assert sent == [phrases.WHO_NUDGE]                                     # nobody said a name: she asks
+    # a known name in the person's words that the model did not take as their own ("wo ist Deniz"): she asks openly
+    # who is there, not whether she talks to Deniz
+    sent.clear()
+    other = {"dialog": [["bot", "Hallo!"], ["user", "wo ist denn Deniz"], ["bot", "Das weiß ich nicht."]], "who_checks": 1}
+    await bridge._maybe_ask_who(None, other)
+    assert sent == [phrases.WHO_NUDGE]
     # a turn ends while the model still reads: it is asked once more on the newer talk, not twice at once
     state["dialog"].append(["user", "und morgen"])
     bridge._on_bot_text(state, "Regen.", live_ws=object())

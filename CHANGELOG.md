@@ -7,7 +7,14 @@
   - While the model reads, `_maybe_ask_who` sends no reminder, so the bridge no longer tells her to ask for a name it is about to learn. The reminder comes one turn later when no name was given.
   - The lists stay as the way without waiting ("ich bin X", a short answer after her question, the name alone); the model is the net behind them. At most 8 checks a talk, none in the app, after the code word or once someone is known. One check running at a time; a turn that ends meanwhile is read in one more check.
   - The words of the talk go to the model only. The log says "Who check N: the person gave a known name after 1.1 s" or "no known name given".
-- 817 tests (813 before).
+- Checked once more at his word ("prüf nochmal, ob du Fehler gemacht hast", 00:48) before anything was installed. Found and mended, four of them faults of 2.182.10, which runs on his server since 00:06:
+  - 2.182.10 made the reminder for a known name ("Spreche ich mit X?") also when someone only asked for X ("wo ist X"): she would have asked the mother whether she is Metin. Now that reminder is only used when the text model could not be asked; after it has read the talk the open question is used.
+  - 2.182.10 used the new "name first" forms to decide that a name was given, and "weil ich müde bin" fits them: the reminder to ask would have stayed away in many talks. Back to the form of before for that decision; the new forms only count against known names.
+  - 2.182.10 took a turn as a name when it held any word of a profile name; the first name must be in it now.
+  - "ich bin X" counted only when the transcript wrote the name exactly; one letter off counts now as a weak sign (my figure "known after 30 s" for his talk of 23:42 rested on a check that allowed one letter off).
+  - Every reminder of the bridge now ends with: has the person just said who they are, she does not ask and uses the name. What she hears is not overruled by the bridge, also in the one moment the model cannot cover (he says his name in the very turn the reminder was sent for).
+  - The model is told how each person belongs to the family (profile field "Zugehörigkeit", `memory.profile_relations`), so "ich bin deine Mutter" counts like the name. 12 checks a talk instead of 8 (a talk with many cut off turns uses one a second). A hand over that fails because the talk ended is caught.
+- 817 tests (813 before), all of them run, the browser tests too (8 min).
 
 ## 2.182.10 (27 Nov 2026)
 

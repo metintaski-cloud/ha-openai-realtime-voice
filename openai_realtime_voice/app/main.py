@@ -958,6 +958,11 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         for word in names_said(said):
             hit = set(memory._words(word))
             names += [n for n, w in words.items() if hit & set(memory._words(n))]
+            # the name as the transcript may write it ("ich bin Sellin"): a weak sign
+            off = [n for n in words if n not in names
+                   and any(near(a, b) for a in hit for b in memory._words(n.split()[0]))]
+            state.setdefault("weak_id", set()).update(off)
+            names += off
         turn = dialog[-1][1]
         # her last turn before this one (not simply the entry before: two entries of the
         # person can follow each other)
@@ -1104,7 +1109,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             return
         said = " ".join(t for s, t in dialog if s == "user")
         told = " ".join(t for s, t in dialog if s != "user")
-        if names_said(said) or state.get("who_checking"):
+        if NAME_SAID_RE.search(said) or state.get("who_checking"):
             return  # a name was said, or the text model is just reading who it is (app/wer.py)
         # a known name the person has said, but not as their own: she asks for that name instead
         # of asking openly once more (2.182.10)
@@ -1112,6 +1117,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         profiles = self.memory.profile_words() if getattr(self, "memory", None) else {}
         heard = next((n.split()[0] for n in profiles if any(
             near(a, b) for a in said_words for b in memory._words(n.split()[0]))), "")
+        if state.get("who_checks"):
+            heard = ""  # the text model has read the talk: the name was not given as their own
         if not state.get("who_nudged") and not WHO_ASKED_RE.search(told):
             state["who_nudged"] = True
             state["who_asked_turn"] = turns
@@ -1142,12 +1149,15 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         turn = memory._words(dialog[-1][1])
         gone = state.get("not_them") or ()
         return [n for n in self.memory.profile_words()
-                if n not in gone and bare_name(turn, set(memory._words(n)), asked)]
+                if n not in gone and bare_name(turn, memory._words(n), asked)]
 
     async def _take_bare_names(self, live_ws, state: dict, names: list) -> None:
         state.setdefault("weak_id", set()).update(names)  # can be taken back (_maybe_name_wrong)
-        for name in names:
-            await self._hand_over_personal(live_ws, state, name)
+        try:
+            for name in names:
+                await self._hand_over_personal(live_ws, state, name)
+        except Exception as e:  # the talk may have ended meanwhile
+            logger.info("Personal part not handed over: %s", type(e).__name__)
 
     async def _who_ask(self, prompt: str) -> Optional[str]:
         return await textmodel.ask(prompt, self.openai_api_key, [self.memory_model],
@@ -1176,7 +1186,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             while True:
                 state["who_again_wanted"] = False
                 state["who_checks"] = state.get("who_checks", 0) + 1
-                profiles = self.memory.profile_words()
+                profiles = self.memory.profile_relations()
                 began = time.monotonic()
                 try:
                     found = await wer.who(self._who_ask, [list(x) for x in state.get("dialog", [])], profiles)
@@ -1191,9 +1201,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 logger.info("Who check %d: %s after %.1f s", state["who_checks"],
                             "the person gave a known name" if names else "no known name given", took)
                 if names:
-                    state.setdefault("weak_id", set()).update(names)  # can be taken back
-                    for name in names:
-                        await self._hand_over_personal(live_ws, state, name)
+                    await self._take_bare_names(live_ws, state, names)
                     return
                 if not state.get("who_again_wanted") or state.get("who_checks", 0) >= wer.MAX_CHECKS:
                     return

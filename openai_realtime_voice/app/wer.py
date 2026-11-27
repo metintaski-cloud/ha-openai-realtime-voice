@@ -16,7 +16,8 @@ from typing import Awaitable, Callable, Optional
 from app import memory, schwer, spott
 
 TIMEOUT_S = 4.0            # a judgement takes 1.0 to 1.2 s (schwer.py, measured 24 Nov 2026)
-MAX_CHECKS = 8             # per talk; after that she goes by her own rules and the lists
+MAX_CHECKS = 12            # per talk (a talk with many cut off turns uses one about every
+                           # second); after that she goes by her own rules and the lists
 MAX_CHARS = 3000           # the newest part of the talk
 FAST = schwer.FAST         # one word, no thinking
 
@@ -26,19 +27,24 @@ Diese Personen kennt Leyla: {names}
 
 Frage: Hat die Person, die mit Leyla spricht, in diesem Gespräch selbst gesagt oder bestätigt, dass sie eine dieser Personen ist? Das zählt: sich vorstellen, in welchen Worten auch immer; auf Leylas Frage, wer da ist, mit dem Namen antworten; Leylas Frage, ob sie mit dieser Person spricht, bejahen. Das zählt nicht: über die Person reden, sie rufen, grüßen oder nach ihr fragen; Stimme, Sprache oder Thema; ein Name, den nur Leyla gesagt hat. Hat die Person einen Namen später zurückgenommen oder jemand anderes spricht inzwischen, zählt das Letzte.
 
-Antworte mit genau einem der Namen oben, wenn es klar ist, sonst mit NIEMAND. Kein weiteres Wort.
+In Klammern steht, wie jemand zur Familie gehört: Sagt die Person das von sich ("ich bin deine Mutter", "annenim"), zählt es wie der Name.
+
+Antworte mit genau einem der Vornamen oben, wenn es klar ist, sonst mit NIEMAND. Kein weiteres Wort.
 
 Gespräch:
 {dialog}"""
 
 
 def first_names(profiles) -> dict:
-    """{key: first name} of the people she has a profile of; one first name once."""
+    """{key: (first name, how they belong to the family)} of the people she has a profile of;
+    one first name once. `profiles`: names, or {name: relation} (memory.profile_relations), so
+    "ich bin deine Mutter" can be told from a name."""
     out = {}
     for name in profiles:
         first = (str(name).split() or [""])[0]
+        relation = str(profiles.get(name) or "") if isinstance(profiles, dict) else ""
         if first:
-            out.setdefault(spott.key(first), first)
+            out.setdefault(spott.key(first), (first, relation[:60]))
     return out
 
 
@@ -48,7 +54,7 @@ async def who(ask: Callable[[str], Awaitable[Optional[str]]], dialog: list, prof
     names = first_names(profiles)
     if not names or not any(s == "user" and str(t).strip() for s, t in dialog):
         return None
-    text = await ask(PROMPT.format(names=", ".join(names.values()),
-                                   dialog=memory.format_dialog(dialog)[-MAX_CHARS:]))
+    listed = ", ".join(f"{first} ({relation})" if relation else first for first, relation in names.values())
+    text = await ask(PROMPT.format(names=listed, dialog=memory.format_dialog(dialog)[-MAX_CHARS:]))
     answer = spott.key((text or "").strip(" .\n\"'„“"))
     return answer if answer in names else None
