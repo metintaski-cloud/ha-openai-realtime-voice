@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.184.0 (27 Nov 2026)
+
+- `feat`: two buttons bottom right in the chat of the app, "💃 Tanz" and "✨ Zeig" (Metin, 03:51: "kannst du mir im App noch 2 Buttons links bauen für tanzen und zeigen", 03:52: "oder besser rechts unten"). They ask for the scene without a chat message.
+  - Whether she does it is decided where the chat decides it: `POST /api/szene {scene}` asks `mood.scene` (her level, `heart.SCENES`: she dances when she is well, she shows herself only when she is well) and answers `{ok, scene, mood}`. Only `tanz` and `zeigen` can be asked this way (`SCENE_BUTTONS`), nothing that changes what she wears, and nothing without the code word.
+  - The page knows itself whether the dress she wears has clips for it (`scnHas`): on 27 Nov 2026 dances exist in the night dress (23) and the short Freizeit dress (5), the show only in the night dress (5). Without clips the button is grey and a tap says why ("In diesem Kleid hat sie keinen Tanz.", "Zeigen gibt es nur im Nachtkleid."); when she is not in the mood: "Dazu ist sie gerade nicht in Stimmung."
+  - Place and look: in a line with the buttons on the right and exactly their size (50 x 44 px, same corners), the sign only, no word (Metin, 03:57, on the first picture with words: "ruhig was kleiner wie die anderen oben", "ohne Text"): 💃 above ✨, beside the text field, below the send button; they move up with the keyboard like the text field. Measured in a browser at 412 x 869 and 1400 x 800: nothing is covered.
+  - `sceneOk(n)` is the one check "this outfit has clips for the scene" for `stageScene` and the buttons.
+- 819 tests (817 before). In the full run 818 passed and one test of the edge light failed (`test_a_light_runs_around_the_edge_instead_of_the_ring`, it samples where the light is right after a clip change). Checked: it is unsteady here tonight with and without this change (alone: 1 of 5 runs failed on the code before, 1 of 3 with it), so it is not caused by the buttons. Open: make that test steady.
+
 ## 2.183.0 (27 Nov 2026)
 
 - `feat`: the bridge gets better ears for who talks (`app/wer.py`). After 2.182.10 Metin and I talked it through (00:12 to 00:27). His words: "Deine Brücke weg oder genauer sein, so dass es keinen Konflikt gibt mit ihrem Bedürfnis herauszufinden, mit wem sie spricht. Ich denke, hier ist ein Logikfehler." and, after reading together why the bridge exists (she did not ask reliably by herself, 2.62.1 and 2.63.2; a person's personal part and the mother's confidences only for that person, 2.64.0; the memory test of 16 Nov in which she answered before she knew who asked, 2.95.5; her knowledge does not fit in at once): "Ich glaube, jetzt, wo die Brücke da ist und an Bedeutung gewonnen hat, sollte sie so oder so bessere Ohren haben." The fault of logic: Leyla hears the person and understands a name in any wording, the bridge judged the same sentence with lists of wordings and then told her that she does not know who it is.

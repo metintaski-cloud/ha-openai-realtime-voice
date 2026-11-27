@@ -356,6 +356,7 @@ button:disabled{background:#1b2152;color:#6c79b8;box-shadow:none}
 @media (min-aspect-ratio:1/1){#chat #ctype{width:min(380px,30%)}
  @supports (field-sizing:content){#chat #ctype{width:auto}#chat #ctype textarea{field-sizing:content;flex:none;min-width:150px;max-width:min(440px,30vw);height:auto;min-height:44px}}}
 #ctype #ckb{position:absolute;right:-2px;top:-30px;width:auto;padding:3px 9px;font-size:12px;border-radius:999px;background:#000a;border:1px solid #22d3ee66}#ctype #ckb.on{background:linear-gradient(90deg,#22d3ee,#8b5cf6);color:#04121e}
+#cscn{position:absolute;z-index:3;right:10px;bottom:8px;display:flex;flex-direction:column;gap:8px}#cscn button{width:50px;min-width:0;height:44px;margin:0;padding:0;font-size:20px;line-height:1;border-radius:14px;text-align:center;white-space:nowrap;background:#000a;border:1px solid #d946ef66;box-shadow:none;backdrop-filter:blur(4px)}#cscn button.off{opacity:.4;filter:grayscale(1)}body.chatfull #chat #cscn{bottom:calc(8px + var(--kb,0px))}
 #ctype textarea.hoert{border-color:#ef4444;box-shadow:0 0 14px #ef444488;animation:recp 1s infinite}
 #ctype textarea{flex:1;min-height:44px;max-height:110px;height:48px;font:inherit;color:#fff;background:#000a;backdrop-filter:blur(4px);border:1px solid var(--bl);border-radius:10px;padding:9px;resize:none}#ctype #csend{width:auto;padding:0 12px;font-size:15px}
 #cin #cmic{width:64px;height:64px;padding:0;border-radius:50%;font-size:28px;box-shadow:0 0 18px #d946ef88}
@@ -382,7 +383,7 @@ body.chatfull #stage{top:calc(0px - env(safe-area-inset-top,0px));bottom:calc(0p
 body.chatfull #menu{top:calc(56px + env(safe-area-inset-top,0px))}
 </style></head><body>
 <div id="splash"><div class="sp"><img src="/icon.png?v=5" alt=""><svg viewBox="0 0 200 200"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#a855f7"/><stop offset="1" stop-color="#d946ef"/></linearGradient></defs><circle class="trk" cx="100" cy="100" r="90"/><circle class="rg" cx="100" cy="100" r="90" pathLength="100"/></svg></div></div>
-<header><button id="back">&#8249;</button><img id="micon" src="/icon.png?v=5" alt="Menü" title="Menü"><h1>Leyla Gedächtnis</h1></header><div id="menu"></div><div id="pulse" class="ok" title="Alles in Ordnung"><div class="tick" id="tick" style="display:none"><span></span></div><i class="spark" style="left:12%;top:30%;animation-delay:0s"></i><i class="spark" style="left:22%;top:68%;animation-delay:0.6s"></i><i class="spark" style="left:31%;top:22%;animation-delay:1.2s"></i><i class="spark" style="left:68%;top:74%;animation-delay:0.3s"></i><i class="spark" style="left:77%;top:28%;animation-delay:0.9s"></i><i class="spark" style="left:88%;top:60%;animation-delay:1.5s"></i><i class="spark" style="left:40%;top:80%;animation-delay:1.8s"></i><i class="spark" style="left:60%;top:18%;animation-delay:2.1s"></i><div class="beam"></div><svg viewBox="0 0 100 90"><defs><linearGradient id="hg" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#f43f5e"/></linearGradient><radialGradient id="hc"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#7dd3fc"/><stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/></radialGradient></defs><path d="M50 84C20 62 4 46 4 28C4 14 15 4 28 4C38 4 46 10 50 18C54 10 62 4 72 4C85 4 96 14 96 28C96 46 80 62 50 84Z" fill="#0b1650cc" stroke="url(#hg)" stroke-width="3.2" stroke-linejoin="round"/><path d="M14 40H34L40 28L47 54L53 34L58 44H86" fill="none" stroke="#e0f2fe" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/><circle cx="54" cy="38" r="9" fill="url(#hc)"/></svg></div><div id="chat"><div id="stage"><div class="fig"><img src="/leyla_body.jpg" alt=""></div><video id="svid" muted playsinline preload="auto"></video><video id="svid2" muted playsinline preload="auto"></video><video id="spet" class="pet" muted playsinline preload="auto"></video><div class="fog"><i class="fl"></i><i class="fr"></i><i class="ff"></i></div></div><div class="chead"><button id="cmenu" title="Menü">&#9776;</button><div class="cav"><img src="/leyla.jpg" alt=""><span id="mbadge"></span></div><div><h2>Chat mit Leyla</h2><div id="mlabel"></div><div id="ccount"></div></div><button id="crose" title="Rose schenken, einmal pro Woche">&#127801;</button><button id="cmus" title="Musik an oder aus">&#127925;</button><button id="clive" title="Live mit Leyla reden">&#128222;</button><div id="lpill"></div></div><div id="clog"></div><div id="ctype"><textarea id="ctext" readonly inputmode="none" placeholder="Tippen und sprechen ..."></textarea><button id="ckb" title="Tastatur statt Diktat">abc</button><button id="csend" title="Senden">&#10148;</button></div><div id="cin"><button id="cnew" title="Neuen Chat beginnen">&#128172;&#8314;</button><button id="cmic" title="Sprachnachricht">&#127908;</button></div></div><div id="live"><img src="/leyla.jpg" alt=""><div id="lstat">Verbinde ...</div><button id="lend">Auflegen</button></div><div id="rules"><div class="top"><button id="rback">&#8249;</button><h1>So ist Leyla</h1></div><div id="rtext"></div></div><div id="root"></div><div id="gmail" style="display:none"></div><div id="lamps" style="display:none"></div>
+<header><button id="back">&#8249;</button><img id="micon" src="/icon.png?v=5" alt="Menü" title="Menü"><h1>Leyla Gedächtnis</h1></header><div id="menu"></div><div id="pulse" class="ok" title="Alles in Ordnung"><div class="tick" id="tick" style="display:none"><span></span></div><i class="spark" style="left:12%;top:30%;animation-delay:0s"></i><i class="spark" style="left:22%;top:68%;animation-delay:0.6s"></i><i class="spark" style="left:31%;top:22%;animation-delay:1.2s"></i><i class="spark" style="left:68%;top:74%;animation-delay:0.3s"></i><i class="spark" style="left:77%;top:28%;animation-delay:0.9s"></i><i class="spark" style="left:88%;top:60%;animation-delay:1.5s"></i><i class="spark" style="left:40%;top:80%;animation-delay:1.8s"></i><i class="spark" style="left:60%;top:18%;animation-delay:2.1s"></i><div class="beam"></div><svg viewBox="0 0 100 90"><defs><linearGradient id="hg" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#f43f5e"/></linearGradient><radialGradient id="hc"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#7dd3fc"/><stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/></radialGradient></defs><path d="M50 84C20 62 4 46 4 28C4 14 15 4 28 4C38 4 46 10 50 18C54 10 62 4 72 4C85 4 96 14 96 28C96 46 80 62 50 84Z" fill="#0b1650cc" stroke="url(#hg)" stroke-width="3.2" stroke-linejoin="round"/><path d="M14 40H34L40 28L47 54L53 34L58 44H86" fill="none" stroke="#e0f2fe" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/><circle cx="54" cy="38" r="9" fill="url(#hc)"/></svg></div><div id="chat"><div id="stage"><div class="fig"><img src="/leyla_body.jpg" alt=""></div><video id="svid" muted playsinline preload="auto"></video><video id="svid2" muted playsinline preload="auto"></video><video id="spet" class="pet" muted playsinline preload="auto"></video><div class="fog"><i class="fl"></i><i class="fr"></i><i class="ff"></i></div></div><div class="chead"><button id="cmenu" title="Menü">&#9776;</button><div class="cav"><img src="/leyla.jpg" alt=""><span id="mbadge"></span></div><div><h2>Chat mit Leyla</h2><div id="mlabel"></div><div id="ccount"></div></div><button id="crose" title="Rose schenken, einmal pro Woche">&#127801;</button><button id="cmus" title="Musik an oder aus">&#127925;</button><button id="clive" title="Live mit Leyla reden">&#128222;</button><div id="lpill"></div></div><div id="clog"></div><div id="ctype"><textarea id="ctext" readonly inputmode="none" placeholder="Tippen und sprechen ..."></textarea><button id="ckb" title="Tastatur statt Diktat">abc</button><button id="csend" title="Senden">&#10148;</button></div><div id="cscn"><button id="ctanz" title="Tanz für mich">&#128131;</button><button id="czeig" title="Zeig dich">&#10024;</button></div><div id="cin"><button id="cnew" title="Neuen Chat beginnen">&#128172;&#8314;</button><button id="cmic" title="Sprachnachricht">&#127908;</button></div></div><div id="live"><img src="/leyla.jpg" alt=""><div id="lstat">Verbinde ...</div><button id="lend">Auflegen</button></div><div id="rules"><div class="top"><button id="rback">&#8249;</button><h1>So ist Leyla</h1></div><div id="rtext"></div></div><div id="root"></div><div id="gmail" style="display:none"></div><div id="lamps" style="display:none"></div>
 <div id="bar"><button id="del" disabled>Markierte löschen</button></div>
 <script>
 var ZNAMEON=false;  /* 2.179.0: the name of the running clip is shown, switched in the menu */
@@ -581,7 +582,8 @@ const DANCE_N=4;
 function zeigenChain(){if(!STM||STM.outfit!=='nacht')return null;const T=['ruhig','mittel','schnell'].filter(t=>clipVars('zeigen'+t).length);if(clipVars('zeigenlang').length&&(!T.length||Math.random()<.5))return ['zeigenlang'];if(!T.length)return null;const t=T[Math.floor(Math.random()*T.length)],f='zeigen'+t,o=[];
  if(clipVars('hinten').length&&clipVars(f+'hf').length){o.push([f,'hinten',f+'hf']);if(clipVars(f+'hh').length)o.push(['hinten',f+'hh',f+'hf']);}
  if(!o.length)o.push([f,f,f]);return o[Math.floor(Math.random()*o.length)];}  /* night show (2.119.1, Metin): three clips of one tempo, front poses, turning away, posing from behind, turning back; fast ones three front poses */
-function stageScene(n){if(!CLIPS||!STM)return;ZCOLNOW='';if(n==='komm'&&!clipVars('komm').length)n='liebe';const ok=n==='zeigen'&&zeigenChain()?1:n==='bettvonarbeit'?(clipVars(n).length||clipVars('umziehen').length):clipVars(n).length;if(!ok)return;
+function sceneOk(n){return n==='zeigen'&&zeigenChain()?1:n==='bettvonarbeit'?(clipVars(n).length||clipVars('umziehen').length):clipVars(n).length;}
+function stageScene(n){if(!CLIPS||!STM)return;ZCOLNOW='';if(n==='komm'&&!clipVars('komm').length)n='liebe';if(!sceneOk(n))return;
  ZBUSY=Date.now()+300000;ZPEND=null;SWAP=0;CONT=false;document.querySelectorAll('#stage video:not(.pet)').forEach(x=>{x.style.transition='opacity .35s';setTimeout(()=>{x.style.transition='';},1500);});
  stageSceneNow(n);}
 function stageSceneNow(n){if(n==='bettvonarbeit'&&!clipVars(n).length&&clipVars('umziehen').length)return stagePlay(['umziehen','bettvonfreizeit'],clipFor(STM));
@@ -667,7 +669,7 @@ function talkWant(voice){const on=TALKV||LISTEN,ch=on!==TALKS;TALKS=on;if(ch){tr
  if(was){CONT=live;stageLoop(clipFor(STM));}else CONT=false;}  /* she stopped listening before her talk clip came in: the loop goes on instead */
 function moodShow(st){if(!st||!st.mood)return;const c=document.getElementById('chat'),b=document.getElementById('mbadge');
  c.classList.toggle('low',!!st.low);c.classList.toggle('good',!st.low);document.getElementById('pulse').dataset.mood=st.low?'low':'good';b.style.display='flex';b.textContent=st.low?'🖤':'❤️';
- document.getElementById('mlabel').textContent=(st.low?'🖤 ':'❤️ ')+st.label;LASTST=st;const rb=document.getElementById('crose');if(rb)rb.classList.toggle('off',st.rose!=='ready');stageMood(st);}
+ document.getElementById('mlabel').textContent=(st.low?'🖤 ':'❤️ ')+st.label;LASTST=st;const rb=document.getElementById('crose');if(rb)rb.classList.toggle('off',st.rose!=='ready');stageMood(st);scnDraw();}
 let CLIPS=null,LASTST=null,STM=null;
 let CVER={},MUSV={},PET=[],PETON=false,PETCAME=false;let OUTFIT='',NIGHT=[],NIGHTBODY=false,LOOKBODY='';const CHANGE=['umziehen','bettvonarbeit','bettvonfreizeit'];
 /* Mokka, Leyla's cat (2.127.0, Metin's gift, name and look chosen by Leyla): a see through
@@ -987,6 +989,20 @@ document.getElementById('crose').onclick=async()=>{const st=LASTST||{};
  if(!j||!j.ok){if(j&&j.mood)moodShow(j.mood);CHAT.push({role:'info',text:j&&j.rose==='blocked'?'🌹 Sie nimmt gerade keine Rose an.':'🌹 Gerade nicht möglich.'});chatDraw();return;}
  moodShow(j.mood);const sc=clipVars(j.scene).length?j.scene:(j.scene==='rosefroh'?'kuss':'');if(sc)stageScene(sc);
  const ta=document.getElementById('ctext');ta.value='🌹 Ich schenke dir eine Rose.';chatSend();};
+/* The two buttons bottom right (2.184.0, Metin, 27 Nov 2026: "kannst du mir im App noch 2 Buttons bauen für tanzen und zeigen", "besser rechts
+   unten"). They ask for the scene without a chat message. Whether she does it is decided where the chat decides it: her level on the server
+   (heart.SCENES through /api/szene). What the page knows itself is whether the outfit she wears has clips for it; then the button is grey and
+   says why (27 Nov 2026: dances exist in the night dress and the short Freizeit dress, the show only in the night dress). */
+const SCN={tanz:['ctanz','💃','In diesem Kleid hat sie keinen Tanz.'],zeigen:['czeig','✨','Zeigen gibt es nur im Nachtkleid.']};
+function scnHas(n){if(!CLIPS||!STM)return false;return n==='zeigen'&&STM.outfit==='nacht'?NIGHT.some(x=>/^zeigen/.test(x)):clipVars(n).length>0;}
+function scnDraw(){for(const n in SCN){const b=document.getElementById(SCN[n][0]);if(b)b.classList.toggle('off',!scnHas(n));}}
+async function scnAsk(n){const ic=SCN[n][1],say=t=>{CHAT.push({role:'info',text:ic+' '+t});chatDraw();};
+ if(!scnHas(n))return say(SCN[n][2]);
+ let j=null;try{j=await (await post('/api/szene',{scene:n})).json();}catch(e){}
+ if(j&&j.mood)moodShow(j.mood);
+ if(j&&j.scene&&sceneOk(j.scene))return stageScene(j.scene);
+ say(j?'Dazu ist sie gerade nicht in Stimmung.':'Gerade nicht möglich.');}
+for(const n in SCN)document.getElementById(SCN[n][0]).onclick=()=>scnAsk(n);
 async function moodLoad(){try{moodShow(await (await post('/api/mood',{})).json());}catch(e){}}
 setInterval(()=>{if(CODE&&document.getElementById('chat').style.display==='block'){moodLoad();remindPending();reachPending();}},60000);
 /* 2.173.0 (Metin: "dass ich auf Handy schreibe und auf PC Monitor sehe", in step): what his other device sends and what she answers
@@ -1734,6 +1750,7 @@ SYNC = collections.deque(maxlen=60)
 SYNC_SEQ = [0]
 SYNC_WAKE: set = set()
 SYNC_WAIT_S = 25.0
+SCENE_BUTTONS = ("tanz", "zeigen")  # /api/szene, the buttons bottom right in the chat (2.184.0)
 SYNC_KEEP = ("reply", "lights", "scene", "mood", "silent", "error")  # no audio, no cards: those stay where he acts
 
 
@@ -2425,6 +2442,18 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
             if ok:
                 logger.info("Memory page: Leyla has discovered Mokka")
             await _respond(writer, "200 OK", "application/json", json.dumps({"ok": ok}))
+        elif method == "POST" and path == "/api/szene":
+            # the two buttons of the app, Tanz and Zeig (2.184.0): her level decides as in the
+            # chat (heart.SCENES); only these two, nothing that changes what she wears
+            want = str(d.get("scene", ""))
+            ok = bool(unlocked and mood and want in SCENE_BUTTONS and hasattr(mood, "scene"))
+            out = {"scene": mood.scene(want) if ok else ""}
+            out["ok"] = bool(out["scene"])
+            if unlocked and mood:
+                out["mood"] = mood.status()
+            if ok:
+                logger.info("Memory page: button %s, she %s", want, "does it" if out["ok"] else "is not in the mood")
+            await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
         elif method == "POST" and path == "/api/rose":
             out = mood.give_rose() if (unlocked and mood and hasattr(mood, "give_rose")) else {"ok": False}
             if out.get("ok") or out.get("rose") == "blocked":
