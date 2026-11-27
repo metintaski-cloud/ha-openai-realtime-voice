@@ -195,13 +195,14 @@ def _files() -> dict:
             "schnitt": os.environ.get("LEYLA_SCHNITT", mw.SCHNITT_PATH),
             "ton": os.environ.get("LEYLA_TON", TON_PATH),
             "vorlauf": os.environ.get("LEYLA_VORLAUF", mw.VORLAUF_PATH),
-            "blende": os.environ.get("LEYLA_BLENDE", mw.BLENDE_PATH)}
+            "blende": os.environ.get("LEYLA_BLENDE", mw.BLENDE_PATH),
+            "ende": os.environ.get("LEYLA_ENDE", mw.ENDE_PATH)}
 
 
 def _now() -> dict:
     from app import memory_web as mw
     return {"tempo": mw._tempo_read(), "kurve": mw._kurve_read(), "schnitt": mw._schnitt_read(),
-            "ton": ton_read(), "vorlauf": mw._vorlauf_read(), "blende": mw._blende_read()}
+            "ton": ton_read(), "vorlauf": mw._vorlauf_read(), "blende": mw._blende_read(), "ende": mw._ende_read()}
 
 
 def _write(path: str, data) -> None:
@@ -232,7 +233,8 @@ def _changed(a: dict, b: dict) -> list:
                  (a.get("kurve") or {}, b.get("kurve") or {}),
                  (a.get("schnitt") or {}, b.get("schnitt") or {}),
                  (a.get("vorlauf") or {}, b.get("vorlauf") or {}),
-                 (a.get("blende") or {}, b.get("blende") or {})):
+                 (a.get("blende") or {}, b.get("blende") or {}),
+                 (a.get("ende") or {}, b.get("ende") or {})):
         names |= {n for n in set(x) | set(y) if x.get(n) != y.get(n)}
     return sorted(names)
 
@@ -248,7 +250,8 @@ def stand_read() -> Optional[dict]:
           and isinstance(d.get("ton", {}), dict))
     lead = d.get("vorlauf") if ok and isinstance(d.get("vorlauf"), dict) else {}  # none before 2.166.0
     fade = d.get("blende") if ok and isinstance(d.get("blende"), dict) else {}  # none before 2.186.0
-    return dict(d, ton=d.get("ton") or {"aus": [], "stumm": {}, "laut": {}}, vorlauf=lead, blende=fade) if ok else None
+    soft = d.get("ende") if ok and isinstance(d.get("ende"), dict) else {}  # none before 2.190.0
+    return dict(d, ton=d.get("ton") or {"aus": [], "stumm": {}, "laut": {}}, vorlauf=lead, blende=fade, ende=soft) if ok else None
 
 
 def stand_save() -> dict:
@@ -277,7 +280,7 @@ def stand_restore() -> dict:
         return {"ok": False}
     back = _changed(d, _now())
     files = _files()
-    for key in ("tempo", "kurve", "schnitt", "ton", "vorlauf", "blende"):
+    for key in ("tempo", "kurve", "schnitt", "ton", "vorlauf", "blende", "ende"):
         _write(files[key], d[key])
     return {**stand_info(), "zurueck": back}
 
@@ -374,7 +377,8 @@ label{display:flex;gap:4px;align-items:center}
 <div class="bar"><button id="bh">hart</button><button id="bw">weich</button><button id="bseh">▶ Übergang ansehen</button><button id="bsave" class="pri">Übergang merken</button></div>
 <div class="bar"><span class="z">Blende</span><button id="bm" class="pm" title="0,05 Sekunden kürzer">−</button><span id="blab" class="val">0.80</span><button id="bp" class="pm" title="0,05 Sekunden länger">+</button><span class="t">so viele Sekunden blendet er ein</span></div>
 <div class="bar"><span class="z">Einsatz</span><button id="lm" class="pm" title="0,05 Sekunden später">−</button><span id="llab" class="val">0.25</span><button id="lp" class="pm" title="0,05 Sekunden früher">+</button><span class="t">so viele Sekunden vor dem Ende des vorigen fängt er an</span></div>
-<div class="t" id="binfo"></div></div>
+<div class="t" id="binfo"></div>
+<label class="t" style="display:block;margin-top:6px"><input type="checkbox" id="bweich"> Das Ende dieses Clips passt nicht zur Grundpose: danach wird immer weich geblendet</label></div>
 <div class="sub"><h3>Ein Stück schneller oder langsamer</h3><div class="t">Für eine Stelle im Clip, die aus dem Takt fällt. Unten am Rand zur Stelle ziehen (oder mit ◀ Bild und Bild ▶ hingehen), dann der Reihe nach:</div>
 <div class="bar"><button id="pa">① Stück beginnt hier</button><button id="pam" title="Anfang ein Bild früher">◀ Bild</button><button id="pap" title="Anfang ein Bild später">Bild ▶</button></div>
 <div class="bar"><button id="pb">② Stück endet hier</button><button id="pbm" title="Ende ein Bild früher">◀ Bild</button><button id="pbp" title="Ende ein Bild später">Bild ▶</button></div>
@@ -402,7 +406,7 @@ const SLOTS=10;   /* places per row of loops and of each touch zone */
 const ZONES=[['Gesicht',['gesicht']],['Brust',['brust']],['Bauch',['bauch','mix']],['Po',['po','povorne','mix']]];
 const PRELOAD_S=3,LOOP_PRE=0.25,LOOP_OFF=300,FAST_OFF=450;
 const $=id=>document.getElementById(id);
-let LOOK='',PRE='',CL=[],VER={},RATE={},KURVE={},SCHNITT={},SAVED={},MUTE={},STUMM={},VOL={},LEAD={},FADE={},SVL={},SVF={},OFF={},SV=0,TOK=0,CUR='',CURSND=false,HOLD='',LAST='',BUSY=false,SEQ=true,SOLO=false,PAUSED=false,SCRUB=false;
+let LOOK='',PRE='',CL=[],VER={},RATE={},KURVE={},SCHNITT={},SAVED={},MUTE={},STUMM={},VOL={},LEAD={},FADE={},SOFT={},SVL={},SVF={},OFF={},SV=0,TOK=0,CUR='',CURSND=false,HOLD='',LAST='',BUSY=false,SEQ=true,SOLO=false,PAUSED=false,SCRUB=false;
 const base=n=>n.replace(/[0-9]+$/,'');
 const vars=b=>CL.filter(n=>base(n)===PRE+b);
 /* every loop the dress has, the extra one of the happy loop too (Metin, 27 Nov 2026: "Schleife bis Max, die wir haben") */
@@ -495,12 +499,13 @@ function label(){const p=pthNow(),c=SCHNITT[p],v=vis(),d=v.duration||10;$('name'
    that one ends; otherwise it starts as soon as it can play. `done` is called PRELOAD_S before
    its own end, so the next clip can load in time (as on the stage of the app). */
 function show(name,opt,done){const vs=[$('v0'),$('v1')],a=vs[SV],b=vs[1-SV],tok=++TOK,pth=LOOK+'/'+name;SOLO=false;PAUSED=false;
- const pre=opt.fast?0:(LEAD[pth]!==undefined?LEAD[pth]:LOOP_PRE),off=opt.fast?FAST_OFF:LOOP_OFF;  /* LEAD: when this clip comes in, set on the page /naht */
+ const soft=!!SOFT[a.dataset.pth||''];  /* the clip that goes out does not end in the base pose: soft blend and normal lead, as on the stage of the app (2.190.0) */
+ const pre=opt.fast?0:(!soft&&LEAD[pth]!==undefined?LEAD[pth]:LOOP_PRE),off=opt.fast?FAST_OFF:LOOP_OFF;  /* LEAD: when this clip comes in, set on the page /naht */
  b.onended=null;b.ontimeupdate=null;b.oncanplaythrough=null;b.dataset.pth=pth;b.muted=!(opt.snd&&$('ton').checked&&!MUTE[pth]);b.volume=.7;
  let rdy=false;
  const go=()=>{if(tok!==TOK)return;const cs=opt.tail?Math.max(cutStart(pth),endOf(b)-opt.tail):cutStart(pth);if(Math.abs(b.currentTime-cs)>0.04)b.currentTime=cs;
   b.play().catch(()=>{b.muted=true;b.play().catch(()=>{});});
-  vs.forEach(x=>{x.style.transition='opacity '+(opt.fast?'.35s':'.8s');});if(opt.cont&&FADE[pth]!==undefined)b.style.transition='opacity '+FADE[pth]+'s';  /* FADE: the blend of the clip that takes over, as on the stage of the app (2.186.0) */
+  vs.forEach(x=>{x.style.transition='opacity '+(opt.fast?'.35s':'.8s');});if(opt.cont&&!soft&&FADE[pth]!==undefined)b.style.transition='opacity '+FADE[pth]+'s';  /* FADE: the blend of the clip that takes over, as on the stage of the app (2.186.0) */
   b.style.zIndex=1;a.style.zIndex=0;b.classList.add('on');SV=1-SV;CUR=name;CURSND=!!opt.snd;label();volFollow(b,pth);
   setTimeout(()=>{if(tok===TOK)a.classList.remove('on');},off);setTimeout(()=>{if(!a.classList.contains('on'))a.pause();},off+150);
   let fired=false,hold=0;const src0=b.src,fire=()=>{if(fired||tok!==TOK)return;fired=true;if(done)done();};
@@ -580,7 +585,7 @@ document.querySelectorAll('.wh').forEach(el=>{let last=0;
 function pick(i){const o=OUT[i];LOOK=o[1];PRE=o[2];CL=(window.J.outfits[LOOK]||{}).clips||[];LAST='';CUR='';OFF={};PV=null;TV=null;try{localStorage.setItem('lganz',String(i));}catch(e){}draw();whFill();whDraw();loopNext(false,true);}
 async function start(){const j=await (await fetch('/clips.json?t='+Date.now())).json();window.J=j;const o=j.outfits||{};
  for(const look in o){VER[look]=o[look].v||0;for(const c in (o[look].r||{}))RATE[look+'/'+c]=o[look].r[c];
-  for(const c in (o[look].k||{}))KURVE[look+'/'+c]=o[look].k[c];for(const c in (o[look].l||{}))SVL[look+'/'+c]=LEAD[look+'/'+c]=o[look].l[c];for(const c in (o[look].b||{}))SVF[look+'/'+c]=FADE[look+'/'+c]=o[look].b[c];for(const c of (o[look].m||[]))MUTE[look+'/'+c]=1;
+  for(const c in (o[look].k||{}))KURVE[look+'/'+c]=o[look].k[c];for(const c in (o[look].l||{}))SVL[look+'/'+c]=LEAD[look+'/'+c]=o[look].l[c];for(const c in (o[look].b||{}))SVF[look+'/'+c]=FADE[look+'/'+c]=o[look].b[c];for(const c of (o[look].w||[]))SOFT[look+'/'+c]=1;for(const c of (o[look].m||[]))MUTE[look+'/'+c]=1;
   for(const c in (o[look].ms||{}))STUMM[look+'/'+c]=o[look].ms[c];for(const c in (o[look].mv||{}))VOL[look+'/'+c]=o[look].mv[c];
   for(const c in (o[look].s||{})){SCHNITT[look+'/'+c]=o[look].s[c].slice();SAVED[look+'/'+c]=o[look].s[c].slice();}}
  const s=$('look');OUT.forEach((x,i)=>{if(!o[x[1]])return;const op=document.createElement('option');op.value=String(i);op.textContent=x[0];s.appendChild(op);
@@ -621,7 +626,8 @@ $('mk').onclick=async()=>{if(!CUR)return;const j=await post('/api/tempo',{name:p
 const bNow=()=>{const p=pthNow();return {p:p,f:FADE[p]!==undefined?FADE[p]:0.8,l:LEAD[p]!==undefined?LEAD[p]:LOOP_PRE};};
 function bShow(){const x=bNow(),sf=SVF[x.p]!==undefined?SVF[x.p]:0.8,sl=SVL[x.p]!==undefined?SVL[x.p]:LOOP_PRE,neu=!!CUR&&(Math.abs(sf-x.f)>0.0004||Math.abs(sl-x.l)>0.0004);
  $('blab').textContent=x.f.toFixed(2);$('llab').textContent=x.l.toFixed(2);$('bh').classList.toggle('on',x.f<=0.1001);$('bw').classList.toggle('on',x.f>=0.7999);
- $('binfo').textContent=!CUR?'':neu?'Noch nicht gemerkt.':'So ist es gemerkt.';}
+ $('binfo').textContent=!CUR?'':neu?'Noch nicht gemerkt.':'So ist es gemerkt.';$('bweich').checked=!!SOFT[x.p];$('bweich').disabled=!CUR;}
+$('bweich').onchange=async()=>{if(!CUR)return;const p=pthNow(),w=$('bweich').checked,j=await post('/api/ende',{name:p,weich:w});if(j&&j.ok){if(w)SOFT[p]=1;else delete SOFT[p];}bShow();standLater();};   /* stored at once: it is a fact about the clip, not a value to try out */
 const bSet=(f,l)=>{if(!CUR)return;const p=pthNow();f=Math.round(Math.min(0.8,Math.max(0.05,f))*100)/100;l=Math.round(Math.min(1.5,Math.max(0,l))*100)/100;
  if(f===0.8)delete FADE[p];else FADE[p]=f;if(l===LOOP_PRE)delete LEAD[p];else LEAD[p]=l;bShow();};
 $('bm').onclick=()=>{const x=bNow();bSet(x.f-0.05,x.l);};$('bp').onclick=()=>{const x=bNow();bSet(x.f+0.05,x.l);};

@@ -33,7 +33,7 @@ def test_it_shows_the_hand_over_of_a_loop_as_the_app_does_it():
     # a loop is handed over tight: PRE 0.25 s, the old clip fades from 300 ms on, the new one fades in 0.8 s
     assert "const PRE0=tight?0.25:0.8,OFF=tight?300:850" in app
     # the lead of the clip that comes in replaces the 0.25 s, only for a loop hand over
-    assert "PRE=tight&&LEAD[lp]!==undefined?LEAD[lp]:PRE0;" in app and "LEAD[k+'/'+c]=outs[k].l[c]" in app
+    assert "PRE=tight&&!soft&&LEAD[lp]!==undefined?LEAD[lp]:PRE0;" in app and "LEAD[k+'/'+c]=outs[k].l[c]" in app
     assert naht_page.HAND_PRE == memory_web.LEAD_DEFAULT
     assert app.count("TIGHT=true;") == 3 and "function stageLoop" in app
     assert "TIGHT=!now;stageShow(n,false," in app   # a talk clip comes in tight too, except when her voice starts it at once (2.176.0)

@@ -126,7 +126,7 @@ const OUT=[['Kurzes Arbeitskleid','kurz',''],['Kurzes Freizeitkleid','kurz','fre
 const ZONES=[['Kopf',['gesicht']],['Brust',['brust']],['Bauch',['bauch']],['Po',['po','povorne']],['Mix',['mix']]];  /* the touch clips, as Metin names them (01:46: Kopf, Brust, Po, Bauch) */
 const MIXTXT='Zwei Mischer, beide ohne Ende und mit jeder Übergabe wie in der App: der eine spielt die Schleifen mit Haken immer der Reihe nach, der andere gemischt (jede einmal, dann neu gemischt).';
 const HAND_PRE=0.25,HAND_OFF=300,HAND_FADE=0.8,FRAME=1/24,MINLEN=0.5,LEAD_MAX=1.5,FADE_MIN=0.05;  /* as the loops of the app hand over (memory_web.stageShow, TIGHT) */
-let LOOK='',PRE='',CL=[],VER={},RATE={},KURVE={},SCHNITT={},LEAD={},FADE={},LAY=[],PLAYING=false,MIX='',TOK=0,STOK=0,PEND=0,AXD=null,ZTOP=1;
+let LOOK='',PRE='',CL=[],VER={},RATE={},KURVE={},SCHNITT={},LEAD={},FADE={},SOFT={},LAY=[],PLAYING=false,MIX='',TOK=0,STOK=0,PEND=0,AXD=null,ZTOP=1;
 const base=n=>n.replace(/[0-9]+$/,'');
 const mine=n=>PRE?n.startsWith(PRE):!n.startsWith('freizeit');
 const pth=n=>LOOK+'/'+n;
@@ -142,6 +142,8 @@ const savedS=L=>{const c=SCHNITT[pth(L.n)];return c&&c[0]>0?c[0]:0;};
 const savedE=L=>{const c=SCHNITT[pth(L.n)];return c&&c[1]>0&&c[1]<L.d?c[1]:L.d;};
 const savedL=L=>{const l=LEAD[pth(L.n)];return l===undefined?HAND_PRE:l;};
 const savedF=L=>{const f=FADE[pth(L.n)];return f===undefined?HAND_FADE:f;};  /* the blend: how long the clip fades in when it takes over (2.186.0) */
+/* after a clip that does not end in the base pose the blend is soft and the lead normal, as on the stage of the app (2.190.0) */
+const fadeOf=(a,b)=>SOFT[pth(a.n)]?HAND_FADE:b.fd,leadOf=(a,b)=>SOFT[pth(a.n)]?HAND_PRE:b.ld;
 const savedK=L=>(KURVE[pth(L.n)]||[]).map(x=>x.slice(0,3));
 /* the tempo of a layer at one moment of its clip: a stretch with its own tempo wins over the tempo of the clip (Metin, 05:25) */
 const rAt=(L,t)=>{for(const k of L.k)if(t>=k[0]&&t<k[1])return k[2];return L.rt;};
@@ -228,7 +230,7 @@ function pick(i,a,b){const o=OUT[i];stop();LAY.forEach(L=>{L.play=0;L.v.pause();
  const la=lay(a)||LAY[0],lb=lay(b)&&lay(b)!==la?lay(b):LAY.find(L=>L!==la);if(la)$('hf').value=la.n;const lc=LAY.find(L=>L!==la&&L!==lb&&isLoop(L.n));$('h3').value=lc&&lb?lc.n:'';$('h4').value='';$('h5').value='';if(lb){$('ht').value=lb.n;hand(la,lb);}else if(la){la.on=true;show();}}
 async function start(){const j=await (await fetch('/clips.json?t='+Date.now())).json();window.J=j;const o=j.outfits||{};
  for(const look in o){VER[look]=o[look].v||0;for(const c in (o[look].r||{}))RATE[look+'/'+c]=o[look].r[c];
-  for(const c in (o[look].k||{}))KURVE[look+'/'+c]=o[look].k[c];for(const c in (o[look].l||{}))LEAD[look+'/'+c]=o[look].l[c];for(const c in (o[look].b||{}))FADE[look+'/'+c]=o[look].b[c];for(const c in (o[look].s||{}))SCHNITT[look+'/'+c]=o[look].s[c].slice();}
+  for(const c in (o[look].k||{}))KURVE[look+'/'+c]=o[look].k[c];for(const c in (o[look].l||{}))LEAD[look+'/'+c]=o[look].l[c];for(const c in (o[look].b||{}))FADE[look+'/'+c]=o[look].b[c];for(const c of (o[look].w||[]))SOFT[look+'/'+c]=1;for(const c in (o[look].s||{}))SCHNITT[look+'/'+c]=o[look].s[c].slice();}
  const s=$('look');OUT.forEach((x,i)=>{if(!o[x[1]])return;const op=document.createElement('option');op.value=String(i);op.textContent=x[0];s.appendChild(op);});
  const qs=new URLSearchParams(location.search),qa=qs.get('a')||'',qb=qs.get('b')||'';let i=-1,a='',b='';
  if(qa.includes('/')){const lk=qa.split('/')[0];a=qa.split('/')[1];b=qb.includes('/')?qb.split('/')[1]:'';i=OUT.findIndex(x=>x[1]===lk&&(x[2]==='freizeit')===a.startsWith('freizeit'));}
@@ -268,7 +270,7 @@ async function play(){if(PLAYING){stop();return;}const seq=chain();if(seq.length
  const tick=()=>{if(tok!==TOK)return;const a=seq[i],b=seq[i+1],now=performance.now();follow(a);if(prev&&!prev.v.paused)follow(prev);
   if(prev&&prev.v.currentTime>=prev.e&&!prev.v.paused)prev.v.pause();
   if(b&&!prep&&now-t1>1300&&a.v.currentTime>=a.e-3){prep=true;b.v.pause();b.v.style.transition='none';b.v.style.opacity='0';try{b.v.currentTime=b.s;}catch(e){}}
-  if(b&&prep&&!on&&a.v.currentTime>=a.e-b.ld){on=true;follow(b,b.s);b.v.style.zIndex=String(++zc);b.v.play().catch(()=>{});b.v.style.transition='opacity '+b.fd+'s';b.v.style.opacity='1';window.SEEN.push(b.n);
+  if(b&&prep&&!on&&a.v.currentTime>=a.e-leadOf(a,b)){on=true;follow(b,b.s);b.v.style.zIndex=String(++zc);b.v.play().catch(()=>{});b.v.style.transition='opacity '+fadeOf(a,b)+'s';b.v.style.opacity='1';window.SEEN.push(b.n);
    setTimeout(()=>{if(tok===TOK){a.v.style.transition='opacity '+HAND_FADE+'s';a.v.style.opacity='0';}},HAND_OFF);prev=a;i++;on=false;prep=false;t1=now;}
   else if(!b&&(a.v.currentTime>=a.e||a.v.ended)){a.v.pause();setTimeout(()=>{if(tok===TOK)stop();},500);return;}
   requestAnimationFrame(tick);};requestAnimationFrame(tick);}
@@ -294,8 +296,8 @@ async function mix(mode){if(PLAYING){const was=MIX;stop();if(was===mode)return;}
  const tick=()=>{if(tok!==TOK)return;const now=performance.now(),a=cur;follow(a);if(prev&&!prev.v.paused)follow(prev);
   if(prev&&prev.v.currentTime>=prev.e&&!prev.v.paused)prev.v.pause();
   if(!prep&&now-t1>1300&&(a.v.currentTime>=a.e-3*a.rt||(a.e-a.s)/a.rt<4.6)){nxt=other();if(nxt){prep=true;nxt.v.pause();nxt.v.style.transition='none';nxt.v.style.opacity='0';try{nxt.v.currentTime=nxt.s;}catch(e){}}}
-  if(prep&&nxt&&a.v.currentTime>=a.e-nxt.ld){const b=nxt;late=(a.v.currentTime-(a.e-b.ld))*1000/a.rt;window.LATE.push(Math.round(late));
-   follow(b,b.s);b.v.style.zIndex=String(++zc);b.v.play().catch(()=>{});b.v.style.transition='opacity '+b.fd+'s';b.v.style.opacity='1';window.SEEN.push(b.n);
+  if(prep&&nxt&&a.v.currentTime>=a.e-leadOf(a,nxt)){const b=nxt;late=(a.v.currentTime-(a.e-leadOf(a,b)))*1000/a.rt;window.LATE.push(Math.round(late));
+   follow(b,b.s);b.v.style.zIndex=String(++zc);b.v.play().catch(()=>{});b.v.style.transition='opacity '+fadeOf(a,b)+'s';b.v.style.opacity='1';window.SEEN.push(b.n);
    setTimeout(()=>{if(tok===TOK){a.v.style.transition='opacity '+HAND_FADE+'s';a.v.style.opacity='0';}},HAND_OFF);prev=a;cur=b;nxt=null;prep=false;t1=now;}
   else if(!nxt&&(a.v.currentTime>=a.e||a.v.ended)){try{a.v.currentTime=a.s;}catch(e){}a.v.play().catch(()=>{});}   /* only one loop takes part: it starts again */
   for(const L of [cur,prev])if(L&&!L.v.paused)L.t=r3(Math.min(L.e,L.v.currentTime));

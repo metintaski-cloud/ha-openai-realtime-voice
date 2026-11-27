@@ -29,6 +29,8 @@ It needs other cut marks, its original, or a new clip; until then it stays soft.
 The blend belongs to the clip that comes in, at every tight hand over: a loop that is set hard also comes in
 hard after a touch, a talk clip, a dance or a scene. So RAUS of every clip that can run before a loop must be
 at the floor before the loops of that look are set hard; a clip whose RAUS is high is the one to repair.
+Such a clip gets the mark "Ende weich" (POST /api/ende, key "w" in /clips.json, the tick in the box Übergang
+of the page /ganzes): after it the app blends softly with the normal lead, whatever the next clip asks for.
 Clips that belong to a chain of their own (sprichtpose between sprichtrein and sprichtraus, the middle of a
 dance chain, eifersuechtig) meet no loop on that side; read their line with that in mind.
 """
@@ -104,6 +106,7 @@ def main() -> None:
     val = val.get(args.look, val)
     marks, rates, curves = val.get("s", {}), val.get("r", {}), val.get("k", {})
     leads, fades = val.get("l", {}), val.get("b", {})
+    soft_end = set(val.get("w", []))   # clips marked as ending off the base pose: after them the app blends softly
     os.makedirs(args.cache, exist_ok=True)
 
     def rate(name: str, t: float) -> float:
@@ -166,7 +169,8 @@ def main() -> None:
             print("%-22s REIN passt %.1f (max %.1f) doppelt weich %.2f hart %.2f %s | RAUS passt %.1f (max %.1f) %s | %s" % (
                 x, np.mean(fin), max(fin), np.mean([v[0] for v in soft]), np.mean([v[0] for v in hard]),
                 "ok" if max(fin) <= FLOOR_OK else "PASST NICHT", np.mean(fout), max(fout),
-                "ok" if max(fout) <= FLOOR_OK else "PASST NICHT", setting(x)))
+                "ok" if max(fout) <= FLOOR_OK else ("Ende weich ist gesetzt" if x in soft_end else "PASST NICHT, Ende weich setzen"),
+                setting(x)))
 
 
 if __name__ == "__main__":

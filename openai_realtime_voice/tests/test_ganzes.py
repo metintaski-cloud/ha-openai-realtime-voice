@@ -198,10 +198,11 @@ async def test_in_a_browser_loops_run_in_order_and_a_touch_cuts_in_and_hands_bac
             assert await page.evaluate("()=>vis().currentTime") != t_a   # it really plays
             await page.click("button[data-n=freizeitbrust]")           # another one takes over and stays too
             await page.wait_for_function("()=>CUR==='freizeitbrust'&&SOLO&&HOLD==='freizeitbrust'", timeout=9000)
+            last = await page.evaluate("()=>LAST")                      # the loop the page counts as seen last
             await page.click("button[data-n=freizeitbrust]")           # the same button again: on with the loop after the last one
             await page.wait_for_function("()=>!SOLO&&HOLD===''&&CUR.startsWith('freizeitgluecklich')", timeout=9000)
             await asyncio.sleep(0.3)
-            assert await page.evaluate("()=>CUR") == order[(order.index(seen[turn - 1]) + 1) % 3], seen
+            assert last in order and await page.evaluate("()=>CUR") == order[(order.index(last) + 1) % 3], (last, seen)
             assert (await page.evaluate("()=>document.getElementById(SV?'v1':'v0').muted")) is True
             tempo_first = await page.evaluate("()=>CUR")  # the loop that gets the tempo here
             await page.evaluate("()=>{const r=document.getElementById('rate');r.value='1.5';r.oninput();}")

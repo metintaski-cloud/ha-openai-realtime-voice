@@ -738,7 +738,7 @@ window.addEventListener('beforeinstallprompt',e=>{INST=e;diag('installable');});
 window.addEventListener('appinstalled',()=>{INST=null;diag('installed');});
 setTimeout(()=>diag('open'),4000);  /* 2.134.3: only with a service worker does Chrome install the page as an app, and only then does the manifest's fullscreen apply */
 async function clipsLoad(){let outs={};try{outs=(await (await fetch('/clips.json')).json()).outfits||{};}catch(e){}
- MUTE={};STUMM={};VOL={};LEAD={};FADE={};for(const k in outs){for(const c in (outs[k].l||{}))LEAD[k+'/'+c]=outs[k].l[c];for(const c in (outs[k].b||{}))FADE[k+'/'+c]=outs[k].b[c];for(const c in (outs[k].mv||{}))VOL[k+'/'+c]=outs[k].mv[c];for(const c of (outs[k].m||[]))MUTE[k+'/'+c]=1;for(const c in (outs[k].ms||{}))STUMM[k+'/'+c]=outs[k].ms[c];CVER[k]=outs[k].v||0;const r=outs[k].r||{};for(const c in r)RATE[k+'/'+c]=r[c];const q=outs[k].k||{};for(const c in q)KURVE[k+'/'+c]=q[c];const sc=outs[k].s||{};for(const c in sc)SCHNITT[k+'/'+c]=sc[c];}  /* 2.136.0 (Metin): his tempo from the tester, the clip files stay untouched */
+ MUTE={};STUMM={};VOL={};LEAD={};FADE={};SOFT={};for(const k in outs){for(const c of (outs[k].w||[]))SOFT[k+'/'+c]=1;for(const c in (outs[k].l||{}))LEAD[k+'/'+c]=outs[k].l[c];for(const c in (outs[k].b||{}))FADE[k+'/'+c]=outs[k].b[c];for(const c in (outs[k].mv||{}))VOL[k+'/'+c]=outs[k].mv[c];for(const c of (outs[k].m||[]))MUTE[k+'/'+c]=1;for(const c in (outs[k].ms||{}))STUMM[k+'/'+c]=outs[k].ms[c];CVER[k]=outs[k].v||0;const r=outs[k].r||{};for(const c in r)RATE[k+'/'+c]=r[c];const q=outs[k].k||{};for(const c in q)KURVE[k+'/'+c]=q[c];const sc=outs[k].s||{};for(const c in sc)SCHNITT[k+'/'+c]=sc[c];}  /* 2.136.0 (Metin): his tempo from the tester, the clip files stay untouched */
 NIGHT=outs.nacht?outs.nacht.clips:[];NIGHTBODY=!!(outs.nacht&&outs.nacht.body);delete outs.nacht;PET=outs.mokka&&outs.mokka.alpha||[];delete outs.mokka;const names=Object.keys(outs);LOOKS=names.slice().sort();
  let last='',lday='',seen=0;try{last=localStorage.getItem('loutfit')||'';lday=localStorage.getItem('loutfitday')||'';seen=Number(localStorage.getItem('lseen')||0);}catch(e){}
  let mokpend=false;try{mokpend=!localStorage.getItem('lmokka');}catch(e){}
@@ -788,7 +788,7 @@ async function netProbe(){try{if(document.hidden||!CODE||Date.now()-NETAT<60000)
   post('/api/netstats',{kbps,ttfb:t1?Math.round(t1-t0):3000,stalls:st,light,wait:0}).catch(()=>{});}catch(e){}}
 setTimeout(netProbe,12000);setInterval(netProbe,180000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(netProbe,6000);});
 function stallSeen(){if(lightNow())return;const t=Date.now();STALLS=STALLS.filter(x=>t-x<60000);STALLS.push(t);if(STALLS.length>=2)LIGHT=true;}
-let RATE={},KURVE={},SCHNITT={},MUTE={},STUMM={},VOL={},LEAD={},FADE={};  /* FADE: seconds a clip fades in when it takes over tight; none = the 0.8 s of the CSS (pages /ganzes and /naht, 2.186.0) */  /* LEAD: when a loop clip comes in, seconds before the end mark of the clip before it; none = 0.25 (page /naht, 2.166.0) */  /* VOL: loudness factor of a clip, 1 = normal (2.164.0) */  /* MUTE: clips whose sound Metin switched off on the page /ganzes, STUMM: silent stretches [from,to] inside a clip (2.163.0); the files keep their sound and their length */
+let RATE={},KURVE={},SCHNITT={},MUTE={},STUMM={},VOL={},LEAD={},FADE={},SOFT={};  /* SOFT: clips that do not end in the base pose, after them the stage blends softly (2.190.0). FADE: seconds a clip fades in when it takes over tight; none = the 0.8 s of the CSS (pages /ganzes and /naht, 2.186.0) */  /* LEAD: when a loop clip comes in, seconds before the end mark of the clip before it; none = 0.25 (page /naht, 2.166.0) */  /* VOL: loudness factor of a clip, 1 = normal (2.164.0) */  /* MUTE: clips whose sound Metin switched off on the page /ganzes, STUMM: silent stretches [from,to] inside a clip (2.163.0); the files keep their sound and their length */
 /* 2.144.0 (Metin sets where a clip begins and ends, in the tester): the stage starts a clip at its mark, hands over at its end mark and holds the last picture there; the file stays whole */
 function cutStart(pth){const c=SCHNITT[pth];return c&&c[0]>0?c[0]:0;}
 function endOf(v){const d=v.duration||0,c=SCHNITT[v.dataset.pth||''];return c&&c[1]>0&&c[1]<d?c[1]:d;}
@@ -807,7 +807,7 @@ let TIGHT=false;  /* a loop that replays the same clip blends only at the very e
 function handMeasure(on,a,b,pre){try{if(!on||!a.duration||a.paused)return;const st={late:Math.round((a.currentTime-(endOf(a)-pre))*1000/(a.playbackRate||1)),lead:Math.round(pre*1000)},t0=performance.now();
   const done=t=>{st.first=Math.round(t-t0);if(BENCH)BENCH.first.push(st.first);fetch('/api/handstats',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(st)}).catch(()=>{});};
   if(b.requestVideoFrameCallback)b.requestVideoFrameCallback(t=>done(t));else b.addEventListener('playing',()=>done(performance.now()),{once:true});}catch(e){}}
-function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name)&&!MUTE[name.includes('/')?name:OUTFIT+'/'+name];const tight=TIGHT;TIGHT=false;const PRE0=tight?0.25:0.8,OFF=tight?300:850,lp=name?(name.includes('/')?name:OUTFIT+'/'+name):'',PRE=tight&&LEAD[lp]!==undefined?LEAD[lp]:PRE0;const FD=tight&&FADE[lp]!==undefined?FADE[lp]:0;const s=document.getElementById('stage'),vs=[document.getElementById('svid'),document.getElementById('svid2')],a=vs[SV],b=vs[1-SV],tok=++STOK,cont=CONT;CONT=false;
+function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name)&&!MUTE[name.includes('/')?name:OUTFIT+'/'+name];const tight=TIGHT;TIGHT=false;const soft=!!SOFT[document.getElementById(SV?'svid2':'svid').dataset.pth||''];const PRE0=tight?0.25:0.8,OFF=tight?300:850,lp=name?(name.includes('/')?name:OUTFIT+'/'+name):'',PRE=tight&&!soft&&LEAD[lp]!==undefined?LEAD[lp]:PRE0;const FD=tight&&!soft&&FADE[lp]!==undefined?FADE[lp]:0;const s=document.getElementById('stage'),vs=[document.getElementById('svid'),document.getElementById('svid2')],a=vs[SV],b=vs[1-SV],tok=++STOK,cont=CONT;CONT=false;
  if(!name){s.classList.remove('vid');vs.forEach(v=>{v.classList.remove('on');setTimeout(()=>{if(tok===STOK){v.pause();v.removeAttribute('src');v.load();}},600);});return;}
  if(loop&&a.loop&&a.classList.contains('on')&&a.src.split('?')[0].endsWith('/'+name+'.mp4'))return;
  /* 2.172.1 (Metin: now and then the picture flickers at a touch): for 0.8 s after a swap the old video is still what he
@@ -1014,9 +1014,9 @@ function syncShow(ev){if(ev.kind==='user'){CHAT.push({role:'user',text:String(ev
 /* 2.173.1 (Metin: what he sets on "Outfit als Ganzes" should reach the Leyla page at once): the values of all clips again, without a new start.
    Tempo and stretches hold for the running clip at once, begin, end, lead and sound from the next clip on. */
 let CLIPST=0;async function clipsRefresh(){let outs=null;try{outs=(await (await fetch('/clips.json?t='+Date.now())).json()).outfits;}catch(e){}if(!outs)return;
- const R={},K={},S={},L={},M={},ST={},V={},FD={};for(const k in outs){const o=outs[k];CVER[k]=o.v||0;for(const c in (o.r||{}))R[k+'/'+c]=o.r[c];for(const c in (o.k||{}))K[k+'/'+c]=o.k[c];for(const c in (o.s||{}))S[k+'/'+c]=o.s[c];
-  for(const c in (o.l||{}))L[k+'/'+c]=o.l[c];for(const c in (o.b||{}))FD[k+'/'+c]=o.b[c];for(const c of (o.m||[]))M[k+'/'+c]=1;for(const c in (o.ms||{}))ST[k+'/'+c]=o.ms[c];for(const c in (o.mv||{}))V[k+'/'+c]=o.mv[c];}
- RATE=R;KURVE=K;SCHNITT=S;LEAD=L;FADE=FD;MUTE=M;STUMM=ST;VOL=V;const v=document.getElementById(SV?'svid2':'svid'),p=v&&v.dataset.pth;if(p&&v.classList.contains('on'))v.playbackRate=rateAt(p,v.currentTime);}
+ const R={},K={},S={},L={},M={},ST={},V={},FD={},SO={};for(const k in outs){const o=outs[k];CVER[k]=o.v||0;for(const c in (o.r||{}))R[k+'/'+c]=o.r[c];for(const c in (o.k||{}))K[k+'/'+c]=o.k[c];for(const c in (o.s||{}))S[k+'/'+c]=o.s[c];
+  for(const c in (o.l||{}))L[k+'/'+c]=o.l[c];for(const c in (o.b||{}))FD[k+'/'+c]=o.b[c];for(const c of (o.w||[]))SO[k+'/'+c]=1;for(const c of (o.m||[]))M[k+'/'+c]=1;for(const c in (o.ms||{}))ST[k+'/'+c]=o.ms[c];for(const c in (o.mv||{}))V[k+'/'+c]=o.mv[c];}
+ RATE=R;KURVE=K;SCHNITT=S;LEAD=L;FADE=FD;SOFT=SO;MUTE=M;STUMM=ST;VOL=V;const v=document.getElementById(SV?'svid2':'svid'),p=v&&v.dataset.pth;if(p&&v.classList.contains('on'))v.playbackRate=rateAt(p,v.currentTime);}
 async function syncLoop(){if(SYNCON)return;SYNCON=true;const nap=ms=>new Promise(r=>setTimeout(r,ms));
  for(;;){if(!CODE||document.hidden){await nap(1000);continue;}
   let j=null;try{j=await (await post('/api/sync',{after:SYNCAT})).json();}catch(e){}
@@ -1440,6 +1440,10 @@ def list_outfits() -> dict:
         look, _, clip = name.partition("/")
         if look in out and clip in out[look]["clips"]:
             out[look].setdefault("b", {})[clip] = fade
+    for name in _ende_read():  # w: after this clip the stage blends softly (2.190.0)
+        look, _, clip = name.partition("/")
+        if look in out and clip in out[look]["clips"]:
+            out[look].setdefault("w", []).append(clip)
     # m: clips whose sound is switched off (2.163.0, the page /ganzes; the files keep their sound)
     from app import ganzes_page
     sound = ganzes_page.ton_read()
@@ -1677,6 +1681,42 @@ def _blende_read() -> dict:
         return {}
     return {str(n): round(float(v), 3) for n, v in d.items()
             if isinstance(v, (int, float)) and not isinstance(v, bool) and FADE_MIN <= v < FADE_DEFAULT} if isinstance(d, dict) else {}
+
+
+ENDE_PATH = "/data/clip_ende.json"
+
+
+def _ende_read() -> dict:
+    """Clips that do not end in the base pose (2.190.0), e.g. {"kurz/freizeittanz3": true}. A loop set
+    to a short blend comes in hard after every clip, also after one whose last picture is another pose,
+    and that jumps (measured 27 Nov 2026: up to 9 where 1 is a fit). After a clip listed here the stage
+    blends softly with the normal lead, whatever the next clip asks for. Found with tools/uebergang.py
+    (RAUS), set after Metin's yes or by him on the page /ganzes."""
+    try:
+        with open(os.environ.get("LEYLA_ENDE", ENDE_PATH), encoding="utf-8") as f:
+            d = json.load(f)
+    except Exception:
+        return {}
+    names = d if isinstance(d, list) else [n for n, v in d.items() if v] if isinstance(d, dict) else []
+    return {str(n): True for n in names}
+
+
+def _ende_set(name: str, soft) -> bool:
+    """Mark or unmark one clip as ending off the base pose. False when it makes no sense."""
+    if not isinstance(soft, bool):
+        return False
+    path = os.environ.get("LEYLA_ENDE", ENDE_PATH)
+    d = _ende_read()
+    if soft:
+        d[name] = True
+    else:
+        d.pop(name, None)
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(d, f, ensure_ascii=False)
+    os.replace(tmp, path)
+    return True
 
 
 def _blende_set(name: str, fade) -> bool:
@@ -2201,6 +2241,17 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
             if ok:
                 sync_clips()
                 logger.info("Blend: %s fades in for %s s", n, d.get("fade"))
+            await _respond(writer, "200 OK", "application/json", json.dumps({"ok": ok}))
+        elif method == "GET" and path == "/api/ende":
+            await _respond(writer, "200 OK", "application/json",
+                           json.dumps(sorted(_ende_read()), ensure_ascii=False))
+        elif method == "POST" and path == "/api/ende":
+            # a clip that does not end in the base pose: the next one blends softly after it (2.190.0)
+            n = str(d.get("name") or "")[:60]
+            ok = bool(n) and "/" in n and _ende_set(n, d.get("weich"))
+            if ok:
+                sync_clips()
+                logger.info("Soft end: %s -> %s", n, d.get("weich"))
             await _respond(writer, "200 OK", "application/json", json.dumps({"ok": ok}))
         elif method == "GET" and path == "/api/vorlauf":
             await _respond(writer, "200 OK", "application/json",

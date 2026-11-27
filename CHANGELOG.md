@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.190.0 (27 Nov 2026)
+
+- `feat`: a clip can be marked as not ending in the base pose; after it the stage always blends softly. Metin, 16:24, about the short leisure dress: "Schleife 1 und 3 blockieren sich auch ein bisschen ... Da entsteht auch ein Halo oder ein Schatten". Measured: the shadow is the soft 0.8 s blend between two loops that move from their first picture (double picture 1.29 and 1.01, set hard 0.07 and 0.03). But a loop set hard comes in hard after every clip, and in that dress four clips end in another pose (`freizeitpo8` 2.1, `freizeitsprichtraus` 2.2, `freizeittanz2` 3.4, `freizeittanz3` 9.2, where 1 is a fit): there a hard loop would jump. This had been written down as open since 2.186.0.
+  - New store `/data/clip_ende.json` (`GET/POST /api/ende` with `{name, weich: true|false}`, `w` per look in `/clips.json`, part of the reset point). On the stage of the app a tight hand over after such a clip uses the soft blend and the normal lead of 0.25 s, whatever blend and lead the incoming clip has (`SOFT`, `soft` in `stageShow`). The pages `/ganzes` and `/naht` play it the same way.
+  - On "Outfit als Ganzes" one tick in the box Übergang: "Das Ende dieses Clips passt nicht zur Grundpose: danach wird immer weich geblendet". It is stored at once.
+  - `tools/uebergang.py` reads the mark and says for every clip whose end does not fit whether it is set.
+- 832 tests (829 before).
+
 ## 2.189.0 (27 Nov 2026)
 
 - `feat`: on "Outfit als Ganzes" every row has ten places. Metin, 15:10, with a photo of the cards of the short leisure dress: "Kannst du die Schleifen von 1 bis 10 machen, jetzt ist es 1 bis 3. Und das gleiche mit Gesicht, Brust, Bauch, Po." Asked what he means (ten places shown, or new clips until there are ten), his choice: "10 Plätze anzeigen". The card Schleifen and each of the four rows of the card Berührung now show the places 1 to 10 (`SLOTS`): a place with a clip is the button it was, a place without one is grey with a dashed edge and does nothing (title "Platz N: noch kein Clip"). All four touch rows are always there, also one without any clip (before, such a row was left out), and a row with a single clip shows "1" instead of an arrow. So he sees at a glance what a dress has and what is still missing.

@@ -52,16 +52,16 @@ def test_the_blend_is_part_of_the_reset_point():
 def test_the_stage_and_both_tool_pages_use_the_blend_of_the_clip_that_comes_in():
     app = open(memory_web.__file__, encoding="utf-8").read()
     # only for a tight hand over (loops, a talk clip, a touch in the green window), and only the clip that comes in
-    assert "const FD=tight&&FADE[lp]!==undefined?FADE[lp]:0;" in app
+    assert "const FD=tight&&!soft&&FADE[lp]!==undefined?FADE[lp]:0;" in app
     assert "b.style.transitionDuration=FD?FD+'s':'';handMeasure(tight&&cont,a,b,PRE);b.play()" in app
     # the old clip always goes out in the 0.8 s of the CSS, whatever blend it came in with
     assert "if(tok===STOK){a.style.transitionDuration='';a.classList.remove('on');}" in app
     assert "FADE[k+'/'+c]=outs[k].b[c]" in app and "LEAD=L;FADE=FD;" in app
     assert memory_web.FADE_DEFAULT == naht_page.HAND_FADE == 0.8
     naht = re.search(r"<script>(.*)</script>", naht_page.PAGE, re.S).group(1)
-    assert naht.count("b.v.style.transition='opacity '+b.fd+'s'") == 2 and "FADE_MIN=0.05" in naht
+    assert naht.count("b.v.style.transition='opacity '+fadeOf(a,b)+'s'") == 2 and "FADE_MIN=0.05" in naht
     ganz = re.search(r"<script>(.*)</script>", ganzes_page.PAGE, re.S).group(1)
-    assert "if(opt.cont&&FADE[pth]!==undefined)b.style.transition='opacity '+FADE[pth]+'s';" in ganz
+    assert "if(opt.cont&&!soft&&FADE[pth]!==undefined)b.style.transition='opacity '+FADE[pth]+'s';" in ganz
     assert "\\" not in ganzes_page.PAGE and "\\" not in naht_page.PAGE
 
 
@@ -205,6 +205,14 @@ async def test_in_a_browser_the_outfit_page_sets_hard_or_soft_shows_it_and_store
             await page.wait_for_function("()=>document.getElementById('binfo').textContent==='So ist es gemerkt.'", timeout=4000)
             assert memory_web._blende_read() == {"kurz/freizeitgluecklich2": 0.1}
             assert memory_web._vorlauf_read() == {"kurz/freizeitgluecklich2": 0.1}
+            # 2.190.0: the end of this clip does not fit the base pose: one tick, stored at once
+            assert not await page.is_checked("#bweich")
+            await page.check("#bweich")
+            await page.wait_for_function("()=>!!SOFT['kurz/freizeitgluecklich2']", timeout=4000)
+            assert memory_web._ende_read() == {"kurz/freizeitgluecklich2": True}
+            await page.uncheck("#bweich")
+            await page.wait_for_function("()=>!SOFT['kurz/freizeitgluecklich2']", timeout=4000)
+            assert memory_web._ende_read() == {}
             await page.click("#bw")                                   # soft again: the defaults, no entries
             await page.click("#bsave")
             await page.wait_for_function("()=>document.getElementById('binfo').textContent==='So ist es gemerkt.'", timeout=4000)
@@ -268,3 +276,102 @@ async def test_in_a_browser_the_naht_page_has_the_blend_as_one_more_slider(tmp_p
     finally:
         server.close()
     assert not errors, errors
+
+
+def test_a_clip_that_ends_off_the_pose_is_stored_and_listed(tmp_path, monkeypatch):
+    """2.190.0. Measured 27 Nov 2026: a loop set hard also comes in hard after a clip whose last picture is another
+    pose (a dance: 9 away where 1 is a fit). Such a clip is marked; after it the stage blends softly."""
+    assert memory_web._ende_read() == {}
+    assert memory_web._ende_set("kurz/freizeittanz3", True) and memory_web._ende_set("kurz/freizeitpo8", True)
+    for bad in (1, "ja", None, 0.5):
+        assert not memory_web._ende_set("kurz/freizeitpo8", bad)
+    assert memory_web._ende_set("kurz/freizeitpo8", False)
+    assert memory_web._ende_read() == {"kurz/freizeittanz3": True}
+    folder = tmp_path / "clips" / "kurz"
+    folder.mkdir(parents=True)
+    (folder / "freizeittanz3.mp4").write_bytes(b"x")
+    monkeypatch.setattr(memory_web, "CLIPS_DIR", str(tmp_path / "clips"))
+    assert memory_web._ende_set("kurz/gibtesnicht", True)
+    assert memory_web.list_outfits()["kurz"]["w"] == ["freizeittanz3"]
+    # part of the reset point
+    ganzes_page.stand_save()
+    assert memory_web._ende_set("kurz/freizeittanz3", False)
+    assert "kurz/freizeittanz3" in ganzes_page.stand_info()["geaendert"]
+    ganzes_page.stand_restore()
+    assert memory_web._ende_read() == {"kurz/freizeittanz3": True, "kurz/gibtesnicht": True}
+    app = open(memory_web.__file__, encoding="utf-8").read()
+    assert "const soft=!!SOFT[document.getElementById(SV?'svid2':'svid').dataset.pth||''];" in app
+    assert "PRE=tight&&!soft&&LEAD[lp]!==undefined?LEAD[lp]:PRE0;" in app and "LEAD=L;FADE=FD;SOFT=SO;" in app
+
+
+async def test_the_soft_end_is_set_over_http(tmp_path):
+    server = await memory_web.start_http(memory.MemoryStore(str(tmp_path / "m.json")), None,
+                                         host="127.0.0.1", port=0)
+    port = server.sockets[0].getsockname()[1]
+    try:
+        assert (await _post(port, "/api/ende", {"name": "kurz/freizeittanz3", "weich": True}))["ok"]
+        assert not (await _post(port, "/api/ende", {"name": "kurz/freizeittanz3", "weich": "ja"}))["ok"]
+        assert not (await _post(port, "/api/ende", {"name": "ohneordner", "weich": True}))["ok"]
+        reader, writer = await asyncio.open_connection("127.0.0.1", port)
+        writer.write(b"GET /api/ende HTTP/1.1\r\nHost: x\r\n\r\n")
+        await writer.drain()
+        got = json.loads((await reader.read()).decode().split("\r\n\r\n", 1)[1])
+        writer.close()
+    finally:
+        server.close()
+    assert got == ["kurz/freizeittanz3"]
+
+
+async def test_in_a_browser_a_hard_loop_blends_softly_after_a_clip_that_ends_off_the_pose(tmp_path, monkeypatch):
+    """Both loops are set hard (blend 0.1 s). One of them is marked as ending off the pose: the loop after it
+    comes in with the soft 0.8 s, the loop after the other one with its 0.1 s."""
+    playwright = pytest.importorskip("playwright.async_api")
+    if not shutil.which("ffmpeg"):
+        pytest.skip("no ffmpeg here")
+    folder = tmp_path / "clips" / "kurz"
+    folder.mkdir(parents=True)
+    try:
+        for i, name in enumerate(("gluecklich4", "gluecklich5")):
+            _h264(folder / (name + ".mp4"), 4, i * 90)
+    except subprocess.CalledProcessError:
+        pytest.skip("this ffmpeg cannot write H.264")
+    monkeypatch.setattr(memory_web, "CLIPS_DIR", str(tmp_path / "clips"))
+    monkeypatch.setattr(memory_web, "MOBIL", None)
+    for name in ("kurz/gluecklich4", "kurz/gluecklich5"):
+        assert memory_web._blende_set(name, 0.1)
+    assert memory_web._ende_set("kurz/gluecklich4", True)
+    server = await memory_web.start_http(memory.MemoryStore(str(tmp_path / "m.json")), None,
+                                         host="127.0.0.1", port=0)
+    port = server.sockets[0].getsockname()[1]
+    hands = []
+    try:
+        async with playwright.async_playwright() as p:
+            try:
+                browser = await p.chromium.launch(args=["--autoplay-policy=no-user-gesture-required"])
+            except Exception:
+                pytest.skip("no browser here")
+            page = await browser.new_page(viewport={"width": 400, "height": 820})
+            await page.goto(f"http://127.0.0.1:{port}/")
+            await asyncio.sleep(1.0)
+            await page.evaluate("""async()=>{CODE='x';STM={mood:'verliebt',low:false,level:'gut',outfit:'arbeit',game:{done:true}};LASTST=STM;
+              const sp=document.getElementById('splash');if(sp)sp.remove();document.getElementById('chat').style.display='block';
+              document.body.classList.add('chatfull');document.getElementById('stage').style.display='block';await clipsLoad();stagePlay([],clipFor(STM));
+              window.H=[];const vs=[document.getElementById('svid'),document.getElementById('svid2')];let sv=SV,cur=null;
+              const samp=()=>{const now=performance.now();
+               if(SV!==sv){sv=SV;cur={n:vs[SV].dataset.pth||'',t0:now,a:0,b:0};window.H.push(cur);}
+               if(cur&&now-cur.t0<2500){const o=parseFloat(getComputedStyle(vs[SV]).opacity);if(!cur.a&&o>0.02)cur.a=now;if(!cur.b&&o>0.95)cur.b=now;}
+               requestAnimationFrame(samp);};samp();}""")
+            for _ in range(260):
+                await asyncio.sleep(0.1)
+                hands = await page.evaluate("()=>window.H.filter(h=>h.b&&performance.now()-h.t0>2500).map(h=>({n:h.n,ms:Math.round(h.b-h.a)}))")
+                if len(hands) >= 2 and {"kurz/gluecklich4", "kurz/gluecklich5"} <= {h["n"] for h in hands[1:]}:
+                    break
+            await browser.close()
+    finally:
+        server.close()
+    later = hands[1:]
+    after_soft_end = [h for h in later if h["n"] == "kurz/gluecklich5"]   # comes after gluecklich4, which ends off the pose
+    after_good_end = [h for h in later if h["n"] == "kurz/gluecklich4"]
+    assert after_soft_end and after_good_end, hands
+    assert all(h["ms"] > 400 for h in after_soft_end), hands             # soft, although the loop itself is set hard
+    assert all(h["ms"] < 250 for h in after_good_end), hands
