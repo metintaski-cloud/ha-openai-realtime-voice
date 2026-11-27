@@ -21,8 +21,9 @@ MAX_SESSION_S = 600.0
 # A live talk from the app may last this long (2.192.0). Metin, 27 Nov 2026, 23:52, after a talk in the app
 # that he liked ("ja so muss Leyla klingen") was cut at 604 s: "warum wird die Live Verbindung von selbst
 # unterbrochen?" In the app he hangs up himself and silence still ends the talk after IDLE_TIMEOUT_S; at the
-# Voice PE the ten minutes stay, there a false wake with the TV running could otherwise talk on.
-APP_MAX_SESSION_S = 3600.0
+# Voice PE the ten minutes stay, there a false wake with the TV running could otherwise talk on. Offered 60
+# minutes, he chose (23:57): "mach 120 min".
+APP_MAX_SESSION_S = 7200.0
 
 
 def max_session_s(state: dict) -> float:
