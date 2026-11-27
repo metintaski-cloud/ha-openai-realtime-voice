@@ -669,3 +669,141 @@ async def test_the_picture_of_the_sound_over_http_only_for_real_clips(tmp_path, 
             assert _json.loads((await _get(port, "/api/wave?clip=" + bad)).split("\r\n\r\n", 1)[1]) == {"ok": False}
     finally:
         server.close()
+
+
+async def test_in_a_browser_the_piece_in_the_bar_is_dragged_with_the_mouse(tmp_path, monkeypatch):
+    """2.187.0. Metin, 27 Nov 2026, 13:54, with a photo of the page: "Die Zeit die ich jetzt markiert habe für ein Stück schneller oder
+    langsamer. Schön wenn ich den mit der Maus rechts und links länger oder kürzer ziehen könnte." An edge of the piece moves that
+    end, the middle moves the whole piece, a drag on an empty bar draws one; the clip shows the picture of the edge that moves.
+    The same for the piece of the sound."""
+    playwright = pytest.importorskip("playwright.async_api")
+    if not shutil.which("ffmpeg"):
+        pytest.skip("no ffmpeg here")
+    try:
+        (tmp_path / "clips" / "kurz").mkdir(parents=True)
+        for name in ("gluecklich4", "brust"):
+            _clip(tmp_path / "clips" / "kurz" / (name + ".mp4"), 4)
+    except subprocess.CalledProcessError:
+        pytest.skip("this ffmpeg cannot write VP9")
+    monkeypatch.setattr(memory_web, "CLIPS_DIR", str(tmp_path / "clips"))
+    memory_web._kurve_set("kurz/gluecklich4", [[0.1, 0.6, 1.2]])    # a piece he stored before: yellow in the bar
+    server = await memory_web.start_http(memory.MemoryStore(str(tmp_path / "m.json")), None, host="127.0.0.1", port=0)
+    port = server.sockets[0].getsockname()[1]
+    errors, got = [], {}
+
+    async def drag(page, bar, a, b):
+        """Press at share a of the bar, move to share b in steps, let go."""
+        await page.locator(bar).scroll_into_view_if_needed()
+        box = await page.locator(bar).bounding_box()
+        y = box["y"] + box["height"] / 2
+        await page.mouse.move(box["x"] + box["width"] * a, y)
+        await page.mouse.down()
+        for i in range(1, 9):
+            await page.mouse.move(box["x"] + box["width"] * (a + (b - a) * i / 8), y)
+            await asyncio.sleep(0.02)
+        await page.mouse.up()
+        await asyncio.sleep(0.15)
+    try:
+        async with playwright.async_playwright() as p:
+            try:
+                browser = await p.chromium.launch(args=["--autoplay-policy=no-user-gesture-required"])
+            except Exception:
+                pytest.skip("no browser here")
+            page = await browser.new_page(viewport={"width": 1200, "height": 800})
+            page.on("pageerror", lambda e: errors.append(str(e)))
+            await page.goto(f"http://127.0.0.1:{port}/ganzes?clip=kurz/gluecklich4")
+            await page.wait_for_function("()=>CUR==='gluecklich4'&&vis().duration>3", timeout=9000)
+            pv = "()=>({a:PV&&PV.a,b:PV&&PV.b,t:vis().currentTime,d:vis().duration,paused:vis().paused})"
+            near = lambda x, y: abs(x - y) < 0.09
+            # 14:02, with a photo of a yellow and a purple piece: "wenn ich mit der Maus an den lila klicke, die Zeit mir angezeigt
+            # wird, und wenn ich orange oder braun ... anklicke, dass mir die Zeit, die ich eingestellt habe, auch dort angezeigt
+            # wird. Also ich möchte wissen, wie viel Tempo hat links ... und wie viel hat rechts die andere Farbe"
+            labels = "()=>[...document.querySelectorAll('#pbar i b')].map(b=>b.textContent)"
+            assert await page.evaluate(labels) == ["1.20"]             # the tempo stands in the stored piece
+            # 14:06: "Kann ich die auch nachträglich anklicken und bearbeiten, dass ich zum Beispiel nicht mehr 1 möchte, sondern 0,9":
+            # a click on the yellow piece takes it into the editor, it turns purple, and storing replaces it
+            await drag(page, "#pbar", 0.10, 0.10)
+            assert await page.evaluate("()=>[PV.a,PV.b,PV.r,PV.i]") == [0.1, 0.6, 1.2, 0]
+            assert await page.inner_text("#plab") == "Gemerktes Stück von 0.10 bis 0.60 s (0.50 s lang), Tempo 1.20"
+            assert await page.evaluate("()=>[document.querySelectorAll('#pbar i.alt').length,document.querySelectorAll('#pbar i.neu').length]") == [0, 1]
+            await drag(page, "#pbar", 0.90, 0.90)                      # a click beside it, nothing changed: it is let go again
+            assert await page.evaluate("()=>PV===null") and await page.evaluate(labels) == ["1.20"]
+            await drag(page, "#pbar", 0.10, 0.10)
+            await page.click("#prm")
+            assert "Tempo 1.19 (Änderung noch nicht gemerkt)" in await page.inner_text("#plab")
+            await page.click("#psave")
+            await page.wait_for_function("()=>PV===null", timeout=4000)
+            assert memory_web._kurve_read() == {"kurz/gluecklich4": [[0.1, 0.6, 1.19]]}   # replaced, not added
+            await page.evaluate("()=>halt()")
+            await drag(page, "#pbar", 0.30, 0.60)                      # an empty bar: the drag draws a piece
+            s = await page.evaluate(pv)
+            got["draw"] = s
+            assert near(s["a"], 0.30 * s["d"]) and near(s["b"], 0.60 * s["d"]) and s["paused"], s
+            assert near(s["t"], s["b"]), s                             # the clip shows the picture of the edge he let go
+            assert abs(s["a"] * 24 - round(s["a"] * 24)) < 0.03 and abs(s["b"] * 24 - round(s["b"] * 24)) < 0.03, s   # whole pictures
+            assert "Stück von" in await page.inner_text("#plab") and await page.inner_text("#psel") == ""
+            assert await page.evaluate(labels) == ["1.19", "1.00"]     # and the tempo of the new piece in the purple one
+            await drag(page, "#pbar", 0.60, 0.80)                      # the right edge: longer
+            s2 = await page.evaluate(pv)
+            assert near(s2["b"], 0.80 * s2["d"]) and s2["a"] == s["a"] and near(s2["t"], s2["b"]), s2
+            await drag(page, "#pbar", 0.30, 0.10)                      # the left edge: earlier
+            s3 = await page.evaluate(pv)
+            assert near(s3["a"], 0.10 * s3["d"]) and s3["b"] == s2["b"] and near(s3["t"], s3["a"]), s3
+            await drag(page, "#pbar", 0.10, 0.95)                      # an edge never passes the other one
+            s4 = await page.evaluate(pv)
+            assert s4["b"] == s3["b"] and 0.07 < s4["b"] - s4["a"] < 0.1, s4
+            await drag(page, "#pbar", 0.77, 0.10)                      # the left edge back
+            await drag(page, "#pbar", 0.80, 0.50)                      # the right edge again: shorter
+            s5 = await page.evaluate(pv)
+            assert near(s5["b"], 0.50 * s5["d"]), s5
+            await drag(page, "#pbar", 0.30, 0.50)                      # the middle: the whole piece moves, its length stays
+            s6 = await page.evaluate(pv)
+            got["move"] = [s5, s6]
+            assert near(s6["a"] - s5["a"], 0.20 * s6["d"]) and abs((s6["b"] - s6["a"]) - (s5["b"] - s5["a"])) < 0.002, (s5, s6)
+            await drag(page, "#pbar", 0.05, 0.05)                      # a click beside the piece: only go there
+            s7 = await page.evaluate(pv)
+            assert (s7["a"], s7["b"]) == (s6["a"], s6["b"]) and near(s7["t"], 0.05 * s7["d"]), s7
+            # that spot lies in the yellow piece: while the purple one waits unsaved, the click only shows what the yellow one holds
+            assert await page.inner_text("#psel") == ("Gelbes Stück (gemerkt): von 0.10 bis 0.60 s (0.50 s lang), Tempo 1.19. "
+                                                      "Zum Ändern erst das lila Stück merken oder verwerfen.")
+            assert await page.evaluate("()=>document.querySelectorAll('#pbar i.alt.sel').length") == 1
+            await page.click("#prp")
+            assert await page.evaluate(labels) == ["1.19", "1.01"]
+            await drag(page, "#pbar", 0.40, 0.40)                      # a click on the purple piece: its line is the one above
+            assert await page.inner_text("#psel") == "" and "Tempo 1.01" in await page.inner_text("#plab")
+            assert memory_web._kurve_read() == {"kurz/gluecklich4": [[0.1, 0.6, 1.19]]}   # nothing is stored by dragging
+            # the same for the sound of a touch clip; drawn from right to left this time
+            await page.evaluate("()=>{BUSY=false;touch('Brust','brust');}")
+            await page.wait_for_function("()=>CUR==='brust'&&vis().duration>3&&CURSND", timeout=9000)
+            tv = "()=>({a:TV&&TV.a,b:TV&&TV.b,t:vis().currentTime,d:vis().duration})"
+            await drag(page, "#tbar", 0.70, 0.40)
+            t1 = await page.evaluate(tv)
+            got["ton"] = t1
+            assert near(t1["a"], 0.40 * t1["d"]) and near(t1["b"], 0.70 * t1["d"]), t1
+            await drag(page, "#tbar", 0.70, 0.90)
+            t2 = await page.evaluate(tv)
+            assert near(t2["b"], 0.90 * t2["d"]) and t2["a"] == t1["a"], t2
+            assert await page.evaluate("()=>[...document.querySelectorAll('#tbar i b')].map(b=>b.textContent)") == ["aus"]
+            # a stored piece of the sound is changed the same way: store it silent, click it, make it half as loud, store again
+            await page.click("#sadd")
+            await page.wait_for_function("()=>TV===null", timeout=4000)
+            stored = ganzes_page.ton_read()["stumm"]["kurz/brust"]
+            assert len(stored) == 1 and len(stored[0]) == 2
+            await drag(page, "#tbar", 0.60, 0.60)
+            assert await page.evaluate("()=>TV&&TV.i") == 0 and (await page.inner_text("#slab")).startswith("Gemerktes Stück von")
+            for _ in range(5):
+                await page.click("#vm")                                # from silence the first step is 90 percent
+            await page.click("#sadd")
+            await page.wait_for_function("()=>TV===null", timeout=4000)
+            again = ganzes_page.ton_read()["stumm"]["kurz/brust"]
+            assert len(again) == 1 and again[0][:2] == stored[0] and again[0][2] == 0.5, again
+            # a loop has no sound: its sound bar does nothing
+            await page.goto(f"http://127.0.0.1:{port}/ganzes?clip=kurz/gluecklich4")
+            await page.wait_for_function("()=>CUR==='gluecklich4'&&vis().duration>3", timeout=9000)
+            await page.evaluate("()=>{document.getElementById('tonstk').style.display='block';}")
+            await drag(page, "#tbar", 0.20, 0.50)
+            assert await page.evaluate("()=>!TV||TV.a<0||TV.p!==pthNow()")
+            await browser.close()
+    finally:
+        server.close()
+    assert not errors, errors

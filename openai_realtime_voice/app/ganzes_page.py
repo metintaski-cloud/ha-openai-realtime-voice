@@ -326,12 +326,16 @@ button.pri{background:linear-gradient(90deg,#22d3ee,#8b5cf6);color:#04121e;borde
 .wh em{display:block;font-style:normal;font-size:12px;color:#9fb3c8;margin-bottom:6px}
 .wh button{width:42px;height:34px;padding:0;font-size:15px}
 .wh.leer{opacity:.55;cursor:default}
-#pbar,#tbar{position:relative;height:26px;margin:8px 0 4px;border-radius:8px;background:#1b2636;overflow:hidden;cursor:pointer}
+#pbar,#tbar{position:relative;height:32px;margin:8px 0 4px;border-radius:8px;background:#1b2636;overflow:hidden;cursor:pointer;touch-action:none;user-select:none}
 #pbar i,#tbar i{position:absolute;top:0;bottom:0}
 #pbar i.alt,#tbar i.alt{background:rgba(251,191,36,.55)}
+#pbar i b,#tbar i b{position:absolute;left:0;right:0;top:0;text-align:center;font:700 13px/32px system-ui,sans-serif;color:#fff;text-shadow:0 0 3px #000,0 0 2px #000;white-space:nowrap;overflow:hidden;pointer-events:none}
+#pbar i.sel,#tbar i.sel{outline:2px solid #fff;outline-offset:-2px}
 #tbar i.still{background:rgba(239,68,68,.6)}
 #pbar i.neu,#tbar i.neu{background:rgba(168,85,247,.75);border-left:2px solid #fff;border-right:2px solid #fff;box-sizing:border-box}
-#pbar i.kopf,#tbar i.kopf{width:2px;background:#fff}
+#pbar i.kopf,#tbar i.kopf{width:2px;background:#fff;pointer-events:none}
+#pbar i.neu::before,#pbar i.neu::after,#tbar i.neu::before,#tbar i.neu::after{position:absolute;top:0;line-height:32px;font:700 15px/32px system-ui,sans-serif;color:#fff;text-shadow:0 0 3px #000;pointer-events:none}
+#pbar i.neu::before,#tbar i.neu::before{content:"①";left:3px}#pbar i.neu::after,#tbar i.neu::after{content:"②";right:3px}
 .val{min-width:58px;text-align:center;font-size:20px;font-weight:700;color:#9fe8ff}
 .pm{width:42px;height:38px;font-size:20px;font-weight:700;padding:0}
 .bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:4px 0}
@@ -373,7 +377,7 @@ label{display:flex;gap:4px;align-items:center}
 <div class="sub"><h3>Ein Stück schneller oder langsamer</h3><div class="t">Für eine Stelle im Clip, die aus dem Takt fällt. Unten am Rand zur Stelle ziehen (oder mit ◀ Bild und Bild ▶ hingehen), dann der Reihe nach:</div>
 <div class="bar"><button id="pa">① Stück beginnt hier</button><button id="pam" title="Anfang ein Bild früher">◀ Bild</button><button id="pap" title="Anfang ein Bild später">Bild ▶</button></div>
 <div class="bar"><button id="pb">② Stück endet hier</button><button id="pbm" title="Ende ein Bild früher">◀ Bild</button><button id="pbp" title="Ende ein Bild später">Bild ▶</button></div>
-<div id="pbar" title="Der ganze Clip. Lila: das Stück, das du gerade einstellst. Gelb: gemerkte Stücke. Weiß: wo der Clip gerade ist."></div><div class="t" id="plab"></div>
+<div id="pbar" title="Der ganze Clip. Lila: das Stück, das du gerade einstellst. Seine Ränder kannst du mit der Maus ziehen, die Mitte verschiebt es. Gelb: gemerkte Stücke. Weiß: wo der Clip gerade ist."></div><div class="t" id="plab"></div><div class="t" id="psel"></div>
 <div class="bar"><span class="z">③ Tempo</span><button id="prm" class="pm" title="0,01 langsamer">−</button><span id="prlab" class="val">1.00</span><button id="prp" class="pm" title="0,01 schneller">+</button></div>
 <div class="bar"><button id="pseh">④ Stück ansehen</button><button id="psave" class="pri">⑤ Stück merken</button><button id="pweg">verwerfen</button></div>
 <div class="t" id="plist"></div></div>
@@ -382,7 +386,7 @@ label{display:flex;gap:4px;align-items:center}
 <div id="tonstk"><div class="t" style="margin-top:6px">Ein Stück vom Ton löschen, leiser oder lauter machen. Der Clip bleibt gleich lang, nichts verschiebt sich. Unten am Rand zur Stelle gehen, dann der Reihe nach:</div>
 <div class="bar"><button id="ta">① Stück beginnt hier</button><button id="tam" title="Anfang ein Bild früher">◀ Bild</button><button id="tap" title="Anfang ein Bild später">Bild ▶</button><button id="tall" title="Das Stück ist der ganze Clip">ganzer Clip</button></div>
 <div class="bar"><button id="tb">② Stück endet hier</button><button id="tbm" title="Ende ein Bild früher">◀ Bild</button><button id="tbp" title="Ende ein Bild später">Bild ▶</button></div>
-<div id="tbar" title="Der ganze Clip. Lila: das Stück, das du gerade einstellst. Rot: gelöschter Ton. Gelb: leiser oder lauter. Weiß: wo der Clip gerade ist."></div><div class="t" id="slab"></div>
+<div id="tbar" title="Der ganze Clip. Lila: das Stück, das du gerade einstellst. Seine Ränder kannst du mit der Maus ziehen, die Mitte verschiebt es. Rot: gelöschter Ton. Gelb: leiser oder lauter. Weiß: wo der Clip gerade ist."></div><div class="t" id="slab"></div><div class="t" id="tsel"></div>
 <div class="bar"><span class="z">③ Ton im Stück</span><button id="tdel">löschen</button><button id="vm" class="pm" title="leiser">−</button><span id="vlab" class="val" style="min-width:74px">Stille</span><button id="vp" class="pm" title="lauter">+</button><button id="v1b">normal</button></div>
 <div class="bar"><button id="shear">④ Stück anhören</button><button id="sadd" class="pri">⑤ merken</button><button id="tweg">verwerfen</button></div>
 <div class="t" id="slist"></div>
@@ -449,22 +453,30 @@ function waveDraw(){const c=$('wave');if(document.body.classList.contains('wave'
    "auch ... Lautstärke ändern können, leiser oder lauter, und dies genauso merken", "nicht separat, sondern die beiden gehören zusammen ... Die sollen
    als eine Einheit dienen"): one piece, taken from the pictures he sees like the piece with its own tempo, and one choice for it: no sound, quieter
    or louder. A piece that is the whole clip is stored as the loudness of the clip (or its sound off), a part of it as a stretch. */
+/* 2.187.0: a stored piece is changed afterwards (Metin, 14:06: "Kann ich die auch nachträglich anklicken und bearbeiten, dass ich zum
+   Beispiel nicht mehr 1 möchte, sondern 0,9"): a click on it loads it into the editor (PV.i / TV.i = its place in the stored list), it
+   turns purple, edges and value change as for a new piece, and storing replaces it. While another piece waits unsaved, the click only
+   shows what the stored one holds. pvClean / tvClean: the loaded piece is still as it is stored. */
+function pvClean(){const v=PV;if(!v||!(v.i>=0))return false;const x=(KURVE[v.p]||[])[v.i];return !!x&&x[0]===v.a&&x[1]===v.b&&Number(x[2])===v.r;}
+function tvClean(){const v=TV;if(!v||!(v.i>=0))return false;const x=(STUMM[v.p]||[])[v.i];return !!x&&x[0]===v.a&&x[1]===v.b&&(x.length>2?x[2]:0)===v.f;}
+let TSEL=null,PSEL=null;  /* the stored piece he clicked in a bar: {p: clip, i: index}; its values stand in the line under the bar (2.187.0) */
 const tvNow=()=>{const p=pthNow();if(!TV||TV.p!==p)TV={p:p,a:-1,b:-1,f:0};return TV;};
 const tvWhole=v=>{const d=vis().duration||0;return d>0&&v.a<=0.02&&v.b>=d-0.05;};
 const pct=f=>f===0?'Stille':Math.round(f*100)+' %';
 function stkShow(){const p=pthNow(),d=vis().duration||0,v=TV&&TV.p===p?TV:null,bar=$('tbar');if(!bar)return;
  const pc=t=>d?(Math.max(0,Math.min(d,t))/d*100)+'%':'0%';let h='';
- for(const x of (STUMM[p]||[]))h+='<i class="'+(x.length>2?'alt':'still')+'" style="left:'+pc(x[0])+';width:'+pc(x[1]-x[0])+'"></i>';
- if(v&&v.a>=0)h+='<i class="neu" style="left:'+pc(v.a)+';width:'+(v.b>v.a?pc(v.b-v.a):'3px')+'"></i>';
+ const si=TSEL&&TSEL.p===p&&(STUMM[p]||[])[TSEL.i]?TSEL.i:-1;(STUMM[p]||[]).forEach((x,i)=>{if(v&&v.i===i)return;h+='<i class="'+(x.length>2?'alt':'still')+(i===si?' sel':'')+'" style="left:'+pc(x[0])+';width:'+pc(x[1]-x[0])+'"><b>'+(x.length>2?pct(x[2]):'aus')+'</b></i>';});
+ if(v&&v.a>=0)h+='<i class="neu" style="left:'+pc(v.a)+';width:'+(v.b>v.a?pc(v.b-v.a):'3px')+'">'+(v.b>v.a?'<b>'+(v.f===0?'aus':pct(v.f))+'</b>':'')+'</i>';
  bar.innerHTML=h+'<i class="kopf" id="tkopf"></i>';
+ {const x=si>=0?STUMM[p][si]:null;$('tsel').textContent=x?'Gemerktes Stück: von '+x[0].toFixed(2)+' bis '+x[1].toFixed(2)+' s ('+(x[1]-x[0]).toFixed(2)+' s lang), '+(x.length>2?'Ton auf '+pct(x[2]):'Ton gelöscht')+'. Zum Ändern erst das lila Stück merken oder verwerfen.':'';}
  const ok=!!(v&&v.b>v.a);
- $('slab').textContent=!v||v.a<0?'Noch kein Stück gewählt.':(ok?(tvWhole(v)?'Der ganze Clip':'Stück von '+v.a.toFixed(2)+' bis '+v.b.toFixed(2)+' s')+': '+(v.f===0?'Ton gelöscht (Stille)':'Ton auf '+pct(v.f))+'  (noch nicht gemerkt)':'Anfang bei '+v.a.toFixed(2)+' s. Jetzt zum Ende gehen und ② drücken.');
+ $('slab').textContent=!v||v.a<0?'Noch kein Stück gewählt.':(ok?(tvWhole(v)?'Der ganze Clip':(v.i>=0?'Gemerktes Stück von ':'Stück von ')+v.a.toFixed(2)+' bis '+v.b.toFixed(2)+' s')+': '+(v.f===0?'Ton gelöscht (Stille)':'Ton auf '+pct(v.f))+(v.i>=0?(tvClean()?'':'  (Änderung noch nicht gemerkt)'):'  (noch nicht gemerkt)'):'Anfang bei '+v.a.toFixed(2)+' s. Jetzt zum Ende gehen und ② drücken.');
  $('vlab').textContent=pct(v?v.f:0);for(const id of ['tdel','vm','vp','v1b','shear','sadd','tbm','tbp'])$(id).disabled=!ok;for(const id of ['tam','tap','tb','tweg'])$(id).disabled=!(v&&v.a>=0);
  const rows=(STUMM[p]||[]).map((x,i)=>'Gemerkt: '+x[0].toFixed(2)+' bis '+x[1].toFixed(2)+' s, '+(x.length>2?'Ton auf '+pct(x[2]):'Ton gelöscht')+' <a href="#" data-i="'+i+'">weg</a>');
  if(VOL[p])rows.unshift('Gemerkt: der ganze Clip auf '+pct(VOL[p])+' <a href="#" data-i="laut">wieder normal</a>');
  $('slist').innerHTML=rows.join('<br>')||'An diesem Ton ist noch nichts geändert.';
  $('slist').querySelectorAll('a').forEach(a2=>{a2.onclick=async e=>{e.preventDefault();if(a2.dataset.i==='laut'){const j=await post('/api/ton',{name:p,laut:1});if(j&&j.ok)delete VOL[p];stkShow();standLater();return;}
-   const k=(STUMM[p]||[]).slice();k.splice(Number(a2.dataset.i),1);stkSave(k);};});}
+   const k=(STUMM[p]||[]).slice();k.splice(Number(a2.dataset.i),1);if(TV&&TV.i>=0)TV=null;TSEL=null;stkSave(k);};});}
 async function stkSave(k){const p=pthNow(),j=await post('/api/ton',{name:p,stumm:k});
  if(j&&j.ok){const st=(j.stumm||{})[p];if(st)STUMM[p]=st;else delete STUMM[p];}stkShow();standLater();return !!(j&&j.ok);}
 function label(){const p=pthNow(),c=SCHNITT[p],v=vis(),d=v.duration||10;$('name').textContent=p;
@@ -639,9 +651,9 @@ $('shear').onclick=()=>{const v=tvNow();if(!CUR||v.b<=v.a)return;solo();PAUSED=f
 $('sadd').onclick=async()=>{const v=tvNow();if(!CUR||!CURSND||v.b<=v.a)return;let ok=false;
  if(tvWhole(v)){if(v.f===0){const j=await post('/api/ton',{name:v.p,aus:true});ok=!!(j&&j.ok);if(ok){MUTE[v.p]=1;vis().muted=true;}}
   else{const j=await post('/api/ton',{name:v.p,laut:v.f});ok=!!(j&&j.ok);if(ok){if(v.f===1)delete VOL[v.p];else VOL[v.p]=v.f;}}}
- else{const k=(STUMM[v.p]||[]).filter(x=>x[1]<=v.a||x[0]>=v.b);if(v.f!==1)k.push(v.f===0?[Number(v.a.toFixed(2)),Number(v.b.toFixed(2))]:[Number(v.a.toFixed(2)),Number(v.b.toFixed(2)),v.f]);
+ else{const k=(STUMM[v.p]||[]).filter((x,i)=>i!==v.i&&(x[1]<=v.a||x[0]>=v.b));if(v.f!==1)k.push(v.f===0?[Number(v.a.toFixed(2)),Number(v.b.toFixed(2))]:[Number(v.a.toFixed(2)),Number(v.b.toFixed(2)),v.f]);
   k.sort((x,y)=>x[0]-y[0]);ok=await stkSave(k);}
- if(ok)TV=null;flash($('sadd'),ok,'⑤ merken');tonShow();standLater();};
+ if(ok){TV=null;TSEL=null;}flash($('sadd'),ok,'⑤ merken');tonShow();standLater();};
 $('tweg').onclick=()=>{TV=null;stkShow();};
 $('tbar').onclick=e=>{if(!CUR)return;const r=$('tbar').getBoundingClientRect(),d=vis().duration||0;tvAt((e.clientX-r.left)/r.width*d);};
 requestAnimationFrame(tvKopf);
@@ -653,13 +665,14 @@ const pvNow=()=>{const p=pthNow();if(!PV||PV.p!==p)PV={p:p,a:-1,b:-1,r:1};return
 const pvAt=t=>{halt();vis().currentTime=Math.max(0,Math.min((vis().duration||0)-0.001,t));};
 function pvShow(){const p=pthNow(),d=vis().duration||0,v=PV&&PV.p===p?PV:null,bar=$('pbar');if(!bar)return;
  const pc=t=>d?(Math.max(0,Math.min(d,t))/d*100)+'%':'0%';let h='';
- for(const x of (KURVE[p]||[]))h+='<i class="alt" style="left:'+pc(x[0])+';width:'+pc(x[1]-x[0])+'"></i>';
- if(v&&v.a>=0)h+='<i class="neu" style="left:'+pc(v.a)+';width:'+(v.b>v.a?pc(v.b-v.a):'3px')+'"></i>';
+ const si=PSEL&&PSEL.p===p&&(KURVE[p]||[])[PSEL.i]?PSEL.i:-1;(KURVE[p]||[]).forEach((x,i)=>{if(v&&v.i===i)return;h+='<i class="alt'+(i===si?' sel':'')+'" style="left:'+pc(x[0])+';width:'+pc(x[1]-x[0])+'"><b>'+Number(x[2]).toFixed(2)+'</b></i>';});
+ if(v&&v.a>=0)h+='<i class="neu" style="left:'+pc(v.a)+';width:'+(v.b>v.a?pc(v.b-v.a):'3px')+'">'+(v.b>v.a?'<b>'+v.r.toFixed(2)+'</b>':'')+'</i>';
  bar.innerHTML=h+'<i class="kopf" id="pkopf"></i>';
- $('plab').textContent=!v||v.a<0?'Noch kein Stück gewählt.':(v.b>v.a?'Stück von '+v.a.toFixed(2)+' bis '+v.b.toFixed(2)+' s ('+(v.b-v.a).toFixed(2)+' s lang), Tempo '+v.r.toFixed(2)+'  (noch nicht gemerkt)':'Anfang bei '+v.a.toFixed(2)+' s. Jetzt zum Ende gehen und ② drücken.');
+ {const x=si>=0?KURVE[p][si]:null;$('psel').textContent=x?'Gelbes Stück (gemerkt): von '+x[0].toFixed(2)+' bis '+x[1].toFixed(2)+' s ('+(x[1]-x[0]).toFixed(2)+' s lang), Tempo '+Number(x[2]).toFixed(2)+'. Zum Ändern erst das lila Stück merken oder verwerfen.':'';}
+ $('plab').textContent=!v||v.a<0?'Noch kein Stück gewählt.':(v.b>v.a?(v.i>=0?'Gemerktes Stück von ':'Stück von ')+v.a.toFixed(2)+' bis '+v.b.toFixed(2)+' s ('+(v.b-v.a).toFixed(2)+' s lang), Tempo '+v.r.toFixed(2)+(v.i>=0?(pvClean()?'':'  (Änderung noch nicht gemerkt)'):'  (noch nicht gemerkt)'):'Anfang bei '+v.a.toFixed(2)+' s. Jetzt zum Ende gehen und ② drücken.');
  $('prlab').textContent=(v?v.r:1).toFixed(2);const ok=!!(v&&v.b>v.a);for(const id of ['prm','prp','pseh','psave','pbm','pbp'])$(id).disabled=!ok;for(const id of ['pam','pap','pb','pweg'])$(id).disabled=!(v&&v.a>=0);
  $('plist').innerHTML=(KURVE[p]||[]).map((x,i)=>'Gemerkt: '+x[0].toFixed(2)+' bis '+x[1].toFixed(2)+' s, Tempo '+Number(x[2]).toFixed(2)+' <a href="#" data-i="'+i+'">weg</a>').join('<br>')||'In diesem Clip ist noch kein Stück gemerkt.';
- $('plist').querySelectorAll('a').forEach(a2=>{a2.onclick=e=>{e.preventDefault();const k=(KURVE[p]||[]).slice();k.splice(Number(a2.dataset.i),1);pvStore(k);};});}
+ $('plist').querySelectorAll('a').forEach(a2=>{a2.onclick=e=>{e.preventDefault();const k=(KURVE[p]||[]).slice();k.splice(Number(a2.dataset.i),1);if(PV&&PV.i>=0)PV=null;PSEL=null;pvStore(k);};});}
 async function pvStore(k){const p=pthNow(),j=await post('/api/kurve',{name:p,segs:k});if(j&&j.ok){if(k.length)KURVE[p]=k;else delete KURVE[p];}pvShow();standLater();return j&&j.ok;}
 function pvKopf(){const k=$('pkopf'),v=vis();if(k&&v.duration)k.style.left=(v.currentTime/v.duration*100)+'%';requestAnimationFrame(pvKopf);}
 $('pa').onclick=()=>{if(!CUR)return;halt();const v=pvNow(),t=Number(vis().currentTime.toFixed(2));v.a=t;if(v.b>=0&&v.b<=t+0.04)v.b=-1;pvShow();};
@@ -670,11 +683,47 @@ $('pam').onclick=()=>pvNudge('a',-1);$('pap').onclick=()=>pvNudge('a',1);$('pbm'
 const pvRate=d=>{const v=pvNow();if(v.b<=v.a)return;v.r=Math.min(2,Math.max(0.4,Math.round((v.r+d)*100)/100));pvShow();};
 $('prm').onclick=()=>pvRate(-0.01);$('prp').onclick=()=>pvRate(0.01);
 $('pseh').onclick=()=>{const v=pvNow();if(v.b<=v.a)return;solo();PAUSED=false;const x=vis();x.currentTime=Math.max(0,v.a-1);x.play().catch(()=>{});};
-$('psave').onclick=async()=>{const v=pvNow();if(v.b<=v.a)return;const k=(KURVE[v.p]||[]).filter(x=>x[1]<=v.a||x[0]>=v.b);
- k.push([Number(v.a.toFixed(2)),Number(v.b.toFixed(2)),v.r]);k.sort((x,y)=>x[0]-y[0]);const ok=await pvStore(k);if(ok)PV=null;flash($('psave'),ok,'⑤ Stück merken');pvShow();};
+$('psave').onclick=async()=>{const v=pvNow();if(v.b<=v.a)return;const k=(KURVE[v.p]||[]).filter((x,i)=>i!==v.i&&(x[1]<=v.a||x[0]>=v.b));   /* v.i: the stored piece this one was loaded from; it is replaced, wherever the new one lies */
+ k.push([Number(v.a.toFixed(2)),Number(v.b.toFixed(2)),v.r]);k.sort((x,y)=>x[0]-y[0]);const ok=await pvStore(k);if(ok){PV=null;PSEL=null;}flash($('psave'),ok,'⑤ Stück merken');pvShow();};
 $('pweg').onclick=()=>{PV=null;pvShow();};
 $('pbar').onclick=e=>{if(!CUR)return;const r=$('pbar').getBoundingClientRect(),d=vis().duration||0;pvAt((e.clientX-r.left)/r.width*d);};
 requestAnimationFrame(pvKopf);
+/* 2.187.0 (Metin, 27 Nov 2026: "Schön wenn ich den mit der Maus rechts und links länger oder kürzer ziehen könnte"): the piece in a bar
+   is dragged with the mouse. An edge moves that end, the middle moves the whole piece, a drag on a bar without a piece draws one, and
+   a click beside a piece only goes there. A click on a stored piece (yellow, red) takes it into the editor to be changed; while another
+   piece waits unsaved it only frames it and writes what it holds into the line under the bar; every piece carries its tempo or loudness as a number in it. The clip shows the picture of the edge that moves, so it stays the indicator. Times snap
+   to whole pictures. */
+function barDrag(id,now,show,can,stored,sel,load,clean,drop){const bar=$(id),MIN=0.08,GRAB=12;let g=null,seekT=0;
+ const dur=()=>vis().duration||0,snap=t=>Math.round(Math.round(t/FRAME)*FRAME*1000)/1000,go=t=>{vis().currentTime=Math.max(0,Math.min(dur()-0.001,t));};
+ const tAt=e=>{const r=bar.getBoundingClientRect();return Math.max(0,Math.min(dur(),(e.clientX-r.left)/Math.max(1,r.width)*dur()));};
+ const part=e=>{const v=now(),r=bar.getBoundingClientRect(),d=dur();if(!d||v.a<0)return '';const has=v.b>v.a,xa=r.left+v.a/d*r.width,xb=has?r.left+v.b/d*r.width:xa,da=Math.abs(e.clientX-xa),db=Math.abs(e.clientX-xb);
+  if(has&&Math.min(da,db)<=GRAB)return da<=db?'a':'b';if(!has&&da<=GRAB)return 'b';return has&&e.clientX>xa&&e.clientX<xb?'m':'';};
+ const seek=t=>{const n=performance.now();if(n-seekT<50)return;seekT=n;go(t);};
+ const hit=t=>stored().findIndex(x=>t>=x[0]&&t<x[1]);
+ bar.onpointerdown=e=>{if(e.button>0||!can()||!dur())return;const v=now(),t=snap(tAt(e));let k=part(e);halt();
+  if(!k){const i=hit(tAt(e)),was=v.b>v.a&&clean();
+   if(v.b>v.a&&!was){sel(i);go(t);show();return;}  /* a piece waits unsaved: beside it only go there, on a stored piece show what it holds */
+   g={k:'b',pend:true,i:i,was:was,x0:e.clientX,t0:tAt(e),a0:Math.min(t,snap(dur()-MIN)),b0:-1};go(t);}
+  else{sel(-1);g={k:k,t0:tAt(e),a0:v.a,b0:v.b};}
+  try{bar.setPointerCapture(e.pointerId);}catch(x){}e.preventDefault();show();};
+ bar.onpointermove=e=>{if(!g){const k=can()?part(e):'';bar.style.cursor=k==='m'?'grab':k?'ew-resize':'pointer';return;}
+  if(g.pend){if(Math.abs(e.clientX-g.x0)<5)return;g.pend=false;sel(-1);drop();const w=now();w.a=g.a0;w.b=-1;}   /* a real drag on a bar without a piece of his own draws one, also across a stored piece */
+  const v=now(),d=dur(),t=tAt(e);
+  if(g.k==='b'&&v.b<0&&t<g.a0-MIN){v.b=g.a0;g.k='a';}   /* a new piece drawn to the left: the first point becomes its end */
+  if(g.k==='a'){v.a=snap(Math.max(0,Math.min(t,v.b-MIN)));seek(v.a);}
+  else if(g.k==='b'){if(v.b>v.a||t>v.a+MIN/2){v.b=snap(Math.max(v.a+MIN,Math.min(t,d)));seek(v.b);}}
+  else{const len=g.b0-g.a0,a=snap(Math.max(0,Math.min(g.a0+t-g.t0,d-len)));v.a=a;v.b=Math.round((a+len)*1000)/1000;seek(a);}
+  show();};
+ const end=e=>{if(!g)return;const v=now(),k=g.k,pend=g.pend,i=g.i,a0=g.a0,was=g.was;g=null;try{bar.releasePointerCapture(e.pointerId);}catch(x){}
+  if(pend){sel(-1);if(i>=0){load(i);go(now().a);show();return;}   /* a click without a move on a stored piece takes it into the editor */
+   if(was){drop();show();return;}                                   /* beside a loaded piece that was not changed: let it go */
+   v.a=a0;v.b=-1;}                                                  /* on an empty bar it sets the begin */
+  if(v.a>=0)go(k==='b'&&v.b>v.a?v.b:v.a);show();};
+ bar.onpointerup=end;bar.onpointercancel=end;}
+barDrag('pbar',pvNow,pvShow,()=>!!CUR,()=>KURVE[pthNow()]||[],i=>{PSEL=i<0?null:{p:pthNow(),i:i};},
+ i=>{const p=pthNow(),x=(KURVE[p]||[])[i];if(x)PV={p:p,a:x[0],b:x[1],r:Number(x[2]),i:i};},pvClean,()=>{PV=null;});
+barDrag('tbar',tvNow,stkShow,()=>!!CUR&&CURSND,()=>STUMM[pthNow()]||[],i=>{TSEL=i<0?null:{p:pthNow(),i:i};},
+ i=>{const p=pthNow(),x=(STUMM[p]||[])[i];if(x)TV={p:p,a:x[0],b:x[1],f:x.length>2?x[2]:0,i:i};},tvClean,()=>{TV=null;});
 /* the reset point: tempo, curve, cut and sound of all clips as they were at one moment */
 function standShow(j){if(!j||!j.ok)return;const n=(j.geaendert||[]).length;window.STAND=j;
  $('rst').textContent='Reset: alles wie am '+j.wann+' Uhr';$('rst').disabled=!n;
