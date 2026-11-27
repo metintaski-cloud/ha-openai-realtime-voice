@@ -225,6 +225,26 @@ async def test_idle_timeout_ends_session():
     assert "session.close" in fake.received
 
 
+async def test_a_talk_ends_after_the_longest_time_and_the_app_gets_two_hours():
+    """2.192.0. Metin, 27 Nov 2026, 23:52: "warum wird die Live Verbindung von selbst unterbrochen?" His talk in
+    the app had been ended after 604 s by the ten minute limit. A talk from the app may now last two hours (his
+    word: "mach 120 min"); at the Voice PE the ten minutes stay."""
+    import app.session_end as se
+    fake = FakeLive(respond_after=10**6)
+
+    async def scenario(client):
+        assert json.loads(await client.recv())["type"] == "ready"
+        return await _collect(client, until_type="disconnect", timeout=5)
+
+    texts, _ = await _run(fake, scenario, MAX_SESSION_S=1.0)
+    assert [t.get("reason") for t in texts if t.get("type") == "disconnect"] == ["max_duration"]
+    import importlib
+    importlib.reload(se)
+    assert se.MAX_SESSION_S == 600.0 and se.APP_MAX_SESSION_S == 7200.0
+    assert se.max_session_s({"from_app": True}) == 7200.0 and se.max_session_s({"from_app": False}) == 600.0
+    assert se.max_session_s({}) == 600.0
+
+
 def test_contains_goodbye():
     import app.main as m
     assert m.contains_goodbye("Okay, danke. Tschüss!")

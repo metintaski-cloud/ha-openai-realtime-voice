@@ -386,7 +386,7 @@ body.chatfull #menu{top:calc(56px + env(safe-area-inset-top,0px))}
 <header><button id="back">&#8249;</button><img id="micon" src="/icon.png?v=5" alt="Menü" title="Menü"><h1>Leyla Gedächtnis</h1></header><div id="menu"></div><div id="pulse" class="ok" title="Alles in Ordnung"><div class="tick" id="tick" style="display:none"><span></span></div><i class="spark" style="left:12%;top:30%;animation-delay:0s"></i><i class="spark" style="left:22%;top:68%;animation-delay:0.6s"></i><i class="spark" style="left:31%;top:22%;animation-delay:1.2s"></i><i class="spark" style="left:68%;top:74%;animation-delay:0.3s"></i><i class="spark" style="left:77%;top:28%;animation-delay:0.9s"></i><i class="spark" style="left:88%;top:60%;animation-delay:1.5s"></i><i class="spark" style="left:40%;top:80%;animation-delay:1.8s"></i><i class="spark" style="left:60%;top:18%;animation-delay:2.1s"></i><div class="beam"></div><svg viewBox="0 0 100 90"><defs><linearGradient id="hg" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#f43f5e"/></linearGradient><radialGradient id="hc"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#7dd3fc"/><stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/></radialGradient></defs><path d="M50 84C20 62 4 46 4 28C4 14 15 4 28 4C38 4 46 10 50 18C54 10 62 4 72 4C85 4 96 14 96 28C96 46 80 62 50 84Z" fill="#0b1650cc" stroke="url(#hg)" stroke-width="3.2" stroke-linejoin="round"/><path d="M14 40H34L40 28L47 54L53 34L58 44H86" fill="none" stroke="#e0f2fe" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/><circle cx="54" cy="38" r="9" fill="url(#hc)"/></svg></div><div id="chat"><div id="stage"><div class="fig"><img src="/leyla_body.jpg" alt=""></div><video id="svid" muted playsinline preload="auto"></video><video id="svid2" muted playsinline preload="auto"></video><video id="spet" class="pet" muted playsinline preload="auto"></video><div class="fog"><i class="fl"></i><i class="fr"></i><i class="ff"></i></div></div><div class="chead"><button id="cmenu" title="Menü">&#9776;</button><div class="cav"><img src="/leyla.jpg" alt=""><span id="mbadge"></span></div><div><h2>Chat mit Leyla</h2><div id="mlabel"></div><div id="ccount"></div></div><button id="crose" title="Rose schenken, einmal pro Woche">&#127801;</button><button id="cmus" title="Musik an oder aus">&#127925;</button><button id="clive" title="Live mit Leyla reden">&#128222;</button><div id="lpill"></div></div><div id="clog"></div><div id="ctype"><textarea id="ctext" readonly inputmode="none" placeholder="Tippen und sprechen ..."></textarea><button id="ckb" title="Tastatur statt Diktat">abc</button><button id="csend" title="Senden">&#10148;</button></div><div id="cscn"><button id="ctanz" title="Tanz für mich">&#128131;</button><button id="czeig" title="Zeig dich">&#10024;</button></div><div id="cin"><button id="cnew" title="Neuen Chat beginnen">&#128172;&#8314;</button><button id="cmic" title="Sprachnachricht">&#127908;</button></div></div><div id="live"><img src="/leyla.jpg" alt=""><div id="lstat">Verbinde ...</div><button id="lend">Auflegen</button></div><div id="rules"><div class="top"><button id="rback">&#8249;</button><h1>So ist Leyla</h1></div><div id="rtext"></div></div><div id="root"></div><div id="gmail" style="display:none"></div><div id="lamps" style="display:none"></div>
 <div id="bar"><button id="del" disabled>Markierte löschen</button></div>
 <script>
-var LKLEIN=false;try{LKLEIN=localStorage.getItem('llklein')==='1';}catch(e){}  /* 2.191.0: test, live talk starts with as little of her knowledge as in the living room */
+try{localStorage.removeItem('llklein');}catch(e){}  /* the test switch of 2.191.0 is gone (2.192.0), its mark on the device with it */
 var ZNAMEON=false;  /* 2.179.0: the name of the running clip is shown, switched in the menu */
 var BENCH=null,BVAR={};  /* the measuring run (2.178.0); declared first because the clip address and the music ask for BVAR from the start */
 let CODE=null;
@@ -427,7 +427,7 @@ async function saveFields(fields){if(!view)return false;
  const j=await r.json();if(j.ok)view.text=j.text;return j.ok;}
 let sec=null,menuOpen=false,LASTD=null;
 const SECNAME={family:'Familie und Haushalt',friends:'Freunde und Verwandte',leyla:'Leylas Geschichte',private:'Privat',mail:'Google verbinden',lamps:'Lampenfarben',set:'Einstellungen'};
-const SECICON={family:'👪',friends:'🤝',leyla:'💜',private:'🔒',mail:'✉',lamps:'💡',rules:'📜',diary:'📔',full:'⛶',set:'⚙',naht:'🧵',zname:'🏷',lklein:'🧪',outfit:'👗',arbeit:'📖',freizeit:'🌴',nacht:'🌙',mback:'‹'};
+const SECICON={family:'👪',friends:'🤝',leyla:'💜',private:'🔒',mail:'✉',lamps:'💡',rules:'📜',diary:'📔',full:'⛶',set:'⚙',naht:'🧵',zname:'🏷',outfit:'👗',arbeit:'📖',freizeit:'🌴',nacht:'🌙',mback:'‹'};
 const WEAR=[['arbeit','Arbeitskleid'],['freizeit','Freizeit'],['nacht','Nacht']];let menuSub='';  /* 2.160.0 (Metin): Umziehen is a folder in the menu, the outfits are inside */
 let LOOKS=[];  /* her dresses, filled by clipsLoad */
 function menuItems(){const it=[];const ls=(LASTD&&LASTD.lists)||[];
@@ -435,7 +435,6 @@ function menuItems(){const it=[];const ls=(LASTD&&LASTD.lists)||[];
  if(CODE&&GM.shown&&GM.needs)it.push(['mail','Google verbinden','']);if(lampOn)it.push(['lamps','Lampenfarben','']);
  if(CODE){it.push(['diary','Tagebuch',LASTD&&LASTD.diary_n!=null?LASTD.diary_n:'']);it.push(['rules','So ist Leyla',''])};if(CODE&&STM&&STM.outfit)it.push(['outfit','Umziehen','']);if(LOOKS.length>1)it.push(['look','Kleid wechseln','']);if(CODE)it.push(['naht','Naht: Schleifen einstellen','']);  /* 2.172.3 (Metin: he wants to reach the page from the PC, in the menu) */
  if(CODE)it.push(['zname',ZNAMEON?'Clip Namen ausblenden':'Clip Namen zeigen','']);
- if(CODE)it.push(['lklein','Live Test: kleiner Start',LKLEIN?'AN':'aus']);  /* 2.191.0 (Metin, 27 Nov 2026: in live talk she sounds as if she read a text aloud): one talk with the small start to hear the difference; goes when that is decided */  /* 2.179.0, a help while clips are being replaced; goes when that is done */
  if(CODE)it.push(['bench',BENCH?'Messlauf abbrechen':'Messlauf (10 Minuten)','']);it.push(['full','Vollbild','']);it.push(['set','Einstellungen','']);return it;}
 function drawMenu(){const m=document.getElementById('menu');m.innerHTML='';m.style.display=menuOpen?'block':'none';document.getElementById('micon').classList.toggle('open',menuOpen);if(!menuOpen){menuSub='';return;}
  const items=menuSub==='outfit'?[['mback','Umziehen','']].concat(WEAR.map(([k,t])=>[k,t,STM&&STM.outfit===k?'trägt sie':''])):menuItems();
@@ -457,7 +456,6 @@ function openSec(k){if(k==='outfit'){menuSub='outfit';drawMenu();return;}if(k===
   try{localStorage.setItem('loutfit',nx);localStorage.setItem('loutfitday',dressDay());localStorage.setItem('lseen',String(Date.now()));}catch(e){}
   location.reload();return;}
  if(k==='zname'){znameSet(!ZNAMEON);return;}
- if(k==='lklein'){LKLEIN=!LKLEIN;try{localStorage.setItem('llklein',LKLEIN?'1':'0');}catch(e){}drawMenu();return;}
  if(k==='bench'){if(BENCH)benchStop('abgebrochen');else benchRun();return;}
  if(k==='full'){  /* 2.134.2 (Metin): the stage over the whole phone, without the address bar */
   const on=!document.fullscreenElement;
@@ -1183,9 +1181,9 @@ async function liveStart(){if(LIVE)return;const box=document.getElementById('liv
   for(let i=0;i<n;i++){const a=Math.floor(i*ratio),b=Math.min(inp.length,Math.floor((i+1)*ratio));let sum=0;for(let k=a;k<b;k++)sum+=inp[k];const v=Math.max(-1,Math.min(1,sum/Math.max(1,b-a)));out[i]=v<0?v*32768:v*32767;}
   ws.send(out.buffer);};
  src.connect(proc);proc.connect(ctx.destination);mark('proc');
- ws.onopen=()=>{mark('open');ws.send(JSON.stringify(LKLEIN?{type:'hello',code:CODE,klein:true}:{type:'hello',code:CODE}));};
+ ws.onopen=()=>{mark('open');ws.send(JSON.stringify({type:'hello',code:CODE}));};
  ws.onmessage=e=>{if(typeof e.data==='string'){let m={};try{m=JSON.parse(e.data);}catch(_){}
-   if(m.type==='ready'){L.ready=true;mark('ready');liveStat('Leyla hört zu');if(LKLEIN&&!L.told){L.told=true;CHAT.push({role:'info',text:'Live Test: dieses Gespräch läuft mit dem kleinen Start.'});chatDraw();}}
+   if(m.type==='ready'){L.ready=true;mark('ready');liveStat('Leyla hört zu');}
    else if(m.type==='phase'){liveStat(m.phase==='replying'?'Leyla spricht':m.phase==='searching'?'Leyla sucht ...':'Leyla denkt ...',m.phase==='replying');}
    else if(m.type==='interrupt'){L.srcs.forEach(s=>{try{s.stop();}catch(_){}});L.srcs=[];L.playT=ctx.currentTime;liveStat('Leyla hört zu');}
    else if(m.type==='disconnect'||m.type==='error'){liveStop();}

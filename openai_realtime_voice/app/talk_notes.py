@@ -229,33 +229,7 @@ class TalkNotesMixin:
         if self._metin():
             items += await self._personal_items(state, self._metin())
         items.append(self._private_note())
-        if state.get("app_small"):
-            items, left = self.small_start(items, self._start_chars())
-            state["start_small"] = left
-            logger.info("Live talk from the app with the small start (test): %d characters of her "
-                        "knowledge kept, left out: %s", sum(len(t) for _, t in items), left or "nothing")
         return items
-
-    @staticmethod
-    def small_start(items: list, budget: int) -> tuple:
-        """A test switch in the menu of the app (2.191.0). Metin, 27 Nov 2026, 23:18, about live talk in
-        the app: "Das ist ihre Art, wie sie redet. Die ist sehr robotermäßig, als würde sie einen Text
-        vorlesen." Measured in the log of that evening: his app talk began with about 18 500 characters
-        of her knowledge before his first word (6 140 in the rules, 12 327 in the startup input), six
-        talks at the Voice PE with 4 300 to 10 500; model, voice and rules were the same. Whether the
-        amount of text makes her sound read aloud can only be heard, so this starts an app talk as small
-        as a talk in the living room: who he is and how she is with him always, then the notes in their
-        order while they fit into `budget` characters (the budget of notes at a talk's start there), and
-        the long past (INPUT_KINDS) not at all. Returns (items kept, {kind: characters left out}).
-        In such a talk she knows less; it is for listening, not for use."""
-        kept, left, used = [], {}, 0
-        for kind, text in items:
-            if kind == "unlock" or (kind not in INPUT_KINDS and used + len(text) <= budget):
-                kept.append((kind, text))
-                used += 0 if kind == "unlock" else len(text)
-            else:
-                left[kind] = left.get(kind, 0) + len(text)
-        return kept, left
 
     async def _personal_items(self, state: dict, name: str, again: bool = False) -> list:
         """The notes for a person who is now known, in the order she needs them. What counts

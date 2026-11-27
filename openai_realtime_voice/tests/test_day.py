@@ -14,7 +14,9 @@ def _answer(erlebt=None, buch="Der kleine Prinz, Antoine de Saint-Exupéry"):
 def test_day_built_from_family_talks_only(tmp_path, monkeypatch):
     monkeypatch.setattr(daymod, "START_H", 0)
     d = Diary(str(tmp_path / "diary.json"))
-    now = time.time()
+    # noon of today, not the clock: one minute before midnight "now + 60" was the next day and the day was built
+    # again (seen on 27 Nov 2026 at 23:59 in a full run)
+    now = time.mktime(time.localtime()[:3] + (12, 0, 0, 0, 0, -1))
     d._save([
         {"t": now - 60, "who": "Gülfikar", "privat": False, "src": "stimme", "mittel": "Anne hat Dolma gekocht"},
         {"t": now - 50, "who": "Gülfikar", "privat": True, "src": "stimme", "mittel": "GEHEIM"},
