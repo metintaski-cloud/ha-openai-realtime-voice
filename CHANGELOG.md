@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.188.0 (27 Nov 2026)
+
+- `feat`: on "Outfit als Ganzes" a touch clip stays until he lets it go. Metin, 14:22, with a photo of the cards: "Ich möchte bei Berührung Po, Brust, Gesicht, wenn ich drauf klicke, dass der Clip immer Schleife läuft, bis ich erneut auf diese Clip-Button klicke. Also es soll nicht nur einmal ablaufen. Wenn ich auf Gesicht 1 geklickt habe, dann soll immer Gesicht 1 laufen, bis ich entweder Gesicht 1 wegklicke oder eine andere wähle, zum Beispiel Brust 1. Dann soll Brust 1 immer Schleife laufen." A click on a button of the card Berührung starts that clip with its sound (a clip from behind after her turn, as before) and it runs again and again (`HOLD`, `show(..., {solo: true})`); the button stays lit. The same button again goes on with the loop after the last one, another button takes over and stays in its turn. Before, a touch clip ran once and the loops came back by themselves, so there was no time to set anything on it.
+- 829 tests as before (the test of the touch buttons was changed).
+
 ## 2.187.0 (27 Nov 2026)
 
 - `feat`: on "Outfit als Ganzes" the piece in the bar is dragged with the mouse. Metin, 13:54, with a photo of the page ("Wow, richtig sauber, schön und übersichtlich. So muss es sein. Ein Wunsch habe ich aber noch. Die Zeit die ich jetzt markiert habe für ein Stück schneller oder langsamer. Schön wenn ich den mit der Maus rechts und links länger oder kürzer ziehen könnte") and 13:57 ("Das gilt auch für Stück beginnt hier und Stück endet hier, dass ich die auch mit Maus rechts, links ein bisschen nachziehen kann. Es ist schwierig, einmal fix drauf zu drücken und an die richtige Stelle zu erwischen").

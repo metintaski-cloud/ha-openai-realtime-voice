@@ -400,7 +400,7 @@ const OUT=[['Kurzes Arbeitskleid','kurz',''],['Kurzes Freizeitkleid','kurz','fre
 const ZONES=[['Gesicht',['gesicht']],['Brust',['brust']],['Bauch',['bauch','mix']],['Po',['po','povorne','mix']]];
 const PRELOAD_S=3,LOOP_PRE=0.25,LOOP_OFF=300,FAST_OFF=450;
 const $=id=>document.getElementById(id);
-let LOOK='',PRE='',CL=[],VER={},RATE={},KURVE={},SCHNITT={},SAVED={},MUTE={},STUMM={},VOL={},LEAD={},FADE={},SVL={},SVF={},OFF={},SV=0,TOK=0,CUR='',CURSND=false,LAST='',BUSY=false,SEQ=true,SOLO=false,PAUSED=false,SCRUB=false;
+let LOOK='',PRE='',CL=[],VER={},RATE={},KURVE={},SCHNITT={},SAVED={},MUTE={},STUMM={},VOL={},LEAD={},FADE={},SVL={},SVF={},OFF={},SV=0,TOK=0,CUR='',CURSND=false,HOLD='',LAST='',BUSY=false,SEQ=true,SOLO=false,PAUSED=false,SCRUB=false;
 const base=n=>n.replace(/[0-9]+$/,'');
 const vars=b=>CL.filter(n=>base(n)===PRE+b);
 /* every loop the dress has, the extra one of the happy loop too (Metin, 27 Nov 2026: "Schleife bis Max, die wir haben") */
@@ -485,7 +485,7 @@ function label(){const p=pthNow(),c=SCHNITT[p],v=vis(),d=v.duration||10;$('name'
  $('cfrom').max=$('cto').max=String(d);$('cfrom').value=String(c&&c[0]||0);$('cto').value=String(c&&c[1]&&c[1]<d?c[1]:d);
  $('info').textContent=(KURVE[p]?'mit Tempo Kurve  ':'')+(v.duration?v.duration.toFixed(1)+' s lang':'');
  cutShow();tonShow();bShow();$('solobar').style.display=SOLO?'flex':'none';
- document.querySelectorAll('button[data-n]').forEach(b=>{const run=b.dataset.n===CUR;
+ document.querySelectorAll('button[data-n]').forEach(b=>{const run=b.dataset.n===CUR||(!b.dataset.loop&&b.dataset.n===HOLD);
   if(b.dataset.loop){b.classList.toggle('on',!OFF[b.dataset.n]);b.classList.toggle('run',run);b.style.opacity=OFF[b.dataset.n]?'.45':'1';b.textContent=(run?'▶ ':'')+b.dataset.lab;}
   else{b.classList.toggle('on',run);b.classList.toggle('run',run);}});
  document.querySelectorAll('#looks button').forEach(b=>b.classList.toggle('run',b.dataset.i===$('look').value));whDraw();pvShow();}
@@ -518,14 +518,18 @@ function roundPick(R,v,cur){let b=(R.b||[]).filter(n=>v.includes(n));
  if(!b.length||(b.length===1&&b[0]===cur&&v.length>1)){b=v.slice();for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)),t=b[i];b[i]=b[j];b[j]=t;}}
  if(b.length>1&&b[0]===cur)b.push(b.shift());const n=b.shift();R.b=b;return n;}
 const RND={};
-function loopNext(cont,fast){BUSY=false;const all=loops(),sel=all.filter(n=>!OFF[n]),v=sel.length?sel:all;if(!v.length){$('name').textContent='Dieses Kleid hat noch keine Schleife.';return;}
+function loopNext(cont,fast){BUSY=false;HOLD='';const all=loops(),sel=all.filter(n=>!OFF[n]),v=sel.length?sel:all;if(!v.length){$('name').textContent='Dieses Kleid hat noch keine Schleife.';return;}
  let n;if(SEQ){const i=v.indexOf(LAST);n=v[(i+1)%v.length];}else n=roundPick(RND,v,LAST);
  LAST=n;
  show(n,{cont:cont,fast:fast},()=>loopNext(true,false));}
 /* a touch clip starts at once, with its sound; a clip from behind first turns her (hinten), as in the app */
-function touch(zone,n){if(BUSY&&!SOLO)return;BUSY=true;if(loops().includes(CUR))LAST=CUR;  /* 2.172.2: on after the loop he really saw last; the next one may already have been chosen and loading, and was then skipped */
+/* 2.188.0 (Metin, 27 Nov 2026, 14:22: "wenn ich drauf klicke, dass der Clip immer Schleife läuft, bis ich erneut auf diese Clip-Button
+   klicke ... oder eine andere wähle, zum Beispiel Brust 1. Dann soll Brust 1 immer Schleife laufen"): a touch clip stays (HOLD) and
+   runs again and again; the same button once more goes back to the loops, another button takes over. Before, it ran once. */
+function touch(zone,n){if(HOLD===n){BUSY=false;loopNext(false,true);return;}
+ if(BUSY&&!SOLO)return;BUSY=true;HOLD=n;if(loops().includes(CUR))LAST=CUR;  /* 2.172.2: on after the loop he really saw last; the next one may already have been chosen and loading, and was then skipped */
  const turn=zone==='Po'&&!/povorne|mix/.test(n)?vars('hinten'):[];
- const back=()=>loopNext(true,false),play=c=>show(n,{cont:c,fast:!c,snd:true},back);
+ const play=c=>show(n,{cont:c,fast:!c,snd:true,solo:true},()=>{});label();
  if(turn.length)show(turn[Math.floor(Math.random()*turn.length)],{fast:true,snd:true},()=>play(true));else play(false);}
 
 /* while he sets begin and end, only this clip runs, from its begin to its end and again */
@@ -564,7 +568,7 @@ function whDraw(){for(const el of document.querySelectorAll('.wh')){const k=el.d
   el.querySelector('em').textContent=w.list.length?(w.i>=0?(w.i+1)+' von '+w.list.length:w.list.length+' Clips'):'';
   el.classList.toggle('run',at>=0);el.classList.toggle('leer',!w.list.length);}}
 function whStep(k,d){const w=WH[k],L=w.list;if(!L.length)return;const at=L.indexOf(CUR);let i=at>=0?at:w.i;i=i<0?(d>0?0:L.length-1):(i+d+L.length)%L.length;w.i=i;
- const n=L[i];BUSY=false;PV=null;TV=null;if(loops().includes(CUR))LAST=CUR;show(n,{fast:true,snd:SNDRE.test(PRE&&n.startsWith(PRE)?n.slice(PRE.length):n),solo:true},()=>{});whDraw();}
+ const n=L[i];BUSY=false;HOLD='';PV=null;TV=null;if(loops().includes(CUR))LAST=CUR;show(n,{fast:true,snd:SNDRE.test(PRE&&n.startsWith(PRE)?n.slice(PRE.length):n),solo:true},()=>{});whDraw();}
 document.querySelectorAll('.wh').forEach(el=>{let last=0;
  el.addEventListener('wheel',e=>{e.preventDefault();const t=Date.now();if(t-last<140)return;last=t;whStep(el.dataset.k,e.deltaY>0?1:-1);},{passive:false});
  el.querySelectorAll('button').forEach(b=>{b.onclick=()=>whStep(el.dataset.k,Number(b.dataset.d));});});
@@ -621,7 +625,7 @@ $('bh').onclick=()=>bSet(0.1,0.1);$('bw').onclick=()=>bSet(0.8,LOOP_PRE);
 $('bsave').onclick=async()=>{if(!CUR)return;const x=bNow(),a=await post('/api/blende',{name:x.p,fade:x.f}),b=await post('/api/vorlauf',{name:x.p,lead:x.l}),ok=!!(a&&a.ok&&b&&b.ok);
  if(ok){if(x.f===0.8)delete SVF[x.p];else SVF[x.p]=x.f;if(x.l===LOOP_PRE)delete SVL[x.p];else SVL[x.p]=x.l;}flash($('bsave'),ok,'Übergang merken');bShow();standLater();};
 /* the loop before this clip plays its last two seconds, then this clip takes over as on the stage of the app */
-$('bseh').onclick=()=>{if(!CUR)return;const all=loops(),cur=CUR,i=all.indexOf(cur),prev=all.length?all[i<0?all.length-1:(i-1+all.length)%all.length]:cur;BUSY=false;LAST=cur;
+$('bseh').onclick=()=>{if(!CUR)return;const all=loops(),cur=CUR,i=all.indexOf(cur),prev=all.length?all[i<0?all.length-1:(i-1+all.length)%all.length]:cur;BUSY=false;HOLD='';LAST=cur;
  show(prev,{fast:true,tail:2},()=>show(cur,{cont:true},()=>loopNext(true,false)));};
 /* begin and end: the marks apply at once on this page, the app gets them with "Schnitt merken" */
 const cutSet=()=>{const p=pthNow(),d=vis().duration||0,a=Number($('cfrom').value),b=Number($('cto').value);

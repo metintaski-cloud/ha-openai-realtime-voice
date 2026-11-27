@@ -75,7 +75,7 @@ async def test_in_a_browser_loops_run_in_order_and_a_touch_cuts_in_and_hands_bac
     folder.mkdir(parents=True)
     try:
         for name in ("freizeitgluecklich", "freizeitgluecklich2", "freizeitgluecklich3", "freizeitpo8",
-                     "freizeithinten", "gluecklich"):
+                     "freizeithinten", "freizeitbrust", "gluecklich"):
             _clip(folder / (name + ".mp4"), 4)
     except subprocess.CalledProcessError:
         pytest.skip("this ffmpeg cannot write VP9")
@@ -176,17 +176,29 @@ async def test_in_a_browser_loops_run_in_order_and_a_touch_cuts_in_and_hands_bac
             state = await watch(1.0)
             assert state["cur"] == "freizeithinten" and state["muted"] is False  # she turns first, with sound
             await watch(9.0)
-            turn = seen.index("freizeithinten")  # then the touch clip, then on with the loop after the last one
+            # 2.188.0 (Metin, 27 Nov 2026, 14:22: "dass der Clip immer Schleife läuft, bis ich erneut auf diese Clip-Button klicke"):
+            # then the touch clip, and it stays: after more than its 4 s it still runs, alone and marked
+            turn = seen.index("freizeithinten")
             order = ["freizeitgluecklich", "freizeitgluecklich2", "freizeitgluecklich3"]
-            assert seen[turn + 1] == "freizeitpo8"
-            assert seen[turn + 2] == order[(order.index(seen[turn - 1]) + 1) % 3], seen
+            assert seen[turn + 1:] == ["freizeitpo8"], seen
+            held = await page.evaluate("()=>[CUR,HOLD,SOLO,vis().paused,document.querySelector('button[data-n=freizeitpo8]').classList.contains('run')]")
+            assert held == ["freizeitpo8", "freizeitpo8", True, False, True], held
+            t_a = await page.evaluate("()=>vis().currentTime")
+            await asyncio.sleep(1.0)
+            assert await page.evaluate("()=>vis().currentTime") != t_a   # it really plays
+            await page.click("button[data-n=freizeitbrust]")           # another one takes over and stays too
+            await page.wait_for_function("()=>CUR==='freizeitbrust'&&SOLO&&HOLD==='freizeitbrust'", timeout=9000)
+            await page.click("button[data-n=freizeitbrust]")           # the same button again: on with the loop after the last one
+            await page.wait_for_function("()=>!SOLO&&HOLD===''&&CUR.startsWith('freizeitgluecklich')", timeout=9000)
+            await asyncio.sleep(0.3)
+            assert await page.evaluate("()=>CUR") == order[(order.index(seen[turn - 1]) + 1) % 3], seen
             assert (await page.evaluate("()=>document.getElementById(SV?'v1':'v0').muted")) is True
             tempo_first = await page.evaluate("()=>CUR")  # the loop that gets the tempo here
             await page.evaluate("()=>{const r=document.getElementById('rate');r.value='1.5';r.oninput();}")
             await page.click("#mk")
             await asyncio.sleep(0.4)
             assert memory_web._tempo_read()[-1]["rate"] == 1.5
-            assert memory_web._tempo_read()[-1]["name"] == "kurz/" + seen[-1]
+            assert memory_web._tempo_read()[-1]["name"] == "kurz/" + tempo_first
             # sound: a touch clip can lose its whole sound for the app, or only a stretch of it
             assert await page.is_disabled("#tonb")  # a loop runs: loops never have sound
             await page.click("button[data-n=freizeitpo8]")
