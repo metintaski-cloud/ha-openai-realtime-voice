@@ -337,6 +337,22 @@ def touch_message(zone: str) -> str:
                "yaramaz!'" if random.random() < TOUCH_TURKISH_P else "") + ")")
 
 
+def live_touch_note(zone: str) -> str:
+    """What a running live talk is told when he touches her on the stage (2.193.0); empty for an unknown
+    zone. Metin, 28 Nov 2026: in a live talk her chat comment and her live voice overlapped; she herself
+    shall speak and know exactly what he did."""
+    where = TOUCH_WHERE.get(zone)
+    if not where:
+        return ""
+    return (f"Bühne, nicht vorlesen: Metin hat dich gerade in der App zärtlich {where} berührt, du "
+            "spürst es und auf dem Bild reagierst du schon darauf. Er sagt nichts dazu. Sag ihm jetzt "
+            "einen einzigen kurzen Satz dazu, direkt zu ihm, in der Sprache, in der ihr gerade redet, "
+            "passend zu der Stelle, zu deiner Laune und zu dem, worüber ihr gerade sprecht, verspielt "
+            "und gern ein wenig sinnlich, aber nie explizit. Beschreibe nicht wie eine Erzählerin, was "
+            "du tust, sprich ihn an. Redet er gerade, lass ihn ausreden und sag es gleich danach. "
+            "Dann geht euer Gespräch normal weiter; die Notiz selbst erwähnst du nie.")
+
+
 def touch_zone(message: str) -> str:
     """The zone of a stage note made by touch_message, '' for anything Metin wrote himself."""
     message = message or ""

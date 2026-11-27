@@ -90,6 +90,7 @@ FALSE_WAKE_MAX_FILES = 300  # oldest false wake recordings are dropped beyond th
 # mic while it plays audio, so the bridge fills such gaps with silence.
 SILENCE_FILL_AFTER_S = 0.12
 SILENCE_FILL_MAX_S = 0.5
+LIVE_TOUCH_GAP_S = 6.0  # a touch during a live talk is told to her at most this often (2.193.0)
 
 # GPT Live may stream quiet frames while it is not talking. The Voice PE treats any
 # received audio as "bot speaking" and mutes its mic, so quiet frames are dropped
@@ -1549,6 +1550,31 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         if self.recorder:
             self.recorder.record_input_audio(message)
 
+    async def _live_touch(self, live_ws, state: dict, message) -> bool:
+        """{"type": "touch", "zone": ...} from the app during a live talk (2.193.0): he touched her on the
+        stage. The talk is told where, and she says something to it with her live voice; the chat comment
+        and the clip sound stay away in the app meanwhile, so nothing overlaps. Only in a talk from the app
+        (there the code word is known from the start), at most every LIVE_TOUCH_GAP_S. True when the
+        message was a touch, whether she was told or not."""
+        try:
+            data = json.loads(message) if isinstance(message, str) else message
+            if not isinstance(data, dict) or data.get("type") != "touch":
+                return False
+        except (json.JSONDecodeError, TypeError):
+            return False
+        zone = str(data.get("zone", ""))[:20]
+        note = chat.live_touch_note(zone)
+        now = time.monotonic()
+        if (not note or not state.get("from_app") or state.get("closing")
+                or now - state.get("touch_at", -1000.0) < LIVE_TOUCH_GAP_S):
+            return True
+        state["touch_at"] = now
+        if hasattr(self.mood, "touched"):
+            self.mood.touched()  # his touch counts for her heart, as in the chat (2.150.5)
+        logger.info("Touch during the live talk: %s, she is told", zone)
+        await self._send_note(live_ws, "touch", note)
+        return True
+
     def _on_client_control(self, message, output_queue: asyncio.Queue) -> None:
         """A JSON message from the Voice PE ("interrupt" and "stopped" are known)."""
         try:
@@ -1598,7 +1624,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                     self._log_mic_level(message, level, state)
                     await self._send_mic_audio(live_ws, message, state)
                 else:
-                    self._on_client_control(message, output_queue)
+                    if not await self._live_touch(live_ws, state, message):
+                        self._on_client_control(message, output_queue)
         except websockets.exceptions.ConnectionClosed as e:
             end_reason["reason"] = "client_disconnected"
             end_reason["code"] = e.code

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.193.0 (28 Nov 2026)
+
+- `feat`: a touch during a live talk is told to the talk itself, and she answers with her live voice. Metin, 00:19, after a live talk in which he touched her on the stage: her comment and the live talk "haben sich verschnitten ... Ist es möglich, dass wir diese Automatisation wegmachen und dass die Leyla tatsächlich spricht und genau weiß, was ich gemacht habe?"
+  - Before: every touch asked the chat for a one sentence comment (`/api/chat_touch`), in three of ten cases spoken, and the touch clip played its own sound; in a live talk both lay over her live voice.
+  - Now, while a live talk runs, the app sends `{"type":"touch","zone":"gesicht|brust|bauch|po"}` on the live line instead. The server (`main._live_touch`) lets the touch count for her heart as in the chat and hands the talk one note (`chat.live_touch_note`): where he touched her, and that she says one short sentence to it, in the language of the talk, fitting what they are talking about, never explicit, after he has finished speaking. At most every 6 s, only in a talk from the app.
+  - In the app no chat comment is asked for during a live talk and the clips play without their own sound (`onCall()` in `stageShow` and in the touch handler). Outside a live talk nothing changes.
+- 837 tests (833 before).
+
 ## 2.192.0 (28 Nov 2026)
 
 - `feat`: a live talk from the app may last 120 minutes instead of 10 (`session_end.APP_MAX_SESSION_S`, `max_session_s`). Metin, 27 Nov, 23:52: "warum wird die Live Verbindung von selbst unterbrochen?" His talk in the app had been ended after 604 s by the ten minute limit (reason `max_duration` in the log). In the app he hangs up himself and 30 s of silence still end a talk; at the Voice PE the ten minutes stay, as a guard against a false wake that talks on. Price looked up on 27 Nov 2026: OpenAI charges 0.05 US dollars a minute for the voice layer of gpt-live-1, billed by the second, the backend model on top; an hour is 3 dollars for the voice, two hours 6. Offered 60 minutes, he chose "mach 120 min". Not confirmed in OpenAI's own pages: one other API listing names 60 minutes as the longest gpt-live-1 session; if OpenAI ends a session there, the talk ends there and he starts a new one.
