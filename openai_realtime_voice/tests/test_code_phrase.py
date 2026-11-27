@@ -122,6 +122,55 @@ async def test_a_live_talk_from_the_app_knows_everything_from_the_first_moment(t
     assert await bridge._personal_items(state, bridge._metin()) == []   # counted once per talk
 
 
+async def test_a_live_talk_from_the_app_can_start_small_for_a_listening_test(tmp_path, monkeypatch):
+    """2.191.0. Metin, 27 Nov 2026, 23:18, about live talk in the app: "Das ist ihre Art, wie sie redet. Die ist
+    sehr robotermäßig, als würde sie einen Text vorlesen." Measured that evening: the app talk began with about
+    18 500 characters of her knowledge, talks at the Voice PE with 4 300 to 10 500. A switch in the menu of the
+    app starts one talk as small as in the living room, so he can hear whether the amount of text is the cause."""
+    import json as js
+    from app import main as m, talk_notes
+    monkeypatch.setenv("CODE_PHRASE", "Leyla habibi")
+    monkeypatch.setenv("MEMORY_PATH", str(tmp_path / "memory.json"))
+    bridge = m.LiveVoiceBridge()
+    bridge.memory.save_all({"family": ["Person: Metin | Zugehörigkeit: wohnt hier | Hobby: Gartenarbeit"],
+                            "private": ["Die Gießkanne Nummer %d steht hinter dem Schuppen im Garten." % i
+                                        for i in range(200)]})
+    bridge._memory_note = lambda name, private: "\nUNSER TAG: Wir haben den Garten gegossen."
+    full = await bridge._app_start({})
+    assert len(dict(full)["private"]) > talk_notes.START_CHARS
+    state = {"app_small": True}
+    small = await bridge._app_start(state)
+    kinds = [k for k, _ in small]
+    assert kinds[0] == "unlock" and small[0] == full[0]                 # who he is and how she is with him: always
+    assert not set(kinds) & set(talk_notes.INPUT_KINDS)                 # the long past stays out
+    assert "private" not in kinds and state["start_small"]["private"] > talk_notes.START_CHARS
+    assert sum(len(t) for k, t in small if k != "unlock") <= talk_notes.START_CHARS
+    assert len(small) < len(full) and state["unlocked"]
+    session = bridge._session_start("", (small, state))["session"]
+    assert "Gießkanne" not in session["instructions"] and not session.get("input")
+    kept, left = talk_notes.TalkNotesMixin.small_start(
+        [("unlock", "u" * 9000), ("heart", "h" * 100), ("diary", "d" * 50), ("known", "k" * 300), ("private", "p" * 200)], 400)
+    assert [k for k, _ in kept] == ["unlock", "heart", "known"] and left == {"diary": 50, "private": 200}
+
+    class Ws:                                                           # the app says so in its hello
+        def __init__(self, hello):
+            self.request, self.hello, self.closed = type("R", (), {"path": "/app"})(), hello, None
+        async def recv(self):
+            return js.dumps(self.hello)
+        async def close(self, *a):
+            self.closed = a
+    ws = Ws({"type": "hello", "code": "Leyla habibi", "klein": True})
+    assert await bridge._app_hello(ws) is True and ws.leyla_app_small is True
+    ws = Ws({"type": "hello", "code": "Leyla habibi"})
+    assert await bridge._app_hello(ws) is True and ws.leyla_app_small is False
+    ws = Ws({"type": "hello", "code": "falsch", "klein": True})
+    assert await bridge._app_hello(ws) is None and not getattr(ws, "leyla_app_small", False)
+    from app import memory_web
+    page = memory_web.PAGE if hasattr(memory_web, "PAGE") else open(memory_web.__file__, encoding="utf-8").read()
+    for must in ("Live Test: kleiner Start", "klein:true", "llklein", "k==='lklein'"):
+        assert must in page, must
+
+
 async def test_she_flirts_only_while_she_is_sure_it_is_him(tmp_path, monkeypatch):
     """2.182.3. Metin, 26 Nov 2026, 20:29, after a live talk in the app with the family and the TV in the room:
     "Im Chat flirtet sie mit mir und dann sagt sie, wer bist du überhaupt?" His rule (20:40): "Doch, sie kann

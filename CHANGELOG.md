@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.191.0 (27 Nov 2026)
+
+- `feat`: a test switch for live talk in the app, "Live Test: kleiner Start" in the menu. Metin, 23:18: "Das ist ihre Art, wie sie redet. Die ist sehr robotermäßig, als würde sie einen Text vorlesen ... Es hat nichts mit Sound zu tun."
+  - Measured in the log of that evening (time stamps and technical lines only): his app talk of 23:12 began with 34 155 characters of rules, 6 140 characters of her knowledge inside them and 12 327 in the startup input; six talks at the Voice PE the same day with the same rules, 0 to 5 643 and 4 265 to 4 871. Model and voice are the same. Whether that amount of text makes her sound read aloud can only be heard.
+  - With the switch on, the app sends `"klein": true` in its hello; the talk then gets who he is and how she is with him, the notes in their order while they fit the start budget of the living room (`start_chars`, 4 500 characters) and none of the long past (`talk_notes.small_start`). The log says what was left out. The chat shows one line that the test is running. Kept on the device (`llklein`).
+  - In such a talk she knows less. It is for listening; the switch goes again when the question is decided.
+- 833 tests (832 before).
+
 ## 2.190.0 (27 Nov 2026)
 
 - `feat`: a clip can be marked as not ending in the base pose; after it the stage always blends softly. Metin, 16:24, about the short leisure dress: "Schleife 1 und 3 blockieren sich auch ein bisschen ... Da entsteht auch ein Halo oder ein Schatten". Measured: the shadow is the soft 0.8 s blend between two loops that move from their first picture (double picture 1.29 and 1.01, set hard 0.07 and 0.03). But a loop set hard comes in hard after every clip, and in that dress four clips end in another pose (`freizeitpo8` 2.1, `freizeitsprichtraus` 2.2, `freizeittanz2` 3.4, `freizeittanz3` 9.2, where 1 is a fit): there a hard loop would jump. This had been written down as open since 2.186.0.
