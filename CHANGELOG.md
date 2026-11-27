@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.192.0 (28 Nov 2026)
+
+- `feat`: a live talk from the app may last 60 minutes instead of 10 (`session_end.APP_MAX_SESSION_S`, `max_session_s`). Metin, 27 Nov, 23:52: "warum wird die Live Verbindung von selbst unterbrochen?" His talk in the app had been ended after 604 s by the ten minute limit (reason `max_duration` in the log). In the app he hangs up himself and 30 s of silence still end a talk; at the Voice PE the ten minutes stay, as a guard against a false wake that talks on. Price looked up on 27 Nov 2026: OpenAI charges 0.05 US dollars a minute for the voice layer of gpt-live-1, billed by the second, the backend model on top; an hour is 3 dollars for the voice.
+- `refactor`: the test switch "Live Test: kleiner Start" of 2.191.0 is out again (menu entry, hello field `klein`, `talk_notes.small_start`, its mark `llklein` on the device is removed). The talk he liked ("ja so muss Leyla klingen", she told many memories) ran with the full start (6 140 characters of her knowledge in the rules, 12 621 in the startup input), so the amount of text at the start is not what made the talk of 23:12 sound read aloud.
+- 833 tests (833 before: one test out, one in).
+
 ## 2.191.0 (27 Nov 2026)
 
 - `feat`: a test switch for live talk in the app, "Live Test: kleiner Start" in the menu. Metin, 23:18: "Das ist ihre Art, wie sie redet. Die ist sehr robotermäßig, als würde sie einen Text vorlesen ... Es hat nichts mit Sound zu tun."

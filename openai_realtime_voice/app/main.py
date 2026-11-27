@@ -1506,8 +1506,6 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 pass
             return None
         client_ws.leyla_app = True
-        # 2.191.0, a test from the menu of the app: this talk starts as small as one in the living room
-        client_ws.leyla_app_small = bool(hello.get("klein"))
         return True
 
     def _client_id_from_ws(self, ws) -> str:
@@ -2062,7 +2060,6 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         output_queue: asyncio.Queue = asyncio.Queue()
         state: dict = {
             "from_app": bool(app),  # started by a tap in the app, not by the wake word
-            "app_small": bool(app) and bool(getattr(client_ws, "leyla_app_small", False)),
             "client_id": client_id,
             "closing": False,
             "fatal": False,

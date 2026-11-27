@@ -18,6 +18,15 @@ NO_SPEECH_TIMEOUT_S = 6.0  # false wake: nobody speaks, end silently (counted fr
 VOICE_HOLD_S = 2.5  # while a voice was heard this recently the session is not ended for silence
 NO_SPEECH_MAX_S = 14.0  # but never longer than this after the start (TV noise must not hold a false wake)
 MAX_SESSION_S = 600.0
+# A live talk from the app may last this long (2.192.0). Metin, 27 Nov 2026, 23:52, after a talk in the app
+# that he liked ("ja so muss Leyla klingen") was cut at 604 s: "warum wird die Live Verbindung von selbst
+# unterbrochen?" In the app he hangs up himself and silence still ends the talk after IDLE_TIMEOUT_S; at the
+# Voice PE the ten minutes stay, there a false wake with the TV running could otherwise talk on.
+APP_MAX_SESSION_S = 3600.0
+
+
+def max_session_s(state: dict) -> float:
+    return APP_MAX_SESSION_S if state.get("from_app") else MAX_SESSION_S
 
 
 class SessionEndMixin:
@@ -43,7 +52,7 @@ class SessionEndMixin:
         state: dict,
     ) -> None:
         """Ends the session: after end_conversation (once the farewell was played), when
-        nobody spoke for IDLE_TIMEOUT_S, or after MAX_SESSION_S."""
+        nobody spoke for IDLE_TIMEOUT_S, or after MAX_SESSION_S (a talk from the app: APP_MAX_SESSION_S)."""
         try:
             session_start = time.monotonic()
             reason = ""
@@ -58,7 +67,7 @@ class SessionEndMixin:
                     reason = "no_speech"
                 elif now - state["last_activity"] > IDLE_TIMEOUT_S:
                     reason = "idle_timeout"
-                elif now - session_start > MAX_SESSION_S:
+                elif now - session_start > max_session_s(state):
                     reason = "max_duration"
             logger.info("Ending session (%s), notifying client", reason)
             end_reason["reason"] = reason
