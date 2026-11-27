@@ -840,7 +840,7 @@ function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name)&&!MUTE[name.in
   let fired=false;const fire=()=>{if(fired||tok!==STOK||!done)return;fired=true;CONT=true;done();CONT=false;};
   const fol=rateFollow(b,b.dataset.pth||'');
   if(fol){const s0=b.src,rf=()=>{if(b.src!==s0||tok!==STOK&&b.paused)return;fol();requestAnimationFrame(rf);};rf();}  /* 2.169.0: a stretch with its own tempo begins and ends at its picture, not at the next quarter second (timeupdate) */
-  {const st=STUMM[b.dataset.pth||''];if(st&&!b.muted){const s0=b.src,v0=b.volume,vf=()=>{if(b.src!==s0)return;const t=b.currentTime;b.volume=st.some(x=>t>=x[0]&&t<x[1])?0:v0;if(!b.ended)requestAnimationFrame(vf);};vf();}}  /* a silent stretch: the clip plays on, only its volume is zero there, nothing shifts */
+  {const st=STUMM[b.dataset.pth||''];if(st&&!b.muted){const s0=b.src,v0=b.volume,vf=()=>{if(b.src!==s0)return;const t=b.currentTime,x=st.find(x=>t>=x[0]&&t<x[1]);b.volume=x?Math.min(1,v0*(x.length>2?x[2]:0)):v0;if(!b.ended)requestAnimationFrame(vf);};vf();}}  /* 2.185.0: a stretch [from,to,factor] is quieter or louder there, [from,to] silent */  /* a silent stretch: the clip plays on, only its volume is zero there, nothing shifts */
   const pre=lightNow()?PRELOAD_LIGHT_S:PRELOAD_S,full=()=>{const r=b.buffered;return r.length&&r.end(r.length-1)>=endOf(b)-0.2;};
   /* 2.143.2 (Metin: the ends of the clips flicker): the early preload on the phone began about 1 s into a 10 s clip and loaded the next clip into the old video while it was still fading out (it stays visible up to 1.65 s). The early preload now waits 2.5 s after the swap */
   const t0=performance.now();

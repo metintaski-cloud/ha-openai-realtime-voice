@@ -1,5 +1,6 @@
 """The page /ganzes: one outfit as a whole, its loops in a row and the touch clips in between."""
 import asyncio
+import json
 import re
 import shutil
 import subprocess
@@ -178,7 +179,7 @@ async def test_in_a_browser_loops_run_in_order_and_a_touch_cuts_in_and_hands_bac
             turn = seen.index("freizeithinten")  # then the touch clip, then on with the loop after the last one
             order = ["freizeitgluecklich", "freizeitgluecklich2", "freizeitgluecklich3"]
             assert seen[turn + 1] == "freizeitpo8"
-            assert seen[turn + 2] == order[(order.index(seen[turn - 1]) + 1) % 3]
+            assert seen[turn + 2] == order[(order.index(seen[turn - 1]) + 1) % 3], seen
             assert (await page.evaluate("()=>document.getElementById(SV?'v1':'v0').muted")) is True
             tempo_first = await page.evaluate("()=>CUR")  # the loop that gets the tempo here
             await page.evaluate("()=>{const r=document.getElementById('rate');r.value='1.5';r.oninput();}")
@@ -190,7 +191,16 @@ async def test_in_a_browser_loops_run_in_order_and_a_touch_cuts_in_and_hands_bac
             assert await page.is_disabled("#tonb")  # a loop runs: loops never have sound
             await page.click("button[data-n=freizeitpo8]")
             await page.wait_for_function("()=>CUR==='freizeitpo8'", timeout=9000)
-            await page.evaluate("()=>{document.getElementById('sfrom').value='1';document.getElementById('sto').value='2.5';stkShow();}")
+            # 2.185.0: the piece is taken from the picture on the stage, one step after the other (Metin: sound "genauso", cut and
+            # loudness "als eine Einheit")
+            await page.evaluate("()=>{halt();vis().currentTime=1;}")
+            await asyncio.sleep(0.3)
+            assert await page.is_disabled("#tb") and await page.is_disabled("#sadd")
+            await page.click("#ta")
+            await page.evaluate("()=>{vis().currentTime=2.5;}")
+            await asyncio.sleep(0.3)
+            await page.click("#tb")
+            assert "Stück von 1.00 bis 2.50 s: Ton gelöscht (Stille)" in await page.inner_text("#slab")
             await page.click("#sadd")
             await page.wait_for_function("()=>(STUMM['kurz/freizeitpo8']||[]).length===1")
             assert ganzes_page.ton_read()["stumm"] == {"kurz/freizeitpo8": [[1.0, 2.5]]}
@@ -209,21 +219,37 @@ async def test_in_a_browser_loops_run_in_order_and_a_touch_cuts_in_and_hands_bac
             await page.mouse.move(box["x"] + box["width"] * 0.4, box["y"] + 20, steps=4)
             await page.mouse.move(box["x"] + box["width"] * 0.5, box["y"] + 20, steps=4)
             await page.mouse.up()
-            picked = await page.evaluate("()=>[Number(document.getElementById('sfrom').value),Number(document.getElementById('sto').value)]")
+            picked = await page.evaluate("()=>[TV.a,TV.b]")
             assert abs(picked[0] - 1.0) < 0.06 and abs(picked[1] - 2.0) < 0.06, picked
             assert "von " + f"{picked[0]:.2f}" in await page.inner_text("#slab")
             # quieter and louder: heard at once here, kept for the app with "Lautstärke merken"
+            # a part of the clip quieter: stored as a stretch with its loudness, beside the silent one
             await page.click("#vm")
             await page.click("#vm")
-            assert "90 %" in await page.inner_text("#vlab")
+            assert await page.inner_text("#vlab") == "80 %"
+            await page.click("#sadd")
+            await page.wait_for_function("()=>(STUMM['kurz/freizeitpo8']||[]).length>=1&&!TV")
+            kept = ganzes_page.ton_read()["stumm"]["kurz/freizeitpo8"]      # a new piece takes the place of the ones it lies over
+            assert len(kept) == 1 and kept[0][2] == 0.8 and abs(kept[0][0] - picked[0]) < 0.011 and abs(kept[0][1] - picked[1]) < 0.011
+            await page.evaluate("()=>{vis().currentTime=(STUMM['kurz/freizeitpo8'][0][0]+STUMM['kurz/freizeitpo8'][0][1])/2;}")
+            await asyncio.sleep(0.2)
+            assert abs(await page.evaluate("()=>document.getElementById(SV?'v1':'v0').volume") - 0.56) < 0.001
+            assert "Ton auf 80 %" in await page.inner_text("#slist")
+            # the whole clip quieter: that is the loudness of the clip, heard at once, kept with the same button
+            await page.click("#tall")
+            await page.click("#vm")
+            assert await page.inner_text("#vlab") == "90 %" and "Der ganze Clip: Ton auf 90 %" in await page.inner_text("#slab")
             await asyncio.sleep(0.15)
             assert abs(await page.evaluate("()=>document.getElementById(SV?'v1':'v0').volume") - 0.63) < 0.001
-            await page.click("#vsave")
-            await page.wait_for_function("()=>document.getElementById('vsave').textContent==='gemerkt'")
+            await page.click("#sadd")
+            await page.wait_for_function("()=>VOL['kurz/freizeitpo8']===0.9&&!TV")
             assert ganzes_page.ton_read()["laut"] == {"kurz/freizeitpo8": 0.9}
+            assert "der ganze Clip auf 90 %" in await page.inner_text("#slist")
+            await page.click("#tall")                       # it starts from what is stored
+            assert await page.inner_text("#vlab") == "90 %"
             await page.click("#v1b")
-            await page.click("#vsave")
-            await asyncio.sleep(0.4)
+            await page.click("#sadd")
+            await page.wait_for_function("()=>!VOL['kurz/freizeitpo8']&&!TV")
             assert ganzes_page.ton_read()["laut"] == {}
             await page.click("#tonb")
             await page.wait_for_function("()=>MUTE['kurz/freizeitpo8']===1")
@@ -234,6 +260,8 @@ async def test_in_a_browser_loops_run_in_order_and_a_touch_cuts_in_and_hands_bac
             assert ganzes_page.ton_read()["aus"] == []
             await page.click("#slist a")
             await page.wait_for_function("()=>!STUMM['kurz/freizeitpo8']")
+            await page.click("#pp")                          # he had stopped the clip to take the pieces: on again
+            assert await page.evaluate("()=>PAUSED") is False
             # begin and end: only this clip runs while he sets them, in steps of one hundredth
             await page.click("#ap")
             await page.click("#ap")
@@ -332,9 +360,11 @@ async def test_the_tester_has_fine_steps_for_every_slider(tmp_path, monkeypatch)
     assert errors == []
 
 
-async def test_in_a_browser_every_loop_every_dance_and_every_show_clip_has_its_chip(tmp_path, monkeypatch):
-    """2.185.0. Metin, 27 Nov 2026, 04:52: "bei Outfit als Ganzes noch ... ein Balken für Tanzen und noch ein Balken für Zeigen ...
-    Und Schleife bis Max, die wir haben", and: "gestalte es viel schöner, dass man das einfacher macht"."""
+async def test_in_a_browser_the_wheel_rolls_through_the_clips_of_a_field_and_a_piece_gets_its_own_tempo(tmp_path, monkeypatch):
+    """2.185.0. Metin, 27 Nov 2026, 04:52 to 05:05: under "1 Kleid" the dress, "rechts daneben tanzen, rechts daneben zeigen. Und in diese
+    Kategorie sollen sich die Dateien schon befinden. Und die wähle ich mit Maus-Scroll"; every loop the dress has ("Schleife bis Max");
+    "wo ich im ganzen Clip ein Stück schneide und dies schneller oder langsamer machen kann. Aber so, dass es schön übersichtlich ist";
+    "während ich diese Anfang und Ende setze, soll natürlich der Clip ... zeigen, wo er steht ... dass das Clip quasi mir ein Indikator ist"."""
     playwright = pytest.importorskip("playwright.async_api")
     if not shutil.which("ffmpeg"):
         pytest.skip("no ffmpeg here")
@@ -343,16 +373,24 @@ async def test_in_a_browser_every_loop_every_dance_and_every_show_clip_has_its_c
                             ("kurz", ("gluecklich4", "freizeitgluecklich", "freizeittanz2", "tanz5"))):
             (tmp_path / "clips" / look).mkdir(parents=True)
             for name in names:
-                _clip(tmp_path / "clips" / look / (name + ".mp4"), 2)
+                _clip(tmp_path / "clips" / look / (name + ".mp4"), 3)
     except subprocess.CalledProcessError:
         pytest.skip("this ffmpeg cannot write VP9")
     monkeypatch.setattr(memory_web, "CLIPS_DIR", str(tmp_path / "clips"))
+    monkeypatch.setenv("LEYLA_KURVE", str(tmp_path / "kurve.json"))
     server = await memory_web.start_http(memory.MemoryStore(str(tmp_path / "m.json")), None, host="127.0.0.1", port=0)
     port = server.sockets[0].getsockname()[1]
     errors = []
-    chips = """()=>{const t=id=>[...document.querySelectorAll('#'+id+' button')].map(b=>[b.textContent.replace('▶ ',''),b.dataset.n]);
-      return {loops:t('loops'),dance:t('dance'),zeig:t('zeig'),looks:[...document.querySelectorAll('#looks button')].map(b=>[b.textContent,b.classList.contains('run')]),
-        cards:[...document.querySelectorAll('#panel .card h2')].map(h=>h.textContent),hint:document.getElementById('zeig').textContent+'|'+document.getElementById('dance').textContent};}"""
+    state = """()=>({loops:[...document.querySelectorAll('#loops button')].map(b=>[b.textContent.replace('▶ ',''),b.dataset.n]),
+      fields:[...document.querySelectorAll('.wh')].map(e=>[e.querySelector('b').textContent,e.querySelector('span').textContent,e.querySelector('em').textContent,e.classList.contains('run')]),
+      lists:{kleid:WH.kleid.list,tanz:WH.tanz.list,zeigen:WH.zeigen.list},cur:CUR,solo:SOLO,muted:vis().muted,name:document.getElementById('name').textContent,
+      cards:[...document.querySelectorAll('#panel .card h2')].map(h=>h.textContent)})"""
+
+    async def roll(page, field, way):
+        await page.hover(field)
+        await page.mouse.wheel(0, 100 * way)
+        await asyncio.sleep(0.25)
+
     try:
         async with playwright.async_playwright() as p:
             try:
@@ -363,32 +401,81 @@ async def test_in_a_browser_every_loop_every_dance_and_every_show_clip_has_its_c
             page.on("pageerror", lambda e: errors.append(str(e)))
             await page.goto(f"http://127.0.0.1:{port}/ganzes?clip=nacht/gluecklich4")
             await page.wait_for_function("()=>CUR==='gluecklich4'", timeout=8000)
-            night = await page.evaluate(chips)
-            assert night["cards"] == ["1Kleid", "2Schleifen", "3Tanzen", "4Zeigen", "5Berührung", "6Einstellen: der Clip, der läuft", "7Reset für alle Clips"]
+            s = await page.evaluate(state)
+            assert s["cards"] == ["1Kleid", "2Schleifen", "3Berührung", "4Einstellen: der Clip, der läuft", "5Reset für alle Clips"]
             # loop 1 is gluecklich4 as on the page Naht, the extra clip is a loop too and comes last
-            assert night["loops"] == [["1", "gluecklich4"], ["2", "gluecklich10"], ["Extra", "gluecklichextra"]]
-            # a chip carries what stands behind the name, in the order of the numbers
-            assert night["dance"] == [["14", "tanz14"], ["27", "tanz27"], ["hf", "tanzhf"]]
-            assert night["zeig"] == [["lang3", "zeigenlang3"]]
-            assert ["Nachtkleid", True] in night["looks"] and ["Kurzes Freizeitkleid", False] in night["looks"]
-            # a dance starts at once, without sound, and the loops go on after it
-            await page.click("button[data-n=tanz27]")
-            await page.wait_for_function("()=>CUR==='tanz27'", timeout=6000)
-            assert await page.evaluate("()=>vis().muted&&document.getElementById('name').textContent==='nacht/tanz27'")
-            assert await page.evaluate("()=>document.querySelector('button[data-n=tanz27]').classList.contains('run')")
-            await page.wait_for_function("()=>loops().includes(CUR)", timeout=8000)
-            assert await page.evaluate("()=>CUR") == "gluecklich10"         # on after the loop he saw last
-            await page.click("button[data-n=zeigenlang3]")
-            await page.wait_for_function("()=>CUR==='zeigenlang3'", timeout=6000)
-            # the short Freizeit dress: its own dance, no show; the work dress beside it keeps its own
+            assert s["loops"] == [["1", "gluecklich4"], ["2", "gluecklich10"], ["Extra", "gluecklichextra"]]
+            # three fields side by side, each holds its clips: the dress (loops first), the dances, the show clips
+            assert s["lists"] == {"kleid": ["gluecklich4", "gluecklich10", "gluecklichextra", "po7"], "tanz": ["tanz14", "tanz27", "tanzhf"], "zeigen": ["zeigenlang3"]}
+            assert s["fields"][0] == ["Nachtkleid", "glücklich 4", "1 von 4", True] and s["fields"][1][0] == "Tanzen" and s["fields"][2][0] == "Zeigen"
+            box = await page.evaluate("()=>[...document.querySelectorAll('.wh')].map(e=>{const r=e.getBoundingClientRect();return [Math.round(r.left),Math.round(r.top)];})")
+            assert box[0][1] == box[1][1] == box[2][1] and box[0][0] < box[1][0] < box[2][0]
+            # the wheel over a field: the next clip of that field runs at once, alone, and stays
+            await roll(page, "#wt", 1)
+            await page.wait_for_function("()=>CUR==='tanz14'&&SOLO", timeout=6000)
+            s = await page.evaluate(state)
+            assert s["fields"][1] == ["Tanzen", "Tanz 14", "1 von 3", True] and s["fields"][0][3] is False
+            assert s["muted"] and s["name"] == "nacht/tanz14"           # dances run without sound, as in the app
+            await roll(page, "#wt", 1)
+            await page.wait_for_function("()=>CUR==='tanz27'&&SOLO", timeout=6000)
+            await roll(page, "#wt", 1)
+            await roll(page, "#wt", 1)                                  # after the last one comes the first again
+            await page.wait_for_function("()=>CUR==='tanz14'&&SOLO", timeout=6000)
+            await roll(page, "#wt", -1)                                 # and back
+            await page.wait_for_function("()=>CUR==='tanzhf'&&SOLO", timeout=6000)
+            await roll(page, "#wz", 1)
+            await page.wait_for_function("()=>CUR==='zeigenlang3'&&SOLO", timeout=6000)
+            await roll(page, "#wk", 1)                                  # the dress goes on from the clip it showed last
+            await page.wait_for_function("()=>CUR==='gluecklich10'&&SOLO", timeout=6000)
+            assert (await page.evaluate(state))["fields"][0] == ["Nachtkleid", "glücklich 10", "2 von 4", True]
+            await page.click("#wk button[data-d='1']")                  # the arrows do the same, for a finger
+            await page.wait_for_function("()=>CUR==='gluecklichextra'&&SOLO", timeout=6000)
+            # ---- a piece of this clip slower: begin and end are taken from the picture he sees ----
+            await page.evaluate("()=>{halt();vis().currentTime=0.5;}")
+            await asyncio.sleep(0.3)
+            assert await page.evaluate("()=>['pb','prm','pseh','psave'].every(i=>document.getElementById(i).disabled)")   # one step after the other
+            await page.click("#pa")
+            await page.click("#pap")                                     # one picture later: the stage shows that picture
+            at = await page.evaluate("()=>[PV.a,vis().currentTime,vis().paused]")
+            assert abs(at[0] - (0.5 + 1 / 24)) < 0.002 and abs(at[1] - at[0]) < 0.02 and at[2]
+            await page.evaluate("()=>{vis().currentTime=1.7;}")
+            await asyncio.sleep(0.3)
+            await page.click("#pb")
+            await page.click("#pbm")
+            end = await page.evaluate("()=>[PV.b,vis().currentTime]")
+            assert abs(end[0] - (1.7 - 1 / 24)) < 0.002 and abs(end[1] - end[0]) < 0.02
+            for _ in range(20):
+                await page.click("#prm")
+            lab = await page.inner_text("#plab")
+            assert "Tempo 0.80" in lab and "noch nicht gemerkt" in lab and await page.inner_text("#prlab") == "0.80"
+            bar = await page.evaluate("()=>{const n=document.querySelector('#pbar i.neu'),b=document.getElementById('pbar').getBoundingClientRect(),r=n.getBoundingClientRect();return [(r.left-b.left)/b.width,(r.right-b.left)/b.width,vis().duration];}")
+            assert abs(bar[0] - at[0] / bar[2]) < 0.02 and abs(bar[1] - end[0] / bar[2]) < 0.02     # the bar shows where the piece lies
+            await page.click("#pseh")                                    # it already plays with its tempo here
+            await page.wait_for_function("()=>!vis().paused&&vis().currentTime>PV.a+0.1&&vis().currentTime<PV.b-0.1", timeout=5000)
+            assert abs(await page.evaluate("()=>vis().playbackRate") - 0.8) < 0.001
+            await page.click("#psave")
+            await page.wait_for_function("()=>!PV&&(KURVE['nacht/gluecklichextra']||[]).length===1", timeout=4000)
+            assert "Gemerkt: 0.54 bis 1.66 s, Tempo 0.80" in await page.inner_text("#plist")
+            kept = json.loads((await _get(port, "/api/kurve")).split("\r\n\r\n", 1)[1])
+            assert kept["nacht/gluecklichextra"] == [[0.54, 1.66, 0.8]]
+            await page.click("#plist a")                                 # and away again
+            await page.wait_for_function("()=>!KURVE['nacht/gluecklichextra']", timeout=4000)
+            await page.click("#weiter")                                  # the round of the loops goes on
+            await page.wait_for_function("()=>!SOLO&&loops().includes(CUR)", timeout=8000)
+            # the short Freizeit dress: its own dance, no show clip; the work dress beside it has its own
             await page.click("#looks button >> text=Kurzes Freizeitkleid")
             await page.wait_for_function("()=>CUR==='freizeitgluecklich'", timeout=8000)
-            frei = await page.evaluate(chips)
-            assert frei["dance"] == [["2", "freizeittanz2"]] and frei["zeig"] == [] and "Zeigen gibt es nur im Nachtkleid." in frei["hint"]
+            s = await page.evaluate(state)
+            assert s["lists"]["tanz"] == ["freizeittanz2"] and s["lists"]["zeigen"] == [] and s["fields"][2][:2] == ["Zeigen", "nur im Nachtkleid"]
+            assert s["fields"][0][0] == "Kurzes Freizeitkleid"
+            await roll(page, "#wz", 1)                                   # an empty field does nothing
+            await roll(page, "#wt", 1)
+            await page.wait_for_function("()=>CUR==='freizeittanz2'&&SOLO", timeout=6000)
+            assert (await page.evaluate(state))["fields"][1] == ["Tanzen", "Tanz 2", "1 von 1", True]
             await page.click("#looks button >> text=Kurzes Arbeitskleid")
             await page.wait_for_function("()=>CUR==='gluecklich4'", timeout=8000)
-            work = await page.evaluate(chips)
-            assert work["dance"] == [["5", "tanz5"]] and work["loops"] == [["1", "gluecklich4"]]
+            s = await page.evaluate(state)
+            assert s["lists"]["tanz"] == ["tanz5"] and s["loops"] == [["1", "gluecklich4"]]
             await browser.close()
     finally:
         server.close()
@@ -490,6 +577,10 @@ async def test_the_reset_point_over_http_and_taken_at_the_first_start(values):
 
 
 # ---- sound: off for a whole clip, or silent for a stretch that keeps its length ----
+def test_the_stage_of_the_app_plays_a_stretch_with_its_loudness():
+    assert "b.volume=x?Math.min(1,v0*(x.length>2?x[2]:0)):v0" in memory_web.PAGE
+
+
 def test_sound_off_and_silent_stretches_are_kept_per_clip(tmp_path):
     assert ganzes_page.ton_read() == {"aus": [], "stumm": {}, "laut": {}}
     assert ganzes_page.ton_set("kurz/freizeitbrust2", True) and ganzes_page.ton_set("schwarz/brust2", True)
@@ -497,6 +588,10 @@ def test_sound_off_and_silent_stretches_are_kept_per_clip(tmp_path):
     assert ganzes_page.ton_read() == {"aus": ["kurz/freizeitbrust2", "schwarz/brust2"], "laut": {},
                                       "stumm": {"kurz/po2": [[1.0, 5.0]]}}  # sorted, joined, nonsense left out
     assert ganzes_page.ton_set("schwarz/brust2", False)
+    # 2.185.0: a stretch may be quieter or louder instead of silent, [from, to, factor]. One kind is joined, a later one of
+    # another kind wins from where it begins, a factor of 1 changes nothing and is left out, more than the phone gives is not kept
+    assert ganzes_page.ton_stumm("kurz/po2", [[1, 3], [2, 4, 0.5], [6, 7, 1], [8, 9, 1.3], [8.5, 9.5, 1.3], [10, 11, 2], [12, 13, 0]])
+    assert ganzes_page.ton_read()["stumm"] == {"kurz/po2": [[1.0, 2.0], [2.0, 4.0, 0.5], [8.0, 9.5, 1.3], [12.0, 13.0]]}
     assert ganzes_page.ton_stumm("kurz/po2", [])
     assert ganzes_page.ton_read() == {"aus": ["kurz/freizeitbrust2"], "stumm": {}, "laut": {}}
     # quieter or louder: a factor, 1 is normal and leaves no entry
@@ -527,7 +622,7 @@ def test_the_app_is_told_which_clips_are_silent(tmp_path, monkeypatch):
     assert "b.volume=Math.min(1,.7*(VOL[" in open(memory_web.__file__, encoding="utf-8").read()
     src = open(memory_web.__file__, encoding="utf-8").read()
     assert "&&!MUTE[name.includes('/')?name:OUTFIT+'/'+name]" in src  # the stage leaves the sound of these off
-    assert "b.volume=st.some(x=>t>=x[0]&&t<x[1])?0:v0" in src        # and is silent inside a stretch
+    assert "b.volume=x?Math.min(1,v0*(x.length>2?x[2]:0)):v0" in src   # and is silent, quieter or louder inside a stretch (2.185.0)
 
 
 # ---- the picture of the sound ----
