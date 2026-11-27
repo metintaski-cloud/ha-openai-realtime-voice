@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.186.0 (27 Nov 2026)
+
+- `feat`: every clip has a blend: how long it fades in when it takes over from the clip before it. Metin, 05:33, a screen recording of the app (long work dress, the change from `schwarz/gluecklich4` to `schwarz/gluecklich2`): book and hand show double. At 05:42: "in dem oberen Fall bringt mein Werkzeug nicht richtig. Was können wir dagegen machen?"
+  - Cause, measured on his clips (body crop at half size, mean difference of the grey values): the three loops of that dress move from their first picture (2.6 to 3.1 after a quarter second, 10 to 14 after half a second), and the stage blended every loop hand over for 0.8 s. In that time the old clip stands on its last picture while the new one is already under way, so both show at once. Begin mark, end mark, lead and tempo do not change the length of that blend, which is why his tools could not heal it (a lead of 0 instead of 0.25 s takes the double picture from 2.5 to 2.2).
+  - New value per clip, the blend (`/data/clip_blende.json`, `GET/POST /api/blende` with `{name, fade}`, 0.05 to 0.8 s, 0.8 = the default and no entry, `b` per look in `/clips.json`, part of the reset point). The stage of the app fades the incoming clip of a tight hand over in for that long (`FADE`, `FD` in `stageShow`); the old clip always goes out in the 0.8 s of the style sheet, so a clip that came in short does not open a gap under the next one.
+  - Simulated with the hand over of the app on his files, old (blend 0.8 s, lead 0.25 s) against new (blend 0.1 s, lead 0.1 s), as the amount of double picture over the hand over: `schwarz/gluecklich2` 1.48 to 0.04, `gluecklich3` 1.16 to 0.03, `gluecklich4` 1.32 to 0.04, `freizeitgluecklich2` 1.33 to 0.04, `freizeitgluecklich3` 0.76 to 0.05, `freizeitgluecklich4` 1.00 to 0.04. The step from the last picture of the old clip to the first of the new one is then 1.0 to 1.6, about what these clips change from one picture to the next anyway (0.6 to 1.8). With the short blend the lead has to be short too: at 0.25 s the old clip is cut a sixth of a second before its end and the step is 1.8 to 2.4.
+  - His tools: on "Outfit als Ganzes" a new box "Übergang" in Einstellen with "hart" (blend 0.10, lead 0.10) and "weich" (0.80, 0.25), minus and plus for both values, "Übergang ansehen" (the loop before plays its last two seconds, then the clip takes over as in the app) and "Übergang merken" (stores both). On the page Naht the blend is one more slider per layer (button "Blende", "Blende normal"), used by every hand over the page plays and stored with "Alle Zeiten merken".
+  - Nothing is set by this version: the values for his clips are stored only after his yes.
+- Found on the way: `nacht/gluecklich4` begins 6.9 away from the pose all night loops end in (the others begin 0.9 to 1.1 away), its file starts in the middle of a movement. No blend heals that; it needs its original or a new clip. Told to Metin, nothing changed.
+- 828 tests (821 before).
+
 ## 2.185.0 (27 Nov 2026)
 
 - `feat`: the page "Outfit als Ganzes" (`/ganzes`) is rebuilt after Metin's words of 04:52 to 05:05.

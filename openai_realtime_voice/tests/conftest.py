@@ -13,7 +13,7 @@ def _ticker_in_tmp(tmp_path, monkeypatch):
     monkeypatch.setattr(spott, "PATH", str(tmp_path / "spott.json"))  # who made fun of her: never in /data
     monkeypatch.setenv("LEYLA_MOOD_PATH", str(tmp_path / "mood.json"))
     monkeypatch.setenv("LEYLA_STAND", str(tmp_path / "tempo_stand.json"))  # reset point of the clip values
-    for key in ("TEMPO", "KURVE", "SCHNITT", "TON", "VORLAUF"):  # a reset writes all of them: never into /data
+    for key in ("TEMPO", "KURVE", "SCHNITT", "TON", "VORLAUF", "BLENDE"):  # a reset writes all of them: never into /data
         monkeypatch.setenv("LEYLA_" + key, str(tmp_path / ("clip_" + key.lower() + ".json")))
     monkeypatch.setenv("LEYLA_MOBIL", "0")  # no background encoder in tests (2.141.0)
     monkeypatch.setenv("LEYLA_MOBIL_DIR", str(tmp_path / "mobil"))

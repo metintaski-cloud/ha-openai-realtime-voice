@@ -103,7 +103,7 @@ input[type=range]{flex:1 1 120px;min-width:120px}
 <div class="card"><h2>2. Mischer: zufällig und nahtlos, wie in der App</h2>
 <div class="bar"><button id="mixs">▶ der Reihe nach: 1, 2, 3</button><button id="mix">▶ gemischt</button></div>
 <div class="t" id="minfo"></div>
-<div class="t">Während er läuft, kannst du bei jeder Schleife Tempo, Anfang, Ende und Einsatz ändern. Es gilt ab der nächsten Übergabe. Der Haken "sichtbar" heißt hier: die Schleife macht mit.</div></div>
+<div class="t">Während er läuft, kannst du bei jeder Schleife Tempo, Anfang, Ende, Einsatz und Blende ändern. Es gilt ab der nächsten Übergabe. Der Haken "sichtbar" heißt hier: die Schleife macht mit.</div></div>
 <div class="card"><h2>3. Übergabe ansehen</h2>
 <div class="bar"><span class="z">von</span><select id="hf"></select></div>
 <div class="bar"><span class="z">nach</span><select id="ht"></select></div>
@@ -115,7 +115,7 @@ input[type=range]{flex:1 1 120px;min-width:120px}
 <div class="card"><h2>4. Merken</h2>
 <div class="bar"><button id="save">Alle Zeiten merken</button><button id="back">zurück auf gemerkt</button></div>
 <div class="t" id="sinfo"></div>
-<div class="t">Jeder Clip hat ein Tempo, einen Anfang, ein Ende und einen Einsatz. Sie gelten bei jedem Wechsel.</div></div>
+<div class="t">Jeder Clip hat ein Tempo, einen Anfang, ein Ende, einen Einsatz und eine Blende. Sie gelten bei jedem Wechsel. Blende heißt: so lange blendet der Clip ein, wenn er übernimmt. 0,8 ist weich. Bewegt sie sich im Clip sofort, sieht man bei 0,8 Hand oder Buch einen Moment doppelt: dann Blende 0,1 und Einsatz 0,1.</div></div>
 <div class="card"><h2>5. Ebenen</h2>
 <div class="bar"><button id="pall">▶ alle sichtbaren abspielen</button><button id="gall">alle zum Anfang</button></div>
 <div class="t">Alle sichtbaren Ebenen starten im selben Augenblick, jede ab ihrem Bild, und laufen bis zu ihrem Ende. Noch einmal drücken hält alle an.</div></div>
@@ -125,8 +125,8 @@ const $=id=>document.getElementById(id);
 const OUT=[['Kurzes Arbeitskleid','kurz',''],['Kurzes Freizeitkleid','kurz','freizeit'],['Langes Arbeitskleid','schwarz',''],['Langes Freizeitkleid','schwarz','freizeit'],['Nachtkleid','nacht','']];
 const ZONES=[['Kopf',['gesicht']],['Brust',['brust']],['Bauch',['bauch']],['Po',['po','povorne']],['Mix',['mix']]];  /* the touch clips, as Metin names them (01:46: Kopf, Brust, Po, Bauch) */
 const MIXTXT='Zwei Mischer, beide ohne Ende und mit jeder Übergabe wie in der App: der eine spielt die Schleifen mit Haken immer der Reihe nach, der andere gemischt (jede einmal, dann neu gemischt).';
-const HAND_PRE=0.25,HAND_OFF=300,HAND_FADE=0.8,FRAME=1/24,MINLEN=0.5,LEAD_MAX=1.5;  /* as the loops of the app hand over (memory_web.stageShow, TIGHT) */
-let LOOK='',PRE='',CL=[],VER={},RATE={},KURVE={},SCHNITT={},LEAD={},LAY=[],PLAYING=false,MIX='',TOK=0,STOK=0,PEND=0,AXD=null,ZTOP=1;
+const HAND_PRE=0.25,HAND_OFF=300,HAND_FADE=0.8,FRAME=1/24,MINLEN=0.5,LEAD_MAX=1.5,FADE_MIN=0.05;  /* as the loops of the app hand over (memory_web.stageShow, TIGHT) */
+let LOOK='',PRE='',CL=[],VER={},RATE={},KURVE={},SCHNITT={},LEAD={},FADE={},LAY=[],PLAYING=false,MIX='',TOK=0,STOK=0,PEND=0,AXD=null,ZTOP=1;
 const base=n=>n.replace(/[0-9]+$/,'');
 const mine=n=>PRE?n.startsWith(PRE):!n.startsWith('freizeit');
 const pth=n=>LOOK+'/'+n;
@@ -141,17 +141,19 @@ function title(n){const all=CL.filter(mine).sort(cmp),loops=all.filter(isLoop);i
 const savedS=L=>{const c=SCHNITT[pth(L.n)];return c&&c[0]>0?c[0]:0;};
 const savedE=L=>{const c=SCHNITT[pth(L.n)];return c&&c[1]>0&&c[1]<L.d?c[1]:L.d;};
 const savedL=L=>{const l=LEAD[pth(L.n)];return l===undefined?HAND_PRE:l;};
+const savedF=L=>{const f=FADE[pth(L.n)];return f===undefined?HAND_FADE:f;};  /* the blend: how long the clip fades in when it takes over (2.186.0) */
 const savedK=L=>(KURVE[pth(L.n)]||[]).map(x=>x.slice(0,3));
 /* the tempo of a layer at one moment of its clip: a stretch with its own tempo wins over the tempo of the clip (Metin, 05:25) */
 const rAt=(L,t)=>{for(const k of L.k)if(t>=k[0]&&t<k[1])return k[2];return L.rt;};
 function follow(L,t){const r=rAt(L,t===undefined?L.v.currentTime:t);if(Math.abs((L.v.playbackRate||1)-r)>0.001)L.v.playbackRate=r;}
-const changed=L=>!!L.d&&(JSON.stringify(L.k)!==JSON.stringify(savedK(L))||Math.abs(L.rt-rate(L.n))>0.004||Math.abs(L.s-savedS(L))>0.0004||Math.abs(L.e-savedE(L))>0.0004||Math.abs(L.ld-savedL(L))>0.0004);
-const val=(L,k)=>k==='s'?L.s:k==='e'?L.e:k==='l'?L.ld:L.t;
+const changed=L=>!!L.d&&(JSON.stringify(L.k)!==JSON.stringify(savedK(L))||Math.abs(L.rt-rate(L.n))>0.004||Math.abs(L.s-savedS(L))>0.0004||Math.abs(L.e-savedE(L))>0.0004||Math.abs(L.ld-savedL(L))>0.0004||Math.abs(L.fd-savedF(L))>0.0004);
+const val=(L,k)=>k==='s'?L.s:k==='e'?L.e:k==='l'?L.ld:k==='b'?L.fd:L.t;
 /* one value of one layer; moving a mark shows the picture at that mark */
 function setVal(L,k,x){if(!L.d)return;halt();if(!MIX)soloStop(L);
  if(k==='s'){L.s=r3(Math.max(0,Math.min(L.e-MINLEN,x)));L.t=MIX?Math.max(L.t,L.s):L.s;}
  else if(k==='e'){L.e=r3(Math.max(L.s+MINLEN,Math.min(L.d,x)));L.t=MIX?Math.min(L.t,L.e):L.e;}
  else if(k==='l')L.ld=r3(Math.max(0,Math.min(LEAD_MAX,x)));
+ else if(k==='b')L.fd=r3(Math.max(FADE_MIN,Math.min(HAND_FADE,x)));
  else if(!MIX)L.t=r3(Math.max(L.s,Math.min(L.e,x)));show();}  /* the play head never leaves the part that stays (Metin, 03:41) */
 function busy(){document.body.classList.toggle('busy',LAY.some(L=>L.on&&!L.play&&(L.v.seeking||L.v.readyState<2)));}
 function seek(v,t){if(Math.abs(v.currentTime-t)>0.0004){try{v.currentTime=t;}catch(e){}}}
@@ -166,10 +168,10 @@ function draw(){const diff=document.body.classList.contains('diff'),tp=top1();le
   q(L,'kadd').classList.toggle('on',L.ka!==null&&L.kb!==null&&Math.abs(L.kb-L.ka)>=0.02);
   q(L,'klab').textContent='Ein Stück mit eigenem Tempo, zum Beispiel das Blinzeln: weißen Strich an den Anfang, "Stück Anfang hier", weißen Strich ans Ende, "Stück Ende hier", Tempo wählen, "Stück dazu".'+(L.ka!==null||L.kb!==null?' Jetzt: von '+(L.ka===null?'?':L.ka.toFixed(3))+' bis '+(L.kb===null?'?':L.kb.toFixed(3))+' s.':'')+(L.ka!==null&&L.kb!==null&&Math.abs(L.kb-L.ka)<0.02?' Anfang und Ende liegen auf demselben Bild: den weißen Strich weiterschieben und "Stück Ende hier" noch einmal drücken.':'');
   const sig=JSON.stringify(L.k);if(L.ksig!==sig){L.ksig=sig;const box=q(L,'klist');box.innerHTML='';L.k.forEach((k,i)=>{const row=document.createElement('div');row.className='bar';const sp=document.createElement('span');sp.className='t';sp.textContent=k[0].toFixed(3)+' bis '+k[1].toFixed(3)+' s: Tempo '+k[2].toFixed(2);const b=document.createElement('button');b.textContent='weg';b.dataset.kdel=String(i);b.onclick=()=>{L.k.splice(i,1);halt();show();};row.appendChild(sp);row.appendChild(b);box.appendChild(row);});}
-  for(const k of ['t','s','e','l'])q(L,'m'+k).classList.toggle('on',L.mode===k);
-  const p=q(L,'pos');p.min=String(L.mode==='t'?L.s:0);p.max=String(L.mode==='l'?LEAD_MAX:L.mode==='t'?(L.e||10):(L.d||10));p.value=String(val(L,L.mode));
+  for(const k of ['t','s','e','l','b'])q(L,'m'+k).classList.toggle('on',L.mode===k);
+  const p=q(L,'pos');p.min=String(L.mode==='t'?L.s:L.mode==='b'?FADE_MIN:0);p.max=String(L.mode==='l'?LEAD_MAX:L.mode==='b'?HAND_FADE:L.mode==='t'?(L.e||10):(L.d||10));p.value=String(val(L,L.mode));
   q(L,'play').textContent=L.play?'⏸ anhalten':'▶ abspielen';const c=changed(L);ch=ch||c;
-  q(L,'lab').innerHTML=!L.d?'wird geladen ...':'Bild <span class="n">'+L.t.toFixed(3)+'</span> &nbsp; Anfang <span class="n">'+L.s.toFixed(3)+'</span> &nbsp; Ende <span class="n">'+L.e.toFixed(3)+'</span> von '+L.d.toFixed(3)+' s &nbsp; Einsatz <span class="n">'+L.ld.toFixed(3)+'</span>'+(c?' &nbsp; <span style="color:#fd8">noch nicht gemerkt</span>':'');}
+  q(L,'lab').innerHTML=!L.d?'wird geladen ...':'Bild <span class="n">'+L.t.toFixed(3)+'</span> &nbsp; Anfang <span class="n">'+L.s.toFixed(3)+'</span> &nbsp; Ende <span class="n">'+L.e.toFixed(3)+'</span> von '+L.d.toFixed(3)+' s &nbsp; Einsatz <span class="n">'+L.ld.toFixed(3)+'</span> &nbsp; Blende <span class="n">'+L.fd.toFixed(3)+'</span>'+(c?' &nbsp; <span style="color:#fd8">noch nicht gemerkt</span>':'');}
  $('save').classList.toggle('on',ch);$('sinfo').textContent=ch?'Noch nicht gemerkt.':'So ist es gemerkt.';$('diff').classList.toggle('on',diff);
  $('play').textContent=PLAYING&&!MIX?'anhalten':'So spielt es die App';$('mix').textContent=MIX==='rnd'?'⏸ anhalten':'▶ gemischt';$('mixs').textContent=MIX==='seq'?'⏸ anhalten':'▶ der Reihe nach: 1, 2, 3';if(!MIX)$('minfo').textContent=MIXTXT;$('pall').textContent=LAY.some(L=>L.play)?'⏸ alle anhalten':'▶ alle sichtbaren abspielen';axDraw();}
 const HTML='<div class="bar"><label><input type="checkbox" data-k="on">sichtbar</label><span class="ttl" data-k="ttl"></span><button data-k="up" title="nach oben legen">nach oben</button></div>'
@@ -179,11 +181,11 @@ const HTML='<div class="bar"><label><input type="checkbox" data-k="on">sichtbar<
  +'<div class="bar"><span class="z">Stück</span><button data-k="ka">Stück Anfang hier</button><button data-k="kb">Stück Ende hier</button></div>'
  +'<div class="bar"><span class="z">Stück Tempo</span><input type="range" data-k="kr" min="0.4" max="2" step="0.01" value="1"><span data-k="krlab" style="min-width:38px">1.00</span><button data-k="kadd">Stück dazu</button></div>'
  +'<div class="t" data-k="klab"></div><div data-k="klist"></div>'
- +'<div class="bar"><span class="z">Regler</span><button data-k="mt">Bild</button><button data-k="ms">Anfang</button><button data-k="me">Ende</button><button data-k="ml">Einsatz</button></div>'
+ +'<div class="bar"><span class="z">Regler</span><button data-k="mt">Bild</button><button data-k="ms">Anfang</button><button data-k="me">Ende</button><button data-k="ml">Einsatz</button><button data-k="mb">Blende</button></div>'
  +'<div class="t" data-k="lab"></div>'
  +'<div class="bar"><input type="range" data-k="pos" min="0" max="10" step="0.001" value="0"></div>'
  +'<div class="bar"><button data-k="fm">◀ Bild</button><button data-k="fp">Bild ▶</button><button data-k="m1">− 0,01</button><button data-k="p1">+ 0,01</button><button data-k="m3">− 0,001</button><button data-k="p3">+ 0,001</button></div>'
- +'<div class="bar"><button data-k="play">▶ abspielen</button><button data-k="gs">zum Anfang</button><button data-k="ge">zum Ende</button><button data-k="l0">Einsatz normal</button></div>';
+ +'<div class="bar"><button data-k="play">▶ abspielen</button><button data-k="gs">zum Anfang</button><button data-k="ge">zum Ende</button><button data-k="l0">Einsatz normal</button><button data-k="b0">Blende normal</button></div>';
 function card(L){const el=document.createElement('div');el.className='card lay';el.dataset.n=L.n;el.innerHTML=HTML;L.el=el;$('cards').appendChild(el);
  q(L,'ttl').textContent=title(L.n)+(title(L.n)===L.n?'':' ('+L.n+')');
  q(L,'on').onchange=()=>{L.on=q(L,'on').checked;if(!L.on&&!MIX)soloStop(L);halt();show();};
@@ -196,14 +198,14 @@ function card(L){const el=document.createElement('div');el.className='card lay';
   const keep=[];for(const k of L.k){if(k[1]<=a||k[0]>=b){keep.push(k);continue;}if(k[0]<a)keep.push([k[0],a,k[2]]);if(k[1]>b)keep.push([b,k[1],k[2]]);}
   keep.push([a,b,Math.round(L.kr*100)/100]);keep.sort((x,y)=>x[0]-y[0]);L.k=keep.slice(0,40);L.ka=null;L.kb=null;halt();show();};
  q(L,'up').onclick=()=>{L.z=++ZTOP;L.on=true;halt();show();};
- for(const k of ['t','s','e','l'])q(L,'m'+k).onclick=()=>{L.mode=k;if(k==='s'||k==='e')setVal(L,k,val(L,k));else show();};
+ for(const k of ['t','s','e','l','b'])q(L,'m'+k).onclick=()=>{L.mode=k;if(k==='s'||k==='e')setVal(L,k,val(L,k));else show();};
  q(L,'pos').oninput=()=>setVal(L,L.mode,Number(q(L,'pos').value));
  const st=d=>()=>setVal(L,L.mode,val(L,L.mode)+d);
  q(L,'fm').onclick=st(-FRAME);q(L,'fp').onclick=st(FRAME);q(L,'m1').onclick=st(-0.01);q(L,'p1').onclick=st(0.01);q(L,'m3').onclick=st(-0.001);q(L,'p3').onclick=st(0.001);
  q(L,'play').onclick=()=>solo(L);q(L,'gs').onclick=()=>{L.mode='t';setVal(L,'t',L.s);};q(L,'ge').onclick=()=>{L.mode='t';setVal(L,'t',L.e);};
- q(L,'l0').onclick=()=>setVal(L,'l',HAND_PRE);}
+ q(L,'l0').onclick=()=>setVal(L,'l',HAND_PRE);q(L,'b0').onclick=()=>setVal(L,'b',HAND_FADE);}
 function addLayer(n,on,op){let L=lay(n);if(L)return L;const v=document.createElement('video');v.playsInline=true;v.muted=true;v.preload='auto';
- const c=SCHNITT[pth(n)]||[0,0];L={n,v,on:!!on,op:op===undefined?100:op,t:0,s:c[0]>0?c[0]:0,e:0,ld:0,rt:rate(n),k:[],ka:null,kb:null,kr:1,d:0,play:0,mode:'t',el:null,z:++ZTOP,then:null};L.ld=savedL(L);L.k=savedK(L);
+ const c=SCHNITT[pth(n)]||[0,0];L={n,v,on:!!on,op:op===undefined?100:op,t:0,s:c[0]>0?c[0]:0,e:0,ld:0,fd:0,rt:rate(n),k:[],ka:null,kb:null,kr:1,d:0,play:0,mode:'t',el:null,z:++ZTOP,then:null};L.ld=savedL(L);L.fd=savedF(L);L.k=savedK(L);
  v.onloadedmetadata=()=>{L.d=v.duration||0;L.e=savedE(L);L.t=Math.max(L.s,Math.min(L.t,L.e));if(L.then){const f=L.then;L.then=null;f();}setAx();show();};
  v.onseeked=busy;v.onseeking=busy;v.onloadeddata=busy;
  v.src='/clips/'+pth(n)+'.mp4?v='+(VER[LOOK]||0);$('st').appendChild(v);LAY.push(L);card(L);return L;}
@@ -226,7 +228,7 @@ function pick(i,a,b){const o=OUT[i];stop();LAY.forEach(L=>{L.play=0;L.v.pause();
  const la=lay(a)||LAY[0],lb=lay(b)&&lay(b)!==la?lay(b):LAY.find(L=>L!==la);if(la)$('hf').value=la.n;const lc=LAY.find(L=>L!==la&&L!==lb&&isLoop(L.n));$('h3').value=lc&&lb?lc.n:'';$('h4').value='';$('h5').value='';if(lb){$('ht').value=lb.n;hand(la,lb);}else if(la){la.on=true;show();}}
 async function start(){const j=await (await fetch('/clips.json?t='+Date.now())).json();window.J=j;const o=j.outfits||{};
  for(const look in o){VER[look]=o[look].v||0;for(const c in (o[look].r||{}))RATE[look+'/'+c]=o[look].r[c];
-  for(const c in (o[look].k||{}))KURVE[look+'/'+c]=o[look].k[c];for(const c in (o[look].l||{}))LEAD[look+'/'+c]=o[look].l[c];for(const c in (o[look].s||{}))SCHNITT[look+'/'+c]=o[look].s[c].slice();}
+  for(const c in (o[look].k||{}))KURVE[look+'/'+c]=o[look].k[c];for(const c in (o[look].l||{}))LEAD[look+'/'+c]=o[look].l[c];for(const c in (o[look].b||{}))FADE[look+'/'+c]=o[look].b[c];for(const c in (o[look].s||{}))SCHNITT[look+'/'+c]=o[look].s[c].slice();}
  const s=$('look');OUT.forEach((x,i)=>{if(!o[x[1]])return;const op=document.createElement('option');op.value=String(i);op.textContent=x[0];s.appendChild(op);});
  const qs=new URLSearchParams(location.search),qa=qs.get('a')||'',qb=qs.get('b')||'';let i=-1,a='',b='';
  if(qa.includes('/')){const lk=qa.split('/')[0];a=qa.split('/')[1];b=qb.includes('/')?qb.split('/')[1]:'';i=OUT.findIndex(x=>x[1]===lk&&(x[2]==='freizeit')===a.startsWith('freizeit'));}
@@ -266,7 +268,7 @@ async function play(){if(PLAYING){stop();return;}const seq=chain();if(seq.length
  const tick=()=>{if(tok!==TOK)return;const a=seq[i],b=seq[i+1],now=performance.now();follow(a);if(prev&&!prev.v.paused)follow(prev);
   if(prev&&prev.v.currentTime>=prev.e&&!prev.v.paused)prev.v.pause();
   if(b&&!prep&&now-t1>1300&&a.v.currentTime>=a.e-3){prep=true;b.v.pause();b.v.style.transition='none';b.v.style.opacity='0';try{b.v.currentTime=b.s;}catch(e){}}
-  if(b&&prep&&!on&&a.v.currentTime>=a.e-b.ld){on=true;follow(b,b.s);b.v.style.zIndex=String(++zc);b.v.play().catch(()=>{});b.v.style.transition='opacity '+HAND_FADE+'s';b.v.style.opacity='1';window.SEEN.push(b.n);
+  if(b&&prep&&!on&&a.v.currentTime>=a.e-b.ld){on=true;follow(b,b.s);b.v.style.zIndex=String(++zc);b.v.play().catch(()=>{});b.v.style.transition='opacity '+b.fd+'s';b.v.style.opacity='1';window.SEEN.push(b.n);
    setTimeout(()=>{if(tok===TOK){a.v.style.transition='opacity '+HAND_FADE+'s';a.v.style.opacity='0';}},HAND_OFF);prev=a;i++;on=false;prep=false;t1=now;}
   else if(!b&&(a.v.currentTime>=a.e||a.v.ended)){a.v.pause();setTimeout(()=>{if(tok===TOK)stop();},500);return;}
   requestAnimationFrame(tick);};requestAnimationFrame(tick);}
@@ -293,7 +295,7 @@ async function mix(mode){if(PLAYING){const was=MIX;stop();if(was===mode)return;}
   if(prev&&prev.v.currentTime>=prev.e&&!prev.v.paused)prev.v.pause();
   if(!prep&&now-t1>1300&&(a.v.currentTime>=a.e-3*a.rt||(a.e-a.s)/a.rt<4.6)){nxt=other();if(nxt){prep=true;nxt.v.pause();nxt.v.style.transition='none';nxt.v.style.opacity='0';try{nxt.v.currentTime=nxt.s;}catch(e){}}}
   if(prep&&nxt&&a.v.currentTime>=a.e-nxt.ld){const b=nxt;late=(a.v.currentTime-(a.e-b.ld))*1000/a.rt;window.LATE.push(Math.round(late));
-   follow(b,b.s);b.v.style.zIndex=String(++zc);b.v.play().catch(()=>{});b.v.style.transition='opacity '+HAND_FADE+'s';b.v.style.opacity='1';window.SEEN.push(b.n);
+   follow(b,b.s);b.v.style.zIndex=String(++zc);b.v.play().catch(()=>{});b.v.style.transition='opacity '+b.fd+'s';b.v.style.opacity='1';window.SEEN.push(b.n);
    setTimeout(()=>{if(tok===TOK){a.v.style.transition='opacity '+HAND_FADE+'s';a.v.style.opacity='0';}},HAND_OFF);prev=a;cur=b;nxt=null;prep=false;t1=now;}
   else if(!nxt&&(a.v.currentTime>=a.e||a.v.ended)){try{a.v.currentTime=a.s;}catch(e){}a.v.play().catch(()=>{});}   /* only one loop takes part: it starts again */
   for(const L of [cur,prev])if(L&&!L.v.paused)L.t=r3(Math.min(L.e,L.v.currentTime));
@@ -307,9 +309,10 @@ $('save').onclick=async()=>{halt();let ok=true;
   if(s!==(o[0]||0)||e!==(o[1]||0)){const j=await post('/api/schnitt',{name:p,start:s,end:e});if(j&&j.ok){if(s||e)SCHNITT[p]=[s,e];else delete SCHNITT[p];L.s=savedS(L);L.e=savedE(L);}else ok=false;}
   if(JSON.stringify(L.k)!==JSON.stringify(savedK(L))){const j=await post('/api/kurve',{name:p,segs:L.k});if(j&&j.ok){if(L.k.length)KURVE[p]=L.k.map(x=>x.slice());else delete KURVE[p];}else ok=false;}
   if(Math.abs(L.rt-rate(L.n))>0.004){const j=await post('/api/tempo',{name:p,rate:L.rt});if(j&&j.ok){if(L.rt===1)delete RATE[p];else RATE[p]=L.rt;}else ok=false;}
-  if(Math.abs(L.ld-savedL(L))>0.0004){const l=r3(L.ld),j=await post('/api/vorlauf',{name:p,lead:l});if(j&&j.ok){if(l===HAND_PRE)delete LEAD[p];else LEAD[p]=l;}else ok=false;}}
+  if(Math.abs(L.ld-savedL(L))>0.0004){const l=r3(L.ld),j=await post('/api/vorlauf',{name:p,lead:l});if(j&&j.ok){if(l===HAND_PRE)delete LEAD[p];else LEAD[p]=l;}else ok=false;}
+  if(Math.abs(L.fd-savedF(L))>0.0004){const f=r3(L.fd),j=await post('/api/blende',{name:p,fade:f});if(j&&j.ok){if(f===HAND_FADE)delete FADE[p];else FADE[p]=f;}else ok=false;}}
  draw();$('sinfo').textContent=ok?'Gemerkt. Die App nimmt es beim nächsten Öffnen.':'Ging nicht bei allen. Zwischen Anfang und Ende muss mindestens eine halbe Sekunde bleiben.';};
-$('back').onclick=()=>{stop();for(const L of LAY){if(!L.d)continue;soloStop(L);L.s=savedS(L);L.e=savedE(L);L.ld=savedL(L);L.rt=rate(L.n);L.k=savedK(L);L.ka=null;L.kb=null;L.t=Math.max(L.s,Math.min(L.e,L.t));}show();};
+$('back').onclick=()=>{stop();for(const L of LAY){if(!L.d)continue;soloStop(L);L.s=savedS(L);L.e=savedE(L);L.ld=savedL(L);L.fd=savedF(L);L.rt=rate(L.n);L.k=savedK(L);L.ka=null;L.kb=null;L.t=Math.max(L.s,Math.min(L.e,L.t));}show();};
 /* The time axis: one bar per layer over the full length of its clip (Metin, 02:15: each loop on its own). The bright
    part is what stays; its edges are dragged to make the clip shorter or longer, a tap or drag inside moves the play head. */
 const AXP=8,AXT=20,AXR=26;

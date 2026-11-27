@@ -738,7 +738,7 @@ window.addEventListener('beforeinstallprompt',e=>{INST=e;diag('installable');});
 window.addEventListener('appinstalled',()=>{INST=null;diag('installed');});
 setTimeout(()=>diag('open'),4000);  /* 2.134.3: only with a service worker does Chrome install the page as an app, and only then does the manifest's fullscreen apply */
 async function clipsLoad(){let outs={};try{outs=(await (await fetch('/clips.json')).json()).outfits||{};}catch(e){}
- MUTE={};STUMM={};VOL={};LEAD={};for(const k in outs){for(const c in (outs[k].l||{}))LEAD[k+'/'+c]=outs[k].l[c];for(const c in (outs[k].mv||{}))VOL[k+'/'+c]=outs[k].mv[c];for(const c of (outs[k].m||[]))MUTE[k+'/'+c]=1;for(const c in (outs[k].ms||{}))STUMM[k+'/'+c]=outs[k].ms[c];CVER[k]=outs[k].v||0;const r=outs[k].r||{};for(const c in r)RATE[k+'/'+c]=r[c];const q=outs[k].k||{};for(const c in q)KURVE[k+'/'+c]=q[c];const sc=outs[k].s||{};for(const c in sc)SCHNITT[k+'/'+c]=sc[c];}  /* 2.136.0 (Metin): his tempo from the tester, the clip files stay untouched */
+ MUTE={};STUMM={};VOL={};LEAD={};FADE={};for(const k in outs){for(const c in (outs[k].l||{}))LEAD[k+'/'+c]=outs[k].l[c];for(const c in (outs[k].b||{}))FADE[k+'/'+c]=outs[k].b[c];for(const c in (outs[k].mv||{}))VOL[k+'/'+c]=outs[k].mv[c];for(const c of (outs[k].m||[]))MUTE[k+'/'+c]=1;for(const c in (outs[k].ms||{}))STUMM[k+'/'+c]=outs[k].ms[c];CVER[k]=outs[k].v||0;const r=outs[k].r||{};for(const c in r)RATE[k+'/'+c]=r[c];const q=outs[k].k||{};for(const c in q)KURVE[k+'/'+c]=q[c];const sc=outs[k].s||{};for(const c in sc)SCHNITT[k+'/'+c]=sc[c];}  /* 2.136.0 (Metin): his tempo from the tester, the clip files stay untouched */
 NIGHT=outs.nacht?outs.nacht.clips:[];NIGHTBODY=!!(outs.nacht&&outs.nacht.body);delete outs.nacht;PET=outs.mokka&&outs.mokka.alpha||[];delete outs.mokka;const names=Object.keys(outs);LOOKS=names.slice().sort();
  let last='',lday='',seen=0;try{last=localStorage.getItem('loutfit')||'';lday=localStorage.getItem('loutfitday')||'';seen=Number(localStorage.getItem('lseen')||0);}catch(e){}
  let mokpend=false;try{mokpend=!localStorage.getItem('lmokka');}catch(e){}
@@ -788,7 +788,7 @@ async function netProbe(){try{if(document.hidden||!CODE||Date.now()-NETAT<60000)
   post('/api/netstats',{kbps,ttfb:t1?Math.round(t1-t0):3000,stalls:st,light,wait:0}).catch(()=>{});}catch(e){}}
 setTimeout(netProbe,12000);setInterval(netProbe,180000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(netProbe,6000);});
 function stallSeen(){if(lightNow())return;const t=Date.now();STALLS=STALLS.filter(x=>t-x<60000);STALLS.push(t);if(STALLS.length>=2)LIGHT=true;}
-let RATE={},KURVE={},SCHNITT={},MUTE={},STUMM={},VOL={},LEAD={};  /* LEAD: when a loop clip comes in, seconds before the end mark of the clip before it; none = 0.25 (page /naht, 2.166.0) */  /* VOL: loudness factor of a clip, 1 = normal (2.164.0) */  /* MUTE: clips whose sound Metin switched off on the page /ganzes, STUMM: silent stretches [from,to] inside a clip (2.163.0); the files keep their sound and their length */
+let RATE={},KURVE={},SCHNITT={},MUTE={},STUMM={},VOL={},LEAD={},FADE={};  /* FADE: seconds a clip fades in when it takes over tight; none = the 0.8 s of the CSS (pages /ganzes and /naht, 2.186.0) */  /* LEAD: when a loop clip comes in, seconds before the end mark of the clip before it; none = 0.25 (page /naht, 2.166.0) */  /* VOL: loudness factor of a clip, 1 = normal (2.164.0) */  /* MUTE: clips whose sound Metin switched off on the page /ganzes, STUMM: silent stretches [from,to] inside a clip (2.163.0); the files keep their sound and their length */
 /* 2.144.0 (Metin sets where a clip begins and ends, in the tester): the stage starts a clip at its mark, hands over at its end mark and holds the last picture there; the file stays whole */
 function cutStart(pth){const c=SCHNITT[pth];return c&&c[0]>0?c[0]:0;}
 function endOf(v){const d=v.duration||0,c=SCHNITT[v.dataset.pth||''];return c&&c[1]>0&&c[1]<d?c[1]:d;}
@@ -807,7 +807,7 @@ let TIGHT=false;  /* a loop that replays the same clip blends only at the very e
 function handMeasure(on,a,b,pre){try{if(!on||!a.duration||a.paused)return;const st={late:Math.round((a.currentTime-(endOf(a)-pre))*1000/(a.playbackRate||1)),lead:Math.round(pre*1000)},t0=performance.now();
   const done=t=>{st.first=Math.round(t-t0);if(BENCH)BENCH.first.push(st.first);fetch('/api/handstats',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(st)}).catch(()=>{});};
   if(b.requestVideoFrameCallback)b.requestVideoFrameCallback(t=>done(t));else b.addEventListener('playing',()=>done(performance.now()),{once:true});}catch(e){}}
-function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name)&&!MUTE[name.includes('/')?name:OUTFIT+'/'+name];const tight=TIGHT;TIGHT=false;const PRE0=tight?0.25:0.8,OFF=tight?300:850,lp=name?(name.includes('/')?name:OUTFIT+'/'+name):'',PRE=tight&&LEAD[lp]!==undefined?LEAD[lp]:PRE0;const s=document.getElementById('stage'),vs=[document.getElementById('svid'),document.getElementById('svid2')],a=vs[SV],b=vs[1-SV],tok=++STOK,cont=CONT;CONT=false;
+function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name)&&!MUTE[name.includes('/')?name:OUTFIT+'/'+name];const tight=TIGHT;TIGHT=false;const PRE0=tight?0.25:0.8,OFF=tight?300:850,lp=name?(name.includes('/')?name:OUTFIT+'/'+name):'',PRE=tight&&LEAD[lp]!==undefined?LEAD[lp]:PRE0;const FD=tight&&FADE[lp]!==undefined?FADE[lp]:0;const s=document.getElementById('stage'),vs=[document.getElementById('svid'),document.getElementById('svid2')],a=vs[SV],b=vs[1-SV],tok=++STOK,cont=CONT;CONT=false;
  if(!name){s.classList.remove('vid');vs.forEach(v=>{v.classList.remove('on');setTimeout(()=>{if(tok===STOK){v.pause();v.removeAttribute('src');v.load();}},600);});return;}
  if(loop&&a.loop&&a.classList.contains('on')&&a.src.split('?')[0].endsWith('/'+name+'.mp4'))return;
  /* 2.172.1 (Metin: now and then the picture flickers at a touch): for 0.8 s after a swap the old video is still what he
@@ -830,12 +830,12 @@ function stageShow(name,loop,done,snd){snd=snd&&SND_RE.test(name)&&!MUTE[name.in
     moment. Without requestVideoFrameCallback, or when no frame comes within SHOW_MAX_MS, it fades in as before.
     His second recording (06:03, schwarz/po): the veil grew for 9 pictures of the recording, 300 ms, and was gone from one
     picture to the next, which is the moment the first real frame came. So the limit is 800 ms, well above that. */
- const go=()=>{const cs=cutStart(b.dataset.pth||'');if(Math.abs(b.currentTime-cs)>0.04)b.currentTime=cs;handMeasure(tight&&cont,a,b,PRE);b.play().catch(()=>{b.muted=true;b.play().catch(()=>{});});b.style.zIndex=1;a.style.zIndex=0;s.classList.add('vid');SV=1-SV;
+ const go=()=>{const cs=cutStart(b.dataset.pth||'');if(Math.abs(b.currentTime-cs)>0.04)b.currentTime=cs;b.style.transitionDuration=FD?FD+'s':'';handMeasure(tight&&cont,a,b,PRE);b.play().catch(()=>{b.muted=true;b.play().catch(()=>{});});b.style.zIndex=1;a.style.zIndex=0;s.classList.add('vid');SV=1-SV;
   FADEEND=performance.now()+SHOW_MAX_MS+(parseFloat(getComputedStyle(b).transitionDuration)||0.8)*1000+60;let shown=false;const t0s=performance.now();
   /* a newer stageShow may have come while this clip waited: it already counts this video as the one on screen (SV), so the
      fade in still happens; only the old video is then left to the newer call */
   const show=()=>{if(shown)return;shown=true;b.classList.remove('pre');if(tok!==STOK&&!s.classList.contains('vid'))return;SHOWLATE=Math.round(performance.now()-t0s);b.classList.add('on');FADEEND=performance.now()+(parseFloat(getComputedStyle(b).transitionDuration)||0.8)*1000+60;if(tok!==STOK)return;
-   setTimeout(()=>{if(tok===STOK)a.classList.remove('on');},OFF);setTimeout(()=>{if(!a.classList.contains('on'))a.pause();},OFF+150);};
+   setTimeout(()=>{if(tok===STOK){a.style.transitionDuration='';a.classList.remove('on');}},OFF);setTimeout(()=>{if(!a.classList.contains('on'))a.pause();},OFF+150);};  /* 2.186.0: the old clip always fades out in the 0.8 s of the CSS, also when it came in with a short blend of its own; under a clip that fades in slowly a quick fade out would let the black behind show */
   if(b.requestVideoFrameCallback){b.classList.add('pre');b.requestVideoFrameCallback(()=>b.requestVideoFrameCallback(show));setTimeout(show,SHOW_MAX_MS);}else show();
   let fired=false;const fire=()=>{if(fired||tok!==STOK||!done)return;fired=true;CONT=true;done();CONT=false;};
   const fol=rateFollow(b,b.dataset.pth||'');
@@ -1014,9 +1014,9 @@ function syncShow(ev){if(ev.kind==='user'){CHAT.push({role:'user',text:String(ev
 /* 2.173.1 (Metin: what he sets on "Outfit als Ganzes" should reach the Leyla page at once): the values of all clips again, without a new start.
    Tempo and stretches hold for the running clip at once, begin, end, lead and sound from the next clip on. */
 let CLIPST=0;async function clipsRefresh(){let outs=null;try{outs=(await (await fetch('/clips.json?t='+Date.now())).json()).outfits;}catch(e){}if(!outs)return;
- const R={},K={},S={},L={},M={},ST={},V={};for(const k in outs){const o=outs[k];CVER[k]=o.v||0;for(const c in (o.r||{}))R[k+'/'+c]=o.r[c];for(const c in (o.k||{}))K[k+'/'+c]=o.k[c];for(const c in (o.s||{}))S[k+'/'+c]=o.s[c];
-  for(const c in (o.l||{}))L[k+'/'+c]=o.l[c];for(const c of (o.m||[]))M[k+'/'+c]=1;for(const c in (o.ms||{}))ST[k+'/'+c]=o.ms[c];for(const c in (o.mv||{}))V[k+'/'+c]=o.mv[c];}
- RATE=R;KURVE=K;SCHNITT=S;LEAD=L;MUTE=M;STUMM=ST;VOL=V;const v=document.getElementById(SV?'svid2':'svid'),p=v&&v.dataset.pth;if(p&&v.classList.contains('on'))v.playbackRate=rateAt(p,v.currentTime);}
+ const R={},K={},S={},L={},M={},ST={},V={},FD={};for(const k in outs){const o=outs[k];CVER[k]=o.v||0;for(const c in (o.r||{}))R[k+'/'+c]=o.r[c];for(const c in (o.k||{}))K[k+'/'+c]=o.k[c];for(const c in (o.s||{}))S[k+'/'+c]=o.s[c];
+  for(const c in (o.l||{}))L[k+'/'+c]=o.l[c];for(const c in (o.b||{}))FD[k+'/'+c]=o.b[c];for(const c of (o.m||[]))M[k+'/'+c]=1;for(const c in (o.ms||{}))ST[k+'/'+c]=o.ms[c];for(const c in (o.mv||{}))V[k+'/'+c]=o.mv[c];}
+ RATE=R;KURVE=K;SCHNITT=S;LEAD=L;FADE=FD;MUTE=M;STUMM=ST;VOL=V;const v=document.getElementById(SV?'svid2':'svid'),p=v&&v.dataset.pth;if(p&&v.classList.contains('on'))v.playbackRate=rateAt(p,v.currentTime);}
 async function syncLoop(){if(SYNCON)return;SYNCON=true;const nap=ms=>new Promise(r=>setTimeout(r,ms));
  for(;;){if(!CODE||document.hidden){await nap(1000);continue;}
   let j=null;try{j=await (await post('/api/sync',{after:SYNCAT})).json();}catch(e){}
@@ -1436,6 +1436,10 @@ def list_outfits() -> dict:
         look, _, clip = name.partition("/")
         if look in out and clip in out[look]["clips"]:
             out[look].setdefault("l", {})[clip] = lead
+    for name, fade in _blende_read().items():  # b: how long a clip fades in when it takes over (2.186.0)
+        look, _, clip = name.partition("/")
+        if look in out and clip in out[look]["clips"]:
+            out[look].setdefault("b", {})[clip] = fade
     # m: clips whose sound is switched off (2.163.0, the page /ganzes; the files keep their sound)
     from app import ganzes_page
     sound = ganzes_page.ton_read()
@@ -1644,6 +1648,48 @@ def _vorlauf_set(name: str, lead) -> bool:
     path = os.environ.get("LEYLA_VORLAUF", VORLAUF_PATH)
     d = _vorlauf_read()
     if value == LEAD_DEFAULT:
+        d.pop(name, None)
+    else:
+        d[name] = value
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(d, f, ensure_ascii=False)
+    os.replace(tmp, path)
+    return True
+
+
+BLENDE_PATH = "/data/clip_blende.json"
+FADE_DEFAULT = 0.8  # seconds a clip fades in when it takes over (the CSS of #stage video)
+FADE_MIN = 0.05     # about one picture of a 24 fps clip; shorter is a hard cut anyway
+
+
+def _blende_read() -> dict:
+    """How long a clip fades in when it takes over from the clip before it (2.186.0, Metin's screen
+    recording of 27 Nov 2026: book and hand showed double at the change of two loops), seconds per
+    clip, e.g. {"schwarz/gluecklich2": 0.1}. No entry means FADE_DEFAULT. A clip that moves from its
+    first picture needs a short blend: during a long one the old clip stands still on its last
+    picture while the new one is already under way, and both show at once. Files stay untouched."""
+    try:
+        with open(os.environ.get("LEYLA_BLENDE", BLENDE_PATH), encoding="utf-8") as f:
+            d = json.load(f)
+    except Exception:
+        return {}
+    return {str(n): round(float(v), 3) for n, v in d.items()
+            if isinstance(v, (int, float)) and not isinstance(v, bool) and FADE_MIN <= v < FADE_DEFAULT} if isinstance(d, dict) else {}
+
+
+def _blende_set(name: str, fade) -> bool:
+    """Store the blend of one clip; the default removes the entry. False when it makes no sense."""
+    try:
+        value = round(float(fade), 3)
+    except (TypeError, ValueError):
+        return False
+    if isinstance(fade, bool) or not FADE_MIN <= value <= FADE_DEFAULT:
+        return False
+    path = os.environ.get("LEYLA_BLENDE", BLENDE_PATH)
+    d = _blende_read()
+    if value == FADE_DEFAULT:
         d.pop(name, None)
     else:
         d[name] = value
@@ -2144,6 +2190,17 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
             if ok:
                 sync_clips()
                 logger.info("Cut marks: %s -> %s to %s", n, d.get("start"), d.get("end"))
+            await _respond(writer, "200 OK", "application/json", json.dumps({"ok": ok}))
+        elif method == "GET" and path == "/api/blende":
+            await _respond(writer, "200 OK", "application/json",
+                           json.dumps(_blende_read(), ensure_ascii=False))
+        elif method == "POST" and path == "/api/blende":
+            # how long a clip fades in when it takes over (pages /ganzes and /naht, 2.186.0)
+            n = str(d.get("name") or "")[:60]
+            ok = bool(n) and "/" in n and _blende_set(n, d.get("fade"))
+            if ok:
+                sync_clips()
+                logger.info("Blend: %s fades in for %s s", n, d.get("fade"))
             await _respond(writer, "200 OK", "application/json", json.dumps({"ok": ok}))
         elif method == "GET" and path == "/api/vorlauf":
             await _respond(writer, "200 OK", "application/json",
