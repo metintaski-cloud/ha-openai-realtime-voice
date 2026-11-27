@@ -1843,6 +1843,9 @@ input[type=range]{width:100%}
 .row{display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap}
 button{padding:6px 10px;border-radius:8px;background:#222;color:#eee;border:1px solid #445}
 .t{font-size:13px;color:#8aa}
+.sec{margin-top:12px;padding:8px 10px 10px;border:1px solid #2a4a66;border-radius:10px;background:#0b1622}
+.sec h2{margin:0 0 2px;font-size:16px;color:#9fe8ff}
+.cap{margin-top:10px;font-size:13px;font-weight:600;color:#cfe3f5}
 .t.g{color:#5c9}
 #liste{margin:10px;padding:8px;border:1px solid #334;border-radius:10px;font-size:13px;color:#9ab}
 @media (max-width:720px){.wrap{flex-direction:column}video{max-height:34vh}}
@@ -1917,19 +1920,19 @@ async function build(){
   row2.append(mkf('- 0,01',-0.01),mkf('+ 0,01',0.01));return row2;};
  const lab=document.createElement('span');lab.className='v';lab.textContent='1.00';
  const row=document.createElement('div');row.className='row';
- const back=document.createElement('button');back.textContent='zurueck auf 1';
- const mk=document.createElement('button');mk.textContent='merken';
- const skip=document.createElement('button');skip.textContent='passt schon';
- row.append(lab,back,mk,skip);
+ const back=document.createElement('button');back.textContent='zurück auf 1';
+ const mk=document.createElement('button');mk.textContent='Tempo merken';
+ const skip=document.createElement('button');skip.textContent='Original passt (1,00)';
+ const ltx=document.createElement('span');ltx.className='cap';ltx.style.marginTop='0';ltx.textContent='Tempo jetzt';row.append(ltx,lab,back,mk,skip);
  /* the scalpel (2.139.0, Metin): a stretch inside the clip gets its own tempo */
  const seg=document.createElement('div');seg.className='row';
  const sfrom=document.createElement('input');sfrom.type='range';sfrom.min='0';sfrom.max='10';sfrom.step='0.01';sfrom.value='0';
  const slen=document.createElement('input');slen.type='range';slen.min='0.2';slen.max='4';slen.step='0.01';slen.value='1';
  const srate=document.createElement('input');srate.type='range';srate.min='0.4';srate.max='2';srate.step='0.01';srate.value='1';
- const slab=document.createElement('div');slab.className='t';
- const only=document.createElement('button');only.textContent='nur Stueck';
- const sadd=document.createElement('button');sadd.textContent='Stueck merken';
- const sclr=document.createElement('button');sclr.textContent='Kurve loeschen';
+ const slab=document.createElement('div');slab.className='t';slab.id='slab';
+ const only=document.createElement('button');only.textContent='nur das Stück spielen';
+ const sadd=document.createElement('button');sadd.textContent='Stück merken';
+ const sclr=document.createElement('button');sclr.textContent='alle Stücke löschen';
  const slist=document.createElement('div');slist.className='t';
  seg.append(only,sadd,sclr);
  /* begin and end (2.144.0, Metin: "dass ich die Endungen selber einstellen und schneiden kann"): two marks per clip,
@@ -1939,11 +1942,20 @@ async function build(){
  const cto=document.createElement('input');cto.type='range';cto.min='0';cto.max='10';cto.step='0.01';cto.value='10';
  const crow=document.createElement('div');crow.className='row';
  const mkb=(txt)=>{const x=document.createElement('button');x.textContent=txt;return x;};
- const am=mkb('Anfang -'),ap=mkb('Anfang +'),em=mkb('Ende -'),ep=mkb('Ende +');
+ const am=mkb('Anfang - 1 Bild'),ap=mkb('Anfang + 1 Bild'),em=mkb('Ende - 1 Bild'),ep=mkb('Ende + 1 Bild');
  const crow2=document.createElement('div');crow2.className='row';
- const seam=mkb('Ende ansehen'),csave=mkb('Schnitt merken'),cclr=mkb('Schnitt weg');
+ const seam=mkb('Naht ansehen'),csave=mkb('Schnitt merken'),cclr=mkb('Schnitt weg');
  crow.append(am,ap,em,ep);crow2.append(seam,csave,cclr);
- d.append(pos,v,nav,r,fine(r,'Tempo'),row,clab,cfrom,fine(cfrom,'Anfang'),cto,fine(cto,'Ende'),crow,crow2,slab,sfrom,fine(sfrom,'Stück Anfang'),slen,fine(slen,'Stück Länge'),srate,fine(srate,'Stück Tempo'),seg,slist);
+ /* 2.184.1 (Metin, 27 Nov 2026, with a photo of this page: "Hast du dafür keine Bezeichnung gegeben? Ich sehe hier gar nichts ... der Inhalt ist gut,
+    aber das Konzept hier, wie das vorgegeben ist, ich kann das nicht selbst erkennen"): until now eight sliders and twenty buttons stood under each
+    other without a word. Now three numbered parts, each with a heading, one sentence on what it is for, and a name over every slider. */
+ const sec=(title,hint,...kids)=>{const x=document.createElement('div');x.className='sec';const h=document.createElement('h2');h.textContent=title;
+  const t=document.createElement('div');t.className='t';t.textContent=hint;x.append(h,t,...kids);return x;};
+ const cap=txt=>{const c=document.createElement('div');c.className='cap';c.textContent=txt;return c;};
+ d.append(pos,v,nav,
+  sec('1 · Tempo des ganzen Clips','So schnell spielt die App diesen Clip. 1,00 ist das Original, kleiner ist langsamer, größer ist schneller. Erst mit "Tempo merken" gilt es in der App.',r,fine(r,'Tempo'),row),
+  sec('2 · Anfang und Ende','Vorn und hinten wegnehmen, was hängt. Die Datei bleibt ganz: die App fängt nur später an und wechselt früher zum nächsten Clip. Erst mit "Schnitt merken" gilt es in der App.',clab,cap('Anfang'),cfrom,fine(cfrom,'Anfang'),cap('Ende'),cto,fine(cto,'Ende'),cap('Genau ein Bild vor oder zurück'),crow,cap('Naht ansehen spielt das Ende und gleich danach den Anfang'),crow2),
+  sec('3 · Ein Stück mit eigenem Tempo','Für eine Stelle mitten im Clip, die zu schnell oder zu langsam ist: Stück einstellen, ansehen, merken. Der Rest des Clips behält sein Tempo.',slab,cap('Wo das Stück beginnt'),sfrom,fine(sfrom,'Stück Anfang'),cap('Wie lang das Stück ist'),slen,fine(slen,'Stück Länge'),cap('Tempo des Stücks'),srate,fine(srate,'Stück Tempo'),seg,slist));
  let cur=(ALL.includes(want)&&want)||NAMES.find(n=>n!==REF)||NAMES[0];
  const show=()=>{pos.textContent=cur+'   '+(NAMES.indexOf(cur)+1)+' von '+NAMES.length+' offen';pick.value=cur;};
  const play=()=>{v.src='/clips/'+cur+'.mp4?t='+Date.now();v.playbackRate=Number(r.value);v.play().catch(()=>{});show();};
@@ -1984,14 +1996,14 @@ async function build(){
   cur=NAMES[Math.min(i<0?0:i,NAMES.length-1)];r.value=String(RATES[cur]||1);lab.textContent=Number(r.value).toFixed(2);play();segShow();};
  const remember=async rate=>{try{await fetch('/api/tempo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:cur,rate:rate})});
    RATES[cur]=rate;mk.textContent='gemerkt';drop();}catch(e){mk.textContent='ging nicht';}
-  setTimeout(()=>{mk.textContent='merken';},1200);liste();};
+  setTimeout(()=>{mk.textContent='Tempo merken';},1200);liste();};
  mk.onclick=()=>remember(Number(r.value));
  skip.onclick=()=>remember(1);
  /* --- the piece inside the clip --- */
  let ONLY=false;
  const segFrom=()=>Number(sfrom.value),segTo=()=>Number(sfrom.value)+Number(slen.value);
- const segShow=()=>{slab.textContent='Stueck '+segFrom().toFixed(2)+' bis '+segTo().toFixed(2)+' s   Tempo '+Number(srate.value).toFixed(2)+(ONLY?'   (Schleife nur ueber dem Stueck)':'');
-  slist.innerHTML=(KURVE[cur]||[]).map((x,i)=>'Kurve: '+x[0].toFixed(2)+'-'+x[1].toFixed(2)+' s  '+Number(x[2]).toFixed(2)+' <a href="#" data-i="'+i+'">weg</a>').join('<br>')||'keine Kurve';
+ const segShow=()=>{slab.textContent='Stück von '+segFrom().toFixed(2)+' bis '+segTo().toFixed(2)+' s, Tempo '+Number(srate.value).toFixed(2)+(ONLY?'   (es läuft nur das Stück)':'');
+  slist.innerHTML=(KURVE[cur]||[]).map((x,i)=>'Gemerkt: '+x[0].toFixed(2)+' bis '+x[1].toFixed(2)+' s, Tempo '+Number(x[2]).toFixed(2)+' <a href="#" data-i="'+i+'">weg</a>').join('<br>')||'Noch kein Stück gemerkt.';
   slist.querySelectorAll('a').forEach(a2=>{a2.onclick=e=>{e.preventDefault();const k=(KURVE[cur]||[]).slice();k.splice(Number(a2.dataset.i),1);kurveSave(k);};});};
  sfrom.oninput=slen.oninput=()=>{segShow();if(ONLY)v.currentTime=segFrom();};
  srate.oninput=()=>{segShow();if(ONLY)v.playbackRate=Number(srate.value);};

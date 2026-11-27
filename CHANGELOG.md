@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.185.0 (27 Nov 2026)
+
+- `feat`: the page "Outfit als Ganzes" (`/ganzes`) has a bar for dances and a bar for the show clips, shows every loop the dress has, and looks new. Metin, 04:52: "bei Outfit als Ganzes noch ... wo Punkt eins steht, Kleid, ... noch ein Balken für Tanzen und noch ein Balken für Zeigen ... Und Schleife bis Max, die wir haben", and: "wenn es geht, gestalte es viel schöner, dass man das einfacher macht".
+  - Seven cards with a number and a colour each: 1 Kleid, 2 Schleifen, 3 Tanzen, 4 Zeigen, 5 Berührung, 6 Einstellen, 7 Reset.
+  - Kleid: the outfits are buttons to tap (the select stays in the page, hidden, for the code around it).
+  - Schleifen: one chip per loop, the extra clip of the happy loop is a loop too and comes last ("Extra"). Loop 1 is now the clip with the smallest number as on the page Naht (before, `gluecklich10` came before `gluecklich4` here and the two pages counted differently).
+  - Tanzen and Zeigen: one chip per clip whose name begins with `tanz` or `zeigen`; the chip carries what stands behind that (tanz27 is "27", tanzhf2 is "hf2", zeigenlang3 is "lang3"), so the clip he means is found. A tap plays it at once, without sound as in the app, then the loops go on after the loop he saw last (`scene(n)`). A dress without such clips says so.
+  - Einstellen: three boxes (Tempo, Schnitt, Ton), the tempo large between a minus and a plus, the buttons that store something in one colour.
+- `feat`: the clip tester (`/tempo`) names what it shows, as a first step before it is rebuilt. Metin, 04:44, with a photo of the page: "Hast du dafür keine Bezeichnung gegeben? Ich sehe hier gar nichts ... der Inhalt ist gut, aber das Konzept hier, wie das vorgegeben ist, ich kann das nicht selbst erkennen." Three numbered parts with a heading and a sentence each (Tempo des ganzen Clips, Anfang und Ende, Ein Stück mit eigenem Tempo), a name over every slider, and buttons that say what they do ("Tempo merken", "Original passt (1,00)", "Anfang + 1 Bild", "Naht ansehen", "nur das Stück spielen", "alle Stücke löschen").
+- 820 tests (819 before).
+
 ## 2.184.0 (27 Nov 2026)
 
 - `feat`: two buttons bottom right in the chat of the app, "💃 Tanz" and "✨ Zeig" (Metin, 03:51: "kannst du mir im App noch 2 Buttons links bauen für tanzen und zeigen", 03:52: "oder besser rechts unten"). They ask for the scene without a chat message.

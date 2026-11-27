@@ -275,10 +275,12 @@ def stand_restore() -> dict:
 PAGE = r"""<!doctype html><html lang="de"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Outfit als Ganzes</title><style>
-html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#eee;font:13px system-ui}
-h1{font-size:14px;margin:6px 8px}
-h2{font-size:13px;margin:0 0 4px;color:#9fe8ff;font-weight:600}
-h3{font-size:12px;margin:8px 0 3px;color:#c9a8ff;font-weight:600}
+html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#eee;font:14px system-ui}
+h1{font-size:16px;margin:8px 10px 2px}
+h1 a{font-size:12px;font-weight:400;margin-left:6px;padding:3px 9px;border:1px solid #2a4a66;border-radius:999px;text-decoration:none;white-space:nowrap}
+h2{font-size:15px;margin:0 0 6px;color:#fff;font-weight:600;display:flex;align-items:center;gap:7px}
+h2 i{font-style:normal;width:22px;height:22px;border-radius:50%;background:var(--c,#38a8ff);color:#04121e;font-size:13px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex:none}
+h3{font-size:13px;margin:0 0 4px;color:#fff;font-weight:600}
 a{color:#9fe8ff}
 /* the clip always stays in view (Metin, 00:29): it fills the screen like in the app, everything to set lies on its left */
 #st{position:fixed;top:0;right:0;height:100%;aspect-ratio:2/3;max-width:100vw;overflow:hidden;background:#000}
@@ -298,45 +300,55 @@ body.hide #panel{display:none}
 #wavebar{position:fixed;left:0;right:0;bottom:0;height:92px;z-index:4;background:rgba(0,0,0,.55);display:none}
 body.wave #wavebar{display:block}
 #wave{width:100%;height:92px;display:block;touch-action:none}
-.card{margin:6px;padding:6px 8px;border:1px solid #334;border-radius:10px;background:rgba(0,0,0,.42)}
+.card{margin:8px;padding:9px 10px 10px;border:1px solid #24364a;border-left:4px solid var(--c,#38a8ff);border-radius:12px;background:rgba(6,12,20,.72)}
+.sub{margin-top:8px;padding:8px;border-radius:10px;background:rgba(255,255,255,.05)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{min-width:42px;height:38px;padding:0 10px;border-radius:10px;font-weight:600}
+.chip.on{border-color:#34d399;color:#bbf7d0;background:rgba(16,80,56,.55)}
+.chip.run{border-color:#22d3ee;background:linear-gradient(135deg,#0e7490,#6d28d9);color:#fff}
+button.pri{background:linear-gradient(90deg,#22d3ee,#8b5cf6);color:#04121e;border-color:transparent;font-weight:600}
+.val{min-width:58px;text-align:center;font-size:20px;font-weight:700;color:#9fe8ff}
+.pm{width:42px;height:38px;font-size:20px;font-weight:700;padding:0}
 .bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:4px 0}
-select,button{padding:6px 8px;border-radius:8px;background:rgba(34,34,34,.9);color:#eee;border:1px solid #445;font:inherit}
+select,button{padding:7px 10px;border-radius:9px;background:rgba(30,36,46,.95);color:#eee;border:1px solid #3b4a5c;font:inherit;cursor:pointer}
 button.on{border-color:#2a6;color:#9f9}
 button:disabled{opacity:.45}
-.t{font-size:12px;color:#9ab}
-.z{color:#9ab;font-size:12px;min-width:44px}
+.t{font-size:12.5px;color:#9fb3c8;line-height:1.35}
+.z{color:#cfe3f5;font-size:13px;min-width:52px;font-weight:600}
 input[type=range]{flex:1 1 120px;min-width:120px}
 label{display:flex;gap:4px;align-items:center}
 </style></head><body>
 <div id="st"><video id="v0" playsinline muted></video><video id="v1" playsinline muted></video></div>
 <div id="top"><button id="tog">☰</button><span id="name">...</span></div>
-<div id="panel"><h1>Outfit als Ganzes &nbsp; <a href="/tempo" style="font-size:12px;font-weight:400">Clip Tester</a> &nbsp; <a href="/naht" id="naht" style="font-size:12px;font-weight:400">Naht</a></h1>
-<div class="card"><h2>1. Kleid</h2><div class="bar"><select id="look"></select></div><div class="t" id="info"></div>
-<div class="bar" id="solobar" style="display:none"><span class="t">Nur dieser Clip läuft, zum Einstellen.</span><button id="weiter">weiter mit den Schleifen</button></div></div>
-<div class="card"><h2>2. Schleifen</h2><div id="loops" class="bar"></div>
-<div class="bar"><button id="seq">Schleifen: der Reihe nach</button><button id="nxt">nächste Schleife</button></div></div>
-<div class="card"><h2>3. Berührung</h2><div id="touch"></div>
+<div id="panel"><h1>Outfit als Ganzes<a href="/tempo">Clip Tester</a><a href="/naht" id="naht">Naht</a></h1>
+<div class="card" style="--c:#38a8ff"><h2><i>1</i>Kleid</h2><div class="chips" id="looks"></div><select id="look" style="display:none"></select><div class="t" id="info" style="margin-top:6px"></div>
+<div class="bar" id="solobar" style="display:none"><span class="t">Nur dieser Clip läuft, zum Einstellen.</span><button id="weiter" class="pri">weiter mit den Schleifen</button></div></div>
+<div class="card" style="--c:#34d399"><h2><i>2</i>Schleifen</h2><div id="loops" class="chips"></div>
+<div class="bar" style="margin-top:8px"><button id="seq">Schleifen: der Reihe nach</button><button id="nxt">nächste Schleife</button></div></div>
+<div class="card" style="--c:#f472b6"><h2><i>3</i>Tanzen</h2><div id="dance" class="chips"></div></div>
+<div class="card" style="--c:#fbbf24"><h2><i>4</i>Zeigen</h2><div id="zeig" class="chips"></div></div>
+<div class="card" style="--c:#c084fc"><h2><i>5</i>Berührung</h2><div id="touch"></div>
 <div class="bar"><label><input type="checkbox" id="ton" checked>Ton hier hören</label></div></div>
-<div class="card"><h2>4. Einstellen: der Clip, der läuft</h2>
-<h3>Tempo</h3>
-<div class="bar"><input type="range" id="rate" min="0.4" max="2" step="0.01" value="1"><span id="rlab" style="min-width:34px">1.00</span></div>
-<div class="bar"><button id="rm">− 0,01</button><button id="rp">+ 0,01</button><button id="r1">auf 1</button><button id="mk">Tempo merken</button></div>
-<h3>Schnitt: Anfang und Ende</h3>
+<div class="card" style="--c:#22d3ee"><h2><i>6</i>Einstellen: der Clip, der läuft</h2><div class="t">Alles hier gilt für den Clip, dessen Name oben rechts steht. In der App gilt es erst nach "merken".</div>
+<div class="sub"><h3>Tempo</h3><div class="t">1,00 ist das Original, kleiner ist langsamer.</div>
+<div class="bar"><button id="rm" class="pm" title="0,01 langsamer">−</button><span id="rlab" class="val">1.00</span><button id="rp" class="pm" title="0,01 schneller">+</button><button id="r1">auf 1,00</button><button id="mk" class="pri">Tempo merken</button></div>
+<div class="bar"><input type="range" id="rate" min="0.4" max="2" step="0.01" value="1"></div></div>
+<div class="sub"><h3>Schnitt: Anfang und Ende</h3><div class="t">Vorn und hinten wegnehmen, was hängt. Die Datei bleibt ganz.</div>
 <div class="t" id="clab"></div>
 <div class="bar"><span class="z">Anfang</span><input type="range" id="cfrom" min="0" max="10" step="0.01" value="0"><button id="am">− 0,01</button><button id="ap">+ 0,01</button></div>
 <div class="bar"><span class="z">Ende</span><input type="range" id="cto" min="0" max="10" step="0.01" value="10"><button id="em">− 0,01</button><button id="ep">+ 0,01</button></div>
-<div class="bar"><button id="csave">Schnitt merken</button><button id="cclr">Schnitt weg</button><a id="cut" href="/tempo" class="t">im Clip Tester</a></div>
-<h3>Ton</h3>
+<div class="bar"><button id="csave" class="pri">Schnitt merken</button><button id="cclr">Schnitt weg</button><a id="cut" href="/tempo" class="t">im Clip Tester</a></div></div>
+<div class="sub"><h3>Ton</h3>
 <div class="bar"><button id="tonb">Ton dieses Clips</button></div><div class="t" id="toninfo"></div>
 <div id="tonstk"><div class="t" id="vlab"></div>
 <div class="bar"><span class="z">Laut</span><input type="range" id="vol" min="10" max="140" step="1" value="100"></div>
-<div class="bar"><button id="vm">leiser</button><button id="vp">lauter</button><button id="v1b">normal</button><button id="vsave">Lautstärke merken</button></div>
+<div class="bar"><button id="vm">leiser</button><button id="vp">lauter</button><button id="v1b">normal</button><button id="vsave" class="pri">Lautstärke merken</button></div>
 <div class="t">Unten am Rand ist das Bild vom Ton: mit dem Finger über das Stück ziehen, das stumm sein soll. Rot ist schon stumm, die weiße Linie zeigt, wo der Clip ist. Einmal tippen springt an die Stelle.</div>
 <div class="t" id="slab"></div>
 <div class="bar"><span class="z">von</span><input type="range" id="sfrom" min="0" max="10" step="0.01" value="0"><button id="sm1">− 0,01</button><button id="sp1">+ 0,01</button></div>
 <div class="bar"><span class="z">bis</span><input type="range" id="sto" min="0" max="10" step="0.01" value="1"><button id="sm2">− 0,01</button><button id="sp2">+ 0,01</button></div>
-<div class="bar"><button id="sadd">Stück stumm schalten</button><button id="shear">Stück anhören</button></div><div class="t" id="slist"></div></div></div>
-<div class="card"><h2>5. Reset für alle Clips</h2><div class="bar"><button id="rst">Reset</button><button id="rnew" style="font-size:11px;color:#9ab">Stand neu merken</button></div>
+<div class="bar"><button id="sadd">Stück stumm schalten</button><button id="shear">Stück anhören</button></div><div class="t" id="slist"></div></div></div></div>
+<div class="card" style="--c:#f87171"><h2><i>7</i>Reset für alle Clips</h2><div class="bar"><button id="rst">Reset</button><button id="rnew" style="font-size:11px;color:#9ab">Stand neu merken</button></div>
 <div class="t" id="rinfo"></div></div></div>
 <div id="trans"><button id="pp">⏸</button><button id="fb">◀ Bild</button><button id="ff">Bild ▶</button><input type="range" id="pos" min="0" max="10" step="0.01" value="0"><span id="ptime">0.00 s</span></div>
 <div id="wavebar"><canvas id="wave"></canvas></div>
@@ -348,6 +360,11 @@ const $=id=>document.getElementById(id);
 let LOOK='',PRE='',CL=[],VER={},RATE={},KURVE={},SCHNITT={},SAVED={},MUTE={},STUMM={},VOL={},LEAD={},OFF={},SV=0,TOK=0,CUR='',CURSND=false,LAST='',BUSY=false,SEQ=true,SOLO=false,PAUSED=false,SCRUB=false;
 const base=n=>n.replace(/[0-9]+$/,'');
 const vars=b=>CL.filter(n=>base(n)===PRE+b);
+/* every loop the dress has, the extra one of the happy loop too (Metin, 27 Nov 2026: "Schleife bis Max, die wir haben") */
+const numbered=(x,y)=>x.localeCompare(y,'de',{numeric:true});  /* gluecklich4 before gluecklich10: loop 1 here is loop 1 on the page Naht */
+const loops=()=>vars('gluecklich').sort(numbered).concat(vars('gluecklichextra').sort(numbered));
+/* all clips of one kind by the start of their name (tanz14, tanzhf2, zeigenlang3 ...), in the order of their numbers */
+const kind=b=>CL.filter(n=>n.startsWith(PRE+b)&&(PRE||!n.startsWith('freizeit'))).sort(numbered);
 const pthNow=()=>LOOK+'/'+CUR;
 const cutStart=p=>{const c=SCHNITT[p];return c&&c[0]>0?c[0]:0;};
 const endOf=v=>{const d=v.duration||0,c=SCHNITT[v.dataset.pth||''];return c&&c[1]>0&&c[1]<d?c[1]:d;};
@@ -361,7 +378,7 @@ const sameCut=(a,b)=>Math.abs(((a||[])[0]||0)-((b||[])[0]||0))<0.006&&Math.abs((
 function cutShow(){const p=pthNow(),d=vis().duration||0,a=Number($('cfrom').value),b=Number($('cto').value);
  $('clab').textContent='Anfang '+a.toFixed(2)+' s, Ende '+b.toFixed(2)+' s von '+d.toFixed(2)+' s'+(sameCut(SCHNITT[p],SAVED[p])?(SAVED[p]?'  (gemerkt)':''):'  (noch nicht gemerkt)');}
 function tonShow(){const p=pthNow(),off=!!MUTE[p];$('tonb').disabled=!CURSND;$('tonb').classList.toggle('on',CURSND&&off);
- $('tonb').textContent=!CURSND?'Schleifen laufen immer ohne Ton':(off?'Ton dieses Clips ist AUS (wieder einschalten)':'Ton dieses Clips ausschalten');
+ $('tonb').textContent=!CURSND?'Schleifen, Tänze und Zeigen laufen ohne Ton':(off?'Ton dieses Clips ist AUS (wieder einschalten)':'Ton dieses Clips ausschalten');
  $('toninfo').textContent=CURSND?(off?'In der App läuft dieser Clip stumm. Die Datei behält ihren Ton.':'In der App läuft dieser Clip mit seinem Ton.'):'';
  $('tonstk').style.display=CURSND&&!off?'block':'none';document.body.classList.toggle('wave',CURSND&&!off);const d=vis().duration||10;$('sfrom').max=$('sto').max=String(d);stkShow();waveLoad();
  $('vol').value=String(Math.round((VOL[p]||1)*100));volShow();}
@@ -399,8 +416,9 @@ function label(){const p=pthNow(),c=SCHNITT[p],v=vis(),d=v.duration||10;$('name'
  $('info').textContent=(KURVE[p]?'mit Tempo Kurve  ':'')+(v.duration?v.duration.toFixed(1)+' s lang':'');
  cutShow();tonShow();$('solobar').style.display=SOLO?'flex':'none';
  document.querySelectorAll('button[data-n]').forEach(b=>{const run=b.dataset.n===CUR;
-  if(b.dataset.loop){b.classList.toggle('on',!OFF[b.dataset.n]);b.style.opacity=OFF[b.dataset.n]?'.5':'1';b.textContent=(run?'▶ ':'')+'Schleife '+b.dataset.loop;}
-  else b.classList.toggle('on',run);});}
+  if(b.dataset.loop){b.classList.toggle('on',!OFF[b.dataset.n]);b.classList.toggle('run',run);b.style.opacity=OFF[b.dataset.n]?'.45':'1';b.textContent=(run?'▶ ':'')+b.dataset.lab;}
+  else{b.classList.toggle('on',run);b.classList.toggle('run',run);}});
+ document.querySelectorAll('#looks button').forEach(b=>b.classList.toggle('run',b.dataset.i===$('look').value));}
 /* one clip on the stage. opt.cont: it follows the running clip and fades in `pre` seconds before
    that one ends; otherwise it starts as soon as it can play. `done` is called PRELOAD_S before
    its own end, so the next clip can load in time (as on the stage of the app). */
@@ -430,15 +448,17 @@ function roundPick(R,v,cur){let b=(R.b||[]).filter(n=>v.includes(n));
  if(!b.length||(b.length===1&&b[0]===cur&&v.length>1)){b=v.slice();for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)),t=b[i];b[i]=b[j];b[j]=t;}}
  if(b.length>1&&b[0]===cur)b.push(b.shift());const n=b.shift();R.b=b;return n;}
 const RND={};
-function loopNext(cont,fast){BUSY=false;const all=vars('gluecklich'),sel=all.filter(n=>!OFF[n]),v=sel.length?sel:all;if(!v.length){$('name').textContent='Dieses Kleid hat noch keine Schleife.';return;}
+function loopNext(cont,fast){BUSY=false;const all=loops(),sel=all.filter(n=>!OFF[n]),v=sel.length?sel:all;if(!v.length){$('name').textContent='Dieses Kleid hat noch keine Schleife.';return;}
  let n;if(SEQ){const i=v.indexOf(LAST);n=v[(i+1)%v.length];}else n=roundPick(RND,v,LAST);
  LAST=n;
  show(n,{cont:cont,fast:fast},()=>loopNext(true,false));}
 /* a touch clip starts at once, with its sound; a clip from behind first turns her (hinten), as in the app */
-function touch(zone,n){if(BUSY&&!SOLO)return;BUSY=true;if(vars('gluecklich').includes(CUR))LAST=CUR;  /* 2.172.2: on after the loop he really saw last; the next one may already have been chosen and loading, and was then skipped */
+function touch(zone,n){if(BUSY&&!SOLO)return;BUSY=true;if(loops().includes(CUR))LAST=CUR;  /* 2.172.2: on after the loop he really saw last; the next one may already have been chosen and loading, and was then skipped */
  const turn=zone==='Po'&&!/povorne|mix/.test(n)?vars('hinten'):[];
  const back=()=>loopNext(true,false),play=c=>show(n,{cont:c,fast:!c,snd:true},back);
  if(turn.length)show(turn[Math.floor(Math.random()*turn.length)],{fast:true,snd:true},()=>play(true));else play(false);}
+/* a dance or a show clip (2.185.0, Metin, 27 Nov 2026: a bar for Tanzen and one for Zeigen): it starts at once like a touch, without sound as in the app, then the loops go on */
+function scene(n){if(BUSY&&!SOLO)return;BUSY=true;if(loops().includes(CUR))LAST=CUR;show(n,{fast:true},()=>loopNext(true,false));}
 /* while he sets begin and end, only this clip runs, from its begin to its end and again */
 function solo(){if(SOLO)return;SOLO=true;++TOK;BUSY=false;const v=vis();v.ontimeupdate=null;v.onended=null;v.loop=false;$('solobar').style.display='flex';
  [$('v0'),$('v1')].forEach(x=>{if(x!==v){x.classList.remove('on');x.pause();}});}
@@ -446,15 +466,23 @@ function soloTick(){if(SOLO){const v=vis(),p=v.dataset.pth||'';if(v.duration){co
    if(!PAUSED&&!SCRUB){if(t>=B-0.01||t<A-0.15||v.ended)v.currentTime=A;if(v.paused)v.play().catch(()=>{});}
    const r=rateAt(p,t);if(Math.abs((v.playbackRate||1)-r)>0.001)v.playbackRate=r;}}
  requestAnimationFrame(soloTick);}
-function draw(){const L=$('loops'),T=$('touch');L.innerHTML='';T.innerHTML='';
- const btn=(txt,n,fn)=>{const b=document.createElement('button');b.textContent=txt;b.dataset.n=n;b.title=LOOK+'/'+n;b.onclick=fn;return b;};
+function draw(){const L=$('loops'),T=$('touch'),D=$('dance'),Z=$('zeig');L.innerHTML='';T.innerHTML='';D.innerHTML='';Z.innerHTML='';
+ const btn=(txt,n,fn)=>{const b=document.createElement('button');b.className='chip';b.textContent=txt;b.dataset.n=n;b.title=LOOK+'/'+n;b.onclick=fn;return b;};
+ const none=(box,txt)=>{const h=document.createElement('div');h.className='t';h.style.flexBasis='100%';h.textContent=txt;box.appendChild(h);};
  /* a tap takes a loop out of the round or back in (Metin, 00:41: not pick one, but let loop 1 and 2 run); one always stays */
- vars('gluecklich').forEach((n,i)=>{const b=btn('Schleife '+(i+1),n,()=>{const left=vars('gluecklich').filter(x=>!OFF[x]);
-   if(OFF[n])delete OFF[n];else if(left.length>1)OFF[n]=1;label();if(OFF[CUR]&&!SOLO){BUSY=false;loopNext(false,true);}});b.dataset.loop=String(i+1);L.appendChild(b);});
- if(L.children.length>1){const h=document.createElement('div');h.className='t';h.style.flexBasis='100%';h.textContent='Tippen: die Schleife macht mit (grün) oder setzt aus.';L.appendChild(h);}
+ loops().forEach((n,i)=>{const b=btn(String(i+1),n,()=>{const left=loops().filter(x=>!OFF[x]);
+   if(OFF[n])delete OFF[n];else if(left.length>1)OFF[n]=1;label();if(OFF[CUR]&&!SOLO){BUSY=false;loopNext(false,true);}});b.dataset.loop=String(i+1);b.dataset.lab=base(n)===PRE+'gluecklichextra'?'Extra':String(i+1);b.textContent=b.dataset.lab;L.appendChild(b);});
+ if(L.children.length>1)none(L,'Tippen: die Schleife macht mit (grün) oder setzt aus. Die mit dem Pfeil läuft gerade.');
+ if(!L.children.length)none(L,'Dieses Kleid hat noch keine Schleife.');
+ /* dances and show clips: the chip carries what stands behind the name (tanz27 is 27, tanzhf2 is hf2), so he finds the clip he means */
+ const tail=(n,b)=>n.slice((PRE+b).length)||'1';
+ kind('tanz').forEach(n=>D.appendChild(btn(tail(n,'tanz'),n,()=>scene(n))));
+ if(!D.children.length)none(D,'Dieses Kleid hat keinen Tanz.');else none(D,'Tippen spielt den Tanz, danach laufen die Schleifen weiter.');
+ kind('zeigen').forEach(n=>Z.appendChild(btn(tail(n,'zeigen'),n,()=>scene(n))));
+ if(!Z.children.length)none(Z,'Zeigen gibt es nur im Nachtkleid.');
  for(const [zone,kinds] of ZONES){const names=[].concat(...kinds.map(vars));if(!names.length)continue;
   const row=document.createElement('div');row.className='bar';row.innerHTML='<span class="z">'+zone+'</span>';
-  names.forEach((n,i)=>row.appendChild(btn(zone+(names.length>1?' '+(i+1):''),n,()=>touch(zone,n))));T.appendChild(row);}
+  names.forEach((n,i)=>row.appendChild(btn(names.length>1?String(i+1):'▶',n,()=>touch(zone,n))));T.appendChild(row);}
  if(!T.children.length)T.innerHTML='<div class="t">Dieses Kleid hat noch keine Berührungs Clips.</div>';}
 function pick(i){const o=OUT[i];LOOK=o[1];PRE=o[2];CL=(window.J.outfits[LOOK]||{}).clips||[];LAST='';CUR='';OFF={};try{localStorage.setItem('lganz',String(i));}catch(e){}draw();loopNext(false,true);}
 async function start(){const j=await (await fetch('/clips.json?t='+Date.now())).json();window.J=j;const o=j.outfits||{};
@@ -462,7 +490,8 @@ async function start(){const j=await (await fetch('/clips.json?t='+Date.now())).
   for(const c in (o[look].k||{}))KURVE[look+'/'+c]=o[look].k[c];for(const c in (o[look].l||{}))LEAD[look+'/'+c]=o[look].l[c];for(const c of (o[look].m||[]))MUTE[look+'/'+c]=1;
   for(const c in (o[look].ms||{}))STUMM[look+'/'+c]=o[look].ms[c];for(const c in (o[look].mv||{}))VOL[look+'/'+c]=o[look].mv[c];
   for(const c in (o[look].s||{})){SCHNITT[look+'/'+c]=o[look].s[c].slice();SAVED[look+'/'+c]=o[look].s[c].slice();}}
- const s=$('look');OUT.forEach((x,i)=>{if(!o[x[1]])return;const op=document.createElement('option');op.value=String(i);op.textContent=x[0];s.appendChild(op);});
+ const s=$('look');OUT.forEach((x,i)=>{if(!o[x[1]])return;const op=document.createElement('option');op.value=String(i);op.textContent=x[0];s.appendChild(op);
+  const b=document.createElement('button');b.className='chip';b.dataset.i=String(i);b.textContent=x[0];b.onclick=()=>{s.value=String(i);pick(i);};$('looks').appendChild(b);});
  s.onchange=()=>pick(Number(s.value));
  const want=new URLSearchParams(location.search).get('clip')||'';let i=-1;
  if(want.includes('/')){const [lk,c]=want.split('/');i=OUT.findIndex(x=>x[1]===lk&&(x[2]==='freizeit')===c.startsWith('freizeit'));}

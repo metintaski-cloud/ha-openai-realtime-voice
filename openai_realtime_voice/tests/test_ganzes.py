@@ -320,7 +320,75 @@ async def test_the_tester_has_fine_steps_for_every_slider(tmp_path, monkeypatch)
             marks = await page.inner_text("div.v")
             assert "Anfang 0.01 s" in marks and "Ende 3.9" in marks
             await page.click("button[data-fine='Stück Tempo+']")
-            assert "Tempo 1.01" in await page.inner_text("div.t >> nth=2")
+            assert "Tempo 1.01" in await page.inner_text("#slab")
+            # 2.185.0 (Metin, with a photo of this page: "Hast du dafür keine Bezeichnung gegeben? Ich sehe hier gar nichts"): three parts
+            # with a heading and a sentence each, and a name over every slider
+            heads = await page.evaluate("()=>[...document.querySelectorAll('.sec h2')].map(h=>h.textContent)")
+            assert heads == ["1 · Tempo des ganzen Clips", "2 · Anfang und Ende", "3 · Ein Stück mit eigenem Tempo"]
+            assert await page.evaluate("()=>document.querySelectorAll('.sec .cap').length") >= 7
+            await browser.close()
+    finally:
+        server.close()
+    assert errors == []
+
+
+async def test_in_a_browser_every_loop_every_dance_and_every_show_clip_has_its_chip(tmp_path, monkeypatch):
+    """2.185.0. Metin, 27 Nov 2026, 04:52: "bei Outfit als Ganzes noch ... ein Balken für Tanzen und noch ein Balken für Zeigen ...
+    Und Schleife bis Max, die wir haben", and: "gestalte es viel schöner, dass man das einfacher macht"."""
+    playwright = pytest.importorskip("playwright.async_api")
+    if not shutil.which("ffmpeg"):
+        pytest.skip("no ffmpeg here")
+    try:
+        for look, names in (("nacht", ("gluecklich10", "gluecklich4", "gluecklichextra", "tanz27", "tanz14", "tanzhf", "zeigenlang3", "po7")),
+                            ("kurz", ("gluecklich4", "freizeitgluecklich", "freizeittanz2", "tanz5"))):
+            (tmp_path / "clips" / look).mkdir(parents=True)
+            for name in names:
+                _clip(tmp_path / "clips" / look / (name + ".mp4"), 2)
+    except subprocess.CalledProcessError:
+        pytest.skip("this ffmpeg cannot write VP9")
+    monkeypatch.setattr(memory_web, "CLIPS_DIR", str(tmp_path / "clips"))
+    server = await memory_web.start_http(memory.MemoryStore(str(tmp_path / "m.json")), None, host="127.0.0.1", port=0)
+    port = server.sockets[0].getsockname()[1]
+    errors = []
+    chips = """()=>{const t=id=>[...document.querySelectorAll('#'+id+' button')].map(b=>[b.textContent.replace('▶ ',''),b.dataset.n]);
+      return {loops:t('loops'),dance:t('dance'),zeig:t('zeig'),looks:[...document.querySelectorAll('#looks button')].map(b=>[b.textContent,b.classList.contains('run')]),
+        cards:[...document.querySelectorAll('#panel .card h2')].map(h=>h.textContent),hint:document.getElementById('zeig').textContent+'|'+document.getElementById('dance').textContent};}"""
+    try:
+        async with playwright.async_playwright() as p:
+            try:
+                browser = await p.chromium.launch(args=["--autoplay-policy=no-user-gesture-required"])
+            except Exception:
+                pytest.skip("no browser here")
+            page = await browser.new_page(viewport={"width": 1200, "height": 900})
+            page.on("pageerror", lambda e: errors.append(str(e)))
+            await page.goto(f"http://127.0.0.1:{port}/ganzes?clip=nacht/gluecklich4")
+            await page.wait_for_function("()=>CUR==='gluecklich4'", timeout=8000)
+            night = await page.evaluate(chips)
+            assert night["cards"] == ["1Kleid", "2Schleifen", "3Tanzen", "4Zeigen", "5Berührung", "6Einstellen: der Clip, der läuft", "7Reset für alle Clips"]
+            # loop 1 is gluecklich4 as on the page Naht, the extra clip is a loop too and comes last
+            assert night["loops"] == [["1", "gluecklich4"], ["2", "gluecklich10"], ["Extra", "gluecklichextra"]]
+            # a chip carries what stands behind the name, in the order of the numbers
+            assert night["dance"] == [["14", "tanz14"], ["27", "tanz27"], ["hf", "tanzhf"]]
+            assert night["zeig"] == [["lang3", "zeigenlang3"]]
+            assert ["Nachtkleid", True] in night["looks"] and ["Kurzes Freizeitkleid", False] in night["looks"]
+            # a dance starts at once, without sound, and the loops go on after it
+            await page.click("button[data-n=tanz27]")
+            await page.wait_for_function("()=>CUR==='tanz27'", timeout=6000)
+            assert await page.evaluate("()=>vis().muted&&document.getElementById('name').textContent==='nacht/tanz27'")
+            assert await page.evaluate("()=>document.querySelector('button[data-n=tanz27]').classList.contains('run')")
+            await page.wait_for_function("()=>loops().includes(CUR)", timeout=8000)
+            assert await page.evaluate("()=>CUR") == "gluecklich10"         # on after the loop he saw last
+            await page.click("button[data-n=zeigenlang3]")
+            await page.wait_for_function("()=>CUR==='zeigenlang3'", timeout=6000)
+            # the short Freizeit dress: its own dance, no show; the work dress beside it keeps its own
+            await page.click("#looks button >> text=Kurzes Freizeitkleid")
+            await page.wait_for_function("()=>CUR==='freizeitgluecklich'", timeout=8000)
+            frei = await page.evaluate(chips)
+            assert frei["dance"] == [["2", "freizeittanz2"]] and frei["zeig"] == [] and "Zeigen gibt es nur im Nachtkleid." in frei["hint"]
+            await page.click("#looks button >> text=Kurzes Arbeitskleid")
+            await page.wait_for_function("()=>CUR==='gluecklich4'", timeout=8000)
+            work = await page.evaluate(chips)
+            assert work["dance"] == [["5", "tanz5"]] and work["loops"] == [["1", "gluecklich4"]]
             await browser.close()
     finally:
         server.close()
