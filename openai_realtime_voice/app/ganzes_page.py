@@ -316,6 +316,7 @@ body.wave #wavebar{display:block}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chip{min-width:42px;height:38px;padding:0 10px;border-radius:10px;font-weight:600}
 .chip.on{border-color:#34d399;color:#bbf7d0;background:rgba(16,80,56,.55)}
+.chip.leer{opacity:.3;border-style:dashed;cursor:default}
 .chip.run{border-color:#22d3ee;background:linear-gradient(135deg,#0e7490,#6d28d9);color:#fff}
 button.pri{background:linear-gradient(90deg,#22d3ee,#8b5cf6);color:#04121e;border-color:transparent;font-weight:600}
 .wheels{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
@@ -397,6 +398,7 @@ label{display:flex;gap:4px;align-items:center}
 <div id="wavebar"><canvas id="wave"></canvas></div>
 <script>
 const OUT=[['Kurzes Arbeitskleid','kurz',''],['Kurzes Freizeitkleid','kurz','freizeit'],['Langes Arbeitskleid','schwarz',''],['Langes Freizeitkleid','schwarz','freizeit'],['Nachtkleid','nacht','']];
+const SLOTS=10;   /* places per row of loops and of each touch zone */
 const ZONES=[['Gesicht',['gesicht']],['Brust',['brust']],['Bauch',['bauch','mix']],['Po',['po','povorne','mix']]];
 const PRELOAD_S=3,LOOP_PRE=0.25,LOOP_OFF=300,FAST_OFF=450;
 const $=id=>document.getElementById(id);
@@ -541,16 +543,19 @@ function soloTick(){if(SOLO){const v=vis(),p=v.dataset.pth||'';if(v.duration){co
  requestAnimationFrame(soloTick);}
 function draw(){const L=$('loops'),T=$('touch');L.innerHTML='';T.innerHTML='';
  const btn=(txt,n,fn)=>{const b=document.createElement('button');b.className='chip';b.textContent=txt;b.dataset.n=n;b.title=LOOK+'/'+n;b.onclick=fn;return b;};
+ /* 2.189.0 (Metin, 27 Nov 2026, 15:10: "Kannst du die Schleifen von 1 bis 10 machen, jetzt ist es 1 bis 3. Und das gleiche mit Gesicht,
+    Brust, Bauch, Po"; asked back, his choice: ten places, the ones without a clip grey): every row has SLOTS places, so he sees what
+    is there and what is still missing. A place without a clip is a dashed button that does nothing. */
+ const empty=(box,from)=>{for(let i=from;i<=SLOTS;i++){const b=document.createElement('button');b.className='chip leer';b.disabled=true;b.textContent=String(i);b.title='Platz '+i+': noch kein Clip';box.appendChild(b);}};
  const none=(box,txt)=>{const h=document.createElement('div');h.className='t';h.style.flexBasis='100%';h.textContent=txt;box.appendChild(h);};
  /* a tap takes a loop out of the round or back in (Metin, 00:41: not pick one, but let loop 1 and 2 run); one always stays */
  loops().forEach((n,i)=>{const b=btn(String(i+1),n,()=>{const left=loops().filter(x=>!OFF[x]);
    if(OFF[n])delete OFF[n];else if(left.length>1)OFF[n]=1;label();if(OFF[CUR]&&!SOLO){BUSY=false;loopNext(false,true);}});b.dataset.loop=String(i+1);b.dataset.lab=base(n)===PRE+'gluecklichextra'?'Extra':String(i+1);b.textContent=b.dataset.lab;L.appendChild(b);});
- if(L.children.length>1)none(L,'Tippen: die Schleife macht mit (grün) oder setzt aus. Die mit dem Pfeil läuft gerade.');
- if(!L.children.length)none(L,'Dieses Kleid hat noch keine Schleife.');
- for(const [zone,kinds] of ZONES){const names=[].concat(...kinds.map(vars));if(!names.length)continue;
+ {const n=L.children.length;empty(L,n+1);if(n>1)none(L,'Tippen: die Schleife macht mit (grün) oder setzt aus. Die mit dem Pfeil läuft gerade.');
+  if(!n)none(L,'Dieses Kleid hat noch keine Schleife.');}
+ for(const [zone,kinds] of ZONES){const names=[].concat(...kinds.map(vars));
   const row=document.createElement('div');row.className='bar';row.innerHTML='<span class="z">'+zone+'</span>';
-  names.forEach((n,i)=>row.appendChild(btn(names.length>1?String(i+1):'▶',n,()=>touch(zone,n))));T.appendChild(row);}
- if(!T.children.length)T.innerHTML='<div class="t">Dieses Kleid hat noch keine Berührungs Clips.</div>';}
+  names.forEach((n,i)=>row.appendChild(btn(String(i+1),n,()=>touch(zone,n))));empty(row,names.length+1);T.appendChild(row);}}
 /* Three fields under the dress (Metin, 27 Nov 2026, 05:02: "darunter Nachtkleid, rechts daneben tanzen, rechts daneben zeigen. Und in diese Kategorie
    sollen sich die Dateien schon befinden. Und die wähle ich mit Maus-Scroll und nicht indem ich ... runter scrolle und dann anklicke ... dann steht
    da Nachtkleid zum Beispiel glücklich. Und dann rolle ich nochmal mit dem Mausrad, dann steht da Nachtkleid glücklich 2"): the wheel over a field

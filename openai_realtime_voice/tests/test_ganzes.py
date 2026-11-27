@@ -167,6 +167,16 @@ async def test_in_a_browser_loops_run_in_order_and_a_touch_cuts_in_and_hands_bac
             assert abs(await page.evaluate("()=>document.getElementById(SV?'v1':'v0').playbackRate") - 1.01) < 1e-6
             await page.click("#r1")
             assert await page.inner_text("#rlab") == "1.00"
+            # 2.189.0 (Metin, 27 Nov 2026, 15:10: "Kannst du die Schleifen von 1 bis 10 machen, jetzt ist es 1 bis 3. Und das gleiche mit
+            # Gesicht, Brust, Bauch, Po"; his choice when asked: ten places, the ones without a clip grey): every row has ten places
+            rows = await page.evaluate("""()=>{const row=b=>[...b.querySelectorAll('button')].map(x=>[x.textContent.replace('▶ ',''),!!x.dataset.n,x.disabled,x.classList.contains('leer')]);
+              return {loops:row(document.getElementById('loops')),touch:[...document.querySelectorAll('#touch .bar')].map(r=>[r.querySelector('.z').textContent,row(r)])};}""")
+            assert [x[0] for x in rows["loops"]] == [str(i) for i in range(1, 11)]
+            assert [x[1:] for x in rows["loops"]] == [[True, False, False]] * 3 + [[False, True, True]] * 7   # three loops, seven free places
+            assert [z for z, _ in rows["touch"]] == ["Gesicht", "Brust", "Bauch", "Po"]                     # all four, also the empty ones
+            assert [sum(1 for x in r if x[1]) for _, r in rows["touch"]] == [0, 1, 0, 1]
+            assert all(len(r) == 10 and [x[0] for x in r] == [str(i) for i in range(1, 11)] for _, r in rows["touch"])
+            assert all(x[2] and x[3] for _, r in rows["touch"] for x in r if not x[1])                      # a free place does nothing
             # the loops at random like the app, or in order: one button
             await page.click("#seq")
             assert "zufällig" in await page.inner_text("#seq") and await page.evaluate("()=>SEQ") is False
@@ -393,7 +403,7 @@ async def test_in_a_browser_the_wheel_rolls_through_the_clips_of_a_field_and_a_p
     server = await memory_web.start_http(memory.MemoryStore(str(tmp_path / "m.json")), None, host="127.0.0.1", port=0)
     port = server.sockets[0].getsockname()[1]
     errors = []
-    state = """()=>({loops:[...document.querySelectorAll('#loops button')].map(b=>[b.textContent.replace('▶ ',''),b.dataset.n]),
+    state = """()=>({loops:[...document.querySelectorAll('#loops button[data-n]')].map(b=>[b.textContent.replace('▶ ',''),b.dataset.n]),
       fields:[...document.querySelectorAll('.wh')].map(e=>[e.querySelector('b').textContent,e.querySelector('span').textContent,e.querySelector('em').textContent,e.classList.contains('run')]),
       lists:{kleid:WH.kleid.list,tanz:WH.tanz.list,zeigen:WH.zeigen.list},cur:CUR,solo:SOLO,muted:vis().muted,name:document.getElementById('name').textContent,
       cards:[...document.querySelectorAll('#panel .card h2')].map(h=>h.textContent)})"""

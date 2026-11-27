@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.189.0 (27 Nov 2026)
+
+- `feat`: on "Outfit als Ganzes" every row has ten places. Metin, 15:10, with a photo of the cards of the short leisure dress: "Kannst du die Schleifen von 1 bis 10 machen, jetzt ist es 1 bis 3. Und das gleiche mit Gesicht, Brust, Bauch, Po." Asked what he means (ten places shown, or new clips until there are ten), his choice: "10 Plätze anzeigen". The card Schleifen and each of the four rows of the card Berührung now show the places 1 to 10 (`SLOTS`): a place with a clip is the button it was, a place without one is grey with a dashed edge and does nothing (title "Platz N: noch kein Clip"). All four touch rows are always there, also one without any clip (before, such a row was left out), and a row with a single clip shows "1" instead of an arrow. So he sees at a glance what a dress has and what is still missing.
+- 829 tests as before (the test of the buttons got the places).
+
 ## 2.188.0 (27 Nov 2026)
 
 - `feat`: on "Outfit als Ganzes" a touch clip stays until he lets it go. Metin, 14:22, with a photo of the cards: "Ich möchte bei Berührung Po, Brust, Gesicht, wenn ich drauf klicke, dass der Clip immer Schleife läuft, bis ich erneut auf diese Clip-Button klicke. Also es soll nicht nur einmal ablaufen. Wenn ich auf Gesicht 1 geklickt habe, dann soll immer Gesicht 1 laufen, bis ich entweder Gesicht 1 wegklicke oder eine andere wähle, zum Beispiel Brust 1. Dann soll Brust 1 immer Schleife laufen." A click on a button of the card Berührung starts that clip with its sound (a clip from behind after her turn, as before) and it runs again and again (`HOLD`, `show(..., {solo: true})`); the button stays lit. The same button again goes on with the loop after the last one, another button takes over and stays in its turn. Before, a touch clip ran once and the loops came back by themselves, so there was no time to set anything on it.
