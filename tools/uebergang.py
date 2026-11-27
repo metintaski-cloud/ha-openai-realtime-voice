@@ -20,9 +20,17 @@ What the numbers mean (all on the body crop at 147 x 220, mean difference of the
            (the old clip stands on its last picture, the new one runs, CSS ease). "weich" = blend 0.8 s and
            lead 0.25 s, "hart" = blend 0.1 s and lead 0.1 s.
   normal   what this clip changes from one picture to the next in its first half second.
+A loop counts as fitting when the middle value of its "passt" is at the floor (one clip before it with a wrong
+end does not make the loop wrong; the line names that clip). The other clips are judged against the fitting
+loops only.
 Reading: a clip whose "passt" is at the floor can come in hard (no double picture, the step at the cut is
 not larger than its normal movement). A clip whose "passt" is high must not be set hard: that would jump.
 It needs other cut marks, its original, or a new clip; until then it stays soft.
+The blend belongs to the clip that comes in, at every tight hand over: a loop that is set hard also comes in
+hard after a touch, a talk clip, a dance or a scene. So RAUS of every clip that can run before a loop must be
+at the floor before the loops of that look are set hard; a clip whose RAUS is high is the one to repair.
+Clips that belong to a chain of their own (sprichtpose between sprichtrein and sprichtraus, the middle of a
+dance chain, eifersuechtig) meet no loop on that side; read their line with that in mind.
 """
 import argparse
 import json
@@ -134,6 +142,7 @@ def main() -> None:
         if not loops:
             continue
         print("\n== %s, %s: Schleife nach Schleife ==" % (args.look, g))
+        good = []   # loops that begin in the pose the others end in; the other clips are judged against these
         for b in loops:
             before = [a for a in loops if a != b] or [b]
             fit = [float(np.abs(clips[a]["tail"][-1] - clips[b]["head"][0]).mean()) for a in before]
@@ -142,13 +151,18 @@ def main() -> None:
             worst = before[int(np.argmax(fit))]
             print("%-22s passt %.1f (max %.1f nach %s) | doppelt weich %.2f hart %.2f | normal %.2f | %s | %s" % (
                 b, np.mean(fit), max(fit), worst, np.mean([x[0] for x in soft]), np.mean([x[0] for x in hard]),
-                clips[b]["step"] * clips[b]["rb"], setting(b), "kann hart" if max(fit) <= FLOOR_OK else "PASST NICHT"))
+                clips[b]["step"] * clips[b]["rb"], setting(b), "kann hart" if np.median(fit) <= FLOOR_OK else "PASST NICHT"))
+            if np.median(fit) <= FLOOR_OK:
+                good.append(b)
+        ref = good or loops
+        if len(ref) < len(loops):
+            print("(die anderen Clips werden nur an den passenden Schleifen gemessen: %s)" % ", ".join(ref))
         print("\n== %s, %s: andere Clips gegen die Schleifen (REIN = der Clip löst eine Schleife ab, RAUS = eine Schleife kommt danach) ==" % (args.look, g))
         for x in others:
-            fin = [float(np.abs(clips[a]["tail"][-1] - clips[x]["head"][0]).mean()) for a in loops]
-            fout = [float(np.abs(clips[x]["tail"][-1] - clips[b]["head"][0]).mean()) for b in loops]
-            soft = [hand_over(clips[a]["tail"], clips[x]["head"], 0.25, 0.8, clips[a]["ra"], clips[x]["rb"]) for a in loops]
-            hard = [hand_over(clips[a]["tail"], clips[x]["head"], 0.1, 0.1, clips[a]["ra"], clips[x]["rb"]) for a in loops]
+            fin = [float(np.abs(clips[a]["tail"][-1] - clips[x]["head"][0]).mean()) for a in ref]
+            fout = [float(np.abs(clips[x]["tail"][-1] - clips[b]["head"][0]).mean()) for b in ref]
+            soft = [hand_over(clips[a]["tail"], clips[x]["head"], 0.25, 0.8, clips[a]["ra"], clips[x]["rb"]) for a in ref]
+            hard = [hand_over(clips[a]["tail"], clips[x]["head"], 0.1, 0.1, clips[a]["ra"], clips[x]["rb"]) for a in ref]
             print("%-22s REIN passt %.1f (max %.1f) doppelt weich %.2f hart %.2f %s | RAUS passt %.1f (max %.1f) %s | %s" % (
                 x, np.mean(fin), max(fin), np.mean([v[0] for v in soft]), np.mean([v[0] for v in hard]),
                 "ok" if max(fin) <= FLOOR_OK else "PASST NICHT", np.mean(fout), max(fout),
