@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.195.0 (28 Nov 2026)
+
+- `feat`: Leyla appears on the living room TV when she is asked to. Metin, 01:19: "quasi möchte ich Leila im Wohnzimmer sagen, hey Leila, zeig dich im Fernseher oder zeig dich oder komm mal her, und dass sie dann quasi automatisch im Fernseher erscheint." About her night outfit there, with children in the room: "im Fernseher soll nicht gefragt werden, Passwort eingeben oder so ... Die Sperre soll automatisch drin sein. Nur die Leila kann das freigeben, indem ich Passwort sage."
+  - New function `leyla_fernseher` (`app/tvshow.py`): `zeigen` switches the TV on if needed and opens her page there through Home Assistant (`remote.turn_on` with the address as `activity`; the TV has the Fully Kiosk Browser since 28 Nov 2026), and answers "done" only when the TV reports the browser in front. `weg` brings back the app that ran before (waipu), else the home screen.
+  - The TV view of the page (`/?tv=1`): only her stage, as high as the screen, no chat, no lists, no menu, nothing to type into. It never asks for the code word and never reads a stored one. No touch, no music, no kiss toward the room; the clips come in the phone size copies.
+  - Her state for that view comes from the new route `GET /api/tv` (no code word), which never says "nacht": while the night outfit is not released the TV gets "freizeit".
+  - The release (`nacht_frei`) exists only as part of that function and only in a talk in which the code word was said (`tvshow.night_gate`; his name alone is not enough). It puts her into the night outfit like Umziehen in the app menu and ends when she leaves the TV, when another app comes to the front there (the Home key of the remote locks within 5 s), with `nacht_zu`, after one hour, on any error and with a restart. Every new appearance starts locked. When it is locked while the TV shows it, the page drops the night clip and the night still at once (measured in the test: within one question of the page, every 4 s).
+  - She is told about the release only in the note after the code word; before it neither her live voice nor her answers know of it, and a refused call tells her to give no reason.
+  - Limits, said plainly: this locks what the page shows. The clip files are served without a code word as before, so it is no protection against somebody who types addresses.
+- 850 tests (840 before).
+
 ## 2.194.0 (28 Nov 2026)
 
 - `feat`: in a live talk from the app she can dance and do the other scenes of the stage when he asks. Metin, 00:48: "wenn ich ja Tanz sage, sie normalerweise getanzt hat. Und das ist jetzt leider nicht mehr der Fall. Können wir das noch irgendwie mit einpflegen?"

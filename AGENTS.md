@@ -69,6 +69,8 @@ Both sides must follow this. If one side changes, the other may need updates.
 
 **Near wakes (HTTP, not the WebSocket):** `POST http://<host>:8082/api/weckton?rate=16000`, body = raw 16 bit mono PCM (0.5 to 4.5 s), no code word, answer `{"ok": true|false}`. The device sends the microphone history there when a silent second copy of the wake word model with a low cutoff fires (`leyla_voice` options `collect_host`, `collect_port`; `collect()`); nothing starts on the device. The server files the clips for training the wake word (`app/sammler.py`, `docs/WECKWORT.md`).
 
+**Her page on the TV (HTTP):** `GET http://<host>:8082/api/tv` (also on 443), no code word: her state for the TV view of the memory page (`/?tv=1`), `{"mood","low","label","cheer","level","outfit"}`; `outfit` is never `nacht` unless the night outfit was released in a talk after the code word (`app/tvshow.py`, 2.195.0). The page asks every 4 s.
+
 **Client:** Resample mic 16 kHz → 24 kHz before send; resample received 24 kHz → 48 kHz for the speaker.
 
 **Server:** Encode PCM to base64 and send as `input_audio_buffer.append`; decode `response.output_audio.delta` (Realtime API GA) and send raw PCM to the client. Tool calls such as `search_web` run in the background so the event loop stays responsive.
@@ -124,6 +126,10 @@ HAOS on a dedicated host. ESPHome config under e.g.:
 Device name, friendly name, wake words, and other production settings can differ from the repo default.
 
 Home Assistant answers on `http://192.168.2.240` (port 80, not 8123). The add on is called "GPT Live Voice" there and has the slug `5b94124a_openai_realtime_voice` (the hash `a0d7b954` belongs to the Tailscale add on). The exact update steps through the browser are in `STATUS.md`, section Umgebung.
+
+## Leyla on the living room TV (28 Nov 2026)
+
+The living room TV is an Android TV (Vestel), in Home Assistant as `remote.android_tv` and `media_player.android_tv_2` (Android TV Remote integration). On 28 Nov 2026 Metin installed the **Fully Kiosk Browser** on it from the Play Store (package `de.ozerov.fully`, free version, start settings untouched: no bars, no kiosk mode); before, the TV had no browser and answered a web address with "keine App dafür". Home Assistant opens a page there with `remote.turn_on` and `activity: <address>`; the Play Store page of an app opens the same way with `activity: market://details?id=<package>`. The add on opens `https://leyla-metin.duckdns.org/?tv=1` (env `TV_LEYLA_URL` overrides it, `aus` switches the function off). Never type the code word into that browser: the TV view neither asks for it nor reads it, and the normal page would keep it there.
 
 ## Remote access from the phone (Tailscale, 15 Nov 2026)
 

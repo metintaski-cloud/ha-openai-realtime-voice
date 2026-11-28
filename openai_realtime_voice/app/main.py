@@ -45,6 +45,7 @@ from app import context
 from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, pcm_level
 from app.live_link import END_CONVERSATION_TOOL
 from app import talk_notes
+from app import tvshow
 from app.talk_notes import KNOWN_WITHOUT_CODE, UNLOCKED_LOVE, TalkNotesMixin  # noqa: F401
 from app.phrases import (near, names_said, bare_name, asked_if, YES_WORDS, NO_WORDS, WHO_NUDGE_NAMED, RESUME_OPEN_KNOWN, RESUME_PRIVATE_KNOWN, RESUME_WHO, NAME_NO_RE, NAME_WRONG, name_given, RESUME_OPEN, RESUME_PRIVATE, END_TALK_RE, RECALL_NUDGE, RECALL_RE, NAME_NUDGE, NAME_NUDGE_AFTER_S, NAME_NUDGE_COOLDOWN_S, NAME_RE, PROMISE_NUDGE, PROMISE_NUDGE_AFTER_S, PROMISE_RE, NAME_SAID_RE, WHO_AGAIN_TURNS, WHO_ASKED_RE, WHO_NUDGE, WHO_NUDGE_AGAIN, COUPLE_NUDGE, COUPLE_WORD_RE, PET_NUDGE, PET_WORD_RE, addressed_by_name, contains_goodbye, greeting_instruction, parse_greeting_words, pick_greeting)
 from app import (reach_link, chat, lamp_show, metrics, output_link, session_end, tool_link, after_talk, announce_voice, live_link, night, cleanup, costs, fan, health, lights, messages, persona, purifier, rf, technik, todo_sync,
@@ -192,6 +193,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self.inbox = inbox.Inbox(google=self.google)
         self.agenda = agenda.Agenda(google=self.google)
         self.mood = heart.Heart() if FEELINGS is heart else mood.Mood()  # her feelings
+        self.tvshow = tvshow.TvShow(self.tv, self.mood)  # herself on the living room TV (2.195.0)
         self.reminders = reminders.Reminders(self.agenda, converse=self._converse)
         self.variety = variety.Variety()  # her last openings, so she never sounds the same
         self.diary = diary.Diary()  # what she talked about in the last month, fading
@@ -320,6 +322,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
              tv.build_tool(self.tv.channels) if self.tv.available else None,
              tv.TV_BACKEND_HINT.format(names=self.tv.names) if self.tv.available else "",
              f"den Fernseher (an, aus, Sender {self.tv.names}, lauter, leiser, stumm)"),
+            (self.tvshow.available, tvshow.SHOW_TOOL, tvshow.SHOW_BACKEND_HINT, tvshow.SHOW_LIVE),
             (self.vacuum.available, vacuum.VACUUM_TOOL, vacuum.VACUUM_BACKEND_HINT,
              "den Saugroboter (saugen, wischen, einzelne Räume, zur Station, "
              "Akku, Wassertanks, Bürsten und Filter)"),
@@ -2299,7 +2302,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         if self.planer.available:
             self._in_background(self.planer.loop())
         if self.enable_memory:
-            web = dict(lamp=self.lamp, code_phrase=self.code_phrase,
+            web = dict(lamp=self.lamp, code_phrase=self.code_phrase, tvstate=self.tvshow.page_state,
                        rules=self._readable_rules, chat=self._chat,
                        voice=self._chat_voice, mailer=self.mailer,
                        google=self.google, inbox=self.inbox,

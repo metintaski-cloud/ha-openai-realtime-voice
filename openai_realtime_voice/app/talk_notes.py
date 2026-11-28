@@ -26,6 +26,7 @@ import time
 import uuid
 
 from app import day, memory, notes, spott
+from app import tvshow
 
 logger = logging.getLogger(__name__)
 
@@ -150,7 +151,9 @@ class TalkNotesMixin:
             "Wenn er fragt, was oder wie viel du weißt, sag es offen und vollständig. "
             "Bittet er dich, dir etwas zu merken, frag kurz, ob es privat bleiben "
             "oder für alle sein soll, außer es ist klar; Vergessen geht jetzt "
-            "auch. Gespeichert wird nach dem Gespräch.")),
+            "auch. Gespeichert wird nach dem Gespräch."
+            + (tvshow.UNLOCK_NOTE if getattr(getattr(self, "tvshow", None), "available", False)
+               else ""))),
             ("heart", "Interne Notiz, nicht erwähnen: " + self.mood.voice_note().strip())]
 
     def _private_note(self) -> tuple:

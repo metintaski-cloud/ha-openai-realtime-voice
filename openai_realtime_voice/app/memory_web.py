@@ -381,12 +381,16 @@ body{padding-top:env(safe-area-inset-top,0px)}#rules{padding-top:env(safe-area-i
 body.chatfull #chat{top:env(safe-area-inset-top,0px);bottom:env(safe-area-inset-bottom,0px);height:auto!important;overflow:visible}
 body.chatfull #stage{top:calc(0px - env(safe-area-inset-top,0px));bottom:calc(0px - env(safe-area-inset-bottom,0px))}
 body.chatfull #menu{top:calc(56px + env(safe-area-inset-top,0px))}
+html.tv body{background:#000;margin:0;overflow:hidden;cursor:none}html.tv body>*:not(#chat),html.tv #chat>*:not(#stage){display:none!important}
+html.tv #chat{display:block!important;position:fixed;inset:0;margin:0;height:auto;border:none;border-radius:0}html.tv #stage{display:block!important;top:0;bottom:0}
 </style></head><body>
 <div id="splash"><div class="sp"><img src="/icon.png?v=5" alt=""><svg viewBox="0 0 200 200"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#a855f7"/><stop offset="1" stop-color="#d946ef"/></linearGradient></defs><circle class="trk" cx="100" cy="100" r="90"/><circle class="rg" cx="100" cy="100" r="90" pathLength="100"/></svg></div></div>
 <header><button id="back">&#8249;</button><img id="micon" src="/icon.png?v=5" alt="Menü" title="Menü"><h1>Leyla Gedächtnis</h1></header><div id="menu"></div><div id="pulse" class="ok" title="Alles in Ordnung"><div class="tick" id="tick" style="display:none"><span></span></div><i class="spark" style="left:12%;top:30%;animation-delay:0s"></i><i class="spark" style="left:22%;top:68%;animation-delay:0.6s"></i><i class="spark" style="left:31%;top:22%;animation-delay:1.2s"></i><i class="spark" style="left:68%;top:74%;animation-delay:0.3s"></i><i class="spark" style="left:77%;top:28%;animation-delay:0.9s"></i><i class="spark" style="left:88%;top:60%;animation-delay:1.5s"></i><i class="spark" style="left:40%;top:80%;animation-delay:1.8s"></i><i class="spark" style="left:60%;top:18%;animation-delay:2.1s"></i><div class="beam"></div><svg viewBox="0 0 100 90"><defs><linearGradient id="hg" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#f43f5e"/></linearGradient><radialGradient id="hc"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#7dd3fc"/><stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/></radialGradient></defs><path d="M50 84C20 62 4 46 4 28C4 14 15 4 28 4C38 4 46 10 50 18C54 10 62 4 72 4C85 4 96 14 96 28C96 46 80 62 50 84Z" fill="#0b1650cc" stroke="url(#hg)" stroke-width="3.2" stroke-linejoin="round"/><path d="M14 40H34L40 28L47 54L53 34L58 44H86" fill="none" stroke="#e0f2fe" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/><circle cx="54" cy="38" r="9" fill="url(#hc)"/></svg></div><div id="chat"><div id="stage"><div class="fig"><img src="/leyla_body.jpg" alt=""></div><video id="svid" muted playsinline preload="auto"></video><video id="svid2" muted playsinline preload="auto"></video><video id="spet" class="pet" muted playsinline preload="auto"></video><div class="fog"><i class="fl"></i><i class="fr"></i><i class="ff"></i></div></div><div class="chead"><button id="cmenu" title="Menü">&#9776;</button><div class="cav"><img src="/leyla.jpg" alt=""><span id="mbadge"></span></div><div><h2>Chat mit Leyla</h2><div id="mlabel"></div><div id="ccount"></div></div><button id="crose" title="Rose schenken, einmal pro Woche">&#127801;</button><button id="cmus" title="Musik an oder aus">&#127925;</button><button id="clive" title="Live mit Leyla reden">&#128222;</button><div id="lpill"></div></div><div id="clog"></div><div id="ctype"><textarea id="ctext" readonly inputmode="none" placeholder="Tippen und sprechen ..."></textarea><button id="ckb" title="Tastatur statt Diktat">abc</button><button id="csend" title="Senden">&#10148;</button></div><div id="cscn"><button id="ctanz" title="Tanz für mich">&#128131;</button><button id="czeig" title="Zeig dich">&#10024;</button></div><div id="cin"><button id="cnew" title="Neuen Chat beginnen">&#128172;&#8314;</button><button id="cmic" title="Sprachnachricht">&#127908;</button></div></div><div id="live"><img src="/leyla.jpg" alt=""><div id="lstat">Verbinde ...</div><button id="lend">Auflegen</button></div><div id="rules"><div class="top"><button id="rback">&#8249;</button><h1>So ist Leyla</h1></div><div id="rtext"></div></div><div id="root"></div><div id="gmail" style="display:none"></div><div id="lamps" style="display:none"></div>
 <div id="bar"><button id="del" disabled>Markierte löschen</button></div>
 <script>
 try{localStorage.removeItem('llklein');}catch(e){}  /* the test switch of 2.191.0 is gone (2.192.0), its mark on the device with it */
+/* 2.195.0, the TV view (?tv=1, Metin 28 Nov 2026: "zeig dich im Fernseher"; children are in the room, so no code word is ever asked or kept there): only her stage, full screen. Her state comes from /api/tv, which never gives the night outfit unless she released it in a talk after the spoken code word (app/tvshow.py). */
+const TV=/[?&]tv=1(&|$)/.test(location.search);if(TV)document.documentElement.classList.add('tv');
 var ZNAMEON=false;  /* 2.179.0: the name of the running clip is shown, switched in the menu */
 var BENCH=null,BVAR={};  /* the measuring run (2.178.0); declared first because the clip address and the music ask for BVAR from the start */
 let CODE=null;
@@ -771,7 +775,8 @@ function slowJudge(kbps){NETK=kbps;if(!SLOW)return;if(kbps>=9000&&Date.now()-SLO
 function tierNow(){return lightNow()?((SLOW||BVAR.small)?'&m=2':'&m=1'):'';}
 /* 2.143.0: a phone always gets the copy at phone size (1440 px wide); its screen cannot show more and decoding 4K made it warm (Metin) */
 const PHONE=Math.min(screen.width,screen.height)*(window.devicePixelRatio||1)<=1600;
-function lightNow(){try{const o=localStorage.getItem('llight');if(o==='an')return true;if(o==='aus')return false;}catch(e){}
+function lightNow(){if(TV)return true;  /* the TV shows her about 1080 px high, the copies of phone size are enough and its decoder may not take 4K portrait */
+ try{const o=localStorage.getItem('llight');if(o==='an')return true;if(o==='aus')return false;}catch(e){}
  const c=navigator.connection;return LIGHT||PHONE||!!(c&&(c.type==='cellular'||c.saveData));}
 /* 2.171.0 (Metin, 25 Nov 2026: is it the phone's internet?): how fast a clip really arrives. Now and then the page
    loads the first megabyte of the clip that is playing once more, times it from the first to the last byte, and
@@ -868,9 +873,15 @@ function stageNext(b){if(ZPEND){const f=ZPEND;ZPEND=null;return f();}if(TALKS&&!
  else if(STM&&STM.low&&STM.level==='schwer'&&clipVars('setzen').length&&Math.random()<KNIET_P)stagePlay(['setzen'],b);else stageLoop(b);}
 var SLAST={};function stagePlay(once,loop){DANCING=false;const q=once.map(n=>{let v=clipVars(n);if(v.length>1&&SLAST[n])v=v.filter(x=>x!==SLAST[n]);const c=v.length?v[Math.floor(Math.random()*v.length)]:null;if(c)SLAST[n]=c;return c;}).filter(Boolean);/* never the same variant twice in a row (2.116.4) */const next=()=>{const n=q.shift();if(n)stageShow(n,false,next,true);else stageLoop(loop);};next();}
 function stageMood(st){if(CLIPS===null)return;document.getElementById('stage').classList.toggle('low',!!st.low);let once=[];const o=STM;
+ if(TV&&o&&o.outfit==='nacht'&&st.outfit!=='nacht'){tvCover(st);return;}
  if(!o)once=['begruessung'];if(o){if(o.low&&!st.low)once=['uebergang','kuss'];else if(st.low&&o.low&&(st.cheer||0)>(o.cheer||0))once=['trost'];}
- const changed=!o||once.length||o.mood!==st.mood||o.level!==st.level;/* an outfit change waits for its change scene or the next hand over (2.116.0) */STM=st;if(!o||o.outfit!==st.outfit){const im=document.querySelector('#stage .fig img'),nb=st.outfit==='nacht'&&NIGHTBODY?'/clips/nacht/body.jpg?v='+(CVER.nacht||0):LOOKBODY;if(nb&&!im.src.endsWith(nb))im.src=nb;}if(changed&&(!o||!(Date.now()<ZBUSY||ZPEND||DANCING||talkOn())))stagePlay(once,clipFor(st));}
+ if(TV)once=once.filter(n=>n!=='kuss');const changed=!o||once.length||o.mood!==st.mood||o.level!==st.level||(TV&&o.outfit!==st.outfit);/* an outfit change waits for its change scene or the next hand over (2.116.0) */STM=st;if(!o||o.outfit!==st.outfit){const im=document.querySelector('#stage .fig img'),nb=st.outfit==='nacht'&&NIGHTBODY?'/clips/nacht/body.jpg?v='+(CVER.nacht||0):LOOKBODY;if(nb&&!im.src.endsWith(nb))im.src=nb;}if(changed&&(!o||!(Date.now()<ZBUSY||ZPEND||DANCING||talkOn())))stagePlay(once,clipFor(st));}
 clipsLoad();
+/* the night outfit was locked while the TV showed it: both videos and the night still go at once (no fade), then the loop of the day outfit starts */
+function tvCover(st){ZBUSY=0;ZPEND=null;DANCING=false;SWAP=0;++STOK;const s=document.getElementById('stage'),im=s.querySelector('.fig img');s.classList.remove('vid');
+ [document.getElementById('svid'),document.getElementById('svid2')].forEach(v=>{v.style.transition='none';v.classList.remove('on');v.pause();v.removeAttribute('src');v.load();void v.offsetWidth;v.style.transition='';});
+ const day=LOOKBODY||'/leyla_body.jpg';if(!im.src.endsWith(day)){im.style.visibility='hidden';im.onload=im.onerror=()=>{im.style.visibility='';im.onload=im.onerror=null;};im.src=day;}  /* a look without its own still falls back to her first picture, never the night still */
+ STM=st;FADEEND=0;stagePlay([],clipFor(st));}
 function stageHello(){if(CLIPS&&STM&&!DANCING)stagePlay(['begruessung'],clipFor(STM));}  // hallo on every open (2.113.1, Metin)
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&document.getElementById('chat').style.display==='block')stageHello();});
 let MUSIC=[],BGMN='',MUSON=true,BGCTX=null,BGSRC=null,BGGAIN=null,BGLOAD='',BGEL=null;const BGBUF={},BGLONG={};try{MUSON=localStorage.getItem('lmusic')!=='0';}catch(e){}
@@ -881,7 +892,7 @@ async function bgmBuf(n){if(BGBUF[n])return BGBUF[n];const b=await BGCTX.decodeA
  const d=b.getChannelData(0);let a=0,e=d.length-1;while(a<e&&Math.abs(d[a])<1e-4)a++;while(e>a&&Math.abs(d[e])<1e-4)e--;b.ls=a/b.sampleRate;b.le=(e+1)/b.sampleRate;BGBUF[n]=b;return b;}
 let VOICE=0;function voiceOn(on){VOICE=Math.max(0,VOICE+(on?1:-1));bgmTick();}  /* 2.142.1: her voice lowers the music at once and on its own, not through the talking clip (Metin could not understand her) */
 function bgVol(){if(TALKING||VOICE)return .22*.02;const v=document.getElementById(SV?'svid2':'svid');return v&&!v.muted&&!v.paused?.22*.96:.22;}  /* 2.130.1: a clip with sound (her laugh) lowers the music from 100 to 96 % (Metin) */
-function bgmTick(){const c=document.getElementById('chat');let n='';if(STM&&MUSIC.length){n=MUSIC.includes(STM.mood)?STM.mood:(STM.low?'traurig':'gut');if(!MUSIC.includes(n))n='';}  /* gapless loop through Web Audio, the audio element paused at its loop point (2.117.5, Metin) */
+function bgmTick(){const c=document.getElementById('chat');let n='';if(STM&&MUSIC.length&&!TV){n=MUSIC.includes(STM.mood)?STM.mood:(STM.low?'traurig':'gut');if(!MUSIC.includes(n))n='';}  /* gapless loop through Web Audio, the audio element paused at its loop point (2.117.5, Metin) */
  const on=n&&MUSON&&!BVAR.nomus&&soundOn&&CODE&&!REC&&!DIK&&!DIKQ&&!c.classList.contains('oncall')&&!document.hidden;  /* keeps playing in the menu and list pages, silent while he records or dictates (2.140.1, Metin) */
  if(!on){if(BGCTX&&BGCTX.state==='running')BGCTX.suspend().catch(()=>{});if(BGEL)BGEL.pause();return;}
  if(BGEL&&BGMN===n){BGEL.volume=bgVol();if(BGEL.paused)BGEL.play().catch(()=>{});return;}
@@ -979,7 +990,7 @@ let TOUCHT=0;function touchAsk(z){if(!CODE||Date.now()-TOUCHT<TOUCH_GAP)return n
 const TOUCH_GAP=25000;/* she answers a touch at most every 25 s, so touches do not push the real chat out of her thread */
 function touchShow(j){if(!j||j.error||!j.reply)return;const m={role:'leyla',text:j.reply};if(j.audio){m.aid='a'+Date.now();AUDIO.set(m.aid,'data:audio/wav;base64,'+j.audio);}CHAT.push(m);if(j.mood)moodShow(j.mood);chatSave();chatDraw();if(m.aid)playAudio(m.aid);}  /* her written reaction to a touch appears when the touch clip starts (2.119.0, Metin) */
 function zRing(ev){const st=document.getElementById('stage'),r=st.getBoundingClientRect(),d=document.createElement('div');d.className='zring';d.style.left=(ev.clientX-r.left)+'px';d.style.top=(ev.clientY-r.top)+'px';st.appendChild(d);setTimeout(()=>d.remove(),900);}
-document.getElementById('stage').onpointerdown=ev=>{if(ev.button>0||Date.now()-ZT<700||zBlocked())return;ZT=Date.now();if(!CLIPS||!STM||(STM.low&&!STM.touch_ok))return;const z=zoneAt(ev);if(!z)return;const v=clipVars(z).concat(...(ZEXTRA[z]||[]).map(clipVars));if(!v.length)return;ZBUSY=Date.now()+60000;zRing(ev);ZCOLNOW=ZCOL[z]||'';const tr=onCall()?liveTouch(z):touchAsk(z);
+document.getElementById('stage').onpointerdown=ev=>{if(TV||ev.button>0||Date.now()-ZT<700||zBlocked())return;ZT=Date.now();if(!CLIPS||!STM||(STM.low&&!STM.touch_ok))return;const z=zoneAt(ev);if(!z)return;const v=clipVars(z).concat(...(ZEXTRA[z]||[]).map(clipVars));if(!v.length)return;ZBUSY=Date.now()+60000;zRing(ev);ZCOLNOW=ZCOL[z]||'';const tr=onCall()?liveTouch(z):touchAsk(z);
  {const g=(STM&&STM.game)||{};if(!g.done){if(!(g.hits||[]).includes(z))zGame(z);}}  /* 2.174.1: she takes a touch only while the ring is green, so every touch she takes is a hit; hits are no longer lost */
  const o=v.length>1?v.filter(n=>n!==ZLAST[z]):v,n=o[Math.floor(Math.random()*o.length)];ZLAST[z]=n;
  const pre=ZPRE[z]&&!/povorne|mix/.test(n)&&clipVars(ZPRE[z]),h=pre&&pre.length?pre[Math.floor(Math.random()*pre.length)]:'';  /* povorne clips start facing him, no turn first (2.117.3) */
@@ -1009,7 +1020,8 @@ async function scnAsk(n){const ic=SCN[n][1],say=t=>{CHAT.push({role:'info',text:
  if(j&&j.scene&&sceneOk(j.scene))return stageScene(j.scene);
  say(j?'Dazu ist sie gerade nicht in Stimmung.':'Gerade nicht möglich.');}
 for(const n in SCN)document.getElementById(SCN[n][0]).onclick=()=>scnAsk(n);
-async function moodLoad(){try{moodShow(await (await post('/api/mood',{})).json());}catch(e){}}
+async function moodLoad(){try{const st=await (TV?fetch('/api/tv?t='+Date.now()):post('/api/mood',{})).then(r=>r.json());if(!TV||st.mood)moodShow(st);}catch(e){}}
+if(TV)setInterval(moodLoad,4000);  /* the TV asks often, so a lock of the night outfit shows within seconds */
 setInterval(()=>{if(CODE&&document.getElementById('chat').style.display==='block'){moodLoad();remindPending();reachPending();}},60000);
 /* 2.173.0 (Metin: "dass ich auf Handy schreibe und auf PC Monitor sehe", in step): what his other device sends and what she answers
    appears here at once. One request stays open at the server until something comes; a hidden page waits and catches up when it is shown again. */
@@ -1212,7 +1224,7 @@ function render(d){FRESH=new Set(d.fresh||[]);ticker(d.ticker);const root=docume
  if(view){const l=d.lists.find(x=>x.kind===view.kind);const t=l&&l.items.find(x=>parts(x).head===view.head);if(t){found={l,t};}else view=null;}
  LASTD=d;const kinds=d.lists.map(l=>l.kind);if(sec&&!SECNAME[sec])sec=null;if(sec==='private'&&!kinds.includes('private'))sec=null;if((sec==='mail'||sec==='private')&&!CODE)sec=null;
  const home=!view&&!sec,isList=!!view||kinds.includes(sec);
- back.style.display=home?'none':'block';document.getElementById('micon').style.display=home?'':'none';document.getElementById('pulse').style.display=home?'block':'none';const ch=document.getElementById('chat'),showChat=!!CODE&&home;document.body.classList.toggle('chatfull',showChat);if(showChat&&ch.style.display!=='block'){ch.style.display='block';chatDraw();mailPending();gmailLoad();moodLoad();stageHello();}else if(!showChat)ch.style.display='none';document.getElementById('stage').style.display=showChat?'block':'none';if(showChat){setTimeout(stageFit,0);setTimeout(stageView,2600);}document.getElementById('gmail').style.display=(sec==='mail'&&GM.shown&&!view)?'block':'none';document.getElementById('lamps').style.display=(sec==='lamps'&&lampOn&&!view)?'block':'none';document.getElementById('bar').style.display=isList?'':'none';h1.textContent=view?title(view.head):sec?SECNAME[sec]:'Leyla Gedächtnis';if(menuOpen)drawMenu();
+ back.style.display=home?'none':'block';document.getElementById('micon').style.display=home?'':'none';document.getElementById('pulse').style.display=home?'block':'none';const ch=document.getElementById('chat'),showChat=(!!CODE||TV)&&home;document.body.classList.toggle('chatfull',showChat);if(showChat&&ch.style.display!=='block'){ch.style.display='block';if(TV)moodLoad();else{chatDraw();mailPending();gmailLoad();moodLoad();stageHello();}}else if(!showChat)ch.style.display='none';document.getElementById('stage').style.display=showChat?'block':'none';if(showChat){setTimeout(stageFit,0);setTimeout(stageView,2600);}document.getElementById('gmail').style.display=(sec==='mail'&&GM.shown&&!view)?'block':'none';document.getElementById('lamps').style.display=(sec==='lamps'&&lampOn&&!view)?'block':'none';document.getElementById('bar').style.display=isList?'':'none';h1.textContent=view?title(view.head):sec?SECNAME[sec]:'Leyla Gedächtnis';if(menuOpen)drawMenu();
  if(found){view.text=found.t;const fields=parts(found.t).fields;
   const box=document.createElement('div');box.className='list';box.dataset.kind=found.l.kind;
   const h=document.createElement('h2');h.textContent='Punkte ('+fields.length+')';box.appendChild(h);
@@ -1224,7 +1236,7 @@ function render(d){FRESH=new Set(d.fresh||[]);ticker(d.ticker);const root=docume
    root.insertBefore(bx,add);add.style.display='none';startEdit(sp,found.l.kind,'',v=>saveFields([...fields,v]));};
   root.appendChild(add);
  }else{
- if(home&&!CODE)root.appendChild(privBox());
+ if(home&&!CODE&&!TV)root.appendChild(privBox());
  if(sec==='set')root.appendChild(privBox());
  for(const l of d.lists.filter(x=>x.kind===sec)){const box=document.createElement('div');box.className='list';box.dataset.kind=l.kind;
   const h=document.createElement('h2');h.textContent=l.title+' ('+l.items.length+')';box.appendChild(h);
@@ -1359,7 +1371,7 @@ async function loadLamps(){let d;try{d=await (await fetch('/api/lamp')).json();}
   lmsg(j.result==='ok'?'Lampen sind zurückgestellt.':(LTXT[j.result]||''));rs.disabled=false;};
  row.append(df,rs);box.appendChild(row);
  const m=document.createElement('div');m.id='lmsg';box.appendChild(m);}
-(async()=>{let c=null;try{c=localStorage.getItem('lcode')}catch(e){}  // remembered on this phone only
+(async()=>{let c=null;try{c=TV?null:localStorage.getItem('lcode')}catch(e){}  // remembered on this phone only; the TV view never reads it
  if(c){try{if((await (await fetch('/api/unlock',{method:'POST',body:JSON.stringify({code:c})})).json()).ok)CODE=c;
   else localStorage.removeItem('lcode');}catch(e){}}
  last='';load();})();
@@ -2148,7 +2160,7 @@ async def _reach_api(reach, method: str, path: str, d: dict, unlocked: bool) -> 
 async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "", rules=None,
                   chat=None, voice=None, mailer=None, google=None, inbox=None,
                   mood=None, reminders=None, diary=None, chat_new=None, reach=None,
-                  touch=None, hear=None, kopf=None, planer=None) -> None:
+                  touch=None, hear=None, kopf=None, planer=None, tvstate=None) -> None:
     try:
         head = await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), timeout=10)
         lines = head.decode("latin-1").split("\r\n")
@@ -2177,6 +2189,11 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
                            json.dumps(sammler.collector().take(body, query)))
         elif method == "GET" and path == "/":
             await _respond(writer, "200 OK", "text/html", PAGE)
+        elif method == "GET" and path == "/api/tv":
+            # her state for the page on the TV (?tv=1, app/tvshow.py): no code word, and never
+            # the night outfit unless it was released in a talk after the code word
+            await _respond(writer, "200 OK", "application/json",
+                           json.dumps(tvstate() if tvstate else {}, ensure_ascii=False))
         elif method == "GET" and path in ("/icon.png", "/icon-maskable.png"):
             with open(ICON_PATH if path == "/icon.png" else MASKABLE_PATH, "rb") as f:
                 raw = f.read()
@@ -2653,14 +2670,14 @@ async def start_http(store: memory.MemoryStore, sync: Optional[object] = None,
                      code_phrase: str = "", rules=None, chat=None, voice=None,
                      mailer=None, google=None, inbox=None, mood=None, reminders=None,
                      diary=None, chat_new=None, reach=None, touch=None, hear=None, tls=None,
-                     kopf=None, planer=None):
+                     kopf=None, planer=None, tvstate=None):
     """`rules`: a function that returns Leyla's instructions without memory and without the
     code word; shown read only after the code word. `tls`: an ssl context; then this is the
     HTTPS copy of the page (app/tls.py) and the background jobs are not started a second time."""
     server = await asyncio.start_server(
         lambda r, w: _handle(store, sync, r, w, lamp, code_phrase, rules, chat, voice, mailer, google,
                           inbox, mood, reminders, diary, chat_new, reach, touch, hear, kopf,
-                          planer),
+                          planer, tvstate),
         host, port, ssl=tls)
     logger.info("Memory page on port %d%s", port, " (HTTPS)" if tls else "")
     if tls is None:

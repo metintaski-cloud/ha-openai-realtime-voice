@@ -7,6 +7,7 @@ import asyncio
 import json
 import logging
 
+from app import tvshow
 from app import agenda, befehle, cleanup, diary, heart, mood, planer, reminders, costs, fan, inbox, lights, mail, messages, purifier, technik, tv, vacuum
 
 logger = logging.getLogger(__name__)
@@ -151,6 +152,12 @@ class ToolLinkMixin:
             "fernseher_steuern": {
                 "label": "TV", "timeout": 20.0, "run": self.tv.run,
                 "error": "Der Fernseher konnte gerade nicht gesteuert werden."},
+            tvshow.SHOW_TOOL["name"]: {
+                # herself on the TV (2.195.0); the night outfit only after the code word
+                "label": "TV show", "timeout": 45.0, "run": self.tvshow.run,
+                "gate": tvshow.night_gate,
+                "error": "Der Fernseher konnte gerade nicht gesteuert werden.",
+                "log": lambda a, r: f"{a.get('action')} -> " + ("error" if "error" in r else "done")},
             technik.TECHNIK_TOOL["name"]: {
                 "label": "Technik", "timeout": 15.0, "run": self.technik.run,
                 "gate": technik_gate,
