@@ -373,6 +373,10 @@ Lachen 2, Kichern und wegschauen:
 
 "10-second realistic continuous scene. 0–2s: Amused, she looks at them with a sweet smile and gently sways to one side. 2–5s: She giggles softly and shyly turns her head to the side, her shoulders moving gently. 5–8s: Still smiling, she softly shifts her weight and glances back at them from the side. 8–10s: She looks at them again with bright, happy eyes and returns to her initial pose. Soft, feminine, natural body movements. Both feet remain in place. Static camera, full body visible, unchanged background, no zoom, no cuts."
 
+**Clip 14, Drehen (28.11.2026, nach 05:01). Aus drei Vorschlägen (eine langsame ganze Drehung, halbe Drehung mit Blick über die Schulter, fröhliche Drehung mit offenen Armen) wählte Metin "Fröhliche Drehung mit offenen Armen".** Noch nicht gestartet, 10 s, 350 Credits, Start und Endbild `leyla_tv_laecheln.png`. Lebhafter Clip, deshalb ohne "Both feet remain in place", mit dem Ort als Erlaubnis.
+
+"10-second realistic continuous scene. 0–2s: Joyful, she looks at them with a bright, sweet smile and lets her hands part, her weight shifting softly. 2–6s: She opens her arms a little and happily turns once around on the spot in a full circle, her dress swinging wide around her. 6–8s: She comes to rest facing them again, her dress settling softly, and smiles bashfully. 8–10s: She looks at them with bright, happy eyes, brings her hands together again and returns to her initial pose. Graceful, feminine, natural body movements. She remains in the same spot. Static camera, full body visible, unchanged background, no zoom, no cuts."
+
 ## Beobachtungen über Kling (Tatsachen, keine Schreibregeln)
 
 - Wird eine Geste in Gelenkbewegungen zerlegt oder abgezählt wiederholt, führt Kling sie wie eine Liste aus: Flattern, Klappen im Handgelenk oder eine einzige Zeitlupe (Clips 169, 181, 226).
