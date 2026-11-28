@@ -377,6 +377,10 @@ Lachen 2, Kichern und wegschauen:
 
 "10-second realistic continuous scene. 0–2s: Joyful, she looks at them with a bright, sweet smile and lets her hands part, her weight shifting softly. 2–6s: She opens her arms a little and happily turns once around on the spot in a full circle, her dress swinging wide around her. 6–8s: She comes to rest facing them again, her dress settling softly, and smiles bashfully. 8–10s: She looks at them with bright, happy eyes, brings her hands together again and returns to her initial pose. Graceful, feminine, natural body movements. She remains in the same spot. Static camera, full body visible, unchanged background, no zoom, no cuts."
 
+**Clip 15, Tanz (28.11.2026). Auf drei Vorschläge (sanfter orientalischer Tanz, fröhlicher Tanz mit Klatschen, langsamer Tanz mit schwingendem Kleid) schrieb Metin "keine Ahnung ?"; Claude empfahl den sanften orientalischen Tanz (passt zu Kleid und Pavillon, ruhig genug für Anne), er um 05:06: "ja".** Noch nicht gestartet, 10 s, 350 Credits, Start und Endbild `leyla_tv_laecheln.png`. Einen Takt hält Kling aus Worten nicht (Beobachtungen), der Tanz ist deshalb ohne Rhythmus beschrieben.
+
+"10-second realistic continuous scene. 0–2s: Happy to dance for them, she smiles sweetly, lets her hands part and begins to sway gently. 2–5s: She lifts her arms gracefully and lets her hands flow softly through the air, her hips swaying gently from side to side. 5–8s: She turns her upper body a little to one side and back, her hands gliding gracefully, her dress swaying with her, a shy smile on her face. 8–10s: She lowers her arms softly, looks at them with bright, kind eyes and brings her hands together again. Graceful, feminine, flowing body movements. She remains in the same spot. Static camera, full body visible, unchanged background, no zoom, no cuts."
+
 ## Beobachtungen über Kling (Tatsachen, keine Schreibregeln)
 
 - Wird eine Geste in Gelenkbewegungen zerlegt oder abgezählt wiederholt, führt Kling sie wie eine Liste aus: Flattern, Klappen im Handgelenk oder eine einzige Zeitlupe (Clips 169, 181, 226).
