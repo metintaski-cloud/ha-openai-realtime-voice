@@ -387,6 +387,8 @@ Lachen 2, Kichern und wegschauen:
 
 **Abschied: kein eigener Clip.** Auf drei Vorschläge schrieb Metin um 05:08: "dafür können wir auch Hallo nehmen". Zum Abschied läuft der Hallo Clip 2984.
 
+**Ergebnis Clip 3083, Tuch Schleife (`kling_20261128_VIDEO_10_second__3083_0.mp4`, von ihm heruntergeladen 05:07, Original in Leyla Kling Originale, 3836 mal 2160, 10,0 s).** Am Kontaktbogen: 0 bis 2,5 s steht sie lächelnd und schaut her; 3 bis 5,5 s hebt sie eine Hand ans Tuch an der Schulter und richtet es, Kopf geneigt, Blick her; 6 bis 7,5 s senkt sie den Blick und streicht den Stoff vorn glatt; ab 8 s Hände zusammen, Lächeln, Blick her. Wie geschrieben. Stillstand: vorn 1 Bild, hinten 0; je Sekunde 1,9 / 4,0 / 2,0 / 5,5 / 2,1 / 3,1 / 4,6 / 1,6 / 2,6 / 1,7, Mittel 2,90. Sein Urteil steht aus. Damit haben drei Clips in Folge in der Form von Vorlage 1 (Einstieg "10-second realistic continuous scene.", vier Takte, Schluss "no zoom, no cuts", 10 s) beim ersten Versuch gepasst.
+
 ## Beobachtungen über Kling (Tatsachen, keine Schreibregeln)
 
 - Wird eine Geste in Gelenkbewegungen zerlegt oder abgezählt wiederholt, führt Kling sie wie eine Liste aus: Flattern, Klappen im Handgelenk oder eine einzige Zeitlupe (Clips 169, 181, 226).
