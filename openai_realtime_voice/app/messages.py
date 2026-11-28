@@ -118,6 +118,7 @@ class MessageCenter:
         self.audio: dict[str, bytes] = {}
         self._wake = asyncio.Event()
         self.on_command: Optional[Callable[[dict], Awaitable[dict]]] = None
+        self.on_service: Optional[Callable[[str, dict], None]] = None  # light service calls, for the lamp show
         self.on_leyla_reply: Optional[Callable[[str], Awaitable[None]]] = None  # 2.128.0
         # Turn the TV down before an announcement and back up after it (set by main).
         self.before_play: Optional[Callable[[], Awaitable[None]]] = None
@@ -496,6 +497,8 @@ class MessageCenter:
                                               "event_type": "leyla_command"}))
                     await ws.send(json.dumps({"id": 5, "type": "subscribe_events",
                                               "event_type": "leyla_announce_prepare"}))
+                    await ws.send(json.dumps({"id": 6, "type": "subscribe_events",
+                                              "event_type": "call_service"}))
                     logger.info("Listening for messages from Metin")
                     async for raw in ws:
                         msg = json.loads(raw)
@@ -508,6 +511,9 @@ class MessageCenter:
                             task.add_done_callback(
                                 lambda t: t.exception() and logger.warning(
                                     "Command failed: %s", t.exception()))
+                        elif ev.get("event_type") == "call_service":
+                            if data.get("domain") == "light" and self.on_service:
+                                self.on_service(data.get("service") or "", dict(data.get("service_data") or {}))
                         elif ev.get("event_type") == "leyla_announce_prepare":
                             task = asyncio.create_task(self.prepare(list(data.get("texts") or [])))
                             task.add_done_callback(

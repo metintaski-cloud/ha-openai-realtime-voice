@@ -186,6 +186,9 @@ def _on_data(entity: str, before: dict, transition: float = 1) -> dict:
     return data
 
 
+OWN_CALL_S = 8.0  # so long a reported service call can be one of the show's own (its report comes within ms)
+
+
 class LampShow:
     def __init__(self, entities: list[str], api_url: Optional[str] = None, token: Optional[str] = None,
                  memory_path: str = "/data/lamp_show.json") -> None:
@@ -202,6 +205,8 @@ class LampShow:
         self.api_url = api_url or os.environ.get("HA_API_URL") or "http://supervisor/core/api"
         self.token = token if token is not None else os.environ.get("SUPERVISOR_TOKEN", "")
         self._before: dict[str, dict] = {}
+        self._own: list = []  # (time, key) of the show's own calls, to tell them from what others switch (2.200.0)
+        self._own_rgb: dict = {}  # colours the show sent and when: a call with one of them is never taken as a wish
         self._active = 0
         self._mode = "off"          # listen, think, speak
         self._level = 0.0
@@ -393,7 +398,77 @@ class LampShow:
         return self._lock
 
     # ---- Home Assistant ----
+    @staticmethod
+    def _call_key(service: str, data: dict) -> str:
+        d = dict(data or {})
+        e = d.get("entity_id")
+        d["entity_id"] = sorted([e] if isinstance(e, str) else list(e or []))
+        return service + json.dumps(d, sort_keys=True, default=list)
+
+    def outside(self, service: str, data: dict) -> None:
+        """Home Assistant reports every light service call (`messages.listen`). A call that is not one of the
+        show's own and switches a lamp of the show while a show runs (or its end is still to come) is somebody's
+        wish: an automation, the Home Assistant app, a switch, or Leyla's own lamp tool. The lamp is then put
+        back to THAT at the end, not to what it was before the talk (2.200.0, Metin 28 Nov 2026)."""
+        try:
+            if service not in ("turn_on", "turn_off", "toggle") or not (self._active or self._pending):
+                return
+            e = (data or {}).get("entity_id")
+            mine = [x for x in ([e] if isinstance(e, str) else list(e or [])) if x in self.entities]
+            if not mine:
+                return
+            now, key = time.monotonic(), self._call_key(service, data)
+            self._own = [(t, k) for t, k in self._own if now - t < OWN_CALL_S]
+            for i, (_, k) in enumerate(self._own):
+                if k == key:
+                    del self._own[i]
+                    return  # the show itself
+            rgb = data.get("rgb_color")
+            if service == "turn_on" and rgb is not None and now - self._own_rgb.get(tuple(int(v) for v in rgb), -1e9) < 900:
+                return  # a look of the show, whatever else differs in the report
+            for entity in mine:
+                base = self._pending.get(entity) or self._before.get(entity) or {"state": "off"}
+                if service == "turn_off" or (service == "toggle" and base.get("state") == "on"):
+                    new = {"state": "off"}
+                else:
+                    new = dict(self._last_on.get(entity) or (base if base.get("state") == "on" else {}))
+                    new["state"] = "on"
+                    if data.get("brightness") is not None:
+                        new["brightness"] = int(data["brightness"])
+                    elif data.get("brightness_pct") is not None:
+                        new["brightness"] = max(1, round(float(data["brightness_pct"]) * 255 / 100))
+                    kelvin = data.get("color_temp_kelvin") or data.get("kelvin")
+                    if not kelvin and data.get("color_temp"):
+                        kelvin = round(1_000_000 / float(data["color_temp"]))
+                    if kelvin:
+                        new.update(color_mode="color_temp", color_temp_kelvin=int(kelvin), hs_color=None)
+                    elif data.get("hs_color") is not None:
+                        new.update(color_mode="hs", hs_color=[float(v) for v in data["hs_color"]])
+                    elif data.get("rgb_color") is not None:
+                        r, g, b = (float(v) / 255 for v in data["rgb_color"])
+                        h, sat, _ = colorsys.rgb_to_hsv(r, g, b)
+                        new.update(color_mode="hs", hs_color=[round(h * 360, 3), round(sat * 100, 3)])
+                    if not new.get("brightness"):
+                        new["brightness"] = 255
+                    self._last_on[entity] = dict(new)
+                self._pending[entity] = new
+                if entity in self._before:
+                    self._before[entity] = dict(new)
+            self._save_memory()
+            logger.info("Lamp show: %s switched from outside during the show (%s), kept for afterwards",
+                        ", ".join(mine), service)
+        except Exception as e:  # a report must never disturb the show
+            logger.warning("Lamp show: outside call not understood: %s", e)
+
+    def _mine(self, service: str, data: dict) -> None:
+        """Remember a call of the show itself, so its report from Home Assistant is not taken for a wish."""
+        self._own.append((time.monotonic(), self._call_key(service, data)))
+        del self._own[:-60]
+        if data.get("rgb_color") is not None:
+            self._own_rgb[tuple(int(v) for v in data["rgb_color"])] = time.monotonic()
+
     async def _service(self, service: str, data: dict, timeout: float = SHOW_TIMEOUT_S) -> None:
+        self._mine(service, data)
         async with httpx.AsyncClient(timeout=timeout) as client:
             resp = await client.post(f"{self.api_url}/services/light/{service}", json=data,
                                      headers={"Authorization": f"Bearer {self.token}"})

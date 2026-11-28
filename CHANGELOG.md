@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.200.0 (28 Nov 2026)
+
+- `feat`: what somebody switches during a talk stays after it. Metin, 15:09: "wenn es abends ist und Leila die Lichter automatisch aktiviert? Bleiben die vorderen noch aktiv, wenn Leila nicht mehr redet", and 15:11: "Ist das auch möglich für die hinteren". Until now the lamp show put its lamps back to what they were before the talk, so a lamp an automation, the Home Assistant app or Leyla's own lamp tool switched in the middle of a talk was undone at its end.
+- Home Assistant reports every light service call (`messages.listen` now also follows `call_service`); `LampShow.outside` takes a call that is not one of the show's own and touches a lamp of the show as the state to go back to (on with its strength and colour, off, or toggled). The show's own calls are known by their exact content, and a call with a colour the show sent is never taken for a wish.
+- Holds for all lamps of the show, which since today are all four floor lamps (option `lamp_show_lights`, set on his server at his wish; the default in `config.yaml` is still the two rear ones).
+- Not covered: a call that names an area, a device or a scene instead of the lamps.
+
 ## 2.199.1 (28 Nov 2026)
 
 - `fix`: when she comes to the TV, only she comes. Metin after the first talk with the live mouth ("Es läuft alles wunderbar flüssig"), 14:47: "wenn Leila ins Fernsehen kommt, die alten Bilder mit dem kurzen Kleid mal erscheint ... Wenn die Leila kommt, muss auch wirklich nur die Leila kommen und nichts davor." The add on opened the normal TV page first, which showed her other look for up to four seconds before it moved to the page on the PC.

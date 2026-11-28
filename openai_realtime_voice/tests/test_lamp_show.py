@@ -447,3 +447,86 @@ async def test_busy_while_a_failed_restore_is_tried_again_and_free_when_it_gave_
     assert show._pending and show.busy   # lamp a could not be switched off: tried again
     await asyncio.sleep(0.3)
     assert show._pending and not show.busy  # given up until the next talk: a plan need not wait
+
+
+# ---- 2.200.0: what somebody else switches during a show stays afterwards ----
+def _reported(monkeypatch, show):
+    """Like Home Assistant: every light call, also the show's own, comes back as a report."""
+    fake = show._service
+
+    async def service(name, data, timeout=None):
+        show._mine(name, data)
+        await fake(name, data, timeout)
+        show.outside(name, json.loads(json.dumps(data)))
+
+    monkeypatch.setattr(show, "_service", service)
+
+
+async def _talk(show):
+    await show.begin()
+    await asyncio.sleep(0.05)
+    show.phase("replying")
+    show.audio(5000)
+    await asyncio.sleep(0.05)
+
+
+async def test_the_reports_of_the_shows_own_calls_change_nothing(monkeypatch, tmp_path):
+    show, calls = _show(monkeypatch, tmp_path)
+    _reported(monkeypatch, show)
+    await _talk(show)
+    await show.end()
+    await asyncio.sleep(0.08)
+    assert show.lamps["light.a"]["state"] == "off"
+    b_on = [c for c in calls if c[0] == "turn_on" and c[1]["entity_id"] == "light.b"][-1]
+    assert b_on[1]["color_temp_kelvin"] == 6000 and b_on[1]["brightness"] == 180
+    assert not show._pending
+
+
+async def test_a_lamp_switched_on_by_an_automation_during_the_talk_stays_on(monkeypatch, tmp_path):
+    show, calls = _show(monkeypatch, tmp_path)
+    _reported(monkeypatch, show)
+    await _talk(show)
+    show.outside("turn_on", {"entity_id": ["light.a"], "brightness_pct": 50, "color_temp_kelvin": 3000})
+    show.audio(0)
+    await asyncio.sleep(0.05)
+    n = len(calls)
+    await show.end()
+    await asyncio.sleep(0.08)
+    after = calls[n:]
+    a = [c for c in after if c[1]["entity_id"] in ("light.a", ["light.a"])]
+    assert [c[0] for c in a] == ["turn_on"]                       # put back to the wish, and never switched off
+    assert a[0][1]["brightness"] == 128 and a[0][1]["color_temp_kelvin"] == 3000
+    b_on = [c for c in after if c[0] == "turn_on" and c[1]["entity_id"] == "light.b"][0]
+    assert b_on[1]["color_temp_kelvin"] == 6000 and b_on[1]["brightness"] == 180   # the other lamp as before the talk
+    assert show.lamps["light.a"]["state"] == "on" and not show._pending
+
+
+async def test_a_lamp_switched_off_or_toggled_during_the_talk_stays_that_way(monkeypatch, tmp_path):
+    show, calls = _show(monkeypatch, tmp_path)
+    _reported(monkeypatch, show)
+    await _talk(show)
+    show.outside("turn_off", {"entity_id": "light.b"})           # b was white before the talk
+    show.outside("toggle", {"entity_id": ["light.a", "light.elsewhere"]})   # a was off before: now wished on
+    await show.end()
+    await asyncio.sleep(0.08)
+    assert show.lamps["light.b"]["state"] == "off"
+    assert show.lamps["light.a"]["state"] == "on"
+    a_on = [c for c in calls if c[0] == "turn_on" and c[1]["entity_id"] == "light.a"][-1]
+    assert a_on[1]["brightness"] == 90 and a_on[1]["color_temp_kelvin"] == 2700    # the way it was last on
+
+
+async def test_a_look_of_the_show_is_never_taken_for_a_wish_and_nothing_counts_without_a_show(monkeypatch, tmp_path):
+    show, calls = _show(monkeypatch, tmp_path)
+    show.outside("turn_on", {"entity_id": ["light.a"], "brightness_pct": 50})      # no show: nothing to keep
+    assert not show._pending
+    _reported(monkeypatch, show)
+    await _talk(show)
+    look = dict([c for c in calls if c[0] == "turn_on" and "rgb_color" in c[1]][-1][1])
+    look["transition"] = 99                                       # the report differs from what was sent
+    show.outside("turn_on", look)
+    show.outside("turn_on", {"entity_id": ["light.other"], "brightness_pct": 10})  # not a lamp of the show
+    await show.end()
+    await asyncio.sleep(0.08)
+    assert show.lamps["light.a"]["state"] == "off"                # still back to before the talk
+    b_on = [c for c in calls if c[0] == "turn_on" and c[1]["entity_id"] == "light.b"][-1]
+    assert b_on[1]["color_temp_kelvin"] == 6000 and b_on[1]["brightness"] == 180
