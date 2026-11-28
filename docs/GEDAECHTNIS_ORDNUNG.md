@@ -114,6 +114,9 @@ Offen: ob 20 festgehaltene Einträge reichen.
 
 - Was darf in welchen Bereich, was nie (je Bereich zwei, drei Beispiele)?
 - Wie viel darf je Gespräch und je Chat eingetragen werden; was ergibt gar keinen Eintrag?
-- Ein Sachverhalt nur einmal: das Neue ersetzt das Alte. Wer entscheidet bei Widerspruch?
+- BESCHLOSSEN 16:50, Widersprüche: ein Sachverhalt steht nur einmal. Hört sie etwas Neues, das dem Alten widerspricht,
+  ändert sie nichts allein; sie macht ihn beim Aufräumen aufmerksam ("Bisher stand X, jetzt habe ich Y gehört, was
+  gilt?") und er entscheidet. Sein Wort: "Ja, das ist okay. Das quasi macht sie einen aufmerksam. Hey, das war so und
+  jetzt willst du es so."
 - Was darf sie allein eintragen, wofür braucht sie sein Ja?
 - Was passiert mit den vorhandenen Einträgen (umsortieren nur mit ihm).
