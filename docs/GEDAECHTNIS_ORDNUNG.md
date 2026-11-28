@@ -22,8 +22,12 @@ Einigung; gebaut wird erst, wenn sie fertig ist. Hintergrund und was schon gebau
 6. Technik zu Hause (was es an Geräten gibt; keine Schaltregeln, keine Termine)
 7. Planung oder Termine (z. B. der Abholtag der Mülltonne gehört hierher, nicht zur Technik; sein Wort 16:24)
 
+Beschlossen 16:26 zu Abgelaufenem: NICHTS verschwindet von selbst ("Nein, die sollen bleiben. Allerdings soll mich
+Leila darauf hinweisen, dass die da sind und was wir damit machen, wenn sie schon abgelaufen sind."). Ein Eintrag mit
+Datum, das vorbei ist, bleibt stehen; Leyla sagt ihm, dass er abgelaufen ist, und fragt, was damit geschehen soll
+(löschen, behalten, neues Datum). Ein eigener Bereich "Aktuelles" entfällt, Zeitliches steht in Planung.
+
 Vorgeschlagen von Claude, von ihm noch nicht entschieden:
-- Aktuelles (alles mit Ablaufdatum, verschwindet von selbst): eigener Bereich oder Teil von Planung?
 - Feste Befehle (Schaltregeln) als eigener Bereich in der App; die Seite ist gebaut, nicht installiert.
 
 ## Noch zu klären
