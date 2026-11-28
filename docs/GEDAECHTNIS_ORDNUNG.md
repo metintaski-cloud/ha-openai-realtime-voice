@@ -184,3 +184,45 @@ Um 17:01 sagte er, eine Zusammenfassung sei nicht nötig: "Wir sind durchgegange
   alte Schaltregeln, was nirgends hinpasst. Sein Wort: "Ja, okay. Aber wenn ich danach frage, sollte sie mir das
   vorlegen können und ich dann wieder entscheiden, löschen oder nicht." Also zusätzlich: auf seine Frage legt sie ihm
   jeden Bereich und jeden Eintrag vor (auch das von selbst Einsortierte), und er entscheidet je Punkt, ob es bleibt.
+
+## Bauplan (Stand 28.11.2026, 18:45; für die nächste Sitzung, falls diese endet)
+
+Stück 1 (Tagebuch) ist als 2.201.0 installiert (18:33). Was dort gebaut ist, steht im Changelog.
+WICHTIG beim Arbeiten im Ordner `openai_realtime_voice/`: Dateien dort mit Bash schreiben und lesen, nicht mit den
+Werkzeugen Write/Read/Edit; diese hängen jedes Mal die ganze `AGENTS.md` des Ordners an (sehr groß).
+
+Stück 2 (Bereiche und sauberer Schreiber), so entschieden beim Lesen des Programms:
+- Neue Listen in `memory.py`: `technik` (TECH) und `planung` (PLAN), beide offen wie `family`; in `KINDS`, `OPEN_KINDS`,
+  `SEEN_KINDS`, `instructions_block` ("TECHNIK ZU HAUSE", "PLANUNG UND TERMINE"), `memory_web.TITLES` (Namen neu:
+  "Familie", "Freunde", "Technik zu Hause", "Planung und Termine"), `chat.KINDS`. `todo_sync` spiegelt sie nicht
+  (dafür müssten in Home Assistant neue Listen angelegt werden).
+- Familie heißt jetzt: Metin, Mutter, Geschwister UND alle Verwandten. Das steht heute anders in `persona.py`
+  (Zeile "Familie heißt bei uns nur ..."), `chat.py` (Zeile "Zur Familie gehören nur ...") und im `SUMMARY_PROMPT`;
+  ein Test in `tests/test_smooth_audio.py` prüft den alten Satz.
+- Profil = nur Tatsachen. Die Felder Stimmung, Zuletzt, Offen und neue "Aktuell bis" Einträge schreibt der Schreiber
+  nicht mehr (Erlebtes steht im Tagebuch). Was davon schon dasteht, bleibt stehen und wird ein offener Punkt "unklar"
+  (er entscheidet). Die versteckte Liste bleibt, wie sie ist.
+- Widerspruch statt "davor:": `memory.keep_untouched` hängt heute bei geänderten Werten das Alte mit "davor:" an und
+  lässt bei geänderten freien Einträgen beide stehen. Neu: das Alte bleibt allein gültig, das Neue wird ein offener
+  Punkt "widerspruch"; nur reine Ergänzungen (`_keeps_all`, `_covered`) gehen durch.
+- Offene Punkte: `app/punkte.py` (`Points`, Datei `/data/leyla_punkte.json`, Arten neu, widerspruch, mensch, unklar,
+  abgelaufen). Der Schreiber meldet zusätzlich `unbekannte` (Namen ohne Wissen) und trägt sie nicht ein.
+- Prüfung im Programm nach dem Schreiber (`ordnung.py`): ein NEUER Eintrag in Familie oder Freunde, der kein
+  "Person:" Profil ist, wandert nach Technik (nennt ein Gerät) oder Planung (nennt Datum oder Wochentag), sonst wird
+  er ein offener Punkt und nicht eingetragen.
+- Einsortieren des Vorhandenen einmal beim Start (Merker in der Gedächtnisdatei): Geräte Sätze aus Familie nach
+  Technik, Sätze mit Datum oder Wochentag nach Planung, Verwandte aus Freunde nach Familie (Zugehörigkeit nennt
+  Nichte, Neffe, Onkel, Tante, Cousin, Schwager, Enkel ...), alles Wort für Wort. Alte Schaltregeln, Doppeltes und
+  was nirgends passt bleibt stehen und wird ein offener Punkt. "Aktuell bis" Einträge bleiben, wo sie sind (sie sind
+  persönlich und kommen erst, wenn klar ist, wer spricht).
+
+Stück 3 (Aufräumen im Gespräch): Werkzeug, das die offenen Punkte vorliest und je Punkt entscheidet (nur nach dem
+Codewort; in der App ist er es immer), einmal am Tag von sich aus fragen, alles durchgehen, bis er stoppt; Abgelaufenes
+(Planung mit Datum in der Vergangenheit, alte "Aktuell bis") als Punkt; Lücken in Profilen: eine Frage je Gespräch an
+den Menschen selbst, mehr bei gegenseitigem Fragen (heute schon: NOCH OFFEN in `instructions_block`, `ASK_FIELDS`).
+Das nächtliche Aufräumen (`cleanup.py`, Vorschläge aufs Handy) wird dadurch ersetzt oder damit verbunden.
+
+Stück 4 (Karton weg, schneller): `Diary._archive`, `archived`, `search` und `recall.py` auf das umstellen, was es noch
+gibt (30 Tage und Festgehaltenes), `nachdenken.py` schreibt den Tag, bevor er verblasst, `KEEP_DAYS` 400 auf 30, die
+Geschichte bleibt. Vorher messen, wie lange welche Frage heute dauert, dann den Umweg über das zweite Modell beim
+Nachschlagen sparen. Was mit dem vorhandenen Archiv geschieht: es wird beim Umstellen gelöscht (sein Beschluss 17:03).
