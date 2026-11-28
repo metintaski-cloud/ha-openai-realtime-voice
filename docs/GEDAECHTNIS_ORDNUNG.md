@@ -131,8 +131,17 @@ Auf dem Archiv, das nie verblasst, bauen heute `app/recall.py` (was ihr von selb
 Archiv Eintrag) und `app/nachdenken.py` (nachts: der Tag, "unsere Geschichte", offene Fäden; docs/LEYLA_SEELE.md).
 Sein Beschluss von 16:46 (kein Archiv von allem; dauerhaft nur, was Leyla ausmacht und die Bindung zur Familie und
 besonders zu ihm) heißt deshalb nicht einfach "Datei weg": "unsere Geschichte" ist genau diese Bindung und kann das
-sein, was an die Stelle des Archivs tritt, zusammen mit dem Festgehaltenen. Das ist ihm noch zu sagen und mit ihm zu
-klären, bevor am Archiv etwas geändert wird (was fällt ihr dann nach 30 Tagen noch von selbst ein?).
+sein, was an die Stelle des Archivs tritt, zusammen mit dem Festgehaltenen.
+
+BESCHLOSSEN 17:03, mit ihm geklärt (Bild für ihn: das Tagebuch sind einzelne Tage; das Archiv ist ein Karton mit einer
+Kopie jeder Seite für immer; "eure Geschichte" ist ein einziger Text, den sie jede Nacht ein Stück weiterschreibt, nur
+das Große): der Karton kommt weg, die Geschichte bleibt. Für immer bleiben also die Geschichte, das Festgehaltene und
+die Bereiche mit Tatsachen. Der Preis, ihm vorher gesagt: nach einem gewöhnlichen Tag ohne Schlüssel kann er nach
+Monaten nicht mehr fragen. Sein Wort: "Ah, das ist okay. Nach 4 Monaten weiß ich auch nicht mehr, was war." Damit
+gibt er seinen Wunsch von 2.123.0 auf (nichts soll nach Monaten verloren gehen); das ist seine bewusste Entscheidung.
+Beim Bauen zu lösen: was ihr von selbst einfällt (`recall.py`) sucht dann nur noch in dem, was es noch gibt (Tagebuch
+der letzten 30 Tage und Festgehaltenes); die nächtliche Geschichte wird aus dem Tag geschrieben, bevor er verblasst.
+Um 17:01 sagte er, eine Zusammenfassung sei nicht nötig: "Wir sind durchgegangen." Das Regelwerk gilt damit als geklärt.
 
 ## Einzelpunkte (erst offen, jetzt geklärt bis auf den letzten)
 
