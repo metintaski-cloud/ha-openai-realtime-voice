@@ -17,7 +17,7 @@ from typing import Optional
 
 import httpx
 
-from app import inbox as inbox_mod
+from app import ordnung, inbox as inbox_mod
 from app import mail, memory, metrics
 
 logger = logging.getLogger(__name__)
@@ -193,6 +193,8 @@ def valid_proposals(raw, lists: dict) -> list[dict]:
             continue
         if action == "add" and new in lists.get(kind, []):
             continue
+        if action in ("add", "edit") and ordnung.is_switch_rule(new) and new != old:
+            continue  # rules about switching devices are fixed commands, never text in a list (app/ordnung.py)
         if action == "edit" and memory.parse_profile(old) and memory.parse_profile(new):
             new = memory._merge_profile(old, new)  # no repeated "davor:" values on the card
         if action == "edit" and new == old:

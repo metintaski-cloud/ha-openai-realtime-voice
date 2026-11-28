@@ -29,7 +29,7 @@ import re
 import time
 from typing import Optional
 
-from app import textmodel
+from app import ordnung, textmodel
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +65,11 @@ FORGET_PHRASES = (
 SUMMARY_PROMPT = """Du pflegst das Gedächtnis von Leyla, der Sprachassistentin im Wohnzimmer einer
 Familie. Dort wohnen Metin und seine Mutter Gülfikar; gesprochen wird Deutsch oder Türkisch.
 Heute ist der {today}.
+
+Regeln zum Schalten von Geräten (welche Lampen, welches Licht, Ventilator, Fernseher, Saugroboter oder
+Luftreiniger bei welchem Satz an oder aus gehen, was "alle Lichter" heißt) trägst du NIE ein, auch nicht
+umformuliert, und vorhandene solche Einträge lässt du Wort für Wort stehen. Dafür gibt es feste Befehle im
+Programm; was du davon aufschreibst, wird verworfen.
 
 Es gibt fünf Listen:
 1. "family" (offen): nur die engste Familie, also Metin, seine Mutter Gülfikar und Metins
@@ -725,6 +730,8 @@ async def summarize(
                            "phrase; ignored", before - after)
             lists[FAMILY] = list(old.get(FAMILY, []))
             lists[FRIENDS] = list(old.get(FRIENDS, []))
+    # rules about switching devices never enter a list as text (app/ordnung.py); they are fixed commands
+    lists, _, _ = ordnung.keep_switch_rules_out(old, lists, (FAMILY, FRIENDS, PRIVATE, LEYLA))
     lists, undone = keep_untouched(old, lists, dialog, today, metin_known=unlocked_by_code)
     if undone:
         logger.info("Memory update: %d changes to entries not talked about undone", undone)
