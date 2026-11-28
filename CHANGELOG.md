@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.194.0 (28 Nov 2026)
+
+- `feat`: in a live talk from the app she can dance and do the other scenes of the stage when he asks. Metin, 00:48: "wenn ich ja Tanz sage, sie normalerweise getanzt hat. Und das ist jetzt leider nicht mehr der Fall. Können wir das noch irgendwie mit einpflegen?"
+  - Before: only the chat could start a scene (the answer of the chat model carries a `szene` field); a live talk had no way to the stage, so she could only say she dances.
+  - Now a live talk that comes from the app gets the function `buehne` (`heart.STAGE_TOOL`, scenes `tanz`, `zeigen`, `kuss`, `liebe`, `komm`, `setzen`; nothing that changes what she wears). The live voice hands his wish to her background, the background calls the function, her heart decides as in the chat (`mood.scene`), and the server sends `{"type":"scene","scene":...}` to the app, which plays it with `stageScene`. If she is not in the mood the result says so and she says it honestly; both hints forbid claiming a dance that is not confirmed.
+  - A talk from the Voice PE gets neither the function nor the hints (no stage there); `stage_gate` also turns the call away if it ever arrives without the app.
+- 840 tests (837 before).
+
 ## 2.193.0 (28 Nov 2026)
 
 - `feat`: a touch during a live talk is told to the talk itself, and she answers with her live voice. Metin, 00:19, after a live talk in which he touched her on the stage: her comment and the live talk "haben sich verschnitten ... Ist es möglich, dass wir diese Automatisation wegmachen und dass die Leyla tatsächlich spricht und genau weiß, was ich gemacht habe?"

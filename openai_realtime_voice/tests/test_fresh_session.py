@@ -87,7 +87,7 @@ class Home(talk_notes.TalkNotesMixin):
             raise RuntimeError("no connection")
         return self.new_conn, True
 
-    def _session_start(self, extra, start, history=None):
+    def _session_start(self, extra, start, history=None, stage=False):
         self.payloads.append((extra, start[0], history))
         start[1]["start_held"] = {}
         return {"session": {"instructions": "rules", "input": history}}

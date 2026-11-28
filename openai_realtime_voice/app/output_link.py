@@ -62,6 +62,14 @@ class OutputMixin:
                         logger.warning("Failed to send interrupt: %s", e)
                     continue
 
+                if isinstance(chunk, tuple) and chunk[0] == "scene":
+                    # her stage in the app during a live talk (2.194.0); the audio goes on
+                    try:
+                        await client_ws.send(json.dumps({"type": "scene", "scene": chunk[1]}))
+                    except Exception as e:
+                        logger.warning("Failed to send scene: %s", e)
+                    continue
+
                 if isinstance(chunk, tuple) and chunk[0] == "error":
                     await sender.pump(flush=True, force=True)
                     error_code = chunk[1]

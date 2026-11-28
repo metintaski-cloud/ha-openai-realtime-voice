@@ -93,6 +93,20 @@ class ToolLinkMixin:
                                          bool(args.get("_privat_ok")))
             return {"erinnerung": note.strip()}
 
+        def stage_gate(args, state):  # only where he sees her: a live talk from the app
+            if not state.get("from_app") or state.get("output_queue") is None:
+                return {"szene": "", "hinweis": "Die Bühne sieht Metin nur in seiner App; hier gibt es keine."}
+            args["_queue"] = state["output_queue"]
+
+        async def stage_run(args):
+            queue = args.pop("_queue", None)
+            wanted = str(args.get("szene", ""))
+            scene = self.mood.scene(wanted) if wanted in heart.STAGE_SCENES else ""
+            if scene and queue is not None:
+                await queue.put(("scene", scene))
+            return {"szene": scene, "hinweis": ("Sie tut es jetzt auf der Bühne." if scene else
+                                                "Ihr ist gerade nicht danach, sie tut es nicht.")}
+
         def mood_after(args, result):
             if self.lamp.mood_low is not None:  # only in a talk in which the lamps show her mood
                 self.lamp.set_mood(self.mood.is_low())
@@ -170,6 +184,10 @@ class ToolLinkMixin:
                 "label": "Mood", "timeout": 5.0, "run": self.mood.run, "gate": mood_gate,
                 "after": mood_after, "error": "Das ging gerade nicht.",
                 "log": lambda a, r: f"{a.get('aktion')} -> " + str(r.get("stimmung", r.get("error", "")))[:40]},
+            heart.STAGE_TOOL["name"]: {
+                "label": "Stage", "timeout": 5.0, "run": stage_run, "gate": stage_gate,
+                "error": "Das ging gerade nicht.",
+                "log": lambda a, r: f"{a.get('szene')} -> " + (r.get("szene") or "not in the mood")},
             diary.MERKEN_TOOL["name"]: {
                 "label": "Remember", "timeout": 5.0, "run": remember_run, "gate": remember_gate,
                 "error": "Das konnte ich mir gerade nicht merken.",

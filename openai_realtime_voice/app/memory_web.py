@@ -1191,6 +1191,7 @@ async function liveStart(){if(LIVE)return;const box=document.getElementById('liv
    if(m.type==='ready'){L.ready=true;mark('ready');liveStat('Leyla hört zu');}
    else if(m.type==='phase'){liveStat(m.phase==='replying'?'Leyla spricht':m.phase==='searching'?'Leyla sucht ...':'Leyla denkt ...',m.phase==='replying');}
    else if(m.type==='interrupt'){L.srcs.forEach(s=>{try{s.stop();}catch(_){}});L.srcs=[];L.playT=ctx.currentTime;liveStat('Leyla hört zu');}
+   else if(m.type==='scene'){if(m.scene)stageScene(String(m.scene));}  /* 2.194.0: asked in the live talk to dance or for another scene, her heart said yes */
    else if(m.type==='disconnect'||m.type==='error'){liveStop();}
    return;}
   const pcm=new Int16Array(e.data);if(!pcm.length)return;const buf=ctx.createBuffer(1,pcm.length,24000);const ch=buf.getChannelData(0);

@@ -245,6 +245,42 @@ MOOD_BACKEND_HINT = (
 )
 
 
+# The stage of the app in a live talk (2.194.0). Metin, 28 Nov 2026, 00:48: "wenn ich ja Tanz sage, sie
+# normalerweise getanzt hat. Und das ist jetzt leider nicht mehr der Fall" (in the chat the model writes a
+# szene field; a live talk had no way to the stage). Her level decides as everywhere (SCENES).
+STAGE_SCENES = ("tanz", "zeigen", "kuss", "liebe", "komm", "setzen")
+STAGE_TOOL = {
+    "type": "function",
+    "name": "buehne",
+    "description": (
+        "Start a scene on Leyla's stage in Metin's app during this live talk: tanz (she dances), "
+        "zeigen (she shows herself), kuss, liebe (an I love you), komm (komm her), setzen (she sits "
+        "down). Her heart decides: the result says whether she does it (szene filled) or is not in "
+        "the mood (szene empty)."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {"szene": {"type": "string", "enum": list(STAGE_SCENES)}},
+        "required": ["szene"],
+        "additionalProperties": False,
+    },
+}
+STAGE_BACKEND_HINT = (
+    " Bühne (buehne): in this talk Metin sees Leyla on the stage of his app. When the live voice "
+    "hands over that he asks her to dance, to show herself, for a kiss, an I love you, to come "
+    "closer or to sit down, call buehne with that word. If szene in the result is filled she is "
+    "doing it now on the stage: answer with one short spoken sentence that fits. If it is empty "
+    "she is not in the mood: say so kindly and honestly, and never claim she dances or does it. "
+    "Kiss, come closer and I love you only when he asks for them himself."
+)
+STAGE_LIVE_HINT = (
+    "\n\nIn diesem Gespräch sieht Metin dich auf der Bühne seiner App. Bittet er dich zu tanzen, "
+    "dich zu zeigen, um einen Kuss, ein I love you, oder sagt er komm her oder setz dich, gibst du "
+    "das sofort an deinen Hintergrund weiter: nur er kann die Szene auf der Bühne starten. Sag nie, "
+    "dass du tanzt oder es tust, bevor dein Hintergrund es bestätigt hat."
+)
+
+
 def week_shift(t: float) -> tuple:
     """The shift of the whole week of t (Monday to Sunday), also on its weekend."""
     lt = time.localtime(t)

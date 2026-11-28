@@ -385,7 +385,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                            "who": sorted(n for n in (state.get("identified") or ()) if n not in gone),
                            "weak": sorted(n for n in (state.get("weak_id") or ()) if n not in gone)}
 
-    def _session_start(self, extra: str = "", start=None, history=None, resumed: bool = False) -> dict:
+    def _session_start(self, extra: str = "", start=None, history=None, resumed: bool = False,
+                       stage: bool = False) -> dict:
         """Build the session.start payload for GPT Live. `start`: the items of a live talk
         from the app (talk_notes._app_start) and the state they are reported in; they go into
         the instructions and the startup input, so she knows them from the first moment.
@@ -402,6 +403,10 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                 backend_instructions += hint
                 devices.append(what)
         live_extra = self.messages.live_hint() if self.messages.available else ""
+        if stage and hasattr(self.mood, "scene"):  # a live talk from the app: he sees her stage (2.194.0)
+            tools.append(heart.STAGE_TOOL)
+            backend_instructions += heart.STAGE_BACKEND_HINT
+            live_extra += heart.STAGE_LIVE_HINT
         self._devices = (devices, self.fan.available, self.tv.available,
                          self.messages.available)
         instructions = (self._instructions_with_memory() + live_extra
@@ -1323,7 +1328,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
                             len(went_on["who"]))
             if items:
                 start = (items, state)
-        await live_ws.send(json.dumps(self._session_start(extra, start, history, resumed=bool(went_on))))
+        await live_ws.send(json.dumps(self._session_start(extra, start, history, resumed=bool(went_on),
+                                                          stage=bool(state and state.get("from_app")))))
         loop = asyncio.get_event_loop()
         deadline = loop.time() + timeout
         while True:
@@ -2087,6 +2093,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         output_queue: asyncio.Queue = asyncio.Queue()
         state: dict = {
             "from_app": bool(app),  # started by a tap in the app, not by the wake word
+            "output_queue": output_queue,  # for what a tool sends to the app (the stage, 2.194.0)
             "client_id": client_id,
             "closing": False,
             "fatal": False,

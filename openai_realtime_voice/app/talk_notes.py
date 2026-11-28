@@ -380,7 +380,8 @@ class TalkNotesMixin:
             turns = len(state.get("dialog", []))
             payload = self._session_start(state.get("context_extra", ""), (items, report),
                                           history=self._history(
-                                              list(state.get("resume_dialog") or []) + state.get("dialog", [])))
+                                              list(state.get("resume_dialog") or []) + state.get("dialog", [])),
+                                          stage=bool(state.get("from_app")))
             ws = None
             try:
                 ws, _ = await self._take_live()
