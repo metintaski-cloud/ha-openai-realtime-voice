@@ -118,5 +118,8 @@ Offen: ob 20 festgehaltene Einträge reichen.
   ändert sie nichts allein; sie macht ihn beim Aufräumen aufmerksam ("Bisher stand X, jetzt habe ich Y gehört, was
   gilt?") und er entscheidet. Sein Wort: "Ja, das ist okay. Das quasi macht sie einen aufmerksam. Hey, das war so und
   jetzt willst du es so."
+  Seine Zwischenfrage 16:51 (ob das Alte gelöscht wird oder beide stehen bleiben), ihm so beantwortet: bis zu seiner
+  Entscheidung gilt das Alte weiter, das Neue wartet als offener Punkt und steht nicht in der Liste. Nach seiner
+  Entscheidung bleibt genau eines stehen, das andere ist weg. Beide nebeneinander gibt es nie.
 - Was darf sie allein eintragen, wofür braucht sie sein Ja?
 - Was passiert mit den vorhandenen Einträgen (umsortieren nur mit ihm).
