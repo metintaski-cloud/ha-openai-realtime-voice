@@ -273,6 +273,18 @@ Von Claude eingesetzt (Startseite von Kling, Video Generation, Kling 4.0, Keyfra
 
 **Lehre (Tatsache, drei von drei Fassungen dieser Szene: 1610, 1816, 628):** sobald sie ihm den Rücken zudreht, ist das Gesicht aus dem Bild; kommt es beim Schulterblick zurück, baut Kling es neu und setzt ihr die Brille der Arbeitsbilder auf. Der Satz "She never wears glasses" im Text hat das nicht verhindert. Nachgeschlagen am 27.11.2026: Kling hat für Ausschlüsse ein eigenes Feld Negative Prompt neben dem Text (seit Kling 3.0 auch bei Bild zu Video; Quellen: kling.ai/blog/kling-ai-negative-prompts-fix-video-distortion, invideo.io FAQ vom 27.07.2026); ob die Keyframes Eingabe von Kling 4.0 das Feld zeigt, ist noch nicht geprüft (er hatte den Clip in der Großansicht offen, deshalb kein Klick). Für den nächsten Versuch: das Wort "glasses" aus dem Text nehmen und, falls vorhanden, ins Negative Feld setzen; und das Gesicht nie ganz aus dem Bild drehen lassen (Dreivierteldrehung, wie beim gelungenen Po 2), wenn er damit einverstanden ist.
 
+## Wohnzimmer Look für den Fernseher (28.11.2026)
+
+Wofür: ein eigener Look nur für den Fernseher im Wohnzimmer, für die Familie und Anne (Metin, 03:19: "Ich möchte ins Wohnzimmer für Anne neues Bild nehmen und Leyla Fokus. Mund reden und logische Mimik ... zeigt ihr gestreckte Hand mit Finger zum Ventilator oder Stehlampe oder Alltags Körpersprache"). Startbild von ihm um 04:02 gewählt ("Die nehmen wir."): `file_00000000359481f487dcfaf80b907f54.png`, Querformat 1672 mal 941: langes altrosa Kleid mit Tuch und Goldstickerei, ganze Figur in der Mitte, Hände vor dem Körper zusammengelegt (das ist hier die Grundpose, jede Szene endet so), Pavillon mit Säulen, Laternen, Wasserfällen, nassem Boden, blauer Nebel links, lila Nebel rechts. Kamera: um 04:04 ausdrücklich gewünscht ("Ja Kamera ist sogar gewünscht, da kann man vieles mit machen"); beim Reden soll sie an Leyla heranfahren, weil ihr Gesicht in der Totale klein ist.
+
+Anders als in allen anderen Looks: das Gegenüber ist die Familie ("them"), nicht "him"; warm, freundlich, respektvoll, schüchtern, nichts Verliebtes.
+
+**Clip 1, Begrüßung (Metin wählte um 04:06 aus drei Vorschlägen "Ruhige Kamera, sie winkt"; die anderen waren: Kamera fährt heran, und: sie kommt zwei Schritte näher).** Nach dem Baukasten, ruhige Fassung, Start und Endbild sein Bild:
+
+"0–2s: Happy to see them, she lifts her gaze with a warm, shy smile and gently sways from one side to the other. 2–5s: She lets her hands part and gives a sweet, gentle wave with one hand, tilting her head a little as her weight shifts softly. 5–8s: Touched, she lays her hand on her heart and bows her head slightly with a bashful smile, her dress swaying softly as she shifts her weight. 8–10s: She looks back at them with bright, kind eyes, brings her hands together again and returns to her initial pose. Soft, feminine, natural body movements. Both feet remain in place. Sweet, shy, warm and respectful body language. Static camera, full body visible, unchanged background."
+
+Ihm um 04:08 auf Deutsch gesagt. Noch nicht gelaufen: das Bild muss er zuerst selbst in Kling hochladen und als Favorit markieren (Hochladen braucht seine Hand). Einstellungen: 4K, 10 s, 350 Credits, Start und Endbild dasselbe Bild. Beim Ergebnis ansehen: ob Kling das Wasser und die Laternen bewegt oder einfriert (im Text steht wie immer "unchanged background").
+
 ## Beobachtungen über Kling (Tatsachen, keine Schreibregeln)
 
 - Wird eine Geste in Gelenkbewegungen zerlegt oder abgezählt wiederholt, führt Kling sie wie eine Liste aus: Flattern, Klappen im Handgelenk oder eine einzige Zeitlupe (Clips 169, 181, 226).
