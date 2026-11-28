@@ -235,4 +235,10 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    if "--live" in sys.argv:  # die Werkstatt startet immer probe.py; mit --live laeuft die Live Messung (live.py)
+        sys.argv.remove("--live")
+        import runpy
+        runpy.run_path(str(Path(__file__).with_name("live.py")), run_name="__main__")
+    else:
+        main()
