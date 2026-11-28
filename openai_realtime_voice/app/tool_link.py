@@ -89,6 +89,13 @@ class ToolLinkMixin:
                                      ask_at=diary.event_time(args.get("datum"), args.get("uhrzeit")))
             return {"ok": ok}
 
+        def key_gate(args, state):  # the diary and its keys are Metin's, behind the code word
+            if not self._only_metin(state):
+                return metin_error("Das Tagebuch und seine Schlüssel verwaltet")
+
+        async def key_run(args):
+            return self.diary.key_run(args)
+
         async def recall_run(args):  # same speaker logic as merken (remember_gate)
             note = await self.recall.ask(args.get("suche", ""), args.get("_wer", ""),
                                          bool(args.get("_privat_ok")))
@@ -199,6 +206,12 @@ class ToolLinkMixin:
                 "label": "Remember", "timeout": 5.0, "run": remember_run, "gate": remember_gate,
                 "error": "Das konnte ich mir gerade nicht merken.",
                 "log": lambda a, r: ("ok " if r.get("ok") else "no ") + (a.get("_wer") or "unknown")},
+            diary.KEY_TOOL["name"]: {
+                "label": "Diary keys", "timeout": 5.0, "run": key_run, "gate": key_gate,
+                "error": "An das Tagebuch komme ich gerade nicht heran.",
+                "log": lambda a, r: f"{a.get('aktion')} -> " + (
+                    "error" if "error" in r else str(len(r["eintraege"])) + " listed" if "eintraege" in r
+                    else str({k: v for k, v in r.items() if isinstance(v, int)}))},
             diary.ERINNERN_TOOL["name"]: {
                 "label": "Recall", "timeout": 8.0, "run": recall_run, "gate": remember_gate,
                 "error": "Daran komme ich gerade nicht heran.",

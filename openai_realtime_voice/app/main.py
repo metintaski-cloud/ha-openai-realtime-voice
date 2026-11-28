@@ -359,6 +359,10 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
              "in deinem ganzen Gedächtnis nachschlagen, auch Monate zurück"),
             (self.enable_memory, diary.MERKEN_TOOL, diary.MERKEN_BACKEND_HINT,
              "dir sofort merken, was dir jemand Wichtiges erzählt (Pläne, Termine, Wünsche)"),
+            (self.enable_memory and bool(self.code_phrase), diary.KEY_TOOL, diary.KEY_BACKEND_HINT,
+             "mit Metin dein Tagebuch durchgehen: die festgehaltenen Erinnerungen nennen, eine "
+             "festhalten, ihr Schloss wieder öffnen oder sie löschen (nur Metin, nach dem "
+             "Codewort, und nur auf sein Wort)"),
             (self.reminders.available, reminders.OK_TOOL, reminders.OK_BACKEND_HINT,
              "Termin Erinnerungen beenden, wenn Metin OK sagt"),
             (bool(self.code_phrase), FEELINGS.MOOD_TOOL, FEELINGS.MOOD_BACKEND_HINT,

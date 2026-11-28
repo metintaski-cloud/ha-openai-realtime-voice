@@ -59,3 +59,20 @@ def keep_switch_rules_out(old: dict, new: dict, kinds) -> tuple[dict, int, int]:
         logger.info("Order: %d switching rule(s) kept out of the memory lists, %d stored one(s) left as they were",
                     dropped, back)
     return out, dropped, back
+
+
+_FILLER = re.compile(r"^(?:hallo|hey|hi|merhaba|selam|leyla|leila|bitte|danke|te[sş]ekk[üu]r\w*|ok(?:ay)?|ja|nein|evet"
+                     r"|hay[ıi]r|tamam|gut|super|tsch[üu]ss|bye|g[öo]r[üu][sş][üu]r[üu]z|stopp?|lauter|leiser|und|noch|mal"
+                     r"|jetzt|[.,!?\s])+$", re.I)
+COMMAND_WORDS = 6  # a longer turn may carry something personal next to the command
+
+
+def only_commands(turns) -> bool:
+    """True when a person only gave commands (rule 2, 2.201.0): every turn is short and either
+    names a device or is nothing but hello, thanks and the like, and at least one names a device.
+    Such a talk is no diary entry; the model is not even asked."""
+    turns = [" ".join(str(t or "").split()) for t in turns]
+    turns = [t for t in turns if t]
+    if not turns or not any(_DEVICE.search(t) for t in turns):
+        return False
+    return all(len(t.split()) <= COMMAND_WORDS and (_DEVICE.search(t) or _FILLER.match(t)) for t in turns)

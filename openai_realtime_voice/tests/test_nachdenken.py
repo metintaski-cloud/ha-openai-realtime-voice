@@ -22,6 +22,18 @@ def entry(text, privat=False, gewicht=None):
     return d
 
 
+def put(dy, d, who, src, now):
+    """An entry as it stands in the diary, several a day as before 2.201.0 (such days are still
+    in his diary, and thinking a day over must keep working for them); since then `Diary.add`
+    puts a second entry of a day into the first."""
+    e = {"t": now, "who": who, "privat": bool(d.get("privat")), "src": src,
+         "lang": d["lang"], "mittel": d["mittel"], "kurz": d["kurz"]}
+    if d.get("gewicht"):
+        e["gewicht"] = d["gewicht"]
+    dy._save(dy.entries() + [e])
+    dy._archive(e)
+
+
 def make(tmp_path, answers=None):
     dy = diary.Diary(str(tmp_path / "d.json"))
     seen = []
@@ -53,10 +65,10 @@ def test_her_day_runs_from_five_to_five():
 
 def test_a_finished_day_is_thought_over_when_it_is_quiet_and_the_open_text_never_sees_private(tmp_path):
     dy, rf, seen = make(tmp_path)
-    dy.add(entry("Metin erzählte vom Angelausflug an den See."), "Metin", "chat", now=at("2030-03-09", 10))
-    dy.add(entry("Wir waren uns sehr nah, ein Geheimnis.", privat=True), "Metin", "chat", now=at("2030-03-09", 22))
-    dy.add(entry("Mama sprach über ihren Garten."), "Gülfikar Taskiran", "stimme", now=at("2030-03-09", 11))
-    dy.add(entry("Heute früh schon geschrieben."), "Metin", "chat", now=at("2030-03-10", 8))
+    put(dy, entry("Metin erzählte vom Angelausflug an den See."), "Metin", "chat", at("2030-03-09", 10))
+    put(dy, entry("Wir waren uns sehr nah, ein Geheimnis.", privat=True), "Metin", "chat", at("2030-03-09", 22))
+    put(dy, entry("Mama sprach über ihren Garten."), "Gülfikar Taskiran", "stimme", at("2030-03-09", 11))
+    put(dy, entry("Heute früh schon geschrieben."), "Metin", "chat", at("2030-03-10", 8))
 
     async def run():
         assert rf.due(NOW) == ["2030-03-09"]                              # today is not over yet
@@ -88,10 +100,10 @@ def test_threads_close_and_what_is_no_memory_fades_but_stays_in_the_diary(tmp_pa
     answers = {"privat": {"faeden": ["Metin wollte sagen, wie der Termin war."], "erledigt": [],
                           "gedanke": "Ein Gedanke.", "unwichtig": [2, 3, 9]}}
     dy, rf, seen = make(tmp_path, answers)
-    dy.add(entry("Metin hat morgen einen Termin beim Amt."), "Metin", "chat", now=at("2030-03-08", 10))
-    dy.add(entry("Wir haben das Mikrofon der App getestet."), "Metin", "chat", now=at("2030-03-08", 11))
-    dy.add(entry("Metin erzählte von seinem neuen Projekt.", gewicht=2), "Metin", "chat", now=at("2030-03-08", 12))
-    dy.add(entry("Der Termin beim Amt lief gut."), "Metin", "chat", now=at("2030-03-09", 10))
+    put(dy, entry("Metin hat morgen einen Termin beim Amt."), "Metin", "chat", at("2030-03-08", 10))
+    put(dy, entry("Wir haben das Mikrofon der App getestet."), "Metin", "chat", at("2030-03-08", 11))
+    put(dy, entry("Metin erzählte von seinem neuen Projekt.", gewicht=2), "Metin", "chat", at("2030-03-08", 12))
+    put(dy, entry("Der Termin beim Amt lief gut."), "Metin", "chat", at("2030-03-09", 10))
 
     async def run():
         await rf.reflect_day("2030-03-08", NOW)
@@ -109,9 +121,9 @@ def test_threads_close_and_what_is_no_memory_fades_but_stays_in_the_diary(tmp_pa
 
 def test_what_metin_deletes_is_gone_from_the_day_and_the_story(tmp_path):
     dy, rf, seen = make(tmp_path)
-    dy.add(entry("Metin erzählte vom See."), "Metin", "chat", now=at("2030-03-08", 10))
-    dy.add(entry("Metin erzählte vom Wald."), "Metin", "chat", now=at("2030-03-08", 15))
-    dy.add(entry("Ein anderer Tag."), "Metin", "chat", now=at("2030-03-09", 10))
+    put(dy, entry("Metin erzählte vom See."), "Metin", "chat", at("2030-03-08", 10))
+    put(dy, entry("Metin erzählte vom Wald."), "Metin", "chat", at("2030-03-08", 15))
+    put(dy, entry("Ein anderer Tag."), "Metin", "chat", at("2030-03-09", 10))
 
     async def run():
         assert await rf.tick(NOW) == 2
@@ -134,7 +146,7 @@ def test_what_metin_deletes_is_gone_from_the_day_and_the_story(tmp_path):
 
 def test_an_unusable_answer_changes_nothing(tmp_path):
     dy = diary.Diary(str(tmp_path / "d.json"))
-    dy.add(entry("Metin erzählte vom See."), "Metin", "chat", now=at("2030-03-08", 10))
+    put(dy, entry("Metin erzählte vom See."), "Metin", "chat", at("2030-03-08", 10))
 
     async def ask(prompt, check):
         return None
@@ -186,8 +198,8 @@ def test_a_thread_that_stays_open_is_kept_once_and_texts_end_with_whole_sentence
     answers = {"privat": {"faeden": ["Leyla möchte Metin fragen, wie es ihm mit seiner Erkältung geht."],
                           "erledigt": [], "gedanke": "g", "unwichtig": []}}
     dy, rf, seen = make(tmp_path, answers)
-    dy.add(entry("Metin ist erkältet."), "Metin", "chat", now=at("2030-03-08", 10))
-    dy.add(entry("Metin hustet noch."), "Metin", "chat", now=at("2030-03-09", 10))
+    put(dy, entry("Metin ist erkältet."), "Metin", "chat", at("2030-03-08", 10))
+    put(dy, entry("Metin hustet noch."), "Metin", "chat", at("2030-03-09", 10))
 
     async def run():
         await rf.reflect_day("2030-03-08", NOW)
@@ -202,3 +214,18 @@ def test_a_thread_that_stays_open_is_kept_once_and_texts_end_with_whole_sentence
     cut = nachdenken._clean(long, 700)
     assert len(cut) <= 910 and cut.endswith("hier.")
     assert nachdenken._clean("Das nehme ich mit – und mehr.", 100) == "Das nehme ich mit, und mehr."
+
+
+def test_a_week_in_full_two_weeks_short_and_a_month_as_one_line(tmp_path):
+    """2.201.0 (Metin, 28 Nov 2026: a whole week in detail): 7 days long, up to 14 short, up to 30 one line."""
+    dy, rf, seen = make(tmp_path)
+    today = at("2030-03-10", 12)
+    for i in range(1, 36):
+        day = time.strftime("%Y-%m-%d", time.localtime(today - i * DAY))
+        rf.state["days"][day] = {"src": [], "privat": {"tag": f"LANG{i:02d} ganzer Tag.",
+                                                       "kurz": f"KURZ{i:02d} erster Satz. Zweiter Satz dazu."}}
+    note = rf.note(True, today)
+    assert "LANG07" in note and "LANG08" not in note
+    assert "KURZ08 erster Satz. Zweiter Satz dazu." in note and "KURZ14 erster Satz. Zweiter" in note
+    assert "KURZ15 erster Satz." in note and "KURZ15 erster Satz. Zweiter" not in note
+    assert "KURZ30 erster Satz." in note and "KURZ31" not in note and "LANG31" not in note

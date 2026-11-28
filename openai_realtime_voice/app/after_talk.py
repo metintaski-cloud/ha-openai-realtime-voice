@@ -67,7 +67,8 @@ class AfterTalkMixin:
             who.append("Metin")
         task = asyncio.create_task(self.diary.write(
             dialog, who, "stimme", self.openai_api_key, [self.memory_model, self.backend_model],
-            os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL)))
+            os.environ.get("OPENAI_RESPONSES_URL", memory.RESPONSES_URL),
+            private=bool(state.get("unlocked"))))
         self._memory_tasks.add(task)
         task.add_done_callback(self._memory_tasks.discard)
 

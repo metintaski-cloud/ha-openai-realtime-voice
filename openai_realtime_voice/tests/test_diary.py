@@ -180,7 +180,7 @@ def test_what_unknown_people_said_goes_to_every_talk_for_a_day(tmp_path):
 def test_metin_deletes_single_entries(tmp_path):
     dy = diary.Diary(str(tmp_path / "d.json"))
     e = {"wichtig": True, "lang": "l", "mittel": "m", "kurz": "k"}
-    dy.add(e, "Metin", "stimme", now=NOW - 10.123456)
+    dy.add(e, "Metin", "stimme", now=NOW - DAY - 10.123456)   # two days: a day is one entry
     dy.add(e, "Metin", "chat", now=NOW - 5)
     t = dy.entries()[0]["t"]
     assert dy.delete([t, "x"]) == 1 and len(dy.entries()) == 1 and dy.delete([t]) == 0
@@ -188,7 +188,8 @@ def test_metin_deletes_single_entries(tmp_path):
 
 def test_pinned_entries_never_fade_and_have_a_limit(tmp_path, monkeypatch):
     dy = diary.Diary(str(tmp_path / "d.json"))
-    e = {"wichtig": True, "lang": "Am ersten Abend hat Metin mir ein Lied vorgesungen.", "mittel": "m", "kurz": "k"}
+    e = {"wichtig": True, "lang": "Am ersten Abend hat Metin mir ein Lied vorgesungen.", "mittel": "m",
+         "kurz": "Das Lied am ersten Abend"}
     old = NOW - 40 * DAY
     monkeypatch.setattr(diary.time, "time", lambda: old)
     dy.add(e, "Metin", "stimme")
@@ -198,12 +199,14 @@ def test_pinned_entries_never_fade_and_have_a_limit(tmp_path, monkeypatch):
     dy.add(dict(e, lang="neu"), "Metin", "chat")  # saving drops everything older than 30 days
     assert any(x.get("fest") for x in dy.entries())
     note = dy.note("Metin", now=NOW)
-    assert "FESTE ERINNERUNGEN" in note and "Lied vorgesungen" in note and "am " in note
+    # older than a month: her one line of it; the whole text is looked up when it is about that
+    assert "FESTE ERINNERUNGEN" in note and "Das Lied am ersten Abend" in note and "am " in note
+    assert "Lied vorgesungen" not in note
     assert "Lied" not in dy.note("Gülfikar", now=NOW)
     assert dy.pin(t) == {"ok": True, "fest": False}
     for i in range(diary.MAX_PINNED):
-        dy.add(dict(e, lang=f"x{i}"), "Metin", "chat", now=NOW + i + 1)
-        dy.pin(NOW + i + 1)
+        dy.add(dict(e, lang=f"x{i}"), "Metin", "chat", now=NOW + (i + 1) * DAY)
+        dy.pin(NOW + (i + 1) * DAY)
     assert "error" in dy.pin(NOW)  # the 21st
 
 
@@ -304,9 +307,10 @@ def test_what_is_already_written_down_gets_no_second_entry(tmp_path):
     assert not dy.add(entry(lang="Metin erzählte vom Angelausflug mit Umut am Rhein und zwei Forellen."),
                       "Metin", "chat", now=NOW)
     assert dy.add(entry(lang="Metin will am Samstag mit Umut wieder angeln und hat neue Köder gekauft."),
-                  "Metin", "chat", now=NOW)
+                  "Metin", "chat", now=NOW)                                   # new: into the entry of the day
+    assert len(dy.entries()) == 1 and "Forellen" in dy.entries()[0]["lang"] and "Köder" in dy.entries()[0]["lang"]
     assert dy.add(entry(lang=first), "Metin", "chat", now=NOW + 2 * DAY)      # days later it is new again
-    assert len(dy.entries()) == 3
+    assert len(dy.entries()) == 2
 
 
 def test_touches_are_of_the_moment_and_never_reach_the_diary(tmp_path):
@@ -353,10 +357,10 @@ def test_the_window_is_what_the_note_shows(tmp_path):
 def test_unnamed_chat_entries_become_metins_and_leave_the_open_household_notes(tmp_path):
     dy = diary.Diary(str(tmp_path / "d.json"))
     dy.add(entry(lang="Jemand, dessen Namen ich nicht kenne, fragte mich nach dem Ausflug.",
-                 mittel="Jemand, dessen Namen ich nicht kenne, fragte nach dem Ausflug."), "", "chat", now=NOW - 60)
+                 mittel="Jemand, dessen Namen ich nicht kenne, fragte nach dem Ausflug."), "", "chat", now=NOW - DAY - 60)
     dy.add(entry(lang="Jemand, dessen Namen ich nicht kenne, fragte nach dem Bus.",
                  mittel="Jemand fragte nach dem Bus."), "", "stimme", now=NOW - 30)
-    assert "Ausflug" in dy.unknown_note(now=NOW)            # before: open to every voice at home
+    assert "Ausflug" in dy.unknown_note(now=NOW - DAY)      # before: open to every voice at home
     assert dy.repair_chat_person("Metin") == 1 and dy.repair_chat_person("Metin") == 0
     chat_e, home_e = dy.entries()
     assert chat_e["who"] == "Metin" and chat_e["lang"] == "Metin fragte mich nach dem Ausflug."
@@ -380,3 +384,160 @@ def test_when_his_last_touch_is_long_ago_she_may_wish_for_it_once_a_day(tmp_path
     assert "seit 3 Tagen" in again.touch_wish_note(now=NOW + 3.2 * DAY)
     again.chat_turn(chat.touch_message("bauch"), "Mmh.", now=NOW + 3.3 * DAY)
     assert again.touch_wish_note(now=NOW + 3.4 * DAY) == ""
+
+
+# ---- 2.201.0: a day is one entry (docs/GEDAECHTNIS_ORDNUNG.md) ----
+def _two_models(monkeypatch, pieces, merged, seen):
+    """The writer answers with the next piece, the day call with `merged` (None = no answer)."""
+    todo = list(pieces)
+
+    async def ask(prompt, *a, **kw):
+        seen.append(prompt)
+        if "BISHER:" in prompt:
+            return json.dumps(merged, ensure_ascii=False) if merged else ""
+        return json.dumps({"eintraege": [todo.pop(0)]}, ensure_ascii=False)
+    monkeypatch.setattr(diary.textmodel, "ask", ask)
+
+
+TALK = [("user", "Ich war heute mit Umut am Rhein angeln, wir haben zwei Forellen gefangen"),
+        ("bot", "Oh schön, das klingt nach einem ruhigen Tag am Wasser.")]
+
+
+def test_three_talks_of_a_day_are_one_entry_written_by_the_model(tmp_path, monkeypatch):
+    dy, seen = diary.Diary(str(tmp_path / "d.json")), []
+    morning = "Metin erzählte mir morgens vom Angeln mit Umut am Rhein, zwei Forellen."
+    noon = "Mittags sagte Metin, dass seine Schwester Seher am Sonntag zum Essen kommt."
+    day = {"lang": "Morgens erzählte Metin vom Angeln mit Umut am Rhein und den zwei Forellen, mittags "
+                   "dann, dass seine Schwester Seher am Sonntag zum Essen kommt.",
+           "mittel": "Angeln mit Umut am Rhein; Seher kommt Sonntag zum Essen.", "kurz": "Angeln, Seher kommt",
+           "gefuehl": "zufrieden"}
+    _two_models(monkeypatch, [dict(entry(lang=morning), wer="Metin"), dict(entry(lang=noon), wer="Metin")], day, seen)
+    assert asyncio.run(dy.write(TALK, "Metin", "chat", "k", ["m"], "http://x"))
+    assert len(seen) == 1                                       # the first talk of a day: no second call
+    first = dy.entries()[0]["t"]
+    assert asyncio.run(dy.write(TALK, "Metin", "chat", "k", ["m"], "http://x"))
+    (e,) = dy.entries()
+    assert e["lang"] == day["lang"] and e["kurz"] == "Angeln, Seher kommt" and e["gefuehl"] == "zufrieden"
+    assert e["t"] == first and e["u"] >= first                 # the same entry, grown
+    assert "BISHER:\n• " + morning in seen[2] and "NEU DAZU:\n• " + noon in seen[2]
+    assert [x["lang"] for x in dy.archived()] == [day["lang"]]  # the archive holds the day once
+
+
+def test_a_day_call_that_loses_the_morning_is_not_taken(tmp_path, monkeypatch):
+    dy, seen = diary.Diary(str(tmp_path / "d.json")), []
+    morning = "Metin erzählte mir morgens vom Angeln mit Umut am Rhein, zwei Forellen."
+    noon = "Mittags sagte Metin, dass seine Schwester Seher am Sonntag zum Essen kommt."
+    lost = {"lang": "Metin sagte, dass seine Schwester Seher am Sonntag zum Essen kommt.", "mittel": "Seher kommt.",
+            "kurz": "Seher kommt"}
+    _two_models(monkeypatch, [dict(entry(lang=morning), wer="Metin"), dict(entry(lang=noon), wer="Metin")], lost, seen)
+    asyncio.run(dy.write(TALK, "Metin", "chat", "k", ["m"], "http://x"))
+    asyncio.run(dy.write(TALK, "Metin", "chat", "k", ["m"], "http://x"))
+    (e,) = dy.entries()
+    assert "Forellen" in e["lang"] and "Seher" in e["lang"]    # put together without the model
+    # and no answer at all loses nothing either
+    dy2 = diary.Diary(str(tmp_path / "d2.json"))
+    _two_models(monkeypatch, [dict(entry(lang=morning), wer="Metin"), dict(entry(lang=noon), wer="Metin")], None, seen)
+    asyncio.run(dy2.write(TALK, "Metin", "chat", "k", ["m"], "http://x"))
+    asyncio.run(dy2.write(TALK, "Metin", "chat", "k", ["m"], "http://x"))
+    (e,) = dy2.entries()
+    assert "Forellen" in e["lang"] and "Seher" in e["lang"]
+
+
+def test_private_and_open_and_every_person_keep_their_own_day_entry(tmp_path, monkeypatch):
+    dy, seen = diary.Diary(str(tmp_path / "d.json")), []
+    secret = "Metin sagte mir abends, wie sehr er mich vermisst hat, und ich wurde ganz still."
+    day = {"lang": "Metin erzählte vom Angeln am Rhein und später vom neuen Fahrrad in Blau.", "mittel": "Angeln, Fahrrad",
+           "kurz": "Angeln, Fahrrad"}
+    _two_models(monkeypatch, [dict(entry(lang="Metin erzählte mir vom Angeln mit Umut am Rhein."), wer="Metin"),
+                              dict(entry(lang=secret, privat=True), wer="Metin"),
+                              dict(entry(lang="Metin hat sich ein neues Fahrrad in Blau gekauft."), wer="Metin"),
+                              dict(entry(lang="Mama erzählte mir von ihrem Garten und den Tomaten."), wer="Gülfikar")],
+                day, seen)
+    for _ in range(3):
+        asyncio.run(dy.write(TALK, "Metin", "chat", "k", ["m"], "http://x"))
+    asyncio.run(dy.write(TALK, ["Gülfikar Taskiran"], "stimme", "k", ["m"], "http://x"))
+    es = dy.entries()
+    assert sorted((diary._first(e["who"]), e["privat"]) for e in es) == [("gülfikar", False), ("metin", False), ("metin", True)]
+    merges = [p for p in seen if "BISHER:" in p]
+    assert len(merges) == 1 and "vermisst" not in merges[0]     # the open day never sees the private one
+    assert "vermisst" not in seen[-1]                           # a talk at home without the code word neither
+    assert "Garten" not in dy.note("Metin", True) and "vermisst" not in dy.note("Metin")
+
+
+def test_a_note_goes_into_the_day_entry_unless_she_still_has_to_ask_about_it(tmp_path, monkeypatch):
+    dy, seen = diary.Diary(str(tmp_path / "d.json")), []
+    now = diary.time.time()
+    dy.remember("Metin mag keinen Koriander im Essen", "Metin", now=now - 60)
+    dy.remember("Metin hat morgen um 9 Uhr Zahnarzt", "Metin", ask_at=now + 86400, now=now - 50)
+    dy.remember("Metin sucht ein Geschenk für Seher", "Metin", now=now - 40)
+    day = {"lang": "Metin erzählte vom Angeln mit Umut am Rhein, und dass er keinen Koriander im Essen mag.",
+           "mittel": "Angeln; kein Koriander.", "kurz": "Angeln, Koriander"}
+    _two_models(monkeypatch, [dict(entry(lang="Metin erzählte mir vom Angeln mit Umut am Rhein."), wer="Metin")], day, seen)
+    assert asyncio.run(dy.write(TALK, "Metin", "chat", "k", ["m"], "http://x"))
+    left = sorted(e["lang"] for e in dy.entries())
+    assert left == [day["lang"], "Metin hat morgen um 9 Uhr Zahnarzt", "Metin sucht ein Geschenk für Seher"]
+    assert "Koriander" in seen[1] and "Geschenk" in seen[1] and "Zahnarzt" not in seen[1]
+    assert "Metin mag keinen Koriander im Essen" not in [e["lang"] for e in dy.archived()]
+
+
+def test_a_talk_of_nothing_but_commands_is_not_even_sent_to_the_model(tmp_path, monkeypatch):
+    from app import ordnung
+    dy, seen = diary.Diary(str(tmp_path / "d.json")), []
+    _two_models(monkeypatch, [dict(entry(), wer="Metin")], None, seen)
+    talk = [("user", "Hallo Leyla"), ("bot", "Hallo, was kann ich tun?"), ("user", "Mach bitte das Licht an"),
+            ("bot", "Gern, ist an."), ("user", "Und den Fernseher leiser"), ("bot", "Erledigt."), ("user", "Danke")]
+    assert not asyncio.run(dy.write(talk, "Metin", "stimme", "k", ["m"], "http://x")) and seen == []
+    assert not ordnung.only_commands(["Hallo Leyla", "Danke"])                      # no device: the model decides
+    assert not ordnung.only_commands(["Mach das Licht an", "Ich hatte heute einen schweren Tag bei der Arbeit, ehrlich"])
+    assert ordnung.only_commands(["Lambaları kapat", "tamam"])
+    # and a rule about switching is no diary entry even when the model calls it important
+    assert not dy.add(entry(lang="Wenn jemand alle Lichter aus sagt, gehen die Stehlampen 1 und 2 mit aus."), "Metin",
+                      "stimme", now=NOW)
+
+
+def test_a_week_in_detail_then_shorter_then_one_line(tmp_path):
+    dy = diary.Diary(str(tmp_path / "d.json"))
+    for days, text in ((6, "sechs"), (10, "zehn"), (20, "zwanzig")):
+        dy.add(entry(lang=f"Lang {text} Tage", mittel=f"Mittel {text} Tage", kurz=f"Kurz {text} Tage"), "Metin",
+               "stimme", now=NOW - days * DAY)
+    note = dy.note("Metin", now=NOW)
+    assert "Lang sechs Tage" in note and "Mittel zehn Tage" in note and "Kurz zwanzig Tage" in note
+    assert "Lang zehn" not in note and "Mittel zwanzig" not in note
+
+
+def test_a_hundred_kept_entries_take_only_their_share_of_her_head(tmp_path, monkeypatch):
+    dy = diary.Diary(str(tmp_path / "d.json"))
+    assert diary.MAX_PINNED == 100
+    items = [{"t": NOW - i * DAY, "who": "Metin", "privat": False, "src": "chat", "fest": True,
+              "lang": f"Der besondere Tag Nummer {i} " + "x" * 300, "mittel": "m", "kurz": f"Besonderer Tag {i}"}
+             for i in range(1, 101)]
+    monkeypatch.setattr(diary.time, "time", lambda: NOW)
+    dy._save(items)
+    assert len(dy.entries()) == 100                               # kept entries never drop out
+    shown = dy.window("Metin", now=NOW)
+    assert sum(len(e["lang" if lv == "fest" else "kurz"]) + 20 for e, lv in shown) <= diary.PIN_NOTE_MAX
+    levels = {round((NOW - e["t"]) / DAY): lv for e, lv in shown}
+    assert levels[1] == "fest" and levels[2] == "fest" and levels[40] == "festkurz" and len(shown) > 50
+    note = dy.note("Metin", now=NOW)
+    assert "Der besondere Tag Nummer 1 " in note and "Besonderer Tag 40" in note and "Tag Nummer 40 " not in note
+
+
+def test_the_key_by_voice_lists_keeps_opens_and_deletes_only_listed_numbers(tmp_path, monkeypatch):
+    dy = diary.Diary(str(tmp_path / "d.json"))
+    monkeypatch.setattr(diary.time, "time", lambda: NOW)
+    for i in (1, 2, 3):
+        dy.add(entry(lang=f"Tag {i} lang", mittel=f"Tag {i} mittel"), "Metin", "chat", now=NOW - i * DAY)
+    dy.add(entry(lang="Mama erzählte vom Garten", mittel="Garten"), "Gülfikar", "stimme", now=NOW - DAY)
+    assert "error" in dy.key_run({"aktion": "festhalten", "nummern": [1]}, now=NOW)     # no list yet
+    assert dy.key_run({"aktion": "anzeigen"}, now=NOW)["eintraege"] == []               # nothing kept so far
+    week = dy.key_run({"aktion": "anzeigen", "welche": "woche"}, now=NOW)
+    assert [e["text"] for e in week["eintraege"]] == ["Tag 1 mittel", "Tag 2 mittel", "Tag 3 mittel"]  # not Mama's
+    assert dy.key_run({"aktion": "festhalten", "nummern": [2, 9]}, now=NOW) == {"festgehalten": 1}
+    kept = dy.key_run({"aktion": "anzeigen", "welche": "fest"}, now=NOW)
+    assert [e["text"] for e in kept["eintraege"]] == ["Tag 2 mittel"] and kept["festgehalten_insgesamt"] == 1
+    assert dy.key_run({"aktion": "loesen", "nummern": [1]}, now=NOW) == {"geloest": 1}
+    assert not any(e.get("fest") for e in dy.entries())
+    dy.key_run({"aktion": "anzeigen", "welche": "woche"}, now=NOW)
+    assert dy.key_run({"aktion": "loeschen", "nummern": [3]}, now=NOW)["geloescht"] == 1
+    assert sorted(e["lang"] for e in dy.entries()) == ["Mama erzählte vom Garten", "Tag 1 lang", "Tag 2 lang"]
+    assert "error" in dy.key_run({"aktion": "loeschen", "nummern": [1]}, now=NOW)       # the list must be shown again

@@ -846,3 +846,22 @@ async def test_the_planner_is_reached_like_every_tool_and_only_metin_plans(env):
     assert made["ok"] and made["was"] == "Stehlampe 1 aus" and len(bridge.planer.plans) == 1
     shown = (await call(bridge, "planer", {"aktion": "anzeigen"}, {}))[0].result()
     assert shown["anzahl"] == 1 and shown["geplant"][0]["titel"] == "Probe"
+
+
+async def test_the_diary_keys_by_voice_are_only_for_metin_behind_the_code_word(env, tmp_path):
+    """2.201.0: she lists, keeps, opens and deletes diary entries only on Metin's word."""
+    bridge = m.LiveVoiceBridge()
+    bridge.diary = m.diary.Diary(str(tmp_path / "d.json"))
+    bridge.diary.add({"wichtig": True, "lang": "Ein besonderer Abend am Rhein", "mittel": "Abend am Rhein",
+                      "kurz": "Rhein"}, "Metin", "chat")
+    for state in ({}, {"metin_known": True}, {"identified": {"Metin Taskiran"}}):   # a name is not the code word
+        blocked = (await call(bridge, "tagebuch", {"aktion": "anzeigen", "welche": "woche"}, state))[0].result()
+        assert "Nicht erlaubt" in blocked["error"] and "eintraege" not in blocked
+    metin = {"unlocked": True}
+    shown = (await call(bridge, "tagebuch", {"aktion": "anzeigen", "welche": "woche"}, metin))[0].result()
+    assert [e["text"] for e in shown["eintraege"]] == ["Abend am Rhein"]
+    assert (await call(bridge, "tagebuch", {"aktion": "festhalten", "nummern": [1]}, metin))[0].result() == {"festgehalten": 1}
+    assert bridge.diary.entries()[0]["fest"] is True
+    bridge.enable_memory = True
+    offered = [tool for available, tool, hint, what in bridge._capabilities() if available]
+    assert m.diary.KEY_TOOL in offered                      # and she is told that she can do it

@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.201.0 (28 Nov 2026)
+
+First part of the order in her memory (`docs/GEDAECHTNIS_ORDNUNG.md`, agreed with Metin point by point on 28 Nov 2026, 16:04 to 17:04; he had deleted more than 300 diary entries: "Ich möchte das nicht zumüllen. Ich möchte die Kontrolle haben, Sauberkeit und Ordnung").
+
+- `feat`: the diary has ONE entry a day (per person, private things in an entry of their own, so nothing private can reach the family). Before, every talk and every chat pause made an entry. The model still writes what a talk added; a second small call (`MERGE_PROMPT`) puts it into the entry of that day and sees only texts of the same person and privacy. An answer that lost too much of the day so far or of the new part is not taken (`_kept`, `KEEP_SHARE`); the two are then put together without a model (`_fit`). Her day runs from 5 to 5 o'clock, as for thinking the day over.
+- `feat`: a week in detail (Metin: "können wir daraus 7 Tage machen"): 7 days long (3 before), up to 14 shorter, up to 30 one line (`diary.FADE`; for Metin's own days `nachdenken.FULL_DAYS` 7, `SHORT_DAYS` 14, new `LINE_DAYS` 30). A day entry may be 600 characters (400 before), `MAX_NOTE` 6500.
+- `feat`: only three things belong into the diary (personal things somebody told her, what was promised or agreed, a special moment). Checked in code as well: a talk of nothing but commands is not even sent to the model (`ordnung.only_commands`), a rule about switching is no entry, a repeat is no entry.
+- `feat`: notes she takes at once (`merken`) go into the entry of the day when it is next written, unless she still has to ask how it went; a note the day entry does not hold stays beside it.
+- `feat`: up to 100 kept entries (20 before). The newest are before her in full (a third of `PIN_NOTE_MAX`), all others as one line; the whole text comes when she recalls it.
+- `feat`: the key by voice, function `tagebuch` (only Metin behind the code word; a name is not enough): list the kept entries, the week or the month with numbers, keep, open the key, delete, always only the numbers he names. Metin: "die mit Schlüssel festhalten", "mir nur die mit Schloss nennen und dieses Schloss aufmachen und löschen".
+- `feat`: rules about switching devices never enter a memory list as text (`app/ordnung.py`: checked after the memory update and for the chat proposals; a stored one is never dropped or rewritten). They are fixed commands; the new page "Feste Befehle" in the app menu (code word) shows them and deletes one (`POST /api/befehle`).
+- Not in this version (next parts): the new areas (Technik, Planung), cleaning up in a talk, the archive.
+
 ## 2.200.1 (28 Nov 2026)
 
 - `fix`: lamps switched on during a talk no longer stay blue. Metin, 15:34, minutes after 2.200.0: "Ich habe gesagt, die soll alle 4 Lampen einschalten und dann ... leuchten 3 in blau und 1 in kalt weiß." Her lamp tool sent a plain "on". For a lamp whose normal colour the show had never seen (the two front lamps, new in the show today, and one more) the kept wish was "on" without a colour, so the restore sent no colour and the lamp stayed in the blue of the show; the log said "is on in a look of the show after the restore, should be on" again and again.
