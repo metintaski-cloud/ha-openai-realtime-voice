@@ -288,3 +288,73 @@ def test_she_learns_about_the_night_outfit_on_the_tv_only_after_the_code_word(tm
     assert tvshow.UNLOCK_NOTE not in start
     bridge.tvshow.url = "aus"                                         # no TV view: no word about it
     assert tvshow.UNLOCK_NOTE not in dict(bridge._code_notes())["unlock"]
+
+
+async def _tv_page(tmp_path, monkeypatch, init, script, names=("gluecklich", "gluecklich2", "gluecklich3")):
+    playwright = pytest.importorskip("playwright.async_api")
+    if not shutil.which("ffmpeg"):
+        pytest.skip("no ffmpeg here")
+    try:
+        _clips(tmp_path / "clips" / "kurz", names)
+    except subprocess.CalledProcessError:
+        pytest.skip("this ffmpeg cannot write H.264")
+    monkeypatch.setattr(memory_web, "CLIPS_DIR", str(tmp_path / "clips"))
+    monkeypatch.setattr(memory_web, "MOBIL", None)
+    memory_web.DIAG.clear()
+    show = tvshow.TvShow(FakeTv(), FakeMood("arbeit"), url="")
+    server = await memory_web.start_http(memory.MemoryStore(str(tmp_path / "m.json")), None, host="127.0.0.1",
+                                         port=0, tvstate=show.page_state)
+    port = server.sockets[0].getsockname()[1]
+    try:
+        async with playwright.async_playwright() as p:
+            try:
+                browser = await p.chromium.launch(args=["--autoplay-policy=no-user-gesture-required"])
+            except Exception:
+                pytest.skip("no browser here")
+            page = await browser.new_page(viewport={"width": 1280, "height": 720})
+            if init:
+                await page.add_init_script(init)
+            await page.goto(f"http://127.0.0.1:{port}/?tv=1")
+            out = await page.evaluate(script)
+            await browser.close()
+    finally:
+        server.close()
+    return out, [d.get("ev", "") for d in memory_web.DIAG]
+
+
+WATCH = """async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms)),seen=[],two=[];let gap=0,t0=performance.now(),still=0;
+  PRE
+  while(performance.now()-t0<LIMIT){await sleep(100);const on=[svid,svid2].filter(v=>v.getAttribute('src'));if(on.length>1)two.push(1);
+    const v=[svid,svid2][SV],n=(v.getAttribute('src')||'').split('?')[0].split('/').pop();if(n&&seen[seen.length-1]!==n)seen.push(n);
+    const c=document.getElementById('tvfreeze'),pic=(v.classList.contains('on')&&v.readyState>=2)||(c&&c.style.display==='block');
+    if(seen.length&&!pic){still+=100;gap=Math.max(gap,still);}else still=0;}
+  return {seen,two:two.length,gap,tv1:TV1,stored:localStorage.getItem('ltv1'),svid2:svid2.getAttribute('src')||''};}"""
+
+
+async def test_the_tv_plays_clip_after_clip_with_one_video(tmp_path, monkeypatch):
+    out, diag = await _tv_page(tmp_path, monkeypatch, "try{localStorage.setItem('ltv1','1')}catch(e){}",
+                               WATCH.replace("PRE", "").replace("LIMIT", "14000"))
+    assert out["tv1"] and len(out["seen"]) >= 3 and len(set(out["seen"])) >= 2, out   # she goes on after the first clip
+    assert out["two"] == 0 and out["svid2"] == ""             # never two videos at once
+    assert out["gap"] <= 300, out                             # between two clips her last picture stays, no black
+    assert any(e.startswith("tv start one win=1280x720 dpr=1") for e in diag), diag
+    assert any(e.startswith("tv ok one clip=240x360 box=480x720") for e in diag), diag
+
+
+async def test_a_tv_that_cannot_run_two_videos_switches_by_itself(tmp_path, monkeypatch):
+    # the second video of the stage never gets a clip, as on a TV with one decoder: the first clip plays and stands
+    block = """const iv=setInterval(()=>{const vs=[svid,svid2];const run=vs.find(v=>v.getAttribute('src')&&!v.paused&&v.currentTime>0.2);if(!run||TV1)return;clearInterval(iv);
+      const o=vs[1-vs.indexOf(run)];Object.defineProperty(o,'src',{configurable:true,get(){return ''},set(x){}});window.BLOCKED=o;},50);
+      const un=setInterval(()=>{if(TV1&&window.BLOCKED){delete window.BLOCKED.src;window.BLOCKED=null;clearInterval(un);}},50);"""
+    out, diag = await _tv_page(tmp_path, monkeypatch, "try{localStorage.removeItem('ltv1')}catch(e){}",
+                               WATCH.replace("PRE", block).replace("LIMIT", "24000"))
+    assert out["tv1"] and out["stored"] == "1", (out, diag)   # found out by itself and remembered on this TV
+    assert len(out["seen"]) >= 3, (out, diag)                 # and she moves again
+    assert any(e.startswith("tv start dual") for e in diag) and any(e.startswith("tv stuck dual a=") for e in diag), diag
+    assert any(e.startswith("tv ok one") for e in diag), diag
+
+
+def test_what_the_tv_page_reports_reaches_the_log_as_technical_words_only():
+    page = open(memory_web.__file__, encoding="utf-8").read()
+    assert 'logger.info("TV page: %s", re.sub(r"[^a-z0-9 =/.-]", "", str(d["ev"])[:90]))' in page
+    assert "const want=!!(!TV&&STM&&STM.outfit==='freizeit'&&PET.length" in page   # no cat video on the TV

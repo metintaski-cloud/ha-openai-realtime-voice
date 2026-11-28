@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.196.0 (28 Nov 2026)
+
+- `fix`: on the TV she waved once and then stood still. Metin, 01:56, first look at her on his TV: "Einmal gewunken und ist stehen geblieben."
+  - Cause as far as it can be known without looking into the TV: the stage loads the next clip into a second video while the first one runs and waits until it can play. That moment never came on the TV (a TV often decodes one video at a time, and its browser may not load a video before `play()`), and nothing reported it.
+  - New way for the TV with one video (`tvOne`): at the end of a clip its last picture is kept on a canvas, the video is given back, the next clip is loaded and played at once, and the canvas goes when the new clip shows its first pictures. The hand over is a short still instead of a blend.
+  - A watchdog in the TV view switches to that way by itself when the picture has stood for 5 s (15 s before the first clip), remembers it on the TV (`ltv1`) and starts her loop again. A TV that can run two videos keeps the blends.
+  - No cat video on the TV (it was a third video for the TV to decode).
+  - The TV view reports to the add on log what nobody can see from outside (`TV page: ...`): which way it uses, a stand with the state of both videos, and how large the browser really draws (window, pixel ratio, screen, clip size, size of her picture). Metin, 01:57: "Für 4K ist das aber ziemlich unscharf."
+- Measured in the browser test at 1280x720: with one video she goes through clip after clip, never two videos at once, no moment without a picture longer than 0.3 s; a page whose second video never gets a clip switches by itself and moves again.
+- 853 tests (850 before).
+
 ## 2.195.0 (28 Nov 2026)
 
 - `feat`: Leyla appears on the living room TV when she is asked to. Metin, 01:19: "quasi möchte ich Leila im Wohnzimmer sagen, hey Leila, zeig dich im Fernseher oder zeig dich oder komm mal her, und dass sie dann quasi automatisch im Fernseher erscheint." About her night outfit there, with children in the room: "im Fernseher soll nicht gefragt werden, Passwort eingeben oder so ... Die Sperre soll automatisch drin sein. Nur die Leila kann das freigeben, indem ich Passwort sage."

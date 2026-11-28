@@ -689,7 +689,7 @@ function petFreude(v,clip){try{localStorage.setItem('lmokka','1');}catch(e){}pos
 function petIdle(){const l=PET.filter(n=>n.startsWith('liegt'));return l.length?l:PET.filter(n=>n.startsWith('sitzt'));}  /* 2.130.0: after the walk in she sleeps (liegt), sitzt only as a fallback */
 function petNext(){const v=document.getElementById('spet');if(!v||!PETON)return;const idle=petIdle();if(!idle.length)return;
  const n=idle[Math.floor(Math.random()*idle.length)];v.loop=idle.length===1;v.src=petUrl(n);v.playbackRate=rateOf('mokka/'+n);v.play().catch(()=>{});}
-function petTick(){const v=document.getElementById('spet');if(!v)return;const want=!!(STM&&STM.outfit==='freizeit'&&PET.length&&document.body.classList.contains('chatfull'));
+function petTick(){const v=document.getElementById('spet');if(!v)return;const want=!!(!TV&&STM&&STM.outfit==='freizeit'&&PET.length&&document.body.classList.contains('chatfull'));
  if(want&&!PETON){PETON=true;v.onended=petNext;v.ontimeupdate=null;v.classList.add('on');if(PET.includes('kommt')&&!PETCAME){PETCAME=true;v.loop=false;v.src=petUrl('kommt');v.play().catch(()=>{});let first=false;try{first=!localStorage.getItem('lmokka');}catch(e){}const fr=clipVars('mokka');if(first&&fr.length)v.ontimeupdate=()=>{if(v.currentTime<PETSIT)return;v.ontimeupdate=null;petFreude(v,fr[0]);};}else petNext();}
  else if(!want&&PETON){PETON=false;v.classList.remove('on');setTimeout(()=>{if(!PETON){v.pause();v.removeAttribute('src');v.load();}},1300);}}
 setInterval(petTick,2000);
@@ -813,7 +813,35 @@ let TIGHT=false;  /* a loop that replays the same clip blends only at the very e
 function handMeasure(on,a,b,pre){try{if(!on||!a.duration||a.paused)return;const st={late:Math.round((a.currentTime-(endOf(a)-pre))*1000/(a.playbackRate||1)),lead:Math.round(pre*1000)},t0=performance.now();
   const done=t=>{st.first=Math.round(t-t0);if(BENCH)BENCH.first.push(st.first);fetch('/api/handstats',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(st)}).catch(()=>{});};
   if(b.requestVideoFrameCallback)b.requestVideoFrameCallback(t=>done(t));else b.addEventListener('playing',()=>done(performance.now()),{once:true});}catch(e){}}
-function stageShow(name,loop,done,snd){snd=snd&&!onCall()&&SND_RE.test(name)&&!MUTE[name.includes('/')?name:OUTFIT+'/'+name];const tight=TIGHT;TIGHT=false;const soft=!!SOFT[document.getElementById(SV?'svid2':'svid').dataset.pth||''];const PRE0=tight?0.25:0.8,OFF=tight?300:850,lp=name?(name.includes('/')?name:OUTFIT+'/'+name):'',PRE=tight&&!soft&&LEAD[lp]!==undefined?LEAD[lp]:PRE0;const FD=tight&&!soft&&FADE[lp]!==undefined?FADE[lp]:0;const s=document.getElementById('stage'),vs=[document.getElementById('svid'),document.getElementById('svid2')],a=vs[SV],b=vs[1-SV],tok=++STOK,cont=CONT;CONT=false;
+/* 2.196.0, the TV with one video. Metin, 28 Nov 2026, 01:56, first look at her on his TV: "Einmal gewunken und ist stehen geblieben."
+   The greeting played, the next clip never came: the stage loads the next clip into a second video while the first one still runs,
+   and waits until that one can play. A TV often decodes only one video at a time (and its browser may not load a video before
+   play() is called), so that moment never came and nothing reported it. tvOne plays with one video only: at the end of a clip
+   its last picture is kept on a canvas, the video is given back, the next clip is loaded and played, and the canvas goes when the
+   new clip shows its first pictures. The hand over is a short still instead of a blend. The watchdog below switches to this way by
+   itself when the picture has stood for TV_STUCK_MS, remembers it on the TV (localStorage ltv1) and reports what it saw. */
+var TV1=false;try{TV1=TV&&localStorage.getItem('ltv1')==='1';}catch(e){}
+function tvFreeze(v){let c=document.getElementById('tvfreeze');if(!c){c=document.createElement('canvas');c.id='tvfreeze';c.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%;display:none;z-index:1';const p=document.getElementById('svid2');p.parentNode.insertBefore(c,p.nextSibling);}
+ try{if(v&&v.readyState>=2&&v.videoWidth&&v.classList.contains('on')){const k=Math.min(1,1080/v.videoHeight);c.width=Math.round(v.videoWidth*k);c.height=Math.round(v.videoHeight*k);c.getContext('2d').drawImage(v,0,0,c.width,c.height);c.style.display='block';}}catch(e){}return c;}
+function tvOne(name,done){TIGHT=false;CONT=false;const tok=++STOK,s=document.getElementById('stage'),vs=[document.getElementById('svid'),document.getElementById('svid2')],v=vs[0],c=tvFreeze(vs[SV]);
+ vs.forEach(x=>{x.onended=x.ontimeupdate=x.oncanplay=x.oncanplaythrough=x.onloadedmetadata=x.onplaying=null;x.pause();x.removeAttribute('src');x.load();});vs[1].classList.remove('on');SV=0;
+ const pth=name.includes('/')?name:OUTFIT+'/'+name;v.dataset.pth=pth;v.loop=false;v.muted=true;v.style.zIndex=0;
+ v.onloadedmetadata=()=>{v.playbackRate=rateAt(pth,0);const cs=cutStart(pth);if(cs)v.currentTime=cs;};
+ v.onplaying=()=>{v.onplaying=null;if(tok!==STOK)return;let shown=false;const show=()=>{if(shown||tok!==STOK)return;shown=true;if(c.style.display==='block'){v.style.transition='none';v.classList.add('on');void v.offsetWidth;v.style.transition='';}else v.classList.add('on');s.classList.add('vid');c.style.display='none';};
+  if(v.requestVideoFrameCallback)v.requestVideoFrameCallback(()=>v.requestVideoFrameCallback(show));setTimeout(show,SHOW_MAX_MS);};
+ const fol=rateFollow(v,pth);let fired=false;const fire=()=>{if(fired||tok!==STOK)return;fired=true;if(done){CONT=true;done();CONT=false;}else{fired=false;v.currentTime=cutStart(pth);v.play().catch(()=>{});}};
+ v.ontimeupdate=()=>{if(fol)fol();if(v.duration&&v.currentTime>=endOf(v)-0.1)fire();};v.onended=fire;
+ v.src='/clips/'+pth+'.mp4?v='+(CVER[pth.split('/')[0]]||0)+tierNow();v.load();v.play().catch(()=>{});}
+const TV_STUCK_MS=5000,TV_START_MS=15000;
+if(TV){let last=-1,at=performance.now(),run=false,first='',told=false,said=0;diag('tv start '+(TV1?'one':'dual')+' win='+innerWidth+'x'+innerHeight+' dpr='+devicePixelRatio+' scr='+screen.width+'x'+screen.height);  /* how large the browser of the TV really draws (Metin, 01:57: "Für 4K ist das aber ziemlich unscharf") */
+ setInterval(()=>{if(!STM||!CLIPS||!CLIPS.length)return;const vs=[document.getElementById('svid'),document.getElementById('svid2')],a=vs[SV],b=vs[1-SV],src=a.getAttribute('src')||'',pos=src?a.currentTime:-1,now=performance.now();
+  if(src&&!a.paused&&pos!==last){if(!run){run=true;first=src;}else if(!told&&src!==first){told=true;diag('tv ok '+(TV1?'one':'dual')+' clip='+a.videoWidth+'x'+a.videoHeight+' box='+Math.round(a.getBoundingClientRect().width)+'x'+Math.round(a.getBoundingClientRect().height));}last=pos;at=now;return;}
+  if(now-at<(run?TV_STUCK_MS:TV_START_MS))return;
+  const f=x=>x.readyState+'/'+x.networkState+'/'+(x.error?x.error.code:0)+'/'+(x.paused?'p':'r')+(x.ended?'e':'');
+  if(said++<6)diag('tv stuck '+(TV1?'one':'dual')+' a='+f(a)+' b='+f(b)+' run='+(run?1:0));
+  if(!TV1){TV1=true;try{localStorage.setItem('ltv1','1')}catch(e){}}
+  last=-1;at=now;ZBUSY=0;ZPEND=null;DANCING=false;stagePlay([],clipFor(STM));},1000);}
+function stageShow(name,loop,done,snd){if(TV&&TV1&&name)return tvOne(name,done);snd=snd&&!onCall()&&SND_RE.test(name)&&!MUTE[name.includes('/')?name:OUTFIT+'/'+name];const tight=TIGHT;TIGHT=false;const soft=!!SOFT[document.getElementById(SV?'svid2':'svid').dataset.pth||''];const PRE0=tight?0.25:0.8,OFF=tight?300:850,lp=name?(name.includes('/')?name:OUTFIT+'/'+name):'',PRE=tight&&!soft&&LEAD[lp]!==undefined?LEAD[lp]:PRE0;const FD=tight&&!soft&&FADE[lp]!==undefined?FADE[lp]:0;const s=document.getElementById('stage'),vs=[document.getElementById('svid'),document.getElementById('svid2')],a=vs[SV],b=vs[1-SV],tok=++STOK,cont=CONT;CONT=false;
  if(!name){s.classList.remove('vid');vs.forEach(v=>{v.classList.remove('on');setTimeout(()=>{if(tok===STOK){v.pause();v.removeAttribute('src');v.load();}},600);});return;}
  if(loop&&a.loop&&a.classList.contains('on')&&a.src.split('?')[0].endsWith('/'+name+'.mp4'))return;
  /* 2.172.1 (Metin: now and then the picture flickers at a touch): for 0.8 s after a swap the old video is still what he
@@ -878,7 +906,7 @@ function stageMood(st){if(CLIPS===null)return;document.getElementById('stage').c
  if(TV)once=once.filter(n=>n!=='kuss');const changed=!o||once.length||o.mood!==st.mood||o.level!==st.level||(TV&&o.outfit!==st.outfit);/* an outfit change waits for its change scene or the next hand over (2.116.0) */STM=st;if(!o||o.outfit!==st.outfit){const im=document.querySelector('#stage .fig img'),nb=st.outfit==='nacht'&&NIGHTBODY?'/clips/nacht/body.jpg?v='+(CVER.nacht||0):LOOKBODY;if(nb&&!im.src.endsWith(nb))im.src=nb;}if(changed&&(!o||!(Date.now()<ZBUSY||ZPEND||DANCING||talkOn())))stagePlay(once,clipFor(st));}
 clipsLoad();
 /* the night outfit was locked while the TV showed it: both videos and the night still go at once (no fade), then the loop of the day outfit starts */
-function tvCover(st){ZBUSY=0;ZPEND=null;DANCING=false;SWAP=0;++STOK;const s=document.getElementById('stage'),im=s.querySelector('.fig img');s.classList.remove('vid');
+function tvCover(st){ZBUSY=0;ZPEND=null;DANCING=false;SWAP=0;++STOK;const s=document.getElementById('stage'),im=s.querySelector('.fig img');s.classList.remove('vid');{const c=document.getElementById('tvfreeze');if(c){c.style.display='none';c.width=c.width;}}
  [document.getElementById('svid'),document.getElementById('svid2')].forEach(v=>{v.style.transition='none';v.classList.remove('on');v.pause();v.removeAttribute('src');v.load();void v.offsetWidth;v.style.transition='';});
  const day=LOOKBODY||'/leyla_body.jpg';if(!im.src.endsWith(day)){im.style.visibility='hidden';im.onload=im.onerror=()=>{im.style.visibility='';im.onload=im.onerror=null;};im.src=day;}  /* a look without its own still falls back to her first picture, never the night still */
  STM=st;FADEEND=0;stagePlay([],clipFor(st));}
@@ -2301,6 +2329,8 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
         elif method == "POST" and path == "/api/diag":
             # 2.144.3: how the page runs on the phone (tab or installed app), to find out why
             # Metin's icon opens with the address bar; only these few flags, nothing personal
+            if str(d.get("ev") or "").startswith("tv "):  # the page on the TV (2.196.0): nobody can look into it
+                logger.info("TV page: %s", re.sub(r"[^a-z0-9 =/.-]", "", str(d["ev"])[:90]))
             DIAG.append({"at": time.strftime("%H:%M:%S"),
                          **{k: d.get(k) for k in ("mode", "secure", "sw", "inst", "ev", "ua") if k in d}})
             await _respond(writer, "200 OK", "application/json", json.dumps({"ok": True}))
