@@ -97,7 +97,11 @@ Familie und besonders mit ihm verbindet. Vorschlag von Claude dazu: sie setzt ni
 schlägt sie vor, was bleiben soll, und er sagt ja oder nein (das Ja ist der Schlüssel). Was mit den heutigen
 Archiv Einträgen geschieht, entscheidet er (nichts wird ohne ihn gelöscht).
 
-Offen: ob 20 festgehaltene Einträge reichen; das feste Ja zu "höchstens ein Eintrag pro Tag" (Frage gestellt 16:42).
+Ein Eintrag pro Tag: auf die Frage, ob das fest ist, sagte er 16:46 "Ich dachte, dafür ist der Tagebuch da." So
+verstanden und ihm so gesagt: ja, ein Tagebuch hat einen Eintrag pro Tag. Umsetzung: der Eintrag des Tages wird nach
+jedem Gespräch ergänzt oder neu gefasst (kein zweiter Eintrag), damit sie abends noch weiß, was morgens war.
+
+Offen: ob 20 festgehaltene Einträge reichen.
 
 ## Noch zu klären
 
