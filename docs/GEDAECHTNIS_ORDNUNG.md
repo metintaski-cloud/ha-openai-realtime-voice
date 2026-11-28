@@ -72,9 +72,17 @@ verblassen nie) lässt sich nur in der App antippen, eine Sprachfunktion dafür 
 mit dem sie auf sein Wort den Schlüssel setzt oder löst; zu Hause nur nach dem Codewort, wie das ganze Aufräumen. Sie
 setzt ihn nie von sich aus.
 
-Offen: Verblassen. Heute werden Einträge nach 3 und 14 Tagen kürzer und fallen nach 30 Tagen heraus, außer mit
-Schlüssel. Das passt nicht ganz zu "nichts verschwindet von selbst". Frage an ihn gestellt (16:36 und 16:39), Antwort
-steht aus. Ebenfalls offen: ob 20 festgehaltene Einträge reichen.
+Beschlossen 16:41 zum Verblassen: es bleibt. "Ja, falls ich was Unwichtiges übersehen habe, soll es von selbst
+verblassen." Einträge ohne Schlüssel werden wie heute nach 3 und 14 Tagen kürzer und fallen nach 30 Tagen heraus;
+was den Schlüssel hat, bleibt. Das Tagebuch ist damit die eine Ausnahme von "nichts verschwindet von selbst" (das gilt
+für die Bereiche mit Tatsachen und Terminen).
+
+Sein Wunsch 16:41 dazu: er will sie auffordern können, ihm nur die Einträge mit Schloss zu nennen, und dann auf sein
+Wort das Schloss aufzumachen (der Eintrag verblasst wieder) oder den Eintrag gleich zu löschen. Zu bauen, alles nur auf
+sein Wort und zu Hause nur nach dem Codewort: festgehaltene Einträge vorlesen, Schlüssel setzen, Schlüssel lösen,
+Eintrag löschen. Von sich aus setzt, löst oder löscht sie nichts.
+
+Offen: ob 20 festgehaltene Einträge reichen; das feste Ja zu "höchstens ein Eintrag pro Tag" (Frage gestellt 16:42).
 
 ## Noch zu klären
 
