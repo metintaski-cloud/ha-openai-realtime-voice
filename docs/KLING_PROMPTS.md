@@ -321,6 +321,10 @@ Ihm um 04:08 auf Deutsch gesagt (das war die Fassung mit 10 s und den Takten 0�
 
 **Clip 2 (Ärmel Schleife) wird erst gestartet, wenn Clip 4 zeigt, dass das neue Startbild in Kling gut läuft** (ihm um 04:45 gesagt), dann auch im Bau von Vorlage 1 mit dem Einstieg "10-second realistic continuous scene." und dem Schluss "no zoom, no cuts".
 
+**Clip 6, Zuhören (Metin wählte um 04:48 aus drei Vorschlägen "Aufmerksam mit Nicken"; die anderen waren: sie beugt sich leicht vor, Kopf zur Seite mit wachem Blick). Noch nicht gestartet; 10 s, 350 Credits, Start und Endbild `leyla_tv_laecheln.png`.** Wofür: die Schleife, während jemand mit ihr spricht. Anders als die ruhigen Schleifen: der Blick bleibt die ganze Zeit bei der Familie (kein verlegenes Wegschauen), die Hände bleiben zusammen, der Mund bleibt zu (Zeile aus Vorlage 3).
+
+"10-second realistic continuous scene. 0–2s: She looks directly at them with a soft, attentive smile, listening closely, and gently sways to one side. 2–5s: She tilts her head a little and gives a small, gentle nod, her hands resting together. 5–8s: Still listening, she keeps her warm eyes on them, gently moves her shoulders and softly shifts her weight. 8–10s: She gives another small nod with a kind, understanding smile and returns to her initial pose. No speaking, lips gently closed. Soft, feminine, natural body movements. Both feet remain in place. Static camera, full body visible, unchanged background, no zoom, no cuts."
+
 ## Beobachtungen über Kling (Tatsachen, keine Schreibregeln)
 
 - Wird eine Geste in Gelenkbewegungen zerlegt oder abgezählt wiederholt, führt Kling sie wie eine Liste aus: Flattern, Klappen im Handgelenk oder eine einzige Zeitlupe (Clips 169, 181, 226).
