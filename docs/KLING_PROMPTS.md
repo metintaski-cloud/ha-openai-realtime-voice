@@ -363,6 +363,16 @@ Nach hinten (die zwei Lampen hinter dem Sofa; Risiko: ein Finger, der auf die Ka
 
 **Clip 5 (Tuch Schleife) gestartet von Claude am 28.11.2026 um 05:01:** Start und Endbild hatte er schon gesetzt (05:01: "ich habe Bilder schon vorbereitet"), am Dateinamen geprüft (beide `leyla_tv_laecheln.png`), "4K · 10s · Adaptive · 1", 350 Credits, Prompt 592 Zeichen und 100 Wörter, "Task submitted. Generation in progress." Einmal gestartet.
 
+**Clips 12 und 13, Lachen (28.11.2026, nach 05:01). Aus drei Vorschlägen (Hand vor dem Mund, offenes Lachen, Kichern und wegschauen) wählte Metin "1 und 3", also zwei Clips.** Noch nicht gestartet, je 10 s und 350 Credits, Start und Endbild `leyla_tv_laecheln.png`. Milde Wörter, weil Kling mehrere starke Gefühlswörter übertrieben spielt (Beobachtungen); keine Zeile "No speaking", beim Lachen darf der Mund aufgehen.
+
+Lachen 1, Hand vor dem Mund:
+
+"10-second realistic continuous scene. 0–2s: Something amuses her, she looks at them and her smile grows brighter as she gently sways to one side. 2–5s: She laughs warmly and shyly raises one hand in front of her mouth, her shoulders moving softly with her laughter. 5–8s: Still amused, she bashfully lowers her gaze, lowers her hand a little and softly shifts her weight. 8–10s: She calms down with a sweet smile, looks back at them with bright eyes and brings her hands together again. Soft, feminine, natural body movements. Both feet remain in place. Static camera, full body visible, unchanged background, no zoom, no cuts."
+
+Lachen 2, Kichern und wegschauen:
+
+"10-second realistic continuous scene. 0–2s: Amused, she looks at them with a sweet smile and gently sways to one side. 2–5s: She giggles softly and shyly turns her head to the side, her shoulders moving gently. 5–8s: Still smiling, she softly shifts her weight and glances back at them from the side. 8–10s: She looks at them again with bright, happy eyes and returns to her initial pose. Soft, feminine, natural body movements. Both feet remain in place. Static camera, full body visible, unchanged background, no zoom, no cuts."
+
 ## Beobachtungen über Kling (Tatsachen, keine Schreibregeln)
 
 - Wird eine Geste in Gelenkbewegungen zerlegt oder abgezählt wiederholt, führt Kling sie wie eine Liste aus: Flattern, Klappen im Handgelenk oder eine einzige Zeitlupe (Clips 169, 181, 226).
