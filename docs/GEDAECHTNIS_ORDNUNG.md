@@ -101,6 +101,10 @@ Ein Eintrag pro Tag: auf die Frage, ob das fest ist, sagte er 16:46 "Ich dachte,
 verstanden und ihm so gesagt: ja, ein Tagebuch hat einen Eintrag pro Tag. Umsetzung: der Eintrag des Tages wird nach
 jedem Gespräch ergänzt oder neu gefasst (kein zweiter Eintrag), damit sie abends noch weiß, was morgens war.
 
+Sein Wunsch 16:48: ausführlich soll sie eine ganze Woche wissen ("können wir daraus 7 Tage machen, quasi eine Woche").
+Festgehalten: 7 Tage ausführlich (heute 3), bis 14 Tage kürzer, bis 30 Tage eine Zeile, danach weg, außer mit Schlüssel
+(`diary.FADE`). Mit einem Eintrag pro Tag passt das in die Länge, die sie mitbekommt (7 mal 400 Zeichen von 5000).
+
 Offen: ob 20 festgehaltene Einträge reichen.
 
 ## Noch zu klären
