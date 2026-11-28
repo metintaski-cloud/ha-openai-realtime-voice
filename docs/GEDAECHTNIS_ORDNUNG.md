@@ -112,7 +112,11 @@ Offen: ob 20 festgehaltene Einträge reichen.
 
 ## Noch zu klären
 
-- Was darf in welchen Bereich, was nie (je Bereich zwei, drei Beispiele)?
+- Was in welchen Bereich darf (wird Bereich für Bereich geklärt):
+  - Familie, BESCHLOSSEN 16:54 ("Ja, das ist okay."): je Mensch nur, wer er ist und was über ihn gilt (Verwandtschaft,
+    Geburtstag, Arbeit, Vorlieben). Keine Erlebnisse (Tagebuch), keine Termine (Planung), keine Geräte (Technik).
+  - Freunde und Privat: Frage gestellt 16:55, Antwort steht aus.
+  - Technik zu Hause und Planung: siehe oben bei den Bereichen (Geräte; Termine).
 - Wie viel darf je Gespräch und je Chat eingetragen werden; was ergibt gar keinen Eintrag?
 - BESCHLOSSEN 16:50, Widersprüche: ein Sachverhalt steht nur einmal. Hört sie etwas Neues, das dem Alten widerspricht,
   ändert sie nichts allein; sie macht ihn beim Aufräumen aufmerksam ("Bisher stand X, jetzt habe ich Y gehört, was
