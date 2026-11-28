@@ -60,3 +60,39 @@ def test_the_chat_cannot_propose_a_switching_rule():
 
 def test_the_prompt_of_the_memory_update_says_it_too():
     assert "Regeln zum Schalten von Geräten" in memory.SUMMARY_PROMPT and "feste Befehle" in memory.SUMMARY_PROMPT
+
+
+def test_the_page_of_fixed_commands_lists_and_deletes_only_with_the_code_word(tmp_path, monkeypatch):
+    import asyncio
+    import json
+
+    from app import befehle, memory_web
+    monkeypatch.setitem(memory_web._code_fails, "n", 0)
+    cmds = befehle.Commands(path=str(tmp_path / "befehle.json"))
+    monkeypatch.setattr(befehle.Commands, "lamp_count", 4, raising=False)
+    assert cmds.define({"name": "Gute Nacht", "saetze": ["Gute Nacht", "İyi geceler"], "lampen_aus": [1, 2, 3, 4],
+                        "ventilatorlicht": "aus"}).get("ok")
+    assert cmds.define({"name": "Kino", "saetze": ["Kino"], "lampen_aus": [3, 4]}).get("ok")
+    store = memory_web.memory.MemoryStore(str(tmp_path / "m.json")) if hasattr(memory_web, "memory") else None
+
+    async def ask(body):
+        server = await memory_web.start_http(store, None, host="127.0.0.1", port=0, code_phrase="Leyla Sonne Mond", befehle=cmds)
+        port = server.sockets[0].getsockname()[1]
+        raw = json.dumps(body).encode()
+        r, w = await asyncio.open_connection("127.0.0.1", port)
+        w.write(b"POST /api/befehle HTTP/1.1\r\nContent-Length: %d\r\n\r\n" % len(raw) + raw)
+        await w.drain()
+        data = await r.read()
+        w.close()
+        server.close()
+        return json.loads(data.split(b"\r\n\r\n", 1)[1])
+
+    assert asyncio.run(ask({})) == {"ok": False}                                  # no code word: nothing
+    assert asyncio.run(ask({"loeschen": "Kino"})) == {"ok": False} and len(cmds.listing()) == 2
+    out = asyncio.run(ask({"code": "Sonne Mond"}))
+    assert out["ok"] and [c["name"] for c in out["items"]] == ["Gute Nacht", "Kino"]
+    assert out["items"][0]["saetze"] == ["Gute Nacht", "İyi geceler"] and "Ventilatorlicht aus" in out["items"][0]["tut"]
+    out = asyncio.run(ask({"code": "Sonne Mond", "loeschen": "Kino"}))
+    assert out["ok"] and [c["name"] for c in out["items"]] == ["Gute Nacht"] and len(cmds.listing()) == 1
+    assert asyncio.run(ask({"code": "Sonne Mond", "loeschen": "gibt es nicht"}))["ok"] is False
+    assert "function openBefehle" in memory_web.PAGE and "'befehle','Feste Befehle'" in memory_web.PAGE

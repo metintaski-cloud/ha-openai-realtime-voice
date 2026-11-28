@@ -440,7 +440,7 @@ let LOOKS=[];  /* her dresses, filled by clipsLoad */
 function menuItems(){const it=[];const ls=(LASTD&&LASTD.lists)||[];
  for(const l of ls)it.push([l.kind,l.title,l.items.length]);
  if(CODE&&GM.shown&&GM.needs)it.push(['mail','Google verbinden','']);if(lampOn)it.push(['lamps','Lampenfarben','']);
- if(CODE){it.push(['diary','Tagebuch',LASTD&&LASTD.diary_n!=null?LASTD.diary_n:'']);it.push(['rules','So ist Leyla',''])};if(CODE&&STM&&STM.outfit)it.push(['outfit','Umziehen','']);if(LOOKS.length>1)it.push(['look','Kleid wechseln','']);if(CODE)it.push(['naht','Naht: Schleifen einstellen','']);  /* 2.172.3 (Metin: he wants to reach the page from the PC, in the menu) */
+ if(CODE){it.push(['diary','Tagebuch',LASTD&&LASTD.diary_n!=null?LASTD.diary_n:'']);it.push(['befehle','Feste Befehle','']);it.push(['rules','So ist Leyla',''])};if(CODE&&STM&&STM.outfit)it.push(['outfit','Umziehen','']);if(LOOKS.length>1)it.push(['look','Kleid wechseln','']);if(CODE)it.push(['naht','Naht: Schleifen einstellen','']);  /* 2.172.3 (Metin: he wants to reach the page from the PC, in the menu) */
  if(CODE)it.push(['zname',ZNAMEON?'Clip Namen ausblenden':'Clip Namen zeigen','']);
  if(CODE)it.push(['bench',BENCH?'Messlauf abbrechen':'Messlauf (10 Minuten)','']);it.push(['full','Vollbild','']);it.push(['set','Einstellungen','']);return it;}
 function drawMenu(){const m=document.getElementById('menu');m.innerHTML='';m.style.display=menuOpen?'block':'none';document.getElementById('micon').classList.toggle('open',menuOpen);if(!menuOpen){menuSub='';return;}
@@ -457,7 +457,7 @@ async function wear(k){snd.on();let st=null;try{st=await (await post('/api/outfi
  if(!st||!st.mood)return;moodShow(st);ZPEND=null;ZBUSY=0;ZREST='';stagePlay([],clipFor(st));}  /* the loop of the new outfit at once; moodShow alone only swaps the still (an outfit change normally waits for its scene) */
 function znameSet(on){ZNAMEON=!!on;const nm=document.getElementById('zname');if(nm){nm.style.display=ZNAMEON?'block':'none';if(!ZNAMEON)nm.textContent='';}try{localStorage.setItem('lzname',ZNAMEON?'1':'0');}catch(e){}}
 function openSec(k){if(k==='outfit'){menuSub='outfit';drawMenu();return;}if(k==='mback'){menuSub='';drawMenu();return;}
- menuOpen=false;drawMenu();if(k==='naht'){window.open('/naht','_blank');return;}  /* 2.173.0 (Metin): in a window of its own, the app stays open beside it */if(WEAR.some(w=>w[0]===k)){wear(k);return;}if(k==='rules'){openRules();return;}if(k==='diary'){openDiary();return;}
+ menuOpen=false;drawMenu();if(k==='naht'){window.open('/naht','_blank');return;}  /* 2.173.0 (Metin): in a window of its own, the app stays open beside it */if(WEAR.some(w=>w[0]===k)){wear(k);return;}if(k==='rules'){openRules();return;}if(k==='diary'){openDiary();return;}if(k==='befehle'){openBefehle();return;}
  if(k==='look'){  /* 2.146.3 (Metin wants to look at the clips of the other dress): the next look, kept for today like the one picked at random */
   const i=LOOKS.indexOf(OUTFIT),nx=LOOKS[(i+1)%LOOKS.length];
   try{localStorage.setItem('loutfit',nx);localStorage.setItem('loutfitday',dressDay());localStorage.setItem('lseen',String(Date.now()));}catch(e){}
@@ -1352,6 +1352,16 @@ async function openDiary(){let j=null;try{j=await (await post('/api/diary',{})).
  if(j.items.length)box.appendChild(db);
  const el=document.getElementById('rules');if(el.style.display!=='block'){el.style.display='block';el.scrollTop=0;rulesOpen=true;editing=true;history.pushState({r:1},'');snd.on();}}
 function openDiaryRefresh(){openDiary();}
+/* 2.201.0: the fixed commands, one line each with a cross to delete (Metin: "Ich möchte die Kontrolle haben, Sauberkeit und Ordnung"); new ones and changes are spoken to her */
+async function openBefehle(del){let j=null;try{j=await (await post('/api/befehle',del?{loeschen:del}:{})).json();}catch(e){}
+ if(!j||!j.items)return;document.querySelector('#rules .top h1').textContent='Feste Befehle';const box=document.getElementById('rtext');box.innerHTML='';
+ const lead=document.createElement('p');lead.className='lead';lead.textContent='Sätze, bei denen Leyla immer genau dasselbe schaltet. Anlegen oder ändern: sag es ihr, zum Beispiel „Leyla, wenn ich Gute Nacht sage, mach alle Lampen aus“. Hier siehst du alle und kannst einen löschen.';box.appendChild(lead);
+ if(!j.items.length){const e=document.createElement('p');e.id='bfleer';e.textContent='Noch keine festen Befehle.';box.appendChild(e);}
+ for(const x of j.items){const p=document.createElement('p');p.className='dy bf';const b=document.createElement('b');b.textContent=x.name;p.appendChild(b);
+  const t=document.createElement('span');t.textContent='  Gilt bei: '+x.saetze.map(q=>'„'+q+'“').join(', ')+'. Schaltet: '+x.tut+'.';p.appendChild(t);
+  const k=document.createElement('button');k.className='dyk bfx';k.textContent='✕';k.title='Diesen Befehl löschen';
+  k.onclick=()=>{if(confirm('Den festen Befehl „'+x.name+'“ löschen?')){snd.del();openBefehle(x.name);}};p.appendChild(k);box.appendChild(p);}
+ if(!rulesOpen){const el=document.getElementById('rules');el.style.display='block';el.scrollTop=0;rulesOpen=true;editing=true;history.pushState({r:1},'');snd.on();}}
 function closeRules(){document.getElementById('rules').style.display='none';rulesOpen=false;editing=false;}
 document.getElementById('rback').onclick=()=>history.back();
 window.addEventListener('popstate',()=>{if(rulesOpen)closeRules();});
@@ -2216,7 +2226,7 @@ async def _reach_api(reach, method: str, path: str, d: dict, unlocked: bool) -> 
 async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "", rules=None,
                   chat=None, voice=None, mailer=None, google=None, inbox=None,
                   mood=None, reminders=None, diary=None, chat_new=None, reach=None,
-                  touch=None, hear=None, kopf=None, planer=None, tvstate=None) -> None:
+                  touch=None, hear=None, kopf=None, planer=None, tvstate=None, befehle=None) -> None:
     try:
         head = await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), timeout=10)
         lines = head.decode("latin-1").split("\r\n")
@@ -2613,6 +2623,17 @@ async def _handle(store, sync, reader, writer, lamp=None, code_phrase: str = "",
         elif method == "POST" and path == "/api/diary/pin":
             out = diary.pin(d.get("id")) if (unlocked and diary) else {"ok": False}
             await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
+        elif method == "POST" and path == "/api/befehle":
+            # The fixed commands (app/befehle.py) for the page in the app: look at them, delete one (2.201.0).
+            # With the code word, like the diary. New ones and changes are spoken to her (`befehl_festlegen`).
+            out = {"ok": False}
+            if unlocked and befehle:
+                out = {"ok": True}
+                if d.get("loeschen"):
+                    out["ok"] = bool(befehle.define({"name": str(d.get("loeschen")), "loeschen": True}).get("ok"))
+                out["items"] = [{"name": c.get("name", ""), "saetze": list(c.get("saetze") or []),
+                                 "tut": c.get("tut", ""), "t": c.get("t", 0)} for c in befehle.listing()]
+            await _respond(writer, "200 OK", "application/json", json.dumps(out, ensure_ascii=False))
         elif method == "POST" and path == "/api/diary/delete":
             n = diary.delete(d.get("ids") or []) if (unlocked and diary) else 0
             await _respond(writer, "200 OK", "application/json", json.dumps({"ok": n > 0, "deleted": n}))
@@ -2728,14 +2749,14 @@ async def start_http(store: memory.MemoryStore, sync: Optional[object] = None,
                      code_phrase: str = "", rules=None, chat=None, voice=None,
                      mailer=None, google=None, inbox=None, mood=None, reminders=None,
                      diary=None, chat_new=None, reach=None, touch=None, hear=None, tls=None,
-                     kopf=None, planer=None, tvstate=None):
+                     kopf=None, planer=None, tvstate=None, befehle=None):
     """`rules`: a function that returns Leyla's instructions without memory and without the
     code word; shown read only after the code word. `tls`: an ssl context; then this is the
     HTTPS copy of the page (app/tls.py) and the background jobs are not started a second time."""
     server = await asyncio.start_server(
         lambda r, w: _handle(store, sync, r, w, lamp, code_phrase, rules, chat, voice, mailer, google,
                           inbox, mood, reminders, diary, chat_new, reach, touch, hear, kopf,
-                          planer, tvstate),
+                          planer, tvstate, befehle),
         host, port, ssl=tls)
     logger.info("Memory page on port %d%s", port, " (HTTPS)" if tls else "")
     if tls is None:

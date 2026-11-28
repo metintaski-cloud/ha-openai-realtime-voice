@@ -2312,6 +2312,7 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             self._in_background(self.planer.loop())
         if self.enable_memory:
             web = dict(lamp=self.lamp, code_phrase=self.code_phrase, tvstate=self.tvshow.page_state,
+                       befehle=self.commands,
                        rules=self._readable_rules, chat=self._chat,
                        voice=self._chat_voice, mailer=self.mailer,
                        google=self.google, inbox=self.inbox,
