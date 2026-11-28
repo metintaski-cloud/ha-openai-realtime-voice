@@ -3,8 +3,9 @@
 # Derselbe Weg wie in live.py (dort gemessen: 115 bis 120 ms je 200 ms Stueck auf der RTX 4070 Ti), nur als
 # Klasse, damit ein Dienst ihn benutzen kann:
 #   kern = MundKern(clip, x, y)          Modelle laden und den Clip einmal vorbereiten (rund 30 s)
-#   rede = kern.neue_rede(ton, versatz)  eine Rede beginnen; versatz = Clip Bild, das beim ersten Ton Bild laeuft
-#   rede.rechne_stueck(s)                Stueck s (5 Bilder) rechnen, gibt die fertigen Bilder zurueck
+#   rede = kern.neue_rede(versatz)       eine Rede beginnen; versatz = Clip Bild, das beim ersten Ton Bild laeuft
+#   rede.fuettern(ton), rede.ende()      der Ton trifft nach und nach ein (16 kHz), dann ist er zu Ende
+#   rede.kann(s), rede.rechne_stueck(s)  Stueck s (5 Bilder) rechnen, sobald genug Ton da ist; gibt die fertigen Bilder zurueck
 #   rede.schluss()                       die letzten zwei Bilder
 # Fertige Bilder sind der Kopf Ausschnitt in halber Groesse (640 x 360, passend fuer ein Full HD Bild).
 # Alles hier muss im selben Thread laufen (ein Grafikkarten Zusammenhang).
@@ -179,21 +180,46 @@ class MundKern:
         m = F.conv2d(F.pad(m, (36, 36, 0, 0), mode="reflect"), self.kern.view(1, 1, 1, 73))
         return F.conv2d(F.pad(m, (0, 0, 36, 36), mode="reflect"), self.kern.view(1, 1, 73, 1))
 
-    def neue_rede(self, ton: np.ndarray, versatz: int) -> "Rede":
-        return Rede(self, ton, versatz)
+    def neue_rede(self, versatz: int, ton: np.ndarray | None = None) -> "Rede":
+        """Eine Rede beginnen. Mit ton ist der ganze Satz schon da (Test); ohne kommt er Stueck fuer Stueck ueber fuettern()."""
+        rede = Rede(self, versatz)
+        if ton is not None:
+            rede.fuettern(ton)
+            rede.ende()
+        return rede
 
 
 class Rede:
-    def __init__(self, kern: MundKern, ton: np.ndarray, versatz: int):
-        self.k, self.ton, self.versatz = kern, ton.astype(np.float32), versatz
-        self.stuecke = max(1, (len(ton) + kern.schritt - 1) // kern.schritt)
-        self.n = self.stuecke * kern.CS
+    """Eine Rede mit fortlaufend eintreffendem Ton (16 kHz, float). Bild j der Rede gehoert zu Clip Bild versatz + j."""
+
+    def __init__(self, kern: MundKern, versatz: int):
+        self.k, self.versatz = kern, versatz
+        self.ton = np.zeros(0, dtype=np.float32)
+        self.zu = False                      # True: es kommt kein Ton mehr
         with torch.no_grad():
             self.zustand = kern.mg.initial_state(kern.erstes)
         self.sprechen = Sprechen(kern.staerke)
         self.roh: dict[int, torch.Tensor] = {}
         self.neu_bild: dict[int, torch.Tensor] = {}
         self.zeiten: list[float] = []
+
+    def fuettern(self, st: np.ndarray) -> None:
+        self.ton = np.concatenate([self.ton, st.astype(np.float32)])
+
+    def ende(self) -> None:
+        self.zu = True
+
+    @property
+    def stuecke(self) -> int:                # endgueltig erst nach ende()
+        return max(1, (len(self.ton) + self.k.schritt - 1) // self.k.schritt)
+
+    @property
+    def n(self) -> int:
+        return self.stuecke * self.k.CS
+
+    def kann(self, s: int) -> bool:
+        """Ist genug Ton da, um Stueck s zu rechnen (das Modell braucht 200 ms Vorschau)?"""
+        return len(self.ton) >= s * self.k.schritt + self.k.fenster or (self.zu and s < self.stuecke)
 
     def _idx(self, lo: int, hi: int) -> torch.Tensor:
         return torch.tensor([(self.versatz + j) % self.k.N for j in range(lo, hi)], device="cuda")

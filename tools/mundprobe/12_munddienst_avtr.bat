@@ -1,9 +1,10 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-title Leyla Mund 6: Vorfuehrung, Leyla spricht live
+title Leyla Mund Dienst: Leyla spricht live am Fernseher
 echo.
-echo   Leyla Vorfuehrung: dein PC rechnet Leylas Mund live und schickt Bild und Ton ins Heimnetz (Port 8090).
+echo   Leyla Mund Dienst: dein PC rechnet Leylas Mund live und schickt das Bild an den Fernseher.
+echo   Ports 8090 (Bild) und 8091 (Ton vom Add on), nur im Heimnetz.
 echo   Der Start dauert etwa eine Minute. Dieses Fenster bitte offen lassen. Zum Beenden einfach schliessen.
 echo.
 docker version >nul 2>&1
@@ -13,7 +14,7 @@ if errorlevel 1 (
   exit /b 1
 )
 ipconfig | findstr /c:"IPv4" > avtr\pc_adresse.txt
-docker run --rm --gpus all -p 8090:8090 -v "%cd%:/work" leyla-mund-avtr bash /work/avtr/vorfuehrung.sh
+docker run --rm --gpus all -p 8090:8090 -p 8091:8091 -v "%cd%:/work" leyla-mund-avtr bash /work/avtr/munddienst.sh
 echo.
-echo   Vorfuehrung beendet.
+echo   Mund Dienst beendet.
 timeout /t 10

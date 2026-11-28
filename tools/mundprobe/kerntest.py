@@ -8,7 +8,7 @@ from mundkern import MundKern, SR
 roh = subprocess.run(["ffmpeg", "-v", "error", "-i", "/work/eingabe/leyla.wav", "-ac", "1", "-ar", str(SR), "-f", "f32le", "-"], capture_output=True, check=True).stdout
 ton = np.frombuffer(roh, dtype=np.float32).copy()
 kern = MundKern("/work/eingabe/tv_aermel.mp4")
-rede = kern.neue_rede(ton, 0)
+rede = kern.neue_rede(0, ton)
 fertig = {}
 for s in range(rede.stuecke):
     fertig.update(rede.rechne_stueck(s))
