@@ -240,9 +240,10 @@ async def test_a_talk_ends_after_the_longest_time_and_the_app_gets_two_hours():
     assert [t.get("reason") for t in texts if t.get("type") == "disconnect"] == ["max_duration"]
     import importlib
     importlib.reload(se)
-    assert se.MAX_SESSION_S == 600.0 and se.APP_MAX_SESSION_S == 7200.0
-    assert se.max_session_s({"from_app": True}) == 7200.0 and se.max_session_s({"from_app": False}) == 600.0
-    assert se.max_session_s({}) == 600.0
+    # 2.197.0 (Metin, 28 Nov 2026, 02:18: "Mach 120 min daraus"): two hours at the Voice PE too
+    assert se.MAX_SESSION_S == 7200.0 and se.APP_MAX_SESSION_S == 7200.0
+    assert se.max_session_s({"from_app": True}) == 7200.0 and se.max_session_s({"from_app": False}) == 7200.0
+    assert se.max_session_s({}) == 7200.0
 
 
 def test_contains_goodbye():

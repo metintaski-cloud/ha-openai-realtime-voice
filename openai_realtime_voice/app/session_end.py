@@ -17,11 +17,14 @@ IDLE_TIMEOUT_S = 30.0
 NO_SPEECH_TIMEOUT_S = 6.0  # false wake: nobody speaks, end silently (counted from the end of her greeting)
 VOICE_HOLD_S = 2.5  # while a voice was heard this recently the session is not ended for silence
 NO_SPEECH_MAX_S = 14.0  # but never longer than this after the start (TV noise must not hold a false wake)
-MAX_SESSION_S = 600.0
+# 2.197.0: also 120 minutes at the Voice PE. Metin, 28 Nov 2026, 02:18: "Mach 120 min daraus. Bitte" (he had
+# asked whether she switches off too fast at home). Until then 600 s, as a guard: with the TV running its
+# voices can keep a talk open, because silence (IDLE_TIMEOUT_S) never comes. That guard is now two hours
+# long; a talk nobody ends can cost up to twelve times as much as before. He was told.
+MAX_SESSION_S = 7200.0
 # A live talk from the app may last this long (2.192.0). Metin, 27 Nov 2026, 23:52, after a talk in the app
 # that he liked ("ja so muss Leyla klingen") was cut at 604 s: "warum wird die Live Verbindung von selbst
-# unterbrochen?" In the app he hangs up himself and silence still ends the talk after IDLE_TIMEOUT_S; at the
-# Voice PE the ten minutes stay, there a false wake with the TV running could otherwise talk on. Offered 60
+# unterbrochen?" In the app he hangs up himself and silence still ends the talk after IDLE_TIMEOUT_S. Offered 60
 # minutes, he chose (23:57): "mach 120 min".
 APP_MAX_SESSION_S = 7200.0
 

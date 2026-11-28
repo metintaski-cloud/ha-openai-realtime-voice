@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.197.0 (28 Nov 2026)
+
+- `feat`: a talk at the Voice PE may last 120 minutes (10 before), like a live talk from the app. Metin, 02:18: "Mach 120 min daraus. Bitte". Silence still ends a talk after 30 s and a false wake after 6 s. The ten minutes were a guard against a talk that the voices of the TV keep open; that guard is now two hours long.
+- 853 tests, the limit test changed; only the tests of the session end and the session flow were run again for this one number.
+
 ## 2.196.0 (28 Nov 2026)
 
 - `fix`: on the TV she waved once and then stood still. Metin, 01:56, first look at her on his TV: "Einmal gewunken und ist stehen geblieben."
