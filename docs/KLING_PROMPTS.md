@@ -385,6 +385,8 @@ Lachen 2, Kichern und wegschauen:
 
 "10-second realistic continuous scene. 0–2s: A little offended, she looks at them, her smile fading into a small pout as she softly shifts her weight. 2–5s: She crosses her arms in front of her chest, pouts sweetly and turns her head to the side, looking away. 5–8s: Still pouting, she glances back at them from the side, gently moves her shoulders and cannot help a small smile. 8–10s: She uncrosses her arms, smiles warmly at them again and brings her hands together. Subtle facial expressions, no exaggerated reactions. No speaking. Soft, feminine, natural body movements. Both feet remain in place. Static camera, full body visible, unchanged background, no zoom, no cuts."
 
+**Abschied: kein eigener Clip.** Auf drei Vorschläge schrieb Metin um 05:08: "dafür können wir auch Hallo nehmen". Zum Abschied läuft der Hallo Clip 2984.
+
 ## Beobachtungen über Kling (Tatsachen, keine Schreibregeln)
 
 - Wird eine Geste in Gelenkbewegungen zerlegt oder abgezählt wiederholt, führt Kling sie wie eine Liste aus: Flattern, Klappen im Handgelenk oder eine einzige Zeitlupe (Clips 169, 181, 226).
