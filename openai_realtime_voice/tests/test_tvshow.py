@@ -243,11 +243,13 @@ async def test_on_the_tv_only_her_stage_shows_and_a_locked_night_outfit_leaves_a
               return {code:CODE,outfit:STM&&STM.outfit,stageH:Math.round(st.height),stageW:Math.round(st.width),
                 shown:[...document.querySelectorAll('body *')].filter(e=>vis(e)&&!e.closest('#stage')&&e.id!=='chat').map(e=>e.id||e.tagName),
                 inputs:[...document.querySelectorAll('input,textarea,button')].filter(vis).length,
+                edge:[...document.querySelectorAll('#zedge,#ztimer')].filter(vis).length,
                 on:[svid,svid2].map(v=>v.classList.contains('on')?(v.getAttribute('src')||''):'').join('|')};}""")
             assert seen["code"] is None                        # the code word stored in this browser was not read
             assert seen["outfit"] == "nacht" and "/clips/nacht/" in seen["on"] and "&m=1" in seen["on"]
             assert seen["stageH"] == 720 and seen["stageW"] == 480          # her whole figure, as high as the screen
             assert seen["shown"] == [] and seen["inputs"] == 0              # nothing but her, nothing to type into
+            assert seen["edge"] == 0                                        # no clip timer light at the edge of her picture (2.197.1)
             show.night_until = 0.0                             # locked again
             t0 = asyncio.get_running_loop().time()
             gone = None

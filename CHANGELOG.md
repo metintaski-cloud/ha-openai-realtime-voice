@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.197.1 (28 Nov 2026)
+
+- `fix`: no line at the edge of her picture on the TV. Metin, 02:28, with a photo of the TV: "Warum hat das hier an der rechten Seite komische Strich". It was the light that runs around the edge of the stage and shows on the phone how far the clip is (`#zedge`, 2.177.0); the TV view hides it and the old ring.
+
 ## 2.197.0 (28 Nov 2026)
 
 - `feat`: a talk at the Voice PE may last 120 minutes (10 before), like a live talk from the app. Metin, 02:18: "Mach 120 min daraus. Bitte". Silence still ends a talk after 30 s and a false wake after 6 s. The ten minutes were a guard against a talk that the voices of the TV keep open; that guard is now two hours long.
