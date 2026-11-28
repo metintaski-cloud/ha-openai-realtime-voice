@@ -122,5 +122,7 @@ Offen: ob 20 festgehaltene Einträge reichen.
   Entscheidung gilt das Alte weiter, das Neue wartet als offener Punkt und steht nicht in der Liste. Nach seiner
   Entscheidung bleibt genau eines stehen, das andere ist weg. Beide nebeneinander gibt es nie. Sein Wort 16:51:
   "Okay, alles klar, das ist gut."
-- Was darf sie allein eintragen, wofür braucht sie sein Ja?
+- BESCHLOSSEN 16:52, was sie allein darf: Neues, das nichts Altem widerspricht, trägt sie selbst ein und nennt es ihm
+  beim Aufräumen einmal. Ändern, löschen und für immer festhalten geht nur mit seinem Ja. Sein Wort: "Ja, sie macht
+  mich darauf aufmerksam und fragt, was ich damit machen soll. Und ich entscheide."
 - Was passiert mit den vorhandenen Einträgen (umsortieren nur mit ihm).
