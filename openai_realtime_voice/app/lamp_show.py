@@ -450,6 +450,10 @@ class LampShow:
                         new.update(color_mode="hs", hs_color=[round(h * 360, 3), round(sat * 100, 3)])
                     if not new.get("brightness"):
                         new["brightness"] = 255
+                    if not ((new.get("color_mode") == "color_temp" and new.get("color_temp_kelvin")) or new.get("hs_color")):
+                        # A plain "on" for a lamp whose normal colour is not known: without a colour the restore
+                        # would leave it in the look of the show (28 Nov 2026: three lamps stayed blue).
+                        new.update(color_mode="color_temp", color_temp_kelvin=NEUTRAL["color_temp_kelvin"], hs_color=None)
                     self._last_on[entity] = dict(new)
                 self._pending[entity] = new
                 if entity in self._before:

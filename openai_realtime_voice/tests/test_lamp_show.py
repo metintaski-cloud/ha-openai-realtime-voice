@@ -530,3 +530,21 @@ async def test_a_look_of_the_show_is_never_taken_for_a_wish_and_nothing_counts_w
     assert show.lamps["light.a"]["state"] == "off"                # still back to before the talk
     b_on = [c for c in calls if c[0] == "turn_on" and c[1]["entity_id"] == "light.b"][-1]
     assert b_on[1]["color_temp_kelvin"] == 6000 and b_on[1]["brightness"] == 180
+
+
+async def test_a_plain_on_for_a_lamp_with_no_known_colour_is_put_back_in_white_not_in_the_look(monkeypatch, tmp_path):
+    """2.200.1: three lamps stayed blue, because the kept wish had no colour and a real lamp keeps the colour it has."""
+    show, calls = _show(monkeypatch, tmp_path)
+    show._last_on.clear()                                         # like the front lamps: never seen on before a show
+    _reported(monkeypatch, show)
+    await _talk(show)
+    show.outside("turn_on", {"entity_id": ["light.a", "light.b"]})   # her lamp tool: "alle Lampen an"
+    n = len(calls)
+    await show.end()
+    await asyncio.sleep(0.08)
+    a_on = [c for c in calls[n:] if c[0] == "turn_on" and c[1]["entity_id"] == "light.a"]
+    assert a_on and a_on[0][1]["color_temp_kelvin"] == ls.NEUTRAL["color_temp_kelvin"] and a_on[0][1]["brightness"] == 255
+    assert "rgb_color" not in a_on[0][1] and "hs_color" not in a_on[0][1]
+    b_on = [c for c in calls[n:] if c[0] == "turn_on" and c[1]["entity_id"] == "light.b"][0]
+    assert b_on[1]["color_temp_kelvin"] == 6000 and b_on[1]["brightness"] == 180   # b was seen white before the talk
+    assert not [c for c in calls[n:] if c[0] == "turn_off"]

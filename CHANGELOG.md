@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.200.1 (28 Nov 2026)
+
+- `fix`: lamps switched on during a talk no longer stay blue. Metin, 15:34, minutes after 2.200.0: "Ich habe gesagt, die soll alle 4 Lampen einschalten und dann ... leuchten 3 in blau und 1 in kalt weiß." Her lamp tool sent a plain "on". For a lamp whose normal colour the show had never seen (the two front lamps, new in the show today, and one more) the kept wish was "on" without a colour, so the restore sent no colour and the lamp stayed in the blue of the show; the log said "is on in a look of the show after the restore, should be on" again and again.
+- Now a wish without a known colour gets the neutral white of the show (`NEUTRAL`, 6000 K). The four lamps were set to cold white by hand at 15:37.
+- Why the tests of 2.200.0 did not see it: the fake lamp of the tests forgets its colour on a plain "on", a real lamp keeps it. The new test checks the call that is sent.
+
 ## 2.200.0 (28 Nov 2026)
 
 - `feat`: what somebody switches during a talk stays after it. Metin, 15:09: "wenn es abends ist und Leila die Lichter automatisch aktiviert? Bleiben die vorderen noch aktiv, wenn Leila nicht mehr redet", and 15:11: "Ist das auch möglich für die hinteren". Until now the lamp show put its lamps back to what they were before the talk, so a lamp an automation, the Home Assistant app or Leyla's own lamp tool switched in the middle of a talk was undone at its end.
