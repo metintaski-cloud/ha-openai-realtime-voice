@@ -315,6 +315,12 @@ Ihm um 04:08 auf Deutsch gesagt (das war die Fassung mit 10 s und den Takten 0�
 
 "10-second realistic continuous scene. 0–2s: She looks directly into the camera, her expression becoming shy, warm and genuinely happy to see them. 2–5s: She gently tilts her head, smiles warmly and gives them a sweet, shy wave with one hand. 5–8s: She bashfully lowers her gaze, gently moves her shoulders and playfully shifts her body weight. 8–10s: She looks back at them with bright, kind eyes, slowly lowers her hand and brings her hands together again. Soft, feminine, natural body movements. Both feet remain in place. Static camera, full body visible, unchanged background, no zoom, no cuts."
 
+**Clip 5, ruhige Schleife 2 (Metin um 04:44: "lass uns weiter Prompt schreiben"; aus drei Vorschlägen wählte er um 04:46 "Sie richtet ihr Tuch"; die anderen waren: sie schaut zum Wasserfall, sie spielt mit der Quaste am Gürtel). Noch nicht gestartet; 10 s, 350 Credits, Start und Endbild `leyla_tv_laecheln.png`.** Im Bau von Vorlage 1 (erst Blick zur Familie, dann die Geste, dann verlegen, dann zurück). Ein Tuch gibt es in keinem anderen Kleid; das Ohrring Berühren aus einem anderen Clip kommt hier nicht vor.
+
+"10-second realistic continuous scene. 0–2s: She looks warmly at them with a soft, shy smile and gently sways to one side. 2–5s: She lifts one hand and gently adjusts the scarf resting on her shoulder, tilting her head a little as her weight shifts softly. 5–8s: She bashfully lowers her gaze for a moment, gently moves her shoulders and smooths the fabric down. 8–10s: She looks back at them with bright, kind eyes and brings her hands together again. Soft, feminine, natural body movements. Both feet remain in place. Static camera, full body visible, unchanged background, no zoom, no cuts."
+
+**Clip 2 (Ärmel Schleife) wird erst gestartet, wenn Clip 4 zeigt, dass das neue Startbild in Kling gut läuft** (ihm um 04:45 gesagt), dann auch im Bau von Vorlage 1 mit dem Einstieg "10-second realistic continuous scene." und dem Schluss "no zoom, no cuts".
+
 ## Beobachtungen über Kling (Tatsachen, keine Schreibregeln)
 
 - Wird eine Geste in Gelenkbewegungen zerlegt oder abgezählt wiederholt, führt Kling sie wie eine Liste aus: Flattern, Klappen im Handgelenk oder eine einzige Zeitlupe (Clips 169, 181, 226).
