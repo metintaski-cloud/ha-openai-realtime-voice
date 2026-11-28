@@ -125,4 +125,9 @@ Offen: ob 20 festgehaltene Einträge reichen.
 - BESCHLOSSEN 16:52, was sie allein darf: Neues, das nichts Altem widerspricht, trägt sie selbst ein und nennt es ihm
   beim Aufräumen einmal. Ändern, löschen und für immer festhalten geht nur mit seinem Ja. Sein Wort: "Ja, sie macht
   mich darauf aufmerksam und fragt, was ich damit machen soll. Und ich entscheide."
-- Was passiert mit den vorhandenen Einträgen (umsortieren nur mit ihm).
+- BESCHLOSSEN 16:53, das Vorhandene: er fragte "Was meinst du, was ist da besser?", Empfehlung von Claude war ein
+  Mittelweg, damit er nicht jeden Punkt durchgehen muss. Alles Eindeutige wandert beim Umbau von selbst in den richtigen
+  Bereich (Text unverändert, nichts wird gelöscht). Nur das Unklare kommt zu ihm ins Aufräumen: Doppeltes, Widersprüche,
+  alte Schaltregeln, was nirgends hinpasst. Sein Wort: "Ja, okay. Aber wenn ich danach frage, sollte sie mir das
+  vorlegen können und ich dann wieder entscheiden, löschen oder nicht." Also zusätzlich: auf seine Frage legt sie ihm
+  jeden Bereich und jeden Eintrag vor (auch das von selbst Einsortierte), und er entscheidet je Punkt, ob es bleibt.
