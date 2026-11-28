@@ -46,7 +46,11 @@ Vorgeschlagen von Claude, von ihm noch nicht entschieden:
 und mich darauf hinweist. Und das bei Live-Gesprächen, sei es App oder PC oder Home."
 - Was sie anspricht: neue Menschen (einordnen), Abgelaufenes (löschen oder behalten), später auch Doppeltes und Widersprüche.
 - Wo: in jedem gesprochenen Gespräch mit ihm (zu Hause, Live aus der App, am PC).
-- Zu klären: wie oft (Vorschlag: höchstens ein Punkt je Gespräch, nur wenn er es ist; Privates nur nach dem Codewort).
+- Wer: in der App und am PC ist er es immer. Zu Hause fragt sie vorher nach dem Passwort (dem Codewort; sie selbst
+  nennt es nie), erst danach gleicht sie ab (16:32: "Home, zu Hause, da soll sie abfragen, Passwort").
+- Wie viel: NICHT nur ein Punkt je Gespräch. Sie geht alles durch, bis er sagt "machen wir morgen weiter", "jetzt nicht"
+  oder "lies mir weiter vor" (16:32).
+- Zu klären: wann sie damit anfängt (von sich aus mit einer Frage, oder nur auf sein Wort).
 
 ## Noch zu klären
 
