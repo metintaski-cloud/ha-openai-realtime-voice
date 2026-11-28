@@ -108,9 +108,11 @@ Sein Wunsch 16:48: ausführlich soll sie eine ganze Woche wissen ("können wir d
 Festgehalten: 7 Tage ausführlich (heute 3), bis 14 Tage kürzer, bis 30 Tage eine Zeile, danach weg, außer mit Schlüssel
 (`diary.FADE`). Mit einem Eintrag pro Tag passt das in die Länge, die sie mitbekommt (7 mal 400 Zeichen von 5000).
 
-Offen: ob 20 festgehaltene Einträge reichen.
+BESCHLOSSEN 16:58, Zahl der festgehaltenen Einträge ("Ja, du hast recht, das passt so."): höchstens 100 statt 20
+(`diary.MAX_PINNED`), weil 20 über Monate zu wenig sind. Ältere festgehaltene bekommt sie als eine Zeile mit und
+schlägt den vollen Text nach, wenn es darum geht, damit ihr Kopf je Gespräch nicht überläuft.
 
-## Noch zu klären
+## Einzelpunkte (erst offen, jetzt geklärt bis auf den letzten)
 
 - Was in welchen Bereich darf (wird Bereich für Bereich geklärt):
   - Familie, BESCHLOSSEN 16:54 ("Ja, das ist okay."): je Mensch nur, wer er ist und was über ihn gilt (Verwandtschaft,
@@ -129,7 +131,11 @@ Offen: ob 20 festgehaltene Einträge reichen.
   - Privat, BESCHLOSSEN 16:58 ("Ja, genau. Passt so."): nur, was zwischen ihm und Leyla bleibt; sie spricht darüber
     erst nach dem Passwort.
   - Technik zu Hause und Planung: siehe oben bei den Bereichen (Geräte; Termine).
-- Wie viel darf je Gespräch und je Chat eingetragen werden; was ergibt gar keinen Eintrag?
+- Menge: im Tagebuch ein Eintrag pro Tag (siehe oben); in den Bereichen nur Neues ohne Widerspruch. Befehle,
+  Schalten, Technik Tests, Geplauder und Wiederholungen ergeben gar keinen Eintrag. Noch nicht eigens gefragt: der
+  Chat in der App (dort macht sie heute Vorschläge, die er antippt).
+- Stand 16:59: alle Fragen, die Claude offen hatte, sind beantwortet. Ihn gefragt, ob ihm noch etwas fehlt; gebaut
+  wird erst auf sein Wort.
 - BESCHLOSSEN 16:50, Widersprüche: ein Sachverhalt steht nur einmal. Hört sie etwas Neues, das dem Alten widerspricht,
   ändert sie nichts allein; sie macht ihn beim Aufräumen aufmerksam ("Bisher stand X, jetzt habe ich Y gehört, was
   gilt?") und er entscheidet. Sein Wort: "Ja, das ist okay. Das quasi macht sie einen aufmerksam. Hey, das war so und
