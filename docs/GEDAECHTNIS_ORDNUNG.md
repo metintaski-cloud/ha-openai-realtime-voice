@@ -53,6 +53,29 @@ und mich darauf hinweist. Und das bei Live-Gesprächen, sei es App oder PC oder 
 - Wann: sie fragt von sich aus einmal am Tag in einem passenden Moment ("Ich habe drei Punkte zum Aufräumen, hast du
   gerade Zeit?"), und er kann es jederzeit selbst starten ("Leyla, lass uns aufräumen"). Sein Wort 16:33: "Ja, das ist sehr gut."
 
+## Leylas Tagebuch (16:34 bis 16:39, in Arbeit)
+
+Sein Knackpunkt 16:34: "Können wir die KI, die das merkt oder aufschreibt, so trimmen, dass die nur bestimmte Sachen
+aufschreibt?" Antwort: ja, über drei Netze: eine feste erlaubte Liste im Auftrag an den Schreiber, eine Prüfung im
+Programm, und sein Abgleich im Gespräch.
+
+Vorgeschlagen von Claude, sein Wort 16:36 "klingt bis jetzt okay" (noch kein festes Ja):
+- Höchstens EIN Eintrag pro Tag (heute entsteht einer nach jedem Gespräch und jeder Chat Pause).
+- Erlaubt: Persönliches, das ihr jemand erzählt hat; Versprochenes und Ausgemachtes; besondere Momente.
+- Nie: Befehle, Schalten, Technik Tests, Geplauder, Wiederholungen.
+- Tatsachen (Geburtstag, neuer Job) gehören ins Profil der Person, nicht ins Tagebuch; ins Tagebuch kommt nur das
+  Erlebte. Sonst steht dasselbe an zwei Stellen, und so entstehen Widersprüche.
+
+Sein Wunsch 16:37: beim Durchgehen will er sagen können "die mit Schlüssel festhalten" (oder ein anderes Wort), und
+Leyla setzt den Schlüssel für ihn. Stand heute: der Schlüssel (`diary.pin`, höchstens `MAX_PINNED` = 20 Einträge, sie
+verblassen nie) lässt sich nur in der App antippen, eine Sprachfunktion dafür gibt es nicht. Zu bauen: ein Werkzeug,
+mit dem sie auf sein Wort den Schlüssel setzt oder löst; zu Hause nur nach dem Codewort, wie das ganze Aufräumen. Sie
+setzt ihn nie von sich aus.
+
+Offen: Verblassen. Heute werden Einträge nach 3 und 14 Tagen kürzer und fallen nach 30 Tagen heraus, außer mit
+Schlüssel. Das passt nicht ganz zu "nichts verschwindet von selbst". Frage an ihn gestellt (16:36 und 16:39), Antwort
+steht aus. Ebenfalls offen: ob 20 festgehaltene Einträge reichen.
+
 ## Noch zu klären
 
 - Was darf in welchen Bereich, was nie (je Bereich zwei, drei Beispiele)?
