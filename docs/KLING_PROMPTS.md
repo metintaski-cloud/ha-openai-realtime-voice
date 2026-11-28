@@ -325,6 +325,10 @@ Ihm um 04:08 auf Deutsch gesagt (das war die Fassung mit 10 s und den Takten 0�
 
 "10-second realistic continuous scene. 0–2s: She looks directly at them with a soft, attentive smile, listening closely, and gently sways to one side. 2–5s: She tilts her head a little and gives a small, gentle nod, her hands resting together. 5–8s: Still listening, she keeps her warm eyes on them, gently moves her shoulders and softly shifts her weight. 8–10s: She gives another small nod with a kind, understanding smile and returns to her initial pose. No speaking, lips gently closed. Soft, feminine, natural body movements. Both feet remain in place. Static camera, full body visible, unchanged background, no zoom, no cuts."
 
+**Clip 7, Nachdenken (Metin wählte um 04:50 aus drei Vorschlägen "Finger ans Kinn"; die anderen waren: Blick zur Seite mit zusammengelegten Händen, Fingerspitzen aneinander). Noch nicht gestartet; 10 s, 350 Credits, Start und Endbild `leyla_tv_laecheln.png`.** Wofür: die Zeit, bevor sie antwortet (Phase thinking und searching). Hand am Gesicht hat mit Brille zweimal das Gesicht kippen lassen (Beobachtungen); hier gibt es keine Brille, beim Ergebnis trotzdem das Gesicht groß ansehen.
+
+"10-second realistic continuous scene. 0–2s: Thoughtful, she looks at them with a soft smile and gently sways to one side as her hands part. 2–5s: She rests one finger lightly on her chin and glances up to the side, thinking, her head tilting a little. 5–8s: Still thinking, she gently moves her shoulders and softly shifts her weight. 8–10s: Her face brightens with a small, sweet smile, she lowers her hand, looks back at them and brings her hands together again. No speaking, lips gently closed. Soft, feminine, natural body movements. Both feet remain in place. Static camera, full body visible, unchanged background, no zoom, no cuts."
+
 ## Beobachtungen über Kling (Tatsachen, keine Schreibregeln)
 
 - Wird eine Geste in Gelenkbewegungen zerlegt oder abgezählt wiederholt, führt Kling sie wie eine Liste aus: Flattern, Klappen im Handgelenk oder eine einzige Zeitlupe (Clips 169, 181, 226).
