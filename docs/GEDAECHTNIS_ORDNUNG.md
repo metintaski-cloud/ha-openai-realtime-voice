@@ -29,9 +29,18 @@ Datum, das vorbei ist, bleibt stehen; Leyla sagt ihm, dass er abgelaufen ist, un
 Vorgeschlagen von Claude, von ihm noch nicht entschieden:
 - Feste Befehle (Schaltregeln) als eigener Bereich in der App; die Seite ist gebaut, nicht installiert.
 
+## Neue Menschen (beschlossen 16:29 bis 16:31)
+
+- Leyla erkennt niemanden an der Stimme; bekannt ist ihr, wer mit Namen in Familie oder Freunde steht. Jeder andere Name ist neu.
+- Bei einem neuen Namen, über den sie nichts weiß, trägt sie nichts von selbst ein. Sie fragt Metin beim nächsten Mal
+  ("Gestern war Ali da. Gehört er zur Familie oder ist er ein Freund, soll ich ihn eintragen?"); erst nach seiner Antwort
+  kommt der Mensch in den richtigen Bereich. Sein Wort dazu: "Genau."
+- Sagt die Person selbst, wer sie ist (Nichte, Enkel, ein Freund von Metin), ordnet Leyla danach zu (sein Zusatz 16:30).
+  Offen: trägt sie dann sofort ein und sagt es ihm einmal, oder wartet sie auch hier auf sein Ja? Sie kann nicht prüfen,
+  ob die Angabe stimmt.
+
 ## Noch zu klären
 
-- Wohin kommt jemand, der nur einmal da war (ohne Bereich Gäste)?
 - Was darf in welchen Bereich, was nie (je Bereich zwei, drei Beispiele)?
 - Wie viel darf je Gespräch und je Chat eingetragen werden; was ergibt gar keinen Eintrag?
 - Ein Sachverhalt nur einmal: das Neue ersetzt das Alte. Wer entscheidet bei Widerspruch?
