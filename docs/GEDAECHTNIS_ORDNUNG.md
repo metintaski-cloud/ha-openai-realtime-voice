@@ -89,6 +89,14 @@ Eintrag aus ihrer Sicht (Erzähltes, was sie tat, wie es sich anfühlte), dazu k
 `merken` ablegt; ob etwas "wichtig" ist, entscheidet das Modell allein. Noch mit ihm zu klären: jeder Eintrag geht
 zusätzlich in ein Archiv, das nie verblasst (2.123.0, Werkzeug `erinnern`).
 
+Sein Wort 16:45 zum Archiv: "Nein, das, was von selbst verblasst, sind wohl Sachen, die nicht mehr genutzt werden.
+Archiv würde ich ersetzen, was Leila doch als persönlich ausmacht, und die Bindung zu der Familie, besonders zu mir."
+So verstanden (Rückfrage gestellt 16:46, sein Ja steht aus): was verblasst, ist wirklich weg; ein Archiv, das von allem
+eine Kopie behält, soll es nicht mehr geben. Dauerhaft bleibt nur, was Leyla als Person ausmacht und was sie mit der
+Familie und besonders mit ihm verbindet. Vorschlag von Claude dazu: sie setzt nichts allein dauerhaft; beim Aufräumen
+schlägt sie vor, was bleiben soll, und er sagt ja oder nein (das Ja ist der Schlüssel). Was mit den heutigen
+Archiv Einträgen geschieht, entscheidet er (nichts wird ohne ihn gelöscht).
+
 Offen: ob 20 festgehaltene Einträge reichen; das feste Ja zu "höchstens ein Eintrag pro Tag" (Frage gestellt 16:42).
 
 ## Noch zu klären
