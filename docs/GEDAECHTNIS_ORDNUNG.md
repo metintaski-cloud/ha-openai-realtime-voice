@@ -124,7 +124,10 @@ Offen: ob 20 festgehaltene Einträge reichen.
     BESCHLOSSEN 16:56 zur Menge: im Normalfall höchstens eine solche Frage pro Gespräch (wie Kennenlernen, kein
     Verhör). Seine Ausnahme: "Wenn die Gegenseite auch Fragen stellt und man merkt, es wird eine Fragerei, da kann sie
     ruhig mehr stellen." Fragt der Mensch also selbst zurück und es wird ein gegenseitiges Fragen, darf sie mehr fragen.
-  - Freunde und Privat: Frage gestellt 16:55, Antwort steht aus.
+  - Freunde, BESCHLOSSEN 16:57 ("Ja, für Freunde gilt dieselbe Regel."): wie Familie, je Mensch nur, wer er ist und
+    was über ihn gilt; auch das Lücken Füllen gilt dort.
+  - Privat: Vorschlag von Claude (nur, was zwischen ihm und Leyla bleibt; sie spricht darüber erst nach dem Passwort),
+    Frage einzeln gestellt 16:58, Antwort steht aus.
   - Technik zu Hause und Planung: siehe oben bei den Bereichen (Geräte; Termine).
 - Wie viel darf je Gespräch und je Chat eingetragen werden; was ergibt gar keinen Eintrag?
 - BESCHLOSSEN 16:50, Widersprüche: ein Sachverhalt steht nur einmal. Hört sie etwas Neues, das dem Alten widerspricht,
