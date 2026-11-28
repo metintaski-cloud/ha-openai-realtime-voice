@@ -128,9 +128,16 @@ class TvShow:
         return (await self.tv._activity()).lower()
 
     async def _open(self) -> bool:
+        # With the mouth service on the PC ready, the TV opens its page directly (2.199.1, Metin: "Wenn die Leyla
+        # kommt, muss auch wirklich nur die Leyla kommen und nichts davor"): the normal page showed her other
+        # look for some seconds before it moved on.
+        url = self.url
+        if self.mund is not None and self.mund.ready():
+            url = self.mund.page()
+            logger.info("TV: opening the page of the mouth service")
         for n in range(SHOW_TRIES):
             await self.tv._service("remote", "turn_on",
-                                   {"entity_id": self.tv.tv_remote, "activity": self.url})
+                                   {"entity_id": self.tv.tv_remote, "activity": url})
             if await self.tv._wait_activity(lambda a: BROWSER in a, SHOW_WAIT_S):
                 logger.info("TV: her page is in front after try %d", n + 1)
                 return True

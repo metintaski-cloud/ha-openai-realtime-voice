@@ -381,7 +381,7 @@ body{padding-top:env(safe-area-inset-top,0px)}#rules{padding-top:env(safe-area-i
 body.chatfull #chat{top:env(safe-area-inset-top,0px);bottom:env(safe-area-inset-bottom,0px);height:auto!important;overflow:visible}
 body.chatfull #stage{top:calc(0px - env(safe-area-inset-top,0px));bottom:calc(0px - env(safe-area-inset-bottom,0px))}
 body.chatfull #menu{top:calc(56px + env(safe-area-inset-top,0px))}
-html.tv body{background:#000;margin:0;overflow:hidden;cursor:none}html.tv body>*:not(#chat),html.tv #chat>*:not(#stage):not(.tvside){display:none!important}
+html.tv body{background:#000;margin:0;overflow:hidden;cursor:none}html.tvwait #chat{visibility:hidden}html.tv body>*:not(#chat),html.tv #chat>*:not(#stage):not(.tvside){display:none!important}
 html.tv #chat{display:block!important;position:fixed;inset:0;margin:0;height:auto;border:none;border-radius:0}html.tv #stage{display:block!important;top:0;bottom:0}html.tv #zedge,html.tv #ztimer{display:none!important}
 html.tv #stage::after{background:none}html.tv #stage{overflow:visible}html.tv #stage .fig{animation:none}html.tv #stage .ff{display:none}.tvside{position:absolute;top:0;height:100%;width:calc(50vw - 33.333vh + 1px);pointer-events:none;display:block}
 .tvside.l{left:0;-webkit-mask-image:linear-gradient(to left,#000 0,#000 16%,rgba(0,0,0,.55) 50%,rgba(0,0,0,.1) 100%);mask-image:linear-gradient(to left,#000 0,#000 16%,rgba(0,0,0,.55) 50%,rgba(0,0,0,.1) 100%)}
@@ -1075,7 +1075,9 @@ async function moodLoad(){try{const st=await (TV?fetch('/api/tv?t='+Date.now()):
  /* 2.199.0: the mouth service on Metin's PC is up, so the TV shows her there with a live mouth; mundaus=1 (set when that page came back after a break) keeps this page */
  if(TV&&st.mund&&!/[?&]mundaus=1/.test(location.search)){location.replace(st.mund);return;}
  if(!TV||st.mood)moodShow(st);}catch(e){}}
-if(TV)setInterval(moodLoad,4000);  /* the TV asks often, so a lock of the night outfit shows within seconds */
+if(TV)setInterval(moodLoad,4000);
+/* 2.199.1: the TV view shows nothing until the first answer says whether she comes from the PC (then this page moves on and never shows the other look) */
+if(TV&&!/[?&]mundaus=1/.test(location.search)){document.documentElement.classList.add('tvwait');moodLoad().then(()=>document.documentElement.classList.remove('tvwait'));setTimeout(()=>document.documentElement.classList.remove('tvwait'),6000);}  /* the TV asks often, so a lock of the night outfit shows within seconds */
 setInterval(()=>{if(CODE&&document.getElementById('chat').style.display==='block'){moodLoad();remindPending();reachPending();}},60000);
 /* 2.173.0 (Metin: "dass ich auf Handy schreibe und auf PC Monitor sehe", in step): what his other device sends and what she answers
    appears here at once. One request stays open at the server until something comes; a hidden page waits and catches up when it is shown again. */

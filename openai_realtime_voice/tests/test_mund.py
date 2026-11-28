@@ -326,3 +326,35 @@ async def test_an_interrupt_during_the_hold_reaches_the_device_at_once_and_no_au
     assert [json.loads(d) for _, d in device.got] == [{"type": "interrupt"}]
     assert device.got[0][0] - t0 < 0.15
     assert m.kinds() == ["S", "A", "A", "A", "A", "X"]
+
+
+async def test_the_tv_opens_the_pc_page_directly_while_the_service_is_ready():
+    """2.199.1: nothing of the normal page (her other look) shows before she comes from the PC."""
+    class Tv:
+        tv_remote = "remote.tv"
+
+        def __init__(self):
+            self.opened = []
+
+        async def _service(self, domain, service, data):
+            self.opened.append(data["activity"])
+
+        async def _wait_activity(self, ok, seconds):
+            return True
+
+    class Link:
+        up = True
+
+        def ready(self):
+            return self.up
+
+        def page(self):
+            return "http://pc:8090/?zurueck=x"
+
+    tv = Tv()
+    show = tvshow.TvShow(tv, None, url="https://x.example/?tv=1")
+    assert await show._open() and tv.opened == ["https://x.example/?tv=1"]      # no mouth: as before
+    show.mund = Link()
+    assert await show._open() and tv.opened[-1] == "http://pc:8090/?zurueck=x"
+    show.mund.up = False                                                        # PC off: the normal page again
+    assert await show._open() and tv.opened[-1] == "https://x.example/?tv=1"

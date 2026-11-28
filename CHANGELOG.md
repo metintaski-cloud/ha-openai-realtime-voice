@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.199.1 (28 Nov 2026)
+
+- `fix`: when she comes to the TV, only she comes. Metin after the first talk with the live mouth ("Es läuft alles wunderbar flüssig"), 14:47: "wenn Leila ins Fernsehen kommt, die alten Bilder mit dem kurzen Kleid mal erscheint ... Wenn die Leila kommt, muss auch wirklich nur die Leila kommen und nichts davor." The add on opened the normal TV page first, which showed her other look for up to four seconds before it moved to the page on the PC.
+- Now `tvshow._open` opens the page of the mouth service directly while it is ready, and the normal TV view (`/?tv=1`) stays black until its first answer from `/api/tv` says where she comes from (at most 6 s).
+
 ## 2.199.0 (28 Nov 2026)
 
 - `feat`: Leyla speaks on the living room TV live and in sync. Metin's idea of the morning ("Das Modell von heute Morgen, kann man den auch bearbeiten, Kinn, nicht nur Mund"): the clip keeps running (body, head, eyes, blinking), and only mouth and chin are computed live from her voice on his PC (AVTR-1 on every picture of the moving clip) and sent to the TV as one video stream. He saw the demonstration on the TV at 13:30: "Ja, das sieht ziemlich perfekt aus."
