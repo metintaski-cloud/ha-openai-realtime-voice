@@ -26,8 +26,9 @@ Leila darauf hinweisen, dass die da sind und was wir damit machen, wenn sie scho
 Datum, das vorbei ist, bleibt stehen; Leyla sagt ihm, dass er abgelaufen ist, und fragt, was damit geschehen soll
 (löschen, behalten, neues Datum). Ein eigener Bereich "Aktuelles" entfällt, Zeitliches steht in Planung.
 
-Vorgeschlagen von Claude, von ihm noch nicht entschieden:
-- Feste Befehle (Schaltregeln) als eigener Bereich in der App; die Seite ist gebaut, nicht installiert.
+7. Feste Befehle (Schaltregeln wie "abends Licht an"). BESCHLOSSEN 16:50: "Ja, einverstanden. Das gehört nicht dahin."
+   Schaltregeln stehen nie als Text in der Familienliste oder einem anderen Bereich; er ändert sie per Stimme und sieht
+   sie in der App. Die Seite und die Sperre (`app/ordnung.py`) sind gebaut, nicht installiert.
 
 ## Neue Menschen (beschlossen 16:29 bis 16:31)
 
