@@ -121,7 +121,9 @@ Offen: ob 20 festgehaltene Einträge reichen.
     Felder (Verwandtschaft, Geburtsdatum mit Alter, Arbeit, Vorlieben); was fehlt, fragt sie den Menschen selbst, wenn
     sie mit ihm spricht, beiläufig und nach und nach. Das Sternzeichen ergibt sich aus dem Geburtsdatum, danach fragt
     sie nicht eigens. Die Antwort trägt sie selbst ein (Neues ohne Widerspruch) und nennt sie ihm beim Aufräumen.
-    Vorschlag von Claude, Frage gestellt 16:56: höchstens eine solche Frage pro Gespräch.
+    BESCHLOSSEN 16:56 zur Menge: im Normalfall höchstens eine solche Frage pro Gespräch (wie Kennenlernen, kein
+    Verhör). Seine Ausnahme: "Wenn die Gegenseite auch Fragen stellt und man merkt, es wird eine Fragerei, da kann sie
+    ruhig mehr stellen." Fragt der Mensch also selbst zurück und es wird ein gegenseitiges Fragen, darf sie mehr fragen.
   - Freunde und Privat: Frage gestellt 16:55, Antwort steht aus.
   - Technik zu Hause und Planung: siehe oben bei den Bereichen (Geräte; Termine).
 - Wie viel darf je Gespräch und je Chat eingetragen werden; was ergibt gar keinen Eintrag?
