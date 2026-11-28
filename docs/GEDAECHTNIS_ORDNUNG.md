@@ -36,8 +36,17 @@ Vorgeschlagen von Claude, von ihm noch nicht entschieden:
   ("Gestern war Ali da. Gehört er zur Familie oder ist er ein Freund, soll ich ihn eintragen?"); erst nach seiner Antwort
   kommt der Mensch in den richtigen Bereich. Sein Wort dazu: "Genau."
 - Sagt die Person selbst, wer sie ist (Nichte, Enkel, ein Freund von Metin), ordnet Leyla danach zu (sein Zusatz 16:30).
-  Offen: trägt sie dann sofort ein und sagt es ihm einmal, oder wartet sie auch hier auf sein Ja? Sie kann nicht prüfen,
-  ob die Angabe stimmt.
+  Sie trägt dann gleich ein und sagt es ihm einmal ("Nisa hat sich als deine Nichte vorgestellt, ich habe sie bei Familie
+  eingetragen"), er greift nur ein, wenn es falsch ist. Sein Wort 16:31: "Ja, das ist eine sehr gute Idee, dass sie das
+  quasi mit mir abgleicht." Sie kann nicht prüfen, ob die Angabe stimmt.
+
+## Sie hält Ordnung im Gespräch mit ihm (beschlossen 16:31)
+
+"Also sie soll aktiv mit mir über die Informationen reden, abfragen, abgelaufen, weißt du, dass sie quasi Ordnung hält
+und mich darauf hinweist. Und das bei Live-Gesprächen, sei es App oder PC oder Home."
+- Was sie anspricht: neue Menschen (einordnen), Abgelaufenes (löschen oder behalten), später auch Doppeltes und Widersprüche.
+- Wo: in jedem gesprochenen Gespräch mit ihm (zu Hause, Live aus der App, am PC).
+- Zu klären: wie oft (Vorschlag: höchstens ein Punkt je Gespräch, nur wenn er es ist; Privates nur nach dem Codewort).
 
 ## Noch zu klären
 
