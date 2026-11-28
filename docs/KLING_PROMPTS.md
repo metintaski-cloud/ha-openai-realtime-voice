@@ -301,6 +301,10 @@ Ihm um 04:08 auf Deutsch gesagt (das war die Fassung mit 10 s und den Takten 0�
 
 "0–3s: Happy to see them, she smiles warmly, lets her hands part and lifts one hand high to greet them. 3–8s: She waves hello to them with her open hand raised beside her head, a clear, friendly wave, tilting her head a little as her weight shifts softly. 8–12s: She bashfully lowers her gaze for a moment and slowly lowers her hand, her dress swaying softly as she shifts her weight. 12–15s: She looks back at them with bright, kind eyes, brings her hands together again and returns to her initial pose. Soft, feminine, natural body movements. Both feet remain in place. Sweet, shy, warm and respectful body language. Static camera, full body visible, unchanged background."
 
+**Metin um 04:26: "aber halt dich an unsere Regel".** Gegen das Muster geprüft, zwei Abweichungen im Text oben: Takt 1 und 4 hatten keine Bewegung unten und Takt 2 und 3 unten dasselbe (Punkt 2), und das Winken hieß "clear, friendly" statt in seinem Ton "sweet, shy" (Punkte 4 und 8; Vorlage 1 hat mit "a sweet, shy wave with one hand" das richtige Winken gebracht). Berichtigte Fassung, diese wird eingesetzt:
+
+"0–3s: Happy to see them, she smiles shyly and warmly, gently sways to one side and lifts one hand in greeting. 3–8s: She tilts her head a little and gives them a sweet, shy wave with her open hand raised beside her head, her weight shifting softly onto the other leg. 8–12s: She bashfully lowers her gaze, gently moves her shoulders and slowly lowers her hand, her dress swaying softly. 12–15s: She looks back at them with bright, kind eyes, settles her weight, brings her hands together again and returns to her initial pose. Soft, feminine, natural body movements. Both feet remain in place. Sweet, shy, warm and respectful body language. Static camera, full body visible, unchanged background."
+
 ## Beobachtungen über Kling (Tatsachen, keine Schreibregeln)
 
 - Wird eine Geste in Gelenkbewegungen zerlegt oder abgezählt wiederholt, führt Kling sie wie eine Liste aus: Flattern, Klappen im Handgelenk oder eine einzige Zeitlupe (Clips 169, 181, 226).
