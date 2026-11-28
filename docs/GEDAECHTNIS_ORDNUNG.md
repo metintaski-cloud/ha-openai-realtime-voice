@@ -112,6 +112,28 @@ BESCHLOSSEN 16:58, Zahl der festgehaltenen Einträge ("Ja, du hast recht, das pa
 (`diary.MAX_PINNED`), weil 20 über Monate zu wenig sind. Ältere festgehaltene bekommt sie als eine Zeile mit und
 schlägt den vollen Text nach, wenn es darum geht, damit ihr Kopf je Gespräch nicht überläuft.
 
+## Schneller Zugriff (sein Wunsch 17:00)
+
+"Wenn ich sie was frage, dann sagt sie ja: Moment, muss ich gucken oder muss ich überlegen. Dieser Weg, kann man den
+schneller machen, dass sie schneller drauf zugreifen kann?"
+- Warum sie das sagt (Stand im Programm): was sie von Anfang an im Kopf hat (Anweisungen der Sitzung), beantwortet die
+  Live Stimme sofort. Alles andere gibt sie an ihren Hintergrund weiter (ein zweites Modell, `backend_model`), der das
+  Werkzeug aufruft (`erinnern`, `kalender`, `email_lesen`, `technik_pruefen` ...) und ihr das Ergebnis zurückgibt. Das
+  sind zwei Modellschritte mehr, daher die Sekunden.
+- Zwei Hebel, ihm so gesagt: (1) mit der neuen Ordnung hat sie mehr gleich im Kopf (saubere Profile, Termine, Technik,
+  7 Tage Tagebuch ausführlich, das Festgehaltene) und muss seltener nachsehen; (2) das Nachschlagen im Gedächtnis ohne
+  den Umweg über das zweite Modell (der Server sucht selbst und legt es ihr hin).
+- Pflicht beim Bauen: erst messen, wie lange welche Art Frage heute dauert, dann alt gegen neu. Keine Zahl versprochen.
+
+## Achtung beim Bauen: das Archiv trägt heute mehr als das Nachschlagen
+
+Auf dem Archiv, das nie verblasst, bauen heute `app/recall.py` (was ihr von selbst einfällt, Bedeutungsvektoren je
+Archiv Eintrag) und `app/nachdenken.py` (nachts: der Tag, "unsere Geschichte", offene Fäden; docs/LEYLA_SEELE.md).
+Sein Beschluss von 16:46 (kein Archiv von allem; dauerhaft nur, was Leyla ausmacht und die Bindung zur Familie und
+besonders zu ihm) heißt deshalb nicht einfach "Datei weg": "unsere Geschichte" ist genau diese Bindung und kann das
+sein, was an die Stelle des Archivs tritt, zusammen mit dem Festgehaltenen. Das ist ihm noch zu sagen und mit ihm zu
+klären, bevor am Archiv etwas geändert wird (was fällt ihr dann nach 30 Tagen noch von selbst ein?).
+
 ## Einzelpunkte (erst offen, jetzt geklärt bis auf den letzten)
 
 - Was in welchen Bereich darf (wird Bereich für Bereich geklärt):
