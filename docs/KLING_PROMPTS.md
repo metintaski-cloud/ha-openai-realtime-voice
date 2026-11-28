@@ -339,6 +339,24 @@ Ihm um 04:08 auf Deutsch gesagt (das war die Fassung mit 10 s und den Takten 0�
 
 **Clip 2 (Ärmel Schleife) gestartet von Claude am 28.11.2026 um 04:53:** das Bild war aus der Liste Uploads verschwunden (dort stand `leyla_tv_laecheln.png` um 04:41 noch an erster Stelle), deshalb nichts gewählt und ihn gebeten; er lud es neu hoch und setzte Start und Endbild selbst ("tue wieder rein und wähle sie für dich schon aus"). Am Dateinamen geprüft (beide `leyla_tv_laecheln.png`), "4K · 10s · Adaptive · 1", 350 Credits, Prompt 575 Zeichen und 94 Wörter (Fassung in der Form von Vorlage 1, steht oben), "Task submitted. Generation in progress." Einmal gestartet. Tuch, Zuhören und Nachdenken warten: ein Clip, dann sein Urteil (Schritt 6).
 
+**Clips 8 bis 11, Zeigen (28.11.2026, nach 04:53).** Metin auf die Fragen: der Ventilator ist ein Deckenventilator; Lampen: "2 neben TV links rechts, eine am Deckenventilator oben und 2 hinten rechts und links". Auf die Frage, welche Zeige Clips entstehen sollen (oben, links, rechts / dazu noch nach hinten / erst nur oben), schrieb er "1,2,3"; gelesen als: alle vier Richtungen, zuerst nur oben starten und das Ergebnis ansehen. Ablauf in jedem Clip, ihm so gesagt: sie schaut kurz dorthin, streckt Arm und Zeigefinger aus (sein Wunsch vom 03:19: "gestreckte Hand mit Finger"), schaut wieder zur Familie und nickt sanft, dann Hände zusammen. Links und rechts sind aus Sicht der Familie gemeint, deshalb steht im Text "side of the frame" und nicht "her left". Alle vier noch nicht gestartet, je 10 s und 350 Credits, Start und Endbild `leyla_tv_laecheln.png`.
+
+Oben (Deckenventilator und sein Licht):
+
+"10-second realistic continuous scene. 0–2s: She looks warmly at them with a soft smile, gently sways to one side and lets her hands part. 2–5s: She glances up and raises one arm, pointing straight up above her with her index finger. 5–8s: Still pointing, she looks back at them with a kind smile and gives a small, gentle nod, her weight shifting softly. 8–10s: She slowly lowers her arm and brings her hands together again. No speaking, lips gently closed. Soft, feminine, natural body movements. Both feet remain in place. Static camera, full body visible, unchanged background, no zoom, no cuts."
+
+Links neben dem Fernseher:
+
+"10-second realistic continuous scene. 0–2s: She looks warmly at them with a soft smile, gently sways to one side and lets her hands part. 2–5s: She glances toward the left side of the frame and stretches out one arm, pointing to the left side of the frame with her index finger. 5–8s: Still pointing, she looks back at them with a kind smile and gives a small, gentle nod, her weight shifting softly. 8–10s: She slowly lowers her arm and brings her hands together again. No speaking, lips gently closed. Soft, feminine, natural body movements. Both feet remain in place. Static camera, full body visible, unchanged background, no zoom, no cuts."
+
+Rechts neben dem Fernseher:
+
+"10-second realistic continuous scene. 0–2s: She looks warmly at them with a soft smile, gently sways to one side and lets her hands part. 2–5s: She glances toward the right side of the frame and stretches out one arm, pointing to the right side of the frame with her index finger. 5–8s: Still pointing, she looks back at them with a kind smile and gives a small, gentle nod, her weight shifting softly. 8–10s: She slowly lowers her arm and brings her hands together again. No speaking, lips gently closed. Soft, feminine, natural body movements. Both feet remain in place. Static camera, full body visible, unchanged background, no zoom, no cuts."
+
+Nach hinten (die zwei Lampen hinter dem Sofa; Risiko: ein Finger, der auf die Kamera zeigt, ist stark verkürzt, die Hand beim Ergebnis groß ansehen):
+
+"10-second realistic continuous scene. 0–2s: She looks warmly at them with a soft smile, gently sways to one side and lets her hands part. 2–5s: She looks straight ahead and stretches out one arm toward the camera, pointing forward past them with her index finger. 5–8s: Still pointing, she looks back at them with a kind smile and gives a small, gentle nod, her weight shifting softly. 8–10s: She slowly lowers her arm and brings her hands together again. No speaking, lips gently closed. Soft, feminine, natural body movements. Both feet remain in place. Static camera, full body visible, unchanged background, no zoom, no cuts."
+
 ## Beobachtungen über Kling (Tatsachen, keine Schreibregeln)
 
 - Wird eine Geste in Gelenkbewegungen zerlegt oder abgezählt wiederholt, führt Kling sie wie eine Liste aus: Flattern, Klappen im Handgelenk oder eine einzige Zeitlupe (Clips 169, 181, 226).
