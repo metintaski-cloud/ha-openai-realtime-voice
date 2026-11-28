@@ -297,6 +297,10 @@ Ihm um 04:08 auf Deutsch gesagt (das war die Fassung mit 10 s und den Takten 0�
 
 "0–2s: Content and calm, she looks at them with a soft, warm smile and gently sways from one side to the other. 2–5s: She lets one hand glide tenderly along her wide sleeve, smoothing the fabric as her weight shifts softly. 5–8s: She shyly lowers her gaze for a moment with a bashful smile, her shoulders turning slightly and her dress swaying softly. 8–10s: She looks back at them with kind, bright eyes, brings her hands together again and returns to her initial pose. Soft, feminine, natural body movements. Both feet remain in place. Sweet, shy, warm and respectful body language. Static camera, full body visible, unchanged background."
 
+**Clip 3, neues Hallo (28.11.2026). Claude schlug um 04:24 ein neues Hallo mit dem Winken als Hauptsache in 10 s vor; Metin um 04:25: "nein, nimm 15 Sekunden". Also 15 s, 525 Credits.** Unterschied zu Clip 2877: das Winken ist die Szene (Hand geht schon im ersten Takt hoch, fünf Sekunden Winken in der Mitte), keine Hand aufs Herz, keine Verbeugung, das Wort "gentle" steht nicht beim Winken. Ihm um 04:26 auf Deutsch gesagt.
+
+"0–3s: Happy to see them, she smiles warmly, lets her hands part and lifts one hand high to greet them. 3–8s: She waves hello to them with her open hand raised beside her head, a clear, friendly wave, tilting her head a little as her weight shifts softly. 8–12s: She bashfully lowers her gaze for a moment and slowly lowers her hand, her dress swaying softly as she shifts her weight. 12–15s: She looks back at them with bright, kind eyes, brings her hands together again and returns to her initial pose. Soft, feminine, natural body movements. Both feet remain in place. Sweet, shy, warm and respectful body language. Static camera, full body visible, unchanged background."
+
 ## Beobachtungen über Kling (Tatsachen, keine Schreibregeln)
 
 - Wird eine Geste in Gelenkbewegungen zerlegt oder abgezählt wiederholt, führt Kling sie wie eine Liste aus: Flattern, Klappen im Handgelenk oder eine einzige Zeitlupe (Clips 169, 181, 226).
