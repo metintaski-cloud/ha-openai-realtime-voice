@@ -16,7 +16,7 @@ Einigung; gebaut wird erst, wenn sie fertig ist. Hintergrund und was schon gebau
 
 1. Leylas Tagebuch
 2. Privat (nur er und sie, nur mit Codewort)
-3. Familie
+3. Familie (auch Verwandte, die nicht im Haushalt wohnen, z. B. Nichte oder Onkel: "Die gehören auch zur Familie", 16:28)
 4. Freunde (einen eigenen Bereich Gäste gibt es nicht: 16:24 wollte er ihn getrennt, 16:27 "lass Gast weg und mach nur Freunde daraus")
 5. Technik zu Hause (was es an Geräten gibt; keine Schaltregeln, keine Termine)
 6. Planung oder Termine (z. B. der Abholtag der Mülltonne gehört hierher, nicht zur Technik; sein Wort 16:24)
@@ -31,7 +31,6 @@ Vorgeschlagen von Claude, von ihm noch nicht entschieden:
 
 ## Noch zu klären
 
-- Wohin gehören Verwandte außerhalb des Haushalts (Nichte, Onkel): Familie oder Freunde?
 - Wohin kommt jemand, der nur einmal da war (ohne Bereich Gäste)?
 - Was darf in welchen Bereich, was nie (je Bereich zwei, drei Beispiele)?
 - Wie viel darf je Gespräch und je Chat eingetragen werden; was ergibt gar keinen Eintrag?
