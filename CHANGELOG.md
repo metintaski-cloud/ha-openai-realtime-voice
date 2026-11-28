@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.199.0 (28 Nov 2026)
+
+- `feat`: Leyla speaks on the living room TV live and in sync. Metin's idea of the morning ("Das Modell von heute Morgen, kann man den auch bearbeiten, Kinn, nicht nur Mund"): the clip keeps running (body, head, eyes, blinking), and only mouth and chin are computed live from her voice on his PC (AVTR-1 on every picture of the moving clip) and sent to the TV as one video stream. He saw the demonstration on the TV at 13:30: "Ja, das sieht ziemlich perfekt aus."
+- New in the add on: `app/mund.py`. Her reply audio goes to the PC the moment it comes, and the same reply goes to the Voice PE `mund_delay_ms` later (default 1.2 s), so the picture is ready when the sound comes. Her voice stays on the Voice PE: from the TV, the Voice PE would hear her and she would interrupt herself.
+- Off unless the new option `mund_host` is set, and even then nothing is held back while the PC is off or nobody watches the stream: then every talk is exactly as before. Never for a talk from the app.
+- The TV page moves to the page on the PC while the service is ready (`mund` in `GET /api/tv`), and comes back when the stream breaks.
+- Measured before: 115 to 120 ms of computing for every 200 ms of picture on his RTX 4070 Ti, 25 pictures a second on the TV, stream delay about 0.3 s. Tests: the whole suite before and after, plus `tests/test_mund.py` (14 tests: the queue alone, with the real sender to the device, the line to the PC).
+- First version on purpose small: one clip (the sleeve loop) with the live mouth. More clips, her listening and thinking poses and a start with Windows come after his test.
+
 ## 2.198.0 (28 Nov 2026)
 
 - `feat`: a wide room on the TV. Metin, 02:39: "Kann es sein, dass dieses Format fürs TV falsch ist?" Her clips are upright (2 to 3), the TV is wide, so she stood in a box in the middle third of the screen. The clip is not stretched and she is unchanged: left and right of it the TV view draws what the clip shows at its own edges, the mist and the light on the floor, first mirrored (12 % of the clip's width, fading), behind that the outermost columns drawn out to the edge of the screen, all of it fading into the dark (`tvSides`, two small canvases, redrawn about eleven times a second from the running clip, the kept still picture or her still). The dark edge fade of the stage, the sway of the still and the floor shimmer are off in the TV view, so no box edge shows.

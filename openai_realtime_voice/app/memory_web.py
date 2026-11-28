@@ -1071,7 +1071,10 @@ async function scnAsk(n){const ic=SCN[n][1],say=t=>{CHAT.push({role:'info',text:
  if(j&&j.scene&&sceneOk(j.scene))return stageScene(j.scene);
  say(j?'Dazu ist sie gerade nicht in Stimmung.':'Gerade nicht möglich.');}
 for(const n in SCN)document.getElementById(SCN[n][0]).onclick=()=>scnAsk(n);
-async function moodLoad(){try{const st=await (TV?fetch('/api/tv?t='+Date.now()):post('/api/mood',{})).then(r=>r.json());if(!TV||st.mood)moodShow(st);}catch(e){}}
+async function moodLoad(){try{const st=await (TV?fetch('/api/tv?t='+Date.now()):post('/api/mood',{})).then(r=>r.json());
+ /* 2.199.0: the mouth service on Metin's PC is up, so the TV shows her there with a live mouth; mundaus=1 (set when that page came back after a break) keeps this page */
+ if(TV&&st.mund&&!/[?&]mundaus=1/.test(location.search)){location.replace(st.mund);return;}
+ if(!TV||st.mood)moodShow(st);}catch(e){}}
 if(TV)setInterval(moodLoad,4000);  /* the TV asks often, so a lock of the night outfit shows within seconds */
 setInterval(()=>{if(CODE&&document.getElementById('chat').style.display==='block'){moodLoad();remindPending();reachPending();}},60000);
 /* 2.173.0 (Metin: "dass ich auf Handy schreibe und auf PC Monitor sehe", in step): what his other device sends and what she answers

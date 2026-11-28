@@ -28,6 +28,9 @@ TV_CHANNELS=$(bashio::config 'tv_channels')
 TV_REMOTE=$(bashio::config 'tv_remote')
 TV_APP=$(bashio::config 'tv_app')
 TV_DUCK=$(bashio::config 'tv_duck')
+MUND_HOST=$(bashio::config 'mund_host')
+MUND_DELAY_MS=$(bashio::config 'mund_delay_ms')
+MUND_FEIN_MS=$(bashio::config 'mund_fein_ms')
 LAMP_SHOW=$(bashio::config 'lamp_show')
 LAMP_SHOW_LIGHTS=$(bashio::config 'lamp_show_lights')
 STROMPREIS_CT=$(bashio::config 'strompreis_ct')
@@ -74,6 +77,9 @@ export TV_CHANNELS
 export TV_REMOTE
 export TV_APP
 export TV_DUCK
+export MUND_HOST
+export MUND_DELAY_MS
+export MUND_FEIN_MS
 export LAMP_SHOW LAMP_SHOW_LIGHTS
 export STROMPREIS_CT
 export CODE_PHRASE

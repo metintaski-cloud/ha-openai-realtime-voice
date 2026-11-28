@@ -46,6 +46,7 @@ from app.pacing import BYTES_PER_SEC, OUTPUT_SILENCE_PEAK, SAMPLE_RATE, pcm_leve
 from app.live_link import END_CONVERSATION_TOOL
 from app import talk_notes
 from app import tvshow
+from app import mund
 from app.talk_notes import KNOWN_WITHOUT_CODE, UNLOCKED_LOVE, TalkNotesMixin  # noqa: F401
 from app.phrases import (near, names_said, bare_name, asked_if, YES_WORDS, NO_WORDS, WHO_NUDGE_NAMED, RESUME_OPEN_KNOWN, RESUME_PRIVATE_KNOWN, RESUME_WHO, NAME_NO_RE, NAME_WRONG, name_given, RESUME_OPEN, RESUME_PRIVATE, END_TALK_RE, RECALL_NUDGE, RECALL_RE, NAME_NUDGE, NAME_NUDGE_AFTER_S, NAME_NUDGE_COOLDOWN_S, NAME_RE, PROMISE_NUDGE, PROMISE_NUDGE_AFTER_S, PROMISE_RE, NAME_SAID_RE, WHO_AGAIN_TURNS, WHO_ASKED_RE, WHO_NUDGE, WHO_NUDGE_AGAIN, COUPLE_NUDGE, COUPLE_WORD_RE, PET_NUDGE, PET_WORD_RE, addressed_by_name, contains_goodbye, greeting_instruction, parse_greeting_words, pick_greeting)
 from app import (reach_link, chat, lamp_show, metrics, output_link, session_end, tool_link, after_talk, announce_voice, live_link, night, cleanup, costs, fan, health, lights, messages, persona, purifier, rf, technik, todo_sync,
@@ -194,6 +195,9 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         self.agenda = agenda.Agenda(google=self.google)
         self.mood = heart.Heart() if FEELINGS is heart else mood.Mood()  # her feelings
         self.tvshow = tvshow.TvShow(self.tv, self.mood)  # herself on the living room TV (2.195.0)
+        # her mouth live on the TV, computed on Metin's PC (2.199.0); None while the option mund_host is not set
+        self.mund = mund.MundLink.from_env(back_url=self.tvshow.url)
+        self.tvshow.mund = self.mund
         self.reminders = reminders.Reminders(self.agenda, converse=self._converse)
         self.variety = variety.Variety()  # her last openings, so she never sounds the same
         self.diary = diary.Diary()  # what she talked about in the last month, fading
@@ -2093,7 +2097,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
             self.recorder.start_recording(client_id)
 
         end_reason: dict = {}
-        output_queue: asyncio.Queue = asyncio.Queue()
+        # the output of this talk; it holds a reply back for her mouth on the TV when that is active (never for the app)
+        output_queue = mund.Ausgang(None if app else self.mund)
         state: dict = {
             "from_app": bool(app),  # started by a tap in the app, not by the wake word
             "output_queue": output_queue,  # for what a tool sends to the app (the stage, 2.194.0)
@@ -2299,6 +2304,8 @@ class LiveVoiceBridge(night.NightMixin, live_link.LiveLinkMixin, after_talk.Afte
         if self.enable_memory and self.openai_api_key:
             self._in_background(self._cleanup_loop())
         self._in_background(self._minute_loop())
+        if self.mund:
+            self._in_background(self.mund.run())
         if self.planer.available:
             self._in_background(self.planer.loop())
         if self.enable_memory:

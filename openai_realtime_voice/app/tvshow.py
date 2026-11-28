@@ -93,6 +93,7 @@ class TvShow:
         if self.url.lower() in ("", "null"):
             self.url = DEFAULT_URL
         self.night_until = 0.0
+        self.mund = None  # app/mund.py MundLink, set by the bridge: her live mouth from Metin's PC (2.199.0)
         self._before = ""   # the app that was in front before she came, to go back to
         self._watch: Optional[asyncio.Task] = None
 
@@ -113,6 +114,9 @@ class TvShow:
         out = {k: st[k] for k in PAGE_KEYS if k in st}
         if out.get("outfit") == "nacht" and not self.night_open(now):
             out["outfit"] = "freizeit"
+        if self.mund is not None and self.mund.ready():
+            # the mouth service on the PC is up: the TV page moves to its page, which shows her with a live mouth
+            out["mund"] = self.mund.page()
         return out
 
     def _lock(self, why: str) -> None:
