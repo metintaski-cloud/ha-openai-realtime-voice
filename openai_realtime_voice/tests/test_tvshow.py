@@ -193,7 +193,7 @@ def test_the_tv_view_is_in_the_page():
     assert "showChat=(!!CODE||TV)&&home;" in page
     assert "onpointerdown=ev=>{if(TV||ev.button>0||" in page           # no touch on the TV
     assert "if(TV)once=once.filter(n=>n!=='kuss');" in page            # no kiss toward the room
-    assert "html.tv body>*:not(#chat),html.tv #chat>*:not(#stage){display:none!important}" in page
+    assert "html.tv body>*:not(#chat),html.tv #chat>*:not(#stage):not(.tvside){display:none!important}" in page
 
 
 def _clips(folder, names):
@@ -241,7 +241,8 @@ async def test_on_the_tv_only_her_stage_shows_and_a_locked_night_outfit_leaves_a
             seen = await page.evaluate("""()=>{const vis=e=>{const r=e.getBoundingClientRect(),c=getComputedStyle(e);return c.display!=='none'&&c.visibility!=='hidden'&&r.width>0&&r.height>0;};
               const st=document.getElementById('stage').getBoundingClientRect();
               return {code:CODE,outfit:STM&&STM.outfit,stageH:Math.round(st.height),stageW:Math.round(st.width),
-                shown:[...document.querySelectorAll('body *')].filter(e=>vis(e)&&!e.closest('#stage')&&e.id!=='chat').map(e=>e.id||e.tagName),
+                shown:[...document.querySelectorAll('body *')].filter(e=>vis(e)&&!e.closest('#stage')&&e.id!=='chat'&&!e.classList.contains('tvside')).map(e=>e.id||e.tagName),
+                sides:[...document.querySelectorAll('.tvside')].map(c=>{const r=c.getBoundingClientRect(),d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;let lit=0;for(let i=0;i<d.length;i+=4)if(d[i]+d[i+1]+d[i+2]>24)lit++;return [Math.round(r.left),Math.round(r.width),Math.round(r.height),lit>c.width*c.height/4];}),
                 inputs:[...document.querySelectorAll('input,textarea,button')].filter(vis).length,
                 edge:[...document.querySelectorAll('#zedge,#ztimer')].filter(vis).length,
                 on:[svid,svid2].map(v=>v.classList.contains('on')?(v.getAttribute('src')||''):'').join('|')};}""")
@@ -250,6 +251,9 @@ async def test_on_the_tv_only_her_stage_shows_and_a_locked_night_outfit_leaves_a
             assert seen["stageH"] == 720 and seen["stageW"] == 480          # her whole figure, as high as the screen
             assert seen["shown"] == [] and seen["inputs"] == 0              # nothing but her, nothing to type into
             assert seen["edge"] == 0                                        # no clip timer light at the edge of her picture (2.197.1)
+            # 2.198.0: the room goes on left and right of her upright clip, from the clip to the edges of the screen,
+            # and it is filled with what the clip shows (the test clips are bright all over)
+            assert seen["sides"] == [[0, 401, 720, True], [879, 401, 720, True]], seen["sides"]
             show.night_until = 0.0                             # locked again
             t0 = asyncio.get_running_loop().time()
             gone = None

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.198.0 (28 Nov 2026)
+
+- `feat`: a wide room on the TV. Metin, 02:39: "Kann es sein, dass dieses Format fürs TV falsch ist?" Her clips are upright (2 to 3), the TV is wide, so she stood in a box in the middle third of the screen. The clip is not stretched and she is unchanged: left and right of it the TV view draws what the clip shows at its own edges, the mist and the light on the floor, first mirrored (12 % of the clip's width, fading), behind that the outermost columns drawn out to the edge of the screen, all of it fading into the dark (`tvSides`, two small canvases, redrawn about eleven times a second from the running clip, the kept still picture or her still). The dark edge fade of the stage, the sway of the still and the floor shimmer are off in the TV view, so no box edge shows.
+- Compared as pictures before choosing: only the drawn out columns gave a hard step at the seam; the column from the end of the mirror carried the floor light across the whole side.
+- Not seen on his TV yet; whether its browser can read pictures out of a running video fast enough shows only there (if not, the sides stay dark as before).
+
 ## 2.197.1 (28 Nov 2026)
 
 - `fix`: no line at the edge of her picture on the TV. Metin, 02:28, with a photo of the TV: "Warum hat das hier an der rechten Seite komische Strich". It was the light that runs around the edge of the stage and shows on the phone how far the clip is (`#zedge`, 2.177.0); the TV view hides it and the old ring.
