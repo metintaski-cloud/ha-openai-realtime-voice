@@ -381,6 +381,10 @@ Lachen 2, Kichern und wegschauen:
 
 "10-second realistic continuous scene. 0–2s: Happy to dance for them, she smiles sweetly, lets her hands part and begins to sway gently. 2–5s: She lifts her arms gracefully and lets her hands flow softly through the air, her hips swaying gently from side to side. 5–8s: She turns her upper body a little to one side and back, her hands gliding gracefully, her dress swaying with her, a shy smile on her face. 8–10s: She lowers her arms softly, looks at them with bright, kind eyes and brings her hands together again. Graceful, feminine, flowing body movements. She remains in the same spot. Static camera, full body visible, unchanged background, no zoom, no cuts."
 
+**Clip 16, leicht sauer (28.11.2026, nach 05:06). Aus drei Vorschlägen (Arme verschränkt mit Schmollmund, Hände in die Hüften, beleidigt halb weggedreht) wählte Metin den empfohlenen ersten.** Noch nicht gestartet, 10 s, 350 Credits, Start und Endbild `leyla_tv_laecheln.png`. Der mahnende Zeigefinger mit Kopfschütteln (Vorlage 3, `kurz/brust`) kommt hier nicht vor. Mit der Zeile für die Stärke aus Vorlage 3.
+
+"10-second realistic continuous scene. 0–2s: A little offended, she looks at them, her smile fading into a small pout as she softly shifts her weight. 2–5s: She crosses her arms in front of her chest, pouts sweetly and turns her head to the side, looking away. 5–8s: Still pouting, she glances back at them from the side, gently moves her shoulders and cannot help a small smile. 8–10s: She uncrosses her arms, smiles warmly at them again and brings her hands together. Subtle facial expressions, no exaggerated reactions. No speaking. Soft, feminine, natural body movements. Both feet remain in place. Static camera, full body visible, unchanged background, no zoom, no cuts."
+
 ## Beobachtungen über Kling (Tatsachen, keine Schreibregeln)
 
 - Wird eine Geste in Gelenkbewegungen zerlegt oder abgezählt wiederholt, führt Kling sie wie eine Liste aus: Flattern, Klappen im Handgelenk oder eine einzige Zeitlupe (Clips 169, 181, 226).
