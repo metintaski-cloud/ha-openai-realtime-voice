@@ -335,6 +335,10 @@ Ihm um 04:08 auf Deutsch gesagt (das war die Fassung mit 10 s und den Takten 0�
 
 "10-second realistic continuous scene. 0–2s: She looks warmly at them with a soft, content smile and gently sways to one side. 2–5s: She lets one hand glide tenderly along her wide sleeve, smoothing the fabric, her weight shifting softly. 5–8s: She bashfully lowers her gaze for a moment, gently moves her shoulders and softly shifts her weight. 8–10s: She looks back at them with bright, kind eyes and brings her hands together again. Soft, feminine, natural body movements. Both feet remain in place. Static camera, full body visible, unchanged background, no zoom, no cuts."
 
+**Metins Urteil zu Clip 2984 (04:51): "ist gut weiter".** Das ist die Begrüßung des Wohnzimmer Looks.
+
+**Clip 2 (Ärmel Schleife) gestartet von Claude am 28.11.2026 um 04:53:** das Bild war aus der Liste Uploads verschwunden (dort stand `leyla_tv_laecheln.png` um 04:41 noch an erster Stelle), deshalb nichts gewählt und ihn gebeten; er lud es neu hoch und setzte Start und Endbild selbst ("tue wieder rein und wähle sie für dich schon aus"). Am Dateinamen geprüft (beide `leyla_tv_laecheln.png`), "4K · 10s · Adaptive · 1", 350 Credits, Prompt 575 Zeichen und 94 Wörter (Fassung in der Form von Vorlage 1, steht oben), "Task submitted. Generation in progress." Einmal gestartet. Tuch, Zuhören und Nachdenken warten: ein Clip, dann sein Urteil (Schritt 6).
+
 ## Beobachtungen über Kling (Tatsachen, keine Schreibregeln)
 
 - Wird eine Geste in Gelenkbewegungen zerlegt oder abgezählt wiederholt, führt Kling sie wie eine Liste aus: Flattern, Klappen im Handgelenk oder eine einzige Zeitlupe (Clips 169, 181, 226).
