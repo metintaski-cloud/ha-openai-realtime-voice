@@ -17,10 +17,9 @@ Einigung; gebaut wird erst, wenn sie fertig ist. Hintergrund und was schon gebau
 1. Leylas Tagebuch
 2. Privat (nur er und sie, nur mit Codewort)
 3. Familie
-4. Freunde
-5. Gäste (getrennt von Freunden, sein Wunsch 16:24)
-6. Technik zu Hause (was es an Geräten gibt; keine Schaltregeln, keine Termine)
-7. Planung oder Termine (z. B. der Abholtag der Mülltonne gehört hierher, nicht zur Technik; sein Wort 16:24)
+4. Freunde (einen eigenen Bereich Gäste gibt es nicht: 16:24 wollte er ihn getrennt, 16:27 "lass Gast weg und mach nur Freunde daraus")
+5. Technik zu Hause (was es an Geräten gibt; keine Schaltregeln, keine Termine)
+6. Planung oder Termine (z. B. der Abholtag der Mülltonne gehört hierher, nicht zur Technik; sein Wort 16:24)
 
 Beschlossen 16:26 zu Abgelaufenem: NICHTS verschwindet von selbst ("Nein, die sollen bleiben. Allerdings soll mich
 Leila darauf hinweisen, dass die da sind und was wir damit machen, wenn sie schon abgelaufen sind."). Ein Eintrag mit
@@ -32,7 +31,8 @@ Vorgeschlagen von Claude, von ihm noch nicht entschieden:
 
 ## Noch zu klären
 
-- Was unterscheidet Freund und Gast, sodass das Modell sicher zuordnet?
+- Wohin gehören Verwandte außerhalb des Haushalts (Nichte, Onkel): Familie oder Freunde?
+- Wohin kommt jemand, der nur einmal da war (ohne Bereich Gäste)?
 - Was darf in welchen Bereich, was nie (je Bereich zwei, drei Beispiele)?
 - Wie viel darf je Gespräch und je Chat eingetragen werden; was ergibt gar keinen Eintrag?
 - Ein Sachverhalt nur einmal: das Neue ersetzt das Alte. Wer entscheidet bei Widerspruch?
