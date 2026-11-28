@@ -115,6 +115,13 @@ Offen: ob 20 festgehaltene Einträge reichen.
 - Was in welchen Bereich darf (wird Bereich für Bereich geklärt):
   - Familie, BESCHLOSSEN 16:54 ("Ja, das ist okay."): je Mensch nur, wer er ist und was über ihn gilt (Verwandtschaft,
     Geburtstag, Arbeit, Vorlieben). Keine Erlebnisse (Tagebuch), keine Termine (Planung), keine Geräte (Technik).
+  - Sein Wunsch 16:55, Lücken füllen: "Allerdings sollte sie versuchen, diese Lücken zu füllen. Zum Beispiel Bruder
+    steht da, aber kein Alter. Und dass sie dann quasi nachfragt, ey, wie alt bist du denn überhaupt? Und Geburtsdatum,
+    Sternzeichen. Aber nicht alles auf einmal, sondern peu à peu mit dem Kennenlernen." Also: jedes Profil hat feste
+    Felder (Verwandtschaft, Geburtsdatum mit Alter, Arbeit, Vorlieben); was fehlt, fragt sie den Menschen selbst, wenn
+    sie mit ihm spricht, beiläufig und nach und nach. Das Sternzeichen ergibt sich aus dem Geburtsdatum, danach fragt
+    sie nicht eigens. Die Antwort trägt sie selbst ein (Neues ohne Widerspruch) und nennt sie ihm beim Aufräumen.
+    Vorschlag von Claude, Frage gestellt 16:56: höchstens eine solche Frage pro Gespräch.
   - Freunde und Privat: Frage gestellt 16:55, Antwort steht aus.
   - Technik zu Hause und Planung: siehe oben bei den Bereichen (Geräte; Termine).
 - Wie viel darf je Gespräch und je Chat eingetragen werden; was ergibt gar keinen Eintrag?
