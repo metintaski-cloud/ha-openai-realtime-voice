@@ -50,7 +50,8 @@ und mich darauf hinweist. Und das bei Live-Gesprächen, sei es App oder PC oder 
   nennt es nie), erst danach gleicht sie ab (16:32: "Home, zu Hause, da soll sie abfragen, Passwort").
 - Wie viel: NICHT nur ein Punkt je Gespräch. Sie geht alles durch, bis er sagt "machen wir morgen weiter", "jetzt nicht"
   oder "lies mir weiter vor" (16:32).
-- Zu klären: wann sie damit anfängt (von sich aus mit einer Frage, oder nur auf sein Wort).
+- Wann: sie fragt von sich aus einmal am Tag in einem passenden Moment ("Ich habe drei Punkte zum Aufräumen, hast du
+  gerade Zeit?"), und er kann es jederzeit selbst starten ("Leyla, lass uns aufräumen"). Sein Wort 16:33: "Ja, das ist sehr gut."
 
 ## Noch zu klären
 
