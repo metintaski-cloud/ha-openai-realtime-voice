@@ -82,6 +82,13 @@ Wort das Schloss aufzumachen (der Eintrag verblasst wieder) oder den Eintrag gle
 sein Wort und zu Hause nur nach dem Codewort: festgehaltene Einträge vorlesen, Schlüssel setzen, Schlüssel lösen,
 Eintrag löschen. Von sich aus setzt, löst oder löscht sie nichts.
 
+Seine Grundfrage 16:42: "Wofür ist dieser Tagebuch? Wozu dient er? Und was sind die Punkte, die er überhaupt da
+einträgt?" Ihm erklärt (Stand im Programm, `app/diary.py`): Zweck ist, dass sie im nächsten Gespräch noch weiß, was
+zuletzt war (sein Wunsch vom 16.11.2026); heute schreibt ein Textmodell nach jedem Gespräch und jeder Chat Pause einen
+Eintrag aus ihrer Sicht (Erzähltes, was sie tat, wie es sich anfühlte), dazu kommen Notizen, die sie sofort mit
+`merken` ablegt; ob etwas "wichtig" ist, entscheidet das Modell allein. Noch mit ihm zu klären: jeder Eintrag geht
+zusätzlich in ein Archiv, das nie verblasst (2.123.0, Werkzeug `erinnern`).
+
 Offen: ob 20 festgehaltene Einträge reichen; das feste Ja zu "höchstens ein Eintrag pro Tag" (Frage gestellt 16:42).
 
 ## Noch zu klären
