@@ -91,7 +91,7 @@ zusätzlich in ein Archiv, das nie verblasst (2.123.0, Werkzeug `erinnern`).
 
 Sein Wort 16:45 zum Archiv: "Nein, das, was von selbst verblasst, sind wohl Sachen, die nicht mehr genutzt werden.
 Archiv würde ich ersetzen, was Leila doch als persönlich ausmacht, und die Bindung zu der Familie, besonders zu mir."
-So verstanden (Rückfrage gestellt 16:46, sein Ja steht aus): was verblasst, ist wirklich weg; ein Archiv, das von allem
+BESCHLOSSEN 16:46 (sein Wort auf die Rückfrage und den Vorschlag: "Ja, okay."): was verblasst, ist wirklich weg; ein Archiv, das von allem
 eine Kopie behält, soll es nicht mehr geben. Dauerhaft bleibt nur, was Leyla als Person ausmacht und was sie mit der
 Familie und besonders mit ihm verbindet. Vorschlag von Claude dazu: sie setzt nichts allein dauerhaft; beim Aufräumen
 schlägt sie vor, was bleiben soll, und er sagt ja oder nein (das Ja ist der Schlüssel). Was mit den heutigen
