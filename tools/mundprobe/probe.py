@@ -240,5 +240,11 @@ if __name__ == "__main__":
         sys.argv.remove("--live")
         import runpy
         runpy.run_path(str(Path(__file__).with_name("live.py")), run_name="__main__")
+    elif "--skript" in sys.argv:  # ein anderes eigenes Skript aus diesem Ordner, z. B. --skript pruef
+        i = sys.argv.index("--skript")
+        name = sys.argv[i + 1]
+        del sys.argv[i:i + 2]
+        import runpy
+        runpy.run_path(str(Path(__file__).with_name(name + ".py")), run_name="__main__")
     else:
         main()
