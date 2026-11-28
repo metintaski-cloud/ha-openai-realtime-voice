@@ -120,6 +120,7 @@ Offen: ob 20 festgehaltene Einträge reichen.
   jetzt willst du es so."
   Seine Zwischenfrage 16:51 (ob das Alte gelöscht wird oder beide stehen bleiben), ihm so beantwortet: bis zu seiner
   Entscheidung gilt das Alte weiter, das Neue wartet als offener Punkt und steht nicht in der Liste. Nach seiner
-  Entscheidung bleibt genau eines stehen, das andere ist weg. Beide nebeneinander gibt es nie.
+  Entscheidung bleibt genau eines stehen, das andere ist weg. Beide nebeneinander gibt es nie. Sein Wort 16:51:
+  "Okay, alles klar, das ist gut."
 - Was darf sie allein eintragen, wofür braucht sie sein Ja?
 - Was passiert mit den vorhandenen Einträgen (umsortieren nur mit ihm).
