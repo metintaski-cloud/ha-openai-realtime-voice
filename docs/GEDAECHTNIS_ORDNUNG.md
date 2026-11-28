@@ -100,6 +100,8 @@ Archiv Einträgen geschieht, entscheidet er (nichts wird ohne ihn gelöscht).
 Ein Eintrag pro Tag: auf die Frage, ob das fest ist, sagte er 16:46 "Ich dachte, dafür ist der Tagebuch da." So
 verstanden und ihm so gesagt: ja, ein Tagebuch hat einen Eintrag pro Tag. Umsetzung: der Eintrag des Tages wird nach
 jedem Gespräch ergänzt oder neu gefasst (kein zweiter Eintrag), damit sie abends noch weiß, was morgens war.
+Nach einem Beispiel (morgens, mittags, abends ergibt heute drei Einträge, künftig einen) sein Wort 16:49: "Ach so, das
+wird quasi alles zusammengefasst, dann ist das ein Eintrag." Damit von ihm verstanden und angenommen.
 
 Sein Wunsch 16:48: ausführlich soll sie eine ganze Woche wissen ("können wir daraus 7 Tage machen, quasi eine Woche").
 Festgehalten: 7 Tage ausführlich (heute 3), bis 14 Tage kürzer, bis 30 Tage eine Zeile, danach weg, außer mit Schlüssel
